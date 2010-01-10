@@ -54,8 +54,8 @@ static int tc_quiet = 0;
 static int
 tc_do_command(char *format, ...) {
   va_list vlist;
-  char *fmt_cmd,
-    *cmd;
+  char *fmt_cmd;
+  char *cmd;
   int rc;
 
   va_start(vlist, format);

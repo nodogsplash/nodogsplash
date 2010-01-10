@@ -317,7 +317,7 @@ http_nodogsplash_redirect_remote_auth(request *r, t_auth_target *authtarget) {
  */
 void
 http_nodogsplash_serve_splash(request *r, t_auth_target *authtarget) {
-  char *abspath;
+  char *tmpstr;
   char line [MAX_BUF];
   char *splashfilename;
   FILE *fd;
@@ -339,15 +339,25 @@ http_nodogsplash_serve_splash(request *r, t_auth_target *authtarget) {
   httpdAddVariable(r,"authaction",authtarget->authaction);
   httpdAddVariable(r,"denyaction",authtarget->denyaction);
   httpdAddVariable(r,"authtarget",authtarget->authtarget);
+  httpdAddVariable(r,"clientip",r->clientAddr);
+  safe_asprintf(&tmpstr, "%d", get_client_list_length());
+  httpdAddVariable(r,"nclients",tmpstr);
+  free(tmpstr);
+  safe_asprintf(&tmpstr, "%d", config->maxclients);
+  httpdAddVariable(r,"maxclients",tmpstr);
+  free(tmpstr);
+  tmpstr = get_uptime_string();
+  httpdAddVariable(r,"uptime",tmpstr);
+  free(tmpstr);
   /* We need to have imagesdir and pagesdir appear in the page
      as absolute paths, so they work no matter what the
      initial user request URL was  */
-  safe_asprintf(&abspath, "/%s", config->imagesdir);
-  httpdAddVariable(r,"imagesdir",abspath);
-  free(abspath);
-  safe_asprintf(&abspath, "/%s", config->pagesdir);
-  httpdAddVariable(r,"pagesdir",abspath);
-  free(abspath);
+  safe_asprintf(&tmpstr, "/%s", config->imagesdir);
+  httpdAddVariable(r,"imagesdir",tmpstr);
+  free(tmpstr);
+  safe_asprintf(&tmpstr, "/%s", config->pagesdir);
+  httpdAddVariable(r,"pagesdir",tmpstr);
+  free(tmpstr);
   
 
   /* Pipe the splash page from its file */

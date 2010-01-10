@@ -68,16 +68,8 @@ extern time_t started_time;
 extern	pthread_mutex_t	client_list_mutex;
 extern	pthread_mutex_t	config_mutex;
 
-/* Defined in commandline.c */
-extern pid_t restart_orig_pid;
-
-/* XXX Do these need to be locked ? */
-static time_t last_online_time = 0;
-static time_t last_offline_time = 0;
-static time_t last_auth_online_time = 0;
-static time_t last_auth_offline_time = 0;
-
-long authenticated_this_session = 0;
+/* Defined in auth.c */
+extern unsigned int authenticated_this_session;
 
 /** Fork a child and execute a shell command, the parent
  * process waits for the child to return and returns the child's exit()
@@ -258,6 +250,29 @@ char *get_ext_iface (void) {
   return NULL;
 }
 
+/* Malloc's */
+char * format_time(unsigned long int secs) {
+  unsigned int days, hours, minutes, seconds;
+  char * str;
+  
+  days = secs / (24 * 60 * 60);
+  secs -= days * (24 * 60 * 60);
+  hours = secs / (60 * 60);
+  secs -= hours * (60 * 60);
+  minutes = secs / 60;
+  secs -= minutes * 60;
+  seconds = secs;
+
+  safe_asprintf(&str,"%ud %uh %um %us", days, hours, minutes, seconds);
+  return str;
+
+}
+
+/* Caller must free. */
+char * get_uptime_string() {
+  return format_time(time(NULL)-started_time);
+}
+
 /*
  * @return A string containing human-readable status text.
  * MUST BE free()d by caller
@@ -265,12 +280,12 @@ char *get_ext_iface (void) {
 char * get_status_text() {
   char buffer[STATUS_BUF_SIZ];
   char timebuf[32];
+  char * str;
   ssize_t len;
   s_config *config;
-  t_client	*first;
-  int		indx;
-  unsigned long int now, uptime = 0, uptimesecs = 0;
-  unsigned int days = 0, hours = 0, minutes = 0, seconds = 0;
+  t_client *client;
+  int	   indx;
+  unsigned long int now, uptimesecs, durationsecs = 0;
   unsigned long long int download_bytes, upload_bytes;
   t_MAC *trust_mac;
   t_MAC *allow_mac;
@@ -283,21 +298,15 @@ char * get_status_text() {
   len = strlen(buffer);
 
   now = time(NULL);
-
-  uptimesecs = uptime = now - started_time;
-  days    = uptime / (24 * 60 * 60);
-  uptime -= days * (24 * 60 * 60);
-  hours   = uptime / (60 * 60);
-  uptime -= hours * (60 * 60);
-  minutes = uptime / 60;
-  uptime -= minutes * 60;
-  seconds = uptime;
+  uptimesecs = now - started_time;
 
   snprintf((buffer + len), (sizeof(buffer) - len), "Version: " VERSION "\n");
   len = strlen(buffer);
 
-  snprintf((buffer + len), (sizeof(buffer) - len), "Uptime: %ud %uh %um %us\n", days, hours, minutes, seconds);
+  str = format_time(uptimesecs);
+  snprintf((buffer + len), (sizeof(buffer) - len), "Uptime: %s\n", str);
   len = strlen(buffer);
+  free(str);
 
   snprintf((buffer + len), (sizeof(buffer) - len), "Gateway Name: %s\n", config->gw_name);
   len = strlen(buffer);
@@ -369,20 +378,6 @@ char * get_status_text() {
   snprintf((buffer + len), (sizeof(buffer) - len), "; avg: %.6g kbit/s\n", ((double) upload_bytes) / 125 / uptimesecs);
   len = strlen(buffer);
 
-
-  /** not needed in nodogsplash, since we don't permit ndsctl restart
-  snprintf((buffer + len), (sizeof(buffer) - len), "Has been restarted: ");
-  len = strlen(buffer);
-  if (restart_orig_pid) {
-    snprintf((buffer + len), (sizeof(buffer) - len), "yes (from PID %d)\n", restart_orig_pid);
-    len = strlen(buffer);
-  }
-  else {
-    snprintf((buffer + len), (sizeof(buffer) - len), "no\n");
-    len = strlen(buffer);
-  }
-  */
-
   snprintf((buffer + len), (sizeof(buffer) - len), "====\n");
   len = strlen(buffer);
 
@@ -401,69 +396,57 @@ char * get_status_text() {
   snprintf((buffer + len), (sizeof(buffer) - len), "Current clients: %d\n", get_client_list_length());
   len = strlen(buffer);
 
-  first = client_get_first_client();
-  if(first) {
+  client = client_get_first_client();
+  if(client) {
     snprintf((buffer + len), (sizeof(buffer) - len), "\n");
     len = strlen(buffer);
   }
   indx = 0;
-  while (first != NULL) {
+  while (client != NULL) {
     snprintf((buffer + len), (sizeof(buffer) - len), "Client %d\n", indx);
     len = strlen(buffer);
 
-    snprintf((buffer + len), (sizeof(buffer) - len), "  IP: %s MAC: %s\n", first->ip, first->mac);
+    snprintf((buffer + len), (sizeof(buffer) - len), "  IP: %s MAC: %s\n", client->ip, client->mac);
     len = strlen(buffer);
 
-    ctime_r(&(first->added_time),timebuf);
+    ctime_r(&(client->added_time),timebuf);
     snprintf((buffer + len), (sizeof(buffer) - len), "  Added:   %s", timebuf);
     len = strlen(buffer);
 
-    ctime_r(&(first->counters.last_updated),timebuf);
+    ctime_r(&(client->counters.last_updated),timebuf);
     snprintf((buffer + len), (sizeof(buffer) - len), "  Active:  %s", timebuf);
     len = strlen(buffer);
 
-    uptimesecs = uptime = first->counters.last_updated - first->added_time;
-    days    = uptime / (24 * 60 * 60);
-    uptime -= days * (24 * 60 * 60);
-    hours   = uptime / (60 * 60);
-    uptime -= hours * (60 * 60);
-    minutes = uptime / 60;
-    uptime -= minutes * 60;
-    seconds = uptime;
-
-    snprintf((buffer + len), (sizeof(buffer) - len), "  Active duration: %ud %uh %um %us\n", days, hours, minutes, seconds);
+    str = format_time(client->counters.last_updated - client->added_time);
+    snprintf((buffer + len), (sizeof(buffer) - len), "  Active duration: %s\n", str);
     len = strlen(buffer);
+    free(str);
 
-    uptimesecs = uptime = now - first->added_time;
-    days    = uptime / (24 * 60 * 60);
-    uptime -= days * (24 * 60 * 60);
-    hours   = uptime / (60 * 60);
-    uptime -= hours * (60 * 60);
-    minutes = uptime / 60;
-    uptime -= minutes * 60;
-    seconds = uptime;
+    durationsecs = now - client->added_time;
 
-    snprintf((buffer + len), (sizeof(buffer) - len), "  Added duration:  %ud %uh %um %us\n", days, hours, minutes, seconds);
+    str = format_time(durationsecs);
+    snprintf((buffer + len), (sizeof(buffer) - len), "  Added duration:  %s\n", str);
     len = strlen(buffer);
+    free(str);
 
-    snprintf((buffer + len), (sizeof(buffer) - len), "  Token: %s\n", first->token ? first->token : "none");
+    snprintf((buffer + len), (sizeof(buffer) - len), "  Token: %s\n", client->token ? client->token : "none");
     len = strlen(buffer);
 
     snprintf((buffer + len), (sizeof(buffer) - len), "  State: %s\n",
-	     fw_connection_state_as_string(first->fw_connection_state));
+	     fw_connection_state_as_string(client->fw_connection_state));
     len = strlen(buffer);
 
-    download_bytes = first->counters.incoming;
-    upload_bytes = first->counters.outgoing;
+    download_bytes = client->counters.incoming;
+    upload_bytes = client->counters.outgoing;
 
     snprintf((buffer + len), (sizeof(buffer) - len),
 	     "  Download: %llu kByte; avg: %.6g kbit/s\n  Upload:   %llu kByte; avg: %.6g kbit/s\n\n",
-	     download_bytes/1000, ((double)download_bytes)/125/uptimesecs,
-	     upload_bytes/1000, ((double)upload_bytes)/125/uptimesecs);
+	     download_bytes/1000, ((double)download_bytes)/125/durationsecs,
+	     upload_bytes/1000, ((double)upload_bytes)/125/durationsecs);
     len = strlen(buffer);
 
     indx++;
-    first = first->next;
+    client = client->next;
   }
 
   UNLOCK_CLIENT_LIST();

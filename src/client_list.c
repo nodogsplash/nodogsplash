@@ -49,6 +49,9 @@
 /** Client counter */
 static int client_count = 0;
 
+/** Time last client added */
+static unsigned long int last_client_time = 0;
+
 /** Global mutex to protect access to the client list */
 pthread_mutex_t client_list_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -123,8 +126,9 @@ _client_list_append(char *ip, char *mac, char *token) {
   client->fw_connection_state = FW_MARK_PREAUTHENTICATED;
   client->counters.incoming = client->counters.incoming_history = 0;
   client->counters.outgoing = client->counters.outgoing_history = 0;
-  client->counters.last_updated = time(NULL);
-  client->added_time = time(NULL);
+  last_client_time = time(NULL);
+  client->counters.last_updated = last_client_time;
+  client->added_time = last_client_time;
 
   debug(LOG_NOTICE, "Adding %s %s token %s to client list",
 	    client->ip, client->mac, client->token ? client->token : "none");

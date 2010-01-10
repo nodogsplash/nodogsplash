@@ -58,6 +58,10 @@ void mark_auth_offline();
 int is_auth_online();
 
 /*
+ * @brief Mallocs and returns nodogsplash uptime string 
+ */
+char * get_uptime_string();
+/*
  * @brief Creates a human-readable paragraph of the status of the nodogsplash process
  */
 char * get_status_text();

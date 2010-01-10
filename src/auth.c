@@ -50,8 +50,8 @@
 /* Defined in clientlist.c */
 extern	pthread_mutex_t	client_list_mutex;
 
-/* Defined in util.c */
-extern long authenticated_this_session;
+/* Count number of authentications */
+unsigned int authenticated_this_session = 0;
 
 /** Launches a thread that periodically checks if any of the connections has timed out
 @param arg Must contain a pointer to a string containing the IP adress of the client to check to check
