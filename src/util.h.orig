@@ -65,10 +65,6 @@ char * get_uptime_string();
  * @brief Creates a human-readable paragraph of the status of the nodogsplash process
  */
 char * get_status_text();
-/*
- * @brief Creates a machine-readable dump of currently connected clients
- */
-char * get_clients_text();
 
 #define LOCK_GHBN() do { \
 	debug(LOG_DEBUG, "Locking wd_gethostbyname()"); \

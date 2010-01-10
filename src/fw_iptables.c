@@ -53,7 +53,7 @@
 
 static int iptables_do_command(char *format, ...);
 static char *iptables_compile(char *, char *, t_firewall_rule *);
-static int iptables_load_ruleset(char *, char *, char *);
+static int iptables_append_ruleset(char *, char *, char *);
 
 extern pthread_mutex_t	client_list_mutex;
 extern pthread_mutex_t	config_mutex;
@@ -138,13 +138,13 @@ iptables_compile(char * table, char *chain, t_firewall_rule *rule)
 
 /**
  * @internal
- * Load all the rules in a rule set.
+ * append all the rules in a rule set.
  * @arg ruleset Name of the ruleset
  * @arg table Table containing the chain.
  * @arg chain IPTables chain the rules go into
  */
 static int
-iptables_load_ruleset(char * table, char *ruleset, char *chain) {
+iptables_append_ruleset(char * table, char *ruleset, char *chain) {
   t_firewall_rule   *rule;
   char		    *cmd;
   int               ret=0;
@@ -335,10 +335,11 @@ iptables_fw_init(void) {
   rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -m mark --mark 0x%x -j ACCEPT", FW_MARK_TRUSTED);
   /* CHAIN_OUTGOING, packets marked AUTHENTICATED  ACCEPT */
   rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -m mark --mark 0x%x -j ACCEPT", FW_MARK_AUTHENTICATED);
+  /* CHAIN_OUTGOING, append the "preauthenticated-users" ruleset */
+  rc |= iptables_append_ruleset("nat", "preauthenticated-users", CHAIN_OUTGOING);
+
   /* CHAIN_OUTGOING, packets for tcp port 80, redirect to gw_port on primary address for the iface */
   rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p tcp --dport 80 -j DNAT --to-destination %s:%d", gw_address, gw_port);
-  /* DNAT may be more 'portable' than REDIRECT, so we use DNAT
-    rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p tcp --dport 80 -j REDIRECT --to-ports %d", gw_port); */
   /* CHAIN_OUTGOING, other packets  ACCEPT */
   rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -j ACCEPT");
 
@@ -371,8 +372,8 @@ iptables_fw_init(void) {
   rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -m mark --mark 0x%x -j ACCEPT", FW_MARK_TRUSTED);
   /* CHAIN_TO_ROUTER, packets to HTTP listening on gw_port on router ACCEPT */
   rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -p tcp --dport %d -j ACCEPT", gw_port);
-  /* CHAIN_TO_ROUTER, load the "users-to-router" ruleset */
-  rc |= iptables_load_ruleset("filter", "users-to-router", CHAIN_TO_ROUTER);
+  /* CHAIN_TO_ROUTER, append the "users-to-router" ruleset */
+  rc |= iptables_append_ruleset("filter", "users-to-router", CHAIN_TO_ROUTER);
   /* everything else, REJECT */
   rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -j REJECT --reject-with icmp-port-unreachable");
 
@@ -403,22 +404,12 @@ iptables_fw_init(void) {
   rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m mark --mark 0x%x -j " CHAIN_AUTHENTICATED, FW_MARK_AUTHENTICATED);
   /* CHAIN_AUTHENTICATED, related and established packets  ACCEPT */
   rc |= iptables_do_command("-t filter -A " CHAIN_AUTHENTICATED " -m state --state RELATED,ESTABLISHED -j ACCEPT");
-  /* CHAIN_AUTHENTICATED, load the "authenticated-users" ruleset */
-  rc |= iptables_load_ruleset("filter", "authenticated-users", CHAIN_AUTHENTICATED);
-  /* CHAIN_AUTHENTICATED, all packets tcp/udp to DNS (port 53) ACCEPT */
-  /* now require that these be explicitly opened in a FirewallRuleset 
-  rc |= iptables_do_command("-t filter -A " CHAIN_AUTHENTICATED " -p tcp --dport 53 -j ACCEPT");
-  rc |= iptables_do_command("-t filter -A " CHAIN_AUTHENTICATED " -p udp --dport 53 -j ACCEPT");
-  */
+  /* CHAIN_AUTHENTICATED, append the "authenticated-users" ruleset */
+  rc |= iptables_append_ruleset("filter", "authenticated-users", CHAIN_AUTHENTICATED);
   /* CHAIN_AUTHENTICATED, any packets not matching that ruleset  REJECT */
   rc |= iptables_do_command("-t filter -A " CHAIN_AUTHENTICATED " -j REJECT --reject-with icmp-port-unreachable");
-  /* CHAIN_TO_INTERNET, load the "preauthenticated-users" ruleset */
-  rc |= iptables_load_ruleset("filter", "preauthenticated-users", CHAIN_TO_INTERNET);
-  /* CHAIN_TO_INTERNET, all packets tcp/udp to DNS (port 53) ACCEPT */
-  /* now require that these be explicitly opened in a FirewallRuleset 
-  rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -p tcp --dport 53 -j ACCEPT");
-  rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -p udp --dport 53 -j ACCEPT");
-  */
+  /* CHAIN_TO_INTERNET, append the "preauthenticated-users" ruleset */
+  rc |= iptables_append_ruleset("filter", "preauthenticated-users", CHAIN_TO_INTERNET);
   /* CHAIN_TO_INTERNET, all other packets REJECT */
   rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -j REJECT --reject-with icmp-port-unreachable");
 
@@ -605,7 +596,7 @@ iptables_fw_total_upload() {
   while (('\n' != fgetc(output)) && !feof(output)) {}
 
   while ( !(feof(output) )) {
-    rc = fscanf(output, "%*d %llu %s ", &counter,target);
+    rc = fscanf(output, "%*d %llu %s ", &counter, target);
     if (2 == rc && !strcmp(target,CHAIN_OUTGOING)) {
       debug(LOG_DEBUG, "Total outgoing Bytes=%llu", counter);
       pclose(output);

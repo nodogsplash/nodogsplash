@@ -58,7 +58,7 @@ beginning by being redirected to their originally requested website.
 This access expires after a certain time interval.
  <p>
  <p>
-Nodogsplash also permits specifying the amount of
+Nodogsplash also permits limiting the aggregate
 bandwidth provided to users, if you don't want to grant all of your
 available upload or download bandwidth.
  <p>
@@ -99,6 +99,8 @@ Or, to install the latest version, you can just run:
 <pre>
 ipkg install http://kokoro.ucsd.edu/nodogsplash/latest.ipk
 </pre>
+(Note:  to prevent installation of an older package, you may have to
+remove references to remote package repositories in your ipkg.conf file.)
 </li>
 <li>
 If the interface that you want nodogsplash to manage is not <code>br0</code>,
@@ -324,7 +326,7 @@ Since the username and password are site-wide
 a secure mechanism.
 <p>
 To enable this, edit <code>nodogsplash.conf</code> to set parameters 
-<code>PasswordAuthentication></code>,
+<code>PasswordAuthentication</code>,
 <code>UsernameAuthentication</code>,
 <code>Password</code>,
 <code>Username</code>, and <code>PasswordAttempts</code> as desired.  

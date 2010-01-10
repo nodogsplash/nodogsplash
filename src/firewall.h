@@ -29,10 +29,9 @@
 
 /** Used by fw_iptables.c to mark packets. Unmarked packets are considered 'preauthenticated' */
 typedef enum _t_fw_marks {
-  FW_MARK_PREAUTHENTICATED = 0,  /**< @brief Actually not used as a packet mark */ 
+  FW_MARK_PREAUTHENTICATED = 0x000,  /**< @brief Actually not used as a packet mark */ 
   FW_MARK_AUTHENTICATED = 0x100,  /**< @brief The client is authenticated */ 
   FW_MARK_BLOCKED = 0x200, /**< @brief The client is blocked */
-  FW_MARK_ALLOWED = 0x300, /**< @brief The client is blocked */
   FW_MARK_TRUSTED = 0x400,  /**< @brief The client is trusted */
   FW_MARK_MASK = 0x700 /**< @brief Mask to use with FW_MARK's */
 } t_fw_marks;

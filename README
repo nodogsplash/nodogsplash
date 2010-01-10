@@ -32,8 +32,8 @@ web page using its own builtin web server. The splash page provides a link
 which, when the user clicks on it, opens limited access for them to the
 internet via your connection, beginning by being redirected to their originally
 requested website. This access expires after a certain time interval.
-Nodogsplash also permits specifying the amount of bandwidth provided to users,
-if you don't want to grant all of your available upload or download bandwidth.
+Nodogsplash also permits limiting the aggregate bandwidth provided to users, if
+you don't want to grant all of your available upload or download bandwidth.
 Specific features of Nodogsplash are configurable, by editing the configuration
 file and the splash page. The default installed configuration may be all you
 need, though.
@@ -60,6 +60,8 @@ need, though.
 
     ipkg install http://kokoro.ucsd.edu/nodogsplash/latest.ipk
 
+  (Note: to prevent installation of an older package, you may have to remove
+  references to remote package repositories in your ipkg.conf file.)
 * If the interface that you want nodogsplash to manage is not br0, edit /etc/
   nodogsplash/nodogsplash.conf and set GatewayInterface.
 * To start nodogsplash, run the following, or just reboot the router:
@@ -208,12 +210,11 @@ Nodogsplash can be configured to require a username and/or password to be
 entered on the splash page as part of the authentication process. Since the
 username and password are site-wide (not per user), and they are sent in the
 clear using HTTP GET, this is not a secure mechanism.
-To enable this, edit nodogsplash.conf to set parameters
-PasswordAuthentication>, UsernameAuthentication, Password, Username, and
-PasswordAttempts as desired. Then the splash page must use a GET-method HTML
-form to send user-entered username and/or password as values of variables
-nodoguser and nodogpass respectively, along with others as required, to the
-server. For example:
+To enable this, edit nodogsplash.conf to set parameters PasswordAuthentication,
+UsernameAuthentication, Password, Username, and PasswordAttempts as desired.
+Then the splash page must use a GET-method HTML form to send user-entered
+username and/or password as values of variables nodoguser and nodogpass
+respectively, along with others as required, to the server. For example:
 
   <form method='GET' action='$authaction'>
   <input type='hidden' name='tok' value='$tok'>
