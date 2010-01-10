@@ -1,0 +1,34 @@
+8
+
+dir
+1161
+https://dev.wifidog.org/svn/trunk/wifidog/scripts
+https://dev.wifidog.org/svn
+
+
+
+2005-11-02T00:48:45.000000Z
+816
+aprilp
+
+
+svn:special svn:externals svn:needs-lock
+
+
+
+
+
+
+
+
+
+
+
+4c0ea164-750a-0410-922a-bd9993033959
+
+init.d
+dir
+
+openwrt
+dir
+

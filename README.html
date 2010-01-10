@@ -1,0 +1,261 @@
+<html>
+<head> <title>nodogsplash README</title> </head>
+<body>
+<h3>0. The Nodogsplash project</h3>
+
+Nodogsplash offers a simple way to
+open a free hotspot providing restricted access to an internet
+connection.  It is intended for use on wireless access points running
+OpenWRT (but may also work on other Linux-based devices).
+ <p>
+Its functionality is similar to Nocatsplash, but it is derived from
+the codebase of the Wifi Guard Dog project. Nodogsplash is released
+under the GNU General Public License.
+ <p>
+<ul>
+<li>
+Nodogsplash: 	
+<a href="http://kokoro.ucsd.edu/nodogsplash">http://kokoro.ucsd.edu/nodogsplash</a>
+</li>
+<li>
+OpenWRT:
+<a href="http://openwrt.org/">http://openwrt.org/</a>
+</li>
+<li>
+Wifidog:
+<a href="http://dev.wifidog.org/">http://dev.wifidog.org/</a>
+</li>
+<li>
+Nocatsplash:
+<a href="http://nocat.net/">http://nocat.net/</a>
+</li>
+<li>
+GNU GPL:
+<a href="http://www.gnu.org/copyleft/gpl.html">http://www.gnu.org/copyleft/gpl.html</a>
+</li>
+</ul>
+ <p>
+The following describes how Nodogsplash works, how to get it and run it,
+and how to customize its behavior for your application.
+
+<h3>1. Overview</h3>
+
+A simple hotspot controller like Nodogsplash is a solution to this
+problem: You want to provide controlled and reasonably secure public access
+to an internet connection; and while you want to require users to give some
+acknowledgment of the service you are providing, you don't need or want the
+complexity of user account names and passwords and
+maintaining a separate database-backed authentication server.
+ <p>
+When installed and running, Nodogsplash implements a simple 'authentication'
+process.  First, it detects any user attempting to
+use your internet connection to visit a website.  It captures
+the request, and instead serves back a 'splash' web page using its own
+builtin <a href="http://www.hughes.com.au/products/libhttpd/">
+libhttpd-based</a> web server.
+The splash page provides a link which, when the user clicks on
+it, opens limited access for them to the internet via your connection,
+beginning by being redirected to their originally requested website.
+This access expires after a certain time interval.
+ <p>
+Specific features of Nodogsplash are configurable, by editing the
+configuration file and the
+splash page.  The default
+installed configuration may be all you need, though.
+
+<h3>2. Installing and running nodogsplash</h3>
+
+<ul>
+<li>
+Have a router working with
+<a href="http://openwrt.org/">OpenWRT</a>.
+Nodogsplash has been compiled against a OpenWRT White Russian 0.9 buildroot;
+it may or may not work on other versions of OpenWRT or on other kinds of 
+Linux-based router firmware.  
+</li>
+<li>
+Make sure your router is basically
+working before you try to install
+nodogsplash. In particular, make sure your DHCP daemon
+is serving addresses on the interface
+that nodogsplash will manage (typically <code>eth1</code>), and for the
+following use ssh or telnet access to your router over a different interface.
+</li>
+<li>
+To install nodogsplash, obtain the latest <code>nodogsplash*.ipk</code> package
+file from the project website, copy it to 
+<code>/tmp/</code> on your OpenWRT router,
+and, in as root on the router, run:
+<pre>
+ipkg install /tmp/nodogsplash*.ipk
+</pre>
+</li>
+<li>
+If the interface that you want nodogsplash to manage is not <code>eth1</code>,
+edit <code>/etc/nodogsplash/nodogsplash.conf</code> and set 
+<code>GatewayInterface</code>.
+</li>
+<li>
+To start nodogsplash, run the following, or just reboot the router:
+<pre>
+/etc/init.d/S65nodogsplash start
+</pre>
+</li>
+<li>
+To test the installation, connect a client machine to the interface
+on your router that is managed by nodogsplash (for example, connect to
+the router's wireless lan) and in a browser on that machine, attempt to visit
+any website.  You should see the nodogsplash splash page instead.  Click on the
+icon; the browser should redirect to the initially requested website.
+</li>
+<li>
+To see the current status of your nodogsplash process, run:
+<pre>
+/usr/bin/ndctl status
+</pre>
+</li>
+<li>
+To stop nodogsplash, run:
+<pre>
+/etc/init.d/S65nodogsplash stop
+</pre>
+</li>
+<li>
+To uninstall nodogsplash, run:
+<pre>
+ipkg remove nodogsplash
+</pre>
+</li>
+</ul>
+
+<h3>3. How nodogsplash works</h3>
+
+A wireless router running OpenWRT has two or more interfaces; nodogsplash
+manages one of them.  This will typically be <code>eth1</code>, which is
+conventionally bridged to both the wireless and wired LAN, or just the wireless
+LAN if the <code>br0</code> bridge has been broken.
+<p>
+Nodogsplash considers four kinds of packets coming into the router
+over that interface, determined by source MAC address:
+<ol>
+<li>
+<em>Blocked</em>, if listed in the BlockedMACList in the configuration file.
+These packets are dropped.  (Caveat: this is not
+a particularly secure mechanism, since MAC addresses are easy to spoof.)
+</li>
+<li>
+<em>Trusted</em>, if listed in the TrustedMACList in the configuration file.
+These packets are accepted and routed to any destination address and port.
+(Caveat: this is not
+a particularly secure mechanism, since MAC addresses are easy to spoof.)
+</li>
+<li>
+<em>Authenticated</em>, if the packet's IP and MAC source address has gone
+through the nodogsplash authentication process and has not yet
+expired.  These packets are accepted and routed to a limited set of 
+addresses and ports (see <code>FirewallRuleSet authenticated-users</code>
+in the <code>nodogsplash.conf</code> configuration file).
+</li>
+<li>
+<em>Unknown</em>.  Any other packet.  These packets are accepted only to DHCP
+and DNS ports on the router, and to the DNS port
+at other addresses.  Any other packet is dropped, except that a packet
+for destination port 80 at any address is redirected to port 2050 on
+the router, where nodogsplash's builtin web server is listening.  This begins
+the 'authentication' process. The
+server will serve a splash page back to the source IP address of the
+packet. The user clicking the appropriate link on the splash page will complete
+the process, causing future packets from this 
+IP/MAC address to be marked as
+<em>Authenticated</em> until the inactive or forced timeout is reached, 
+and its packets revert to being <em>Unknown</em>.
+</li>
+</ol>
+Nodogsplash implements these actions by 
+inserting rules in the router's iptables mangle
+PREROUTING table to mark packets, and by inserting
+rules in the nat PREROUTING, filter INPUT and
+filter FORWARD chains which match on those marks.
+Because it inserts its rules at the beginning
+of existing chains, nodogsplash should be 
+insensitive to almost any existing firewall
+configuration.  
+
+<h3>4. Customizing nodogsplash</h3>
+
+The default shipped configuration is intended to be usable and reasonably
+secure as-is for basic internet sharing applications, but it is
+customizable. 
+<ul>
+<li>
+To change basic nodogsplash settings, edit the configuration file:
+<pre>
+/etc/nodogsplash/nodogsplash.conf
+</pre>
+</li>
+<li>
+To change the contents of the splash page, edit the splash page file:
+<pre>
+/etc/nodogsplash/htdocs/splash.html
+</pre>
+When the splash page is served, the following variables in the page are
+replaced by their values:
+<ul>
+<li>
+<code>$gatewayname</code>  The value of 
+<code>GatewayName</code> as set in <code>nodogsplash.conf</code>.
+</li>
+<li>
+<code>$authtarget</code>  A URL which encodes a token and
+the URL of the user's original web request.  When nodogsplash receives a
+request at this URL, it redirects them
+to their original web request, and subsequent packets from that
+user are marked as <em>Authenticated</em>.
+</li>
+<li>
+<code>$imagesdir</code>  The directory in nodogsplash's web hierarchy
+where images to be displayed in the splash page must be located.
+</li>
+</ul>
+</ul>
+
+<h3>5. Debugging nodogsplash</h3>
+<ul>
+<li>
+To see verbose debugging output from nodogsplash, 
+edit the <code>/etc/init.d/S65nodogsplash</code> file to set the 
+<code>OPTIONS</code>
+variable to the flags <code>"-s -d 7"</code>, restart or reboot, and
+view messages with logread.
+The <code>-s</code> flag logs to syslog; the <code>-d 7</code> flag
+sets the maximally verbose level for debugging messages (see syslog.h).
+You don't want to run with these flags routinely, as it will 
+quickly fill the syslog  circular buffer, unless you enable remote logging.
+<p>
+Alternatively, you can set the flag <code>-f</code> instead of <code>-s</code>,
+and restart.
+This will run nodogsplash in the foreground, logging to stdout. However, 
+if you do this, don't reboot the router;
+nodogsplash will not start at boot with the  <code>-f</code> flag set.
+</li>
+<li>
+When stopped, nodogsplash deletes its iptables rules,
+attempting to leave the router's firewall in its original state.  If 
+not (for example, after a crash)
+subsequently starting and stopping nodogsplash should remove its rules.
+To check to see all the
+rules in, for example, the filter table chains, run
+<pre>
+iptables -t filter -L -v
+</pre>
+For extensive suggestions on debugging iptables, see for example
+<a href="http://iptables-tutorial.frozentux.net/iptables-tutorial.html">
+Oskar Andreasson's tutorial</a>.
+</li>
+</ul>
+
+<hr>
+Email contact: nodogsplash (at) kokoro.ucsd.edu
+
+</body>
+</html>

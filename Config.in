@@ -1,0 +1,13 @@
+config BR2_PACKAGE_NODOGSPLASH
+	tristate "nodogsplash - Wireless LAN portal controller"
+	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_IPTABLES
+	select BR2_PACKAGE_IPTABLES_MOD_IPOPT
+	select BR2_PACKAGE_LIBPTHREAD
+	help
+	  Nodogsplash is a simple open source captive portal or wireless LAN
+	  access point controller. It is based on the Wifidog gateway client,
+	  but (like nocatsplash) does not require an authentication server.
+
+	  http://kokoro.ucsd.edu/nodogsplash
+	  

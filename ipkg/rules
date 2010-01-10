@@ -1,0 +1,112 @@
+#!/usr/bin/make -f
+
+ifndef BUILDROOT
+	ERR := $(error Please set BUILDROOT to OpenWRT's buildroot)
+endif
+
+ARCH:=mipsel
+
+NODOGSPLASH_MAJOR_VERSION := $(shell awk -F= '$$1 == "NODOGSPLASH_MAJOR_VERSION" {print $$2}' configure.in)
+NODOGSPLASH_MINOR_VERSION := $(shell awk -F= '$$1 == "NODOGSPLASH_MINOR_VERSION" {print $$2}' configure.in)
+VERSION=$(NODOGSPLASH_MAJOR_VERSION).$(NODOGSPLASH_MINOR_VERSION)
+
+BUILD_DIR:=$(CURDIR)/ipkg
+TMP_DIR:=$(BUILD_DIR)/tmp
+STAGING_DIR=$(BUILDROOT)/staging_dir_$(ARCH)
+IPKG_DIR := $(wildcard $(BUILDROOT)/build_$(ARCH)/ipkg-utils-*/)
+IPTABLES_DIR := $(wildcard $(BUILDROOT)/build_$(ARCH)/iptables-*/)
+KERNEL_VERSION := $(shell awk '$$1 == "\#define" && $$2 == "UTS_RELEASE" {gsub(/["]/, "", $$3); print $$3}' $(STAGING_DIR)/include/linux/version.h)
+KERNEL_MODULES_DIR := $(BUILDROOT)/build_$(ARCH)/linux-2.4-brcm/modules/lib/modules/$(KERNEL_VERSION)
+UCLIBC_DIR := $(wildcard $(BUILDROOT)/build_$(ARCH)/uClibc*/)
+
+GNU_TARGET_NAME=$(ARCH)-linux
+TARGET_CROSS=$(STAGING_DIR)/bin/$(ARCH)-linux-uclibc-
+
+CC=$(TARGET_CROSS)gcc
+LD=$(TARGET_CROSS)ld
+AR=$(TARGET_CROSS)ar
+RANLIB=$(TARGET_CROSS)ranlib
+STRIP=$(TARGET_CROSS)strip
+IPKG_BUILD=$(STAGING_DIR)/usr/bin/ipkg-build
+
+all: binary
+
+build: build-nodogsplash build-iptables build-ipkg-utils
+
+build-nodogsplash: build-nodogsplash-stamp
+build-nodogsplash-stamp:
+	-test -f autogen.sh && ./autogen.sh
+	-$(MAKE) distclean
+	CC=$(CC) LD=$(LD) AR=$(AR) RANLIB=$(RANLIB) ./configure --prefix=/  --host=$(ARCH) --target=$(ARCH)
+	$(MAKE)
+	touch build-nodogsplash-stamp
+
+build-ipkg-utils: $(IPKG_BUILD)
+
+build-ipkg-utils-stamp: 
+	$(MAKE) -C $(BUILDROOT) ipkg-utils
+	touch build-ipkg-utils-stamp
+
+build-iptables: build-iptables-stamp
+build-iptables-stamp:
+	sed "s/PF_EXT_SLIB:=icmp/PF_EXT_SLIB:=mac icmp/" $(IPTABLES_DIR)/extensions/Makefile > $(IPTABLES_DIR)/extensions/Makefile.patched
+	mv -f $(IPTABLES_DIR)/extensions/Makefile.patched $(IPTABLES_DIR)/extensions/Makefile
+	CC=$(CC) LD=$(LD) AR=$(AR) RANLIB=$(RANLIB) $(MAKE) -C $(IPTABLES_DIR) KERNEL_DIR=../../linux/linux/
+
+	touch build-iptables-stamp
+
+clean:
+	-$(MAKE) clean
+	-$(MAKE) distclean
+	-$(MAKE) -C $(IPTABLES_DIR) clean
+	rm -f $(BUILD_DIR)/*.~*~
+	rm -rf $(TMP_DIR)
+	rm -f build-nodogsplash-stamp
+	rm -f build-iptables-stamp
+	rm -f build-ipkg-utils-stamp
+
+install: build install-nodogsplash 
+	mkdir -p $(TMP_DIR)/etc/nodogsplash
+	cp $(CURDIR)/nodogsplash.conf $(TMP_DIR)/etc/nodogsplash
+	cp -r $(CURDIR)/htdocs $(TMP_DIR)/etc/nodogsplash
+	mkdir -p $(TMP_DIR)/etc/init.d
+	cp $(CURDIR)/scripts/init.d/S65nodogsplash $(TMP_DIR)/etc/init.d
+	chmod +x $(TMP_DIR)/etc/init.d/S65nodogsplash
+
+install-nodogsplash:
+	mkdir -p $(TMP_DIR)/usr/bin
+	cp $(CURDIR)/src/nodogsplash $(TMP_DIR)/usr/bin
+	cp $(CURDIR)/src/ndsctl $(TMP_DIR)/usr/bin
+	$(STRIP) $(TMP_DIR)/usr/bin/nodogsplash
+	$(STRIP) $(TMP_DIR)/usr/bin/ndsctl
+
+install-iptables:
+	mkdir -p $(TMP_DIR)/usr/lib/iptables
+	cp $(IPTABLES_DIR)/extensions/libipt_{mac,mark,MARK}.so $(TMP_DIR)/usr/lib/iptables
+
+install-kernel-modules:
+	mkdir -p $(TMP_DIR)/lib/modules/$(KERNEL_VERSION)/kernel/net/ipv4/netfilter
+	cp $(KERNEL_MODULES_DIR)/kernel/net/ipv4/netfilter/ipt_mac.o $(TMP_DIR)/lib/modules/$(KERNEL_VERSION)/kernel/net/ipv4/netfilter
+
+install-pthread:
+	mkdir -p $(TMP_DIR)/lib
+	cp $(UCLIBC_DIR)/lib/libpthread*so $(TMP_DIR)/lib
+	cp $(UCLIBC_DIR)/lib/libpthread*so.0 $(TMP_DIR)/lib
+
+binary: build install
+	mkdir -p $(TMP_DIR)/CONTROL
+	echo "Package: nodogsplash" > $(TMP_DIR)/CONTROL/control
+	echo "Version: $(VERSION)" >> $(TMP_DIR)/CONTROL/control
+	echo "Architecture: $(ARCH)" >> $(TMP_DIR)/CONTROL/control
+	echo "Section: net" >> $(TMP_DIR)/CONTROL/control
+	echo "Maintainer: Paul Kube <nodogsplash@kokoro.ucsd.edu>" >> $(TMP_DIR)/CONTROL/control
+	echo "Priority: optional" >> $(TMP_DIR)/CONTROL/control
+	echo "Description: Nodogsplash is a simple, configurable hotspot controller" >> $(TMP_DIR)/CONTROL/control
+	echo "Source: http://kokoro.ucsd.edu/nodogsplash" >> $(TMP_DIR)/CONTROL/control
+	echo "/etc/nodogsplash/nodogsplash.conf" > $(TMP_DIR)/CONTROL/conffiles
+	echo "/etc/nodogsplash/htdocs/splash.html" >> $(TMP_DIR)/CONTROL/conffiles
+	echo "/etc/init.d/S65nodogsplash" >> $(TMP_DIR)/CONTROL/conffiles
+	$(IPKG_BUILD) -c -o root -g root $(TMP_DIR) $(CURDIR)
+
+.PHONY: all clean build install binary
+
