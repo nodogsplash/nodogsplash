@@ -159,7 +159,11 @@ These packets are dropped.
 <li>
 <em>Trusted</em>, if the source MAC address of the packet matches one
 listed in the TrustedMACList.
-These packets are accepted and routed to any destination address and port.
+These packets are accepted and routed to a set of 
+addresses and ports controlled by
+<code>FirewallRuleSet trusted-users</code> and 
+<code>FirewallRuleSet trusted-users-to-router</code>
+in the <code>nodogsplash.conf</code> configuration file.
 </li>
 <li>
 <em>Authenticated</em>, if the packet's IP and MAC source address has gone

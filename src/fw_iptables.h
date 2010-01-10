@@ -35,6 +35,7 @@
 /**Iptable chain names used by nodogsplash */
 #define CHAIN_TO_INTERNET "ndsNET"
 #define CHAIN_TO_ROUTER "ndsRTR"
+#define CHAIN_TRUSTED_TO_ROUTER "ndsTRT"
 #define CHAIN_OUTGOING  "ndsOUT"
 #define CHAIN_INCOMING  "ndsINC"
 #define CHAIN_AUTHENTICATED     "ndsAUT"

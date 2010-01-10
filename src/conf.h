@@ -81,34 +81,41 @@
 #define DEFAULT_FW_MARK_AUTHENTICATED 0x400
 #define DEFAULT_FW_MARK_TRUSTED 0x200
 #define DEFAULT_FW_MARK_BLOCKED 0x100
+#define DEFAULT_EMPTY_TRUSTED_USERS_POLICY "ACCEPT"
+#define DEFAULT_EMPTY_TRUSTED_USERS_TO_ROUTER_POLICY "ACCEPT"
+#define DEFAULT_EMPTY_USERS_TO_ROUTER_POLICY "REJECT"
+#define DEFAULT_EMPTY_AUTHENTICATED_USERS_POLICY "RETURN"
+#define DEFAULT_EMPTY_PREAUTHENTICATED_USERS_POLICY "REJECT"
+
 /*@}*/ 
 
 /**
  * Firewall rules
  */
 typedef struct _firewall_rule_t {
-    int block_allow;		/**< @brief 1 = Allow rule, 0 = Block rule */
-    char *protocol;		/**< @brief tcp, udp, etc ... */
-    char *port;			/**< @brief Port to block/allow */
-    char *mask;			/**< @brief Mask for the rule *destination* */
-    struct _firewall_rule_t *next;
+  int block_allow;		/**< @brief 1 = Allow rule, 0 = Block rule */
+  char *protocol;		/**< @brief tcp, udp, etc ... */
+  char *port;			/**< @brief Port to block/allow */
+  char *mask;			/**< @brief Mask for the rule *destination* */
+  struct _firewall_rule_t *next;
 } t_firewall_rule;
 
 /**
  * Firewall rulesets
  */
 typedef struct _firewall_ruleset_t {
-    char			*name;
-    t_firewall_rule		*rules;
-    struct _firewall_ruleset_t	*next;
+  char			*name;
+  char			*emptyrulesetpolicy;
+  t_firewall_rule		*rules;
+  struct _firewall_ruleset_t	*next;
 } t_firewall_ruleset;
 
 /**
  * MAC Addresses
  */
 typedef struct _MAC_t {
-    char   *mac;
-    struct _MAC_t *next;
+  char   *mac;
+  struct _MAC_t *next;
 } t_MAC;
 
 
@@ -184,13 +191,26 @@ void config_read(char *filename);
 /** @brief Check that the configuration is valid */
 void config_validate(void);
 
-/** @brief Fetch a firewall rule set. */
-t_firewall_rule *get_ruleset(char *);
+/** @brief Fetch a firewall rule list, given name of the ruleset. */
+t_firewall_rule *get_ruleset_list(char *);
+
+/** @brief Fetch a firewall ruleset, given its name. */
+t_firewall_ruleset *get_ruleset(char *);
+
+/** @brief Add a firewall ruleset with the given name, and return it. */
+static t_firewall_ruleset *add_ruleset(char *);
+
+/** @brief Say if a named firewall ruleset is empty. */
+int is_empty_ruleset(char *);
+
+/** @brief Get a named empty firewall ruleset policy, given ruleset name. */
+char * get_empty_ruleset_policy(char *);
 
 static void config_notnull(void *parm, char *parmname);
 static int parse_boolean_value(char *);
-static int _parse_firewall_rule(char *ruleset, char *leftover);
+static int _parse_firewall_rule(t_firewall_ruleset *ruleset, char *leftover);
 static void parse_firewall_ruleset(char *, FILE *, char *, int *);
+static void parse_empty_ruleset_policy(char *, char *, int);
 void parse_trusted_mac_list(char *);
 void parse_blocked_mac_list(char *);
 void parse_allowed_mac_list(char *);

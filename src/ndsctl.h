@@ -30,6 +30,8 @@
 
 #define DEFAULT_SOCK	"/tmp/ndsctl.sock"
 
+#define NDSCTL_TERMINATOR	"\r\n\r\n"
+
 #define NDSCTL_UNDEF		0
 #define NDSCTL_STATUS		1
 #define NDSCTL_STOP		2

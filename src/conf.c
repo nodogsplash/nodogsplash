@@ -100,6 +100,7 @@ typedef enum {
 	oSyslogFacility,
 	oFirewallRule,
 	oFirewallRuleSet,
+	oEmptyRuleSetPolicy,
 	oMACmechanism,
 	oTrustedMACList,
 	oBlockedMACList,
@@ -152,6 +153,7 @@ static const struct {
 	{ "ndsctlsocket", 	oNdsctlSocket },
 	{ "firewallruleset",	oFirewallRuleSet },
 	{ "firewallrule",	oFirewallRule },
+	{ "emptyrulesetpolicy",	oEmptyRuleSetPolicy },
 	{ "trustedmaclist",	oTrustedMACList },
 	{ "blockedmaclist",	oBlockedMACList },
 	{ "allowedmaclist",	oAllowedMACList },
@@ -168,7 +170,7 @@ static OpCodes config_parse_opcode(const char *cp, const char *filename, int lin
 Strip comments and leading and trailing whitespace from a string.
 Return a pointer to the first nonspace char in the string.
 */
-static char*_strip_whitespace(char* p1);
+static char* _strip_whitespace(char* p1);
 
 /** Accessor for the current gateway configuration
 @return:  A pointer to the current config.  The pointer isn't opaque, but should be treated as READ-ONLY
@@ -181,6 +183,8 @@ config_get_config(void) {
 /** Sets the default config parameters and initialises the configuration system */
 void
 config_init(void) {
+  t_firewall_ruleset *rs;
+  
   debug(LOG_DEBUG, "Setting default config parameters");
   strncpy(config.configfile, DEFAULT_CONFIGFILE, sizeof(config.configfile));
   config.debuglevel = DEFAULT_DEBUGLEVEL;
@@ -229,10 +233,23 @@ config_init(void) {
   config.FW_MARK_AUTHENTICATED = DEFAULT_FW_MARK_AUTHENTICATED;
   config.FW_MARK_TRUSTED = DEFAULT_FW_MARK_TRUSTED;
   config.FW_MARK_BLOCKED = DEFAULT_FW_MARK_BLOCKED;
+  
+  /* Set up default FirewallRuleSets, and their empty ruleset policies */
+  rs = add_ruleset("trusted-users");
+  rs->emptyrulesetpolicy = safe_strdup(DEFAULT_EMPTY_TRUSTED_USERS_POLICY);
+  rs = add_ruleset("trusted-users-to-router");
+  rs->emptyrulesetpolicy = safe_strdup(DEFAULT_EMPTY_TRUSTED_USERS_TO_ROUTER_POLICY);
+  rs = add_ruleset("users-to-router");
+  rs->emptyrulesetpolicy = safe_strdup(DEFAULT_EMPTY_USERS_TO_ROUTER_POLICY);
+  rs = add_ruleset("authenticated-users");
+  rs->emptyrulesetpolicy = safe_strdup(DEFAULT_EMPTY_AUTHENTICATED_USERS_POLICY);
+  rs = add_ruleset("preauthenticated-users");
+  rs->emptyrulesetpolicy = safe_strdup(DEFAULT_EMPTY_PREAUTHENTICATED_USERS_POLICY);
+  
 }
 
 /**
- * If the command-line didn't provide a config, use the default.
+ * If the command-line didn't specify a config, use the default.
  */
 void
 config_init_override(void) {
@@ -278,23 +295,113 @@ Advance to the next word
 	} \
 } while (0)
 
+/** Add a firewall ruleset with the given name, and return it.
+ *  Do not allow duplicates. */
+static t_firewall_ruleset *
+add_ruleset(char * rulesetname) {
+
+  t_firewall_ruleset * ruleset;
+
+  ruleset = get_ruleset(rulesetname);
+
+  if(ruleset != NULL) {
+    debug(LOG_DEBUG, "add_ruleset(): FirewallRuleSet %s already exists.", rulesetname);
+    return ruleset;
+  }
+    
+  debug(LOG_DEBUG, "add_ruleset(): Creating FirewallRuleSet %s.", rulesetname);
+
+  /* Create and place at head of config.rulesets */
+  ruleset = safe_malloc(sizeof(t_firewall_ruleset));
+  memset(ruleset, 0, sizeof(t_firewall_ruleset));
+  ruleset->name = safe_strdup(rulesetname);
+  ruleset->next = config.rulesets;
+  config.rulesets = ruleset;
+
+  return ruleset;
+
+}
+
+
+/** @internal
+Parses an empty ruleset policy directive
+*/
+static void
+parse_empty_ruleset_policy(char *ptr, char *filename, int lineno) {
+  char *rulesetname, *policy;
+  t_firewall_ruleset *ruleset;
+
+  /* find first whitespace delimited word; this is ruleset name */
+  while ((*ptr != '\0') && (isblank(*ptr))) ptr++;
+  rulesetname = ptr;
+  while ((*ptr != '\0') && (!isblank(*ptr))) ptr++;
+  *ptr = '\0';
+
+
+  /* get the ruleset struct with this name */
+  debug(LOG_DEBUG, "Parsing EmptyRuleSetPolicy for %s", rulesetname);
+  ruleset = get_ruleset(rulesetname);
+  if(ruleset == NULL) {
+    debug(LOG_ERR, "Unrecognized FirewallRuleSet name: %s at line %d in %s", rulesetname, lineno, filename);
+      debug(LOG_ERR, "Exiting...");
+      exit(-1);
+  }
+
+  /* find next whitespace delimited word; this is policy name */
+  ptr++;
+  while ((*ptr != '\0') && (isblank(*ptr))) ptr++;
+  policy = ptr;
+  while ((*ptr != '\0') && (!isblank(*ptr))) ptr++;
+  *ptr = '\0';
+
+  /* make sure policy is one of the possible ones:
+   "passthrough" means iptables RETURN
+   "allow" means iptables ACCEPT
+   "block" means iptables REJECT
+  */
+  if (ruleset->emptyrulesetpolicy != NULL) free(ruleset->emptyrulesetpolicy);
+  if(!strcasecmp(policy,"passthrough")) {
+      ruleset->emptyrulesetpolicy =  safe_strdup("RETURN");
+  } else if (!strcasecmp(policy,"allow")) {
+      ruleset->emptyrulesetpolicy =  safe_strdup("ACCEPT");
+  } else if (!strcasecmp(policy,"block")) {
+      ruleset->emptyrulesetpolicy =  safe_strdup("REJECT");
+  } else {
+    debug(LOG_ERR, "Unknown EmptyRuleSetPolicy directive: %s at line %d in %s", policy, lineno, filename);
+    debug(LOG_ERR, "Exiting...");
+    exit(-1);
+  }
+
+  debug(LOG_DEBUG, "Set EmptyRuleSetPolicy for %s to %s", rulesetname, policy);
+
+}
+
+			   
+
 /** @internal
 Parses firewall rule set information
 */
 static void
-parse_firewall_ruleset(char *ruleset, FILE *fd, char *filename, int *linenum) {
+parse_firewall_ruleset(char *rulesetname, FILE *fd, char *filename, int *linenum) {
   char line[MAX_BUF], *p1, *p2;
   int  opcode;
+  t_firewall_ruleset *ruleset;
 
   /* find whitespace delimited word in ruleset string; this is its name */
-  p1 = strchr(ruleset,' ');
+  p1 = strchr(rulesetname,' ');
   if(p1) *p1 = '\0';
-  p1 = strchr(ruleset,'\t');
+  p1 = strchr(rulesetname,'\t');
   if(p1) *p1 = '\0';
 
-  debug(LOG_DEBUG, "Adding Firewall Rule Set %s", ruleset);
-	
-  /* Parsing the ruleset */
+  debug(LOG_DEBUG, "Parsing FirewallRuleSet %s", rulesetname);
+  ruleset = get_ruleset(rulesetname);
+  if(ruleset == NULL) {
+    debug(LOG_ERR, "Unrecognized FirewallRuleSet name: %s", rulesetname);
+      debug(LOG_ERR, "Exiting...");
+      exit(-1);
+  }    
+
+  /* Parsing the rules in the set */
   while (fgets(line, MAX_BUF, fd)) {
     (*linenum)++;
     p1 = _strip_whitespace(line);
@@ -312,7 +419,7 @@ parse_firewall_ruleset(char *ruleset, FILE *fd, char *filename, int *linenum) {
     while ((*p2 != '\0') && (!isblank(*p2))) p2++;
     /* if this is end of line, it's a problem */
     if(p2[0] == '\0') {
-      debug(LOG_ERR, "Firewall Rule incomplete on line %d in %s", *linenum, filename);
+      debug(LOG_ERR, "FirewallRule incomplete on line %d in %s", *linenum, filename);
       debug(LOG_ERR, "Exiting...");
       exit(-1);
     }
@@ -335,22 +442,21 @@ parse_firewall_ruleset(char *ruleset, FILE *fd, char *filename, int *linenum) {
 
     case oBadOption:
     default:
-      debug(LOG_ERR, "Bad option %s parsing Firewall Rule Set on line %d in %s", p1, *linenum, filename);
+      debug(LOG_ERR, "Bad option %s parsing FirewallRuleSet on line %d in %s", p1, *linenum, filename);
       debug(LOG_ERR, "Exiting...");
       exit(-1);
       break;
     }
 
   }
-
-  debug(LOG_DEBUG, "Firewall Rule Set %s added.", ruleset);
+  debug(LOG_DEBUG, "FirewallRuleSet %s parsed.", rulesetname);
 }
 
 /** @internal
 Helper for parse_firewall_ruleset.  Parses a single rule in a ruleset
 */
 static int
-_parse_firewall_rule(char *ruleset, char *leftover) {
+_parse_firewall_rule(t_firewall_ruleset *ruleset, char *leftover) {
   int i;
   int block_allow = 0; /**< 0 == block, 1 == allow */
   int all_nums = 1; /**< If 0, word contained illegal chars */
@@ -360,12 +466,10 @@ _parse_firewall_rule(char *ruleset, char *leftover) {
   char *protocol = NULL; /**< protocol to allow/block: tcp/udp/icmp/all */
   char *mask = NULL; /**< Netmask */
   char *other_kw = NULL; /**< other key word */
-  t_firewall_ruleset *tmpr;
-  t_firewall_ruleset *tmpr2;
   t_firewall_rule *tmp;
   t_firewall_rule *tmp2;
 
-  debug(LOG_DEBUG, "leftover: %s", leftover);
+  /* debug(LOG_DEBUG, "leftover: %s", leftover); */
 
   /* lowercase everything */
   for (i = 0; *(leftover + i) != '\0'
@@ -454,35 +558,14 @@ _parse_firewall_rule(char *ruleset, char *leftover) {
   else
     tmp->mask = safe_strdup(mask);
 
-  debug(LOG_DEBUG, "Adding Firewall Rule %s %s port %s to %s", token, tmp->protocol, tmp->port, tmp->mask);
+  debug(LOG_DEBUG, "Adding FirewallRule %s %s port %s to %s to FirewallRuleset %s", token, tmp->protocol, tmp->port, tmp->mask, ruleset->name);
 	
-  /* Append the rule record */
-  if (config.rulesets == NULL) {
-    config.rulesets = safe_malloc(sizeof(t_firewall_ruleset));
-    memset(config.rulesets, 0, sizeof(t_firewall_ruleset));
-    config.rulesets->name = safe_strdup(ruleset);
-    tmpr = config.rulesets;
-  } else {
-    tmpr2 = tmpr = config.rulesets;
-    while (tmpr != NULL && (strcmp(tmpr->name, ruleset) != 0)) {
-      tmpr2 = tmpr;
-      tmpr = tmpr->next;
-    }
-    if (tmpr == NULL) {
-      /* Ruleset did not exist */
-      tmpr = safe_malloc(sizeof(t_firewall_ruleset));
-      memset(tmpr, 0, sizeof(t_firewall_ruleset));
-      tmpr->name = safe_strdup(ruleset);
-      tmpr2->next = tmpr;
-    }
-  }
-
-  /* At this point, tmpr == the ruleset */
-  if (tmpr->rules == NULL) {
+  /* Add the rule record */
+  if (ruleset->rules == NULL) {
     /* No rules... */
-    tmpr->rules = tmp;
+    ruleset->rules = tmp;
   } else {
-    tmp2 = tmpr->rules;
+    tmp2 = ruleset->rules;
     while (tmp2->next != NULL)
       tmp2 = tmp2->next;
     tmp2->next = tmp;
@@ -491,17 +574,37 @@ _parse_firewall_rule(char *ruleset, char *leftover) {
   return 1;
 }
 
-t_firewall_rule *
+int
+is_empty_ruleset(char *rulesetname) {
+  return get_ruleset_list(rulesetname) == NULL;
+}
+
+char *
+get_empty_ruleset_policy(char *rulesetname) {
+  t_firewall_ruleset *rs;
+  rs = get_ruleset(rulesetname);
+  if(rs == NULL) return NULL;
+  return rs->emptyrulesetpolicy;
+}
+
+
+t_firewall_ruleset *
 get_ruleset(char *ruleset) {
   t_firewall_ruleset	*tmp;
 
   for (tmp = config.rulesets; tmp != NULL
 	 && strcmp(tmp->name, ruleset) != 0; tmp = tmp->next);
 
-  if (tmp == NULL)
-    return NULL;
+  return (tmp);
+}
 
-  return(tmp->rules);
+t_firewall_rule *
+get_ruleset_list(char *ruleset) {
+  t_firewall_ruleset	*tmp = get_ruleset(ruleset);
+
+  if (tmp == NULL) return NULL;
+
+  return (tmp->rules);
 }
 
 /** @internal
@@ -561,9 +664,7 @@ config_read(char *filename) {
      * even if <arg> is just a left brace, for example
      */
     
-    /* check there is a whitespace-delimited arg following the option */
-
-    /* find first word end boundary */
+    /* find first word (i.e. option) end boundary */
     p1 = s;
     while ((*p1 != '\0') && (!isspace(*p1))) p1++;
     /* if this is end of line, it's a problem */
@@ -622,6 +723,9 @@ config_read(char *filename) {
       break;
     case oFirewallRuleSet:
       parse_firewall_ruleset(p1, fd, filename, &linenum);
+      break;
+    case oEmptyRuleSetPolicy:
+      parse_empty_ruleset_policy(p1, filename, linenum);
       break;
     case oTrustedMACList:
       parse_trusted_mac_list(p1);

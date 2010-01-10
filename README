@@ -100,8 +100,10 @@ managed interface. Each packet is one of these kinds:
      is allow, and source MAC address of the packet does not match one listed
      in the AllowedMACList or the TrustedMACList. These packets are dropped.
   2. Trusted, if the source MAC address of the packet matches one listed in the
-     TrustedMACList. These packets are accepted and routed to any destination
-     address and port.
+     TrustedMACList. These packets are accepted and routed to a set of
+     addresses and ports controlled by FirewallRuleSet trusted-users and
+     FirewallRuleSet trusted-users-to-router in the nodogsplash.conf
+     configuration file.
   3. Authenticated, if the packet's IP and MAC source address has gone through
      the nodogsplash authentication process and has not yet expired. These
      packets are accepted and routed to a limited set of addresses and ports

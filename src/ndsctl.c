@@ -49,6 +49,8 @@ static void init_config(void);
 static void parse_commandline(int, char **);
 static int connect_to_server(char *);
 static int send_request(int, char *);
+static void ndsctl_action(char *, char *, char *);
+static void ndsctl_print(char *);
 static void ndsctl_status(void);
 static void ndsctl_clients(void);
 static void ndsctl_stop(void);
@@ -305,493 +307,180 @@ send_request(int sock, char *request) {
   return((int)len);
 }
 
+/* Perform a ndsctl action, with server response Yes or No.
+ * Action given by cmd, followed by config.param.
+ * Responses printed to stdout, as formatted by ifyes or ifno.
+ * config.param interpolated in format with %s directive if desired.
+ */
 static void
-ndsctl_clients(void) {
+ndsctl_action(char * cmd, char * ifyes, char * ifno) {
+  int	sock;
+  char	buffer[4096];
+  char	request[128];
+  int	len,
+    rlen;
+
+  sock = connect_to_server(config.socket);
+		
+  snprintf(request, sizeof(request)-strlen(NDSCTL_TERMINATOR),
+	   "%s %s", cmd, config.param);
+  strcat(request, NDSCTL_TERMINATOR);
+
+  len = send_request(sock, request);
+	
+  len = 0;
+  memset(buffer, 0, sizeof(buffer));
+  while ((len < sizeof(buffer)) && ((rlen = read(sock, (buffer + len),
+						 (sizeof(buffer) - len))) > 0)){
+    len += rlen;
+  }
+
+  if(rlen<0) {
+    fprintf(stderr, "ndsctl: Error reading socket: %s", strerror(errno));
+  }
+
+
+  if (strcmp(buffer, "Yes") == 0) {
+    printf(ifyes, config.param);
+  } else if (strcmp(buffer, "No") == 0) {
+    printf(ifno, config.param);
+  } else {
+    fprintf(stderr, "ndsctl: Error: nodogsplash sent an abnormal "
+	    "reply.\n");
+  }
+
+  shutdown(sock, 2);
+  close(sock);
+
+}
+
+/* Perform a ndsctl action, printing to stdout the server response.
+ *  Action given by cmd.
+ */
+static void
+ndsctl_print(char * cmd) {
   int sock;
   char buffer[4096];
-  char request[16];
+  char request[32];
   int len;
 
   sock = connect_to_server(config.socket);
 		
-  strncpy(request, "clients\r\n\r\n", 15);
+  snprintf(request, sizeof(request)-strlen(NDSCTL_TERMINATOR), "%s", cmd);
+  strcat(request, NDSCTL_TERMINATOR);
 
   len = send_request(sock, request);
 	
-  while ((len = read(sock, buffer, sizeof(buffer))) > 0) {
+  while ((len = read(sock, buffer, sizeof(buffer)-1)) > 0) {
     buffer[len] = '\0';
     printf("%s", buffer);
   }
 
+  if(len<0) {
+    fprintf(stderr, "ndsctl: Error reading socket: %s", strerror(errno));
+  }
+
   shutdown(sock, 2);
   close(sock);
+}
 
+static void
+ndsctl_clients(void) {
+  ndsctl_print("clients");
 }
 
 static void
 ndsctl_status(void) {
-  int	sock;
-  char	buffer[4096];
-  char	request[16];
-  int	len;
-
-  sock = connect_to_server(config.socket);
-		
-  strncpy(request, "status\r\n\r\n", 15);
-
-  len = send_request(sock, request);
-	
-  while ((len = read(sock, buffer, sizeof(buffer))) > 0) {
-    buffer[len] = '\0';
-    printf("%s", buffer);
-  }
-
-  shutdown(sock, 2);
-  close(sock);
+  ndsctl_print("status");
 }
 
 static void
 ndsctl_stop(void) {
-  int	sock;
-  char	buffer[4096];
-  char	request[16];
-  int	len;
-
-  sock = connect_to_server(config.socket);
-		
-  strncpy(request, "stop\r\n\r\n", 15);
-
-  len = send_request(sock, request);
-	
-  while ((len = read(sock, buffer, sizeof(buffer))) > 0) {
-    buffer[len] = '\0';
-    printf("%s", buffer);
-  }
-
-  shutdown(sock, 2);
-  close(sock);
+  ndsctl_print("stop");
 }
 
 void
 ndsctl_loglevel(void) {
-  int	sock;
-  char	buffer[4096];
-  char	request[64];
-  int	len,
-    rlen;
-
-  sock = connect_to_server(config.socket);
-		
-  strncpy(request, "loglevel ", 64);
-  strncat(request, config.param, (64 - strlen(request)));
-  strncat(request, "\r\n\r\n", (64 - strlen(request)));
-
-  len = send_request(sock, request);
-	
-  len = 0;
-  memset(buffer, 0, sizeof(buffer));
-  while ((len < sizeof(buffer)) && ((rlen = read(sock, (buffer + len),
-						 (sizeof(buffer) - len))) > 0)){
-    len += rlen;
-  }
-
-  if (strcmp(buffer, "Yes") == 0) {
-    printf("Log level set to %s.\n", config.param);
-  } else if (strcmp(buffer, "No") == 0) {
-    printf("Failed to set log level to %s.\n", config.param);
-  } else {
-    fprintf(stderr, "ndsctl: Error: nodogsplash sent an abnormal "
-	    "reply.\n");
-  }
-
-  shutdown(sock, 2);
-  close(sock);
+  ndsctl_action("loglevel",
+		"Log level set to %s.\n",
+		"Failed to set log level to %s.\n");
 }
 
 void
 ndsctl_password(void) {
-  int	sock;
-  char	buffer[4096];
-  char	request[64];
-  int	len,
-    rlen;
-
-  sock = connect_to_server(config.socket);
-		
-  strncpy(request, "password ", 64);
-  strncat(request, config.param, (64 - strlen(request)));
-  strncat(request, "\r\n\r\n", (64 - strlen(request)));
-
-  len = send_request(sock, request);
-	
-  len = 0;
-  memset(buffer, 0, sizeof(buffer));
-  while ((len < sizeof(buffer)) && ((rlen = read(sock, (buffer + len),
-						 (sizeof(buffer) - len))) > 0)){
-    len += rlen;
-  }
-
-  if (strcmp(buffer, "Yes") == 0) {
-    printf("Password set to %s.\n", config.param);
-  } else if (strcmp(buffer, "No") == 0) {
-    printf("Failed to set password to %s.\n", config.param);
-  } else {
-    fprintf(stderr, "ndsctl: Error: nodogsplash sent an abnormal "
-	    "reply.\n");
-  }
-
-  shutdown(sock, 2);
-  close(sock);
+  ndsctl_action("password",
+		"Password set to %s.\n",
+		"Failed to set password to %s.\n");
 }
 
 
 void
 ndsctl_username(void) {
-  int	sock;
-  char	buffer[4096];
-  char	request[64];
-  int	len,
-    rlen;
-
-  sock = connect_to_server(config.socket);
-		
-  strncpy(request, "username ", 64);
-  strncat(request, config.param, (64 - strlen(request)));
-  strncat(request, "\r\n\r\n", (64 - strlen(request)));
-
-  len = send_request(sock, request);
-	
-  len = 0;
-  memset(buffer, 0, sizeof(buffer));
-  while ((len < sizeof(buffer)) && ((rlen = read(sock, (buffer + len),
-						 (sizeof(buffer) - len))) > 0)){
-    len += rlen;
-  }
-
-  if (strcmp(buffer, "Yes") == 0) {
-    printf("Username set to %s.\n", config.param);
-  } else if (strcmp(buffer, "No") == 0) {
-    printf("Failed to set username to %s.\n", config.param);
-  } else {
-    fprintf(stderr, "ndsctl: Error: nodogsplash sent an abnormal "
-	    "reply.\n");
-  }
-
-  shutdown(sock, 2);
-  close(sock);
+  ndsctl_action("username",
+		"Username set to %s.\n",
+		"Failed to set username to %s.\n");
 }
 
 
 void
 ndsctl_deauth(void) {
-  int	sock;
-  char	buffer[4096];
-  char	request[64];
-  int	len,
-    rlen;
-
-  sock = connect_to_server(config.socket);
-		
-  strncpy(request, "deauth ", 64);
-  strncat(request, config.param, (64 - strlen(request)));
-  strncat(request, "\r\n\r\n", (64 - strlen(request)));
-
-  len = send_request(sock, request);
-	
-  len = 0;
-  memset(buffer, 0, sizeof(buffer));
-  while ((len < sizeof(buffer)) && ((rlen = read(sock, (buffer + len),
-						 (sizeof(buffer) - len))) > 0)){
-    len += rlen;
-  }
-
-  if (strcmp(buffer, "Yes") == 0) {
-    printf("Client %s deauthenticated.\n", config.param);
-  } else if (strcmp(buffer, "No") == 0) {
-    printf("Client %s not found.\n", config.param);
-  } else {
-    fprintf(stderr, "ndsctl: Error: nodogsplash sent an abnormal "
-	    "reply.\n");
-  }
-
-  shutdown(sock, 2);
-  close(sock);
+  ndsctl_action("deauth",
+		"Client %s deauthenticated.\n",
+		"Client %s not found.\n");
 }
 
 void
 ndsctl_auth(void) {
-  int	sock;
-  char	buffer[4096];
-  char	request[64];
-  int	len,
-    rlen;
-
-  sock = connect_to_server(config.socket);
-		
-  strncpy(request, "auth ", 64);
-  strncat(request, config.param, (64 - strlen(request)));
-  strncat(request, "\r\n\r\n", (64 - strlen(request)));
-
-  len = send_request(sock, request);
-	
-  len = 0;
-  memset(buffer, 0, sizeof(buffer));
-  while ((len < sizeof(buffer)) && ((rlen = read(sock, (buffer + len),
-						 (sizeof(buffer) - len))) > 0)){
-    len += rlen;
-  }
-
-  if (strcmp(buffer, "Yes") == 0) {
-    printf("Client %s authenticated.\n", config.param);
-  } else if (strcmp(buffer, "No") == 0) {
-    printf("Failed to authenticate client %s.\n", config.param);
-  } else {
-    fprintf(stderr, "ndsctl: Error: nodogsplash sent an abnormal "
-	    "reply:\n  \"%s\"",buffer);
-  }
-
-  shutdown(sock, 2);
-  close(sock);
+  ndsctl_action("auth",
+		"Client %s authenticated.\n",
+		"Failed to authenticate client %s.\n");
 }
+
 
 void
 ndsctl_block(void) {
-  int	sock;
-  char	buffer[4096];
-  char	request[64];
-  int	len,
-    rlen;
-
-  sock = connect_to_server(config.socket);
-		
-  strncpy(request, "block ", 64);
-  strncat(request, config.param, (64 - strlen(request)));
-  strncat(request, "\r\n\r\n", (64 - strlen(request)));
-
-  len = send_request(sock, request);
-	
-  len = 0;
-  memset(buffer, 0, sizeof(buffer));
-  while ((len < sizeof(buffer)) && ((rlen = read(sock, (buffer + len),
-						 (sizeof(buffer) - len))) > 0)){
-    len += rlen;
-  }
-
-  if (strcmp(buffer, "Yes") == 0) {
-    printf("MAC %s blocked.\n", config.param);
-  } else if (strcmp(buffer, "No") == 0) {
-    printf("Failed to block MAC %s.\n", config.param);
-  } else {
-    fprintf(stderr, "ndsctl: Error: nodogsplash sent an abnormal "
-	    "reply.\n");
-  }
-
-  shutdown(sock, 2);
-  close(sock);
+  ndsctl_action("block",
+		"MAC %s blocked.\n",
+		"Failed to block MAC %s.\n");
 }
 
 void
 ndsctl_unblock(void) {
-  int	sock;
-  char	buffer[4096];
-  char	request[64];
-  int	len,
-    rlen;
-
-  sock = connect_to_server(config.socket);
-		
-  strncpy(request, "unblock ", 64);
-  strncat(request, config.param, (64 - strlen(request)));
-  strncat(request, "\r\n\r\n", (64 - strlen(request)));
-
-  len = send_request(sock, request);
-	
-  len = 0;
-  memset(buffer, 0, sizeof(buffer));
-  while ((len < sizeof(buffer)) && ((rlen = read(sock, (buffer + len),
-						 (sizeof(buffer) - len))) > 0)){
-    len += rlen;
-  }
-
-  if (strcmp(buffer, "Yes") == 0) {
-    printf("MAC %s unblocked.\n", config.param);
-  } else if (strcmp(buffer, "No") == 0) {
-    printf("Failed to unblock MAC %s.\n", config.param);
-  } else {
-    fprintf(stderr, "ndsctl: Error: nodogsplash sent an abnormal "
-	    "reply.\n");
-  }
-
-  shutdown(sock, 2);
-  close(sock);
+  ndsctl_action("unblock",
+		"MAC %s unblocked.\n",
+		"Failed to unblock MAC %s.\n");
 }
 
 void
 ndsctl_allow(void) {
-  int	sock;
-  char	buffer[4096];
-  char	request[64];
-  int	len,
-    rlen;
-
-  sock = connect_to_server(config.socket);
-		
-  strncpy(request, "allow ", 64);
-  strncat(request, config.param, (64 - strlen(request)));
-  strncat(request, "\r\n\r\n", (64 - strlen(request)));
-
-  len = send_request(sock, request);
-	
-  len = 0;
-  memset(buffer, 0, sizeof(buffer));
-  while ((len < sizeof(buffer)) && ((rlen = read(sock, (buffer + len),
-						 (sizeof(buffer) - len))) > 0)){
-    len += rlen;
-  }
-
-  if (strcmp(buffer, "Yes") == 0) {
-    printf("MAC %s allowed.\n", config.param);
-  } else if (strcmp(buffer, "No") == 0) {
-    printf("Failed to allow MAC %s.\n", config.param);
-  } else {
-    fprintf(stderr, "ndsctl: Error: nodogsplash sent an abnormal "
-	    "reply.\n");
-  }
-
-  shutdown(sock, 2);
-  close(sock);
-}
+  ndsctl_action("allow",
+		"MAC %s allowed.\n",
+		"Failed to allow MAC %s.\n");
+} 
 
 void
 ndsctl_unallow(void) {
-  int	sock;
-  char	buffer[4096];
-  char	request[64];
-  int	len,
-    rlen;
-
-  sock = connect_to_server(config.socket);
-		
-  strncpy(request, "unallow ", 64);
-  strncat(request, config.param, (64 - strlen(request)));
-  strncat(request, "\r\n\r\n", (64 - strlen(request)));
-
-  len = send_request(sock, request);
-	
-  len = 0;
-  memset(buffer, 0, sizeof(buffer));
-  while ((len < sizeof(buffer)) && ((rlen = read(sock, (buffer + len),
-						 (sizeof(buffer) - len))) > 0)){
-    len += rlen;
-  }
-
-  if (strcmp(buffer, "Yes") == 0) {
-    printf("MAC %s unallowed.\n", config.param);
-  } else if (strcmp(buffer, "No") == 0) {
-    printf("Failed to unallow MAC %s.\n", config.param);
-  } else {
-    fprintf(stderr, "ndsctl: Error: nodogsplash sent an abnormal "
-	    "reply.\n");
-  }
-
-  shutdown(sock, 2);
-  close(sock);
-}
-
+  ndsctl_action("unallow",
+		"MAC %s unallowed.\n",
+		"Failed to unallow MAC %s.\n");
+} 
 
 void
 ndsctl_trust(void) {
-  int	sock;
-  char	buffer[4096];
-  char	request[64];
-  int	len,
-    rlen;
-
-  sock = connect_to_server(config.socket);
-		
-  strncpy(request, "trust ", 64);
-  strncat(request, config.param, (64 - strlen(request)));
-  strncat(request, "\r\n\r\n", (64 - strlen(request)));
-
-  len = send_request(sock, request);
-	
-  len = 0;
-  memset(buffer, 0, sizeof(buffer));
-  while ((len < sizeof(buffer)) && ((rlen = read(sock, (buffer + len),
-						 (sizeof(buffer) - len))) > 0)){
-    len += rlen;
-  }
-
-  if (strcmp(buffer, "Yes") == 0) {
-    printf("MAC %s trusted.\n", config.param);
-  } else if (strcmp(buffer, "No") == 0) {
-    printf("Failed to trust MAC %s.\n", config.param);
-  } else {
-    fprintf(stderr, "ndsctl: Error: nodogsplash sent an abnormal "
-	    "reply.\n");
-  }
-
-  shutdown(sock, 2);
-  close(sock);
+  ndsctl_action("trust",
+		"MAC %s trusted.\n",
+		"Failed to trust MAC %s.\n");
 }
 
 void
 ndsctl_untrust(void) {
-  int	sock;
-  char	buffer[4096];
-  char	request[64];
-  int	len,
-    rlen;
-
-  sock = connect_to_server(config.socket);
-		
-  strncpy(request, "untrust ", 64);
-  strncat(request, config.param, (64 - strlen(request)));
-  strncat(request, "\r\n\r\n", (64 - strlen(request)));
-
-  len = send_request(sock, request);
-	
-  len = 0;
-  memset(buffer, 0, sizeof(buffer));
-  while ((len < sizeof(buffer)) && ((rlen = read(sock, (buffer + len),
-						 (sizeof(buffer) - len))) > 0)){
-    len += rlen;
-  }
-
-  if (strcmp(buffer, "Yes") == 0) {
-    printf("MAC %s untrusted.\n", config.param);
-  } else if (strcmp(buffer, "No") == 0) {
-    printf("Failed to untrust MAC %s.\n", config.param);
-  } else {
-    fprintf(stderr, "ndsctl: Error: nodogsplash sent an abnormal "
-	    "reply.\n");
-  }
-
-  shutdown(sock, 2);
-  close(sock);
+  ndsctl_action("untrust",
+		"MAC %s untrusted.\n",
+		"Failed to untrust MAC %s.\n");
 }
-
-
 static void
 ndsctl_restart(void) {
-  int	sock;
-  char	buffer[4096];
-  char	request[16];
-  int	len;
-
-  sock = connect_to_server(config.socket);
-		
-  strncpy(request, "restart\r\n\r\n", 15);
-
-  len = send_request(sock, request);
-	
-  while ((len = read(sock, buffer, sizeof(buffer))) > 0) {
-    buffer[len] = '\0';
-    printf("%s", buffer);
-  }
-
-  shutdown(sock, 2);
-  close(sock);
+  ndsctl_print("restart");
 }
 
 int

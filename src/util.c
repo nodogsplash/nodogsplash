@@ -26,6 +26,7 @@
   @brief Misc utility functions
   @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
   @author Copyright (C) 2006 Benoit Gr√©goire <bock@step.polymtl.ca>
+  @author Copyright (C) 2008 Paul Kube©goire <nodogsplash@kokoro.ucsd.edu>
  */
 
 #define _GNU_SOURCE
@@ -72,38 +73,75 @@ extern	pthread_mutex_t	config_mutex;
 extern unsigned int authenticated_this_session;
 
 /** Fork a child and execute a shell command.
- * the parent process waits for the child to return,
+ * The parent process waits for the child to return,
  * and returns the child's exit() value.
  * @return Return code of the command
  */
 int
 execute(char *cmd_line, int quiet) {
-  int pid,
-    status,
-    rc;
-
+  int status, retval;
+  pid_t pid, rc;
+  struct sigaction sa, oldsa;
   const char *new_argv[4];
   new_argv[0] = "/bin/sh";
   new_argv[1] = "-c";
   new_argv[2] = cmd_line;
   new_argv[3] = NULL;
 
+  /* Temporarily get rid of SIGCHLD handler (see gateway.c),
+   * until child exits.  Will handle SIGCHLD with waitpid() in the parent. */
+  debug(LOG_DEBUG,"Setting default SIGCHLD handler SIG_DFL"); 
+  sa.sa_handler = SIG_DFL;
+  sigemptyset(&sa.sa_mask);
+  sa.sa_flags = SA_NOCLDSTOP | SA_RESTART;
+  if (sigaction(SIGCHLD, &sa, &oldsa) == -1) { 
+    debug(LOG_ERR, "sigaction() failed to set default SIGCHLD handler: %s", strerror(errno));
+  }
+
   pid = safe_fork();
+  
   if (pid == 0) {    /* for the child process:         */
-    /* We don't want to see any errors if quiet flag is on */
-    if (quiet) close(2);
+    
+    if (quiet) close(2); /* Close stderr if quiet flag is on */
     if (execvp("/bin/sh", (char *const *)new_argv) < 0) {    /* execute the command  */
       debug(LOG_ERR, "execvp(): %s", strerror(errno));
       exit(1);
     }
-  }
-  else {        /* for the parent:      */
-    debug(LOG_DEBUG, "Waiting for PID %d to exit", pid);
-    rc = waitpid(pid, &status, 0);
-    debug(LOG_DEBUG, "Process PID %d exited, status %d", rc, WEXITSTATUS(status));
+
+  } else {        /* for the parent:      */
+    debug(LOG_DEBUG, "Waiting for PID %d to exit", (int)pid);
+
+    do {
+      rc = waitpid(pid, &status, 0);
+      if(rc == -1) {
+	if(errno == ECHILD) {
+	  debug(LOG_DEBUG, "waitpid(): No child exists now. Assuming normal exit for PID %d", (int)pid);
+	  retval = 0;
+	} else {
+	  debug(LOG_ERR, "Error waiting for child (waitpid() returned -1): %s", strerror(errno));
+	  retval = -1;
+	}
+	break;
+      }
+      if(WIFEXITED(status)) {
+	debug(LOG_DEBUG, "Process PID %d exited normally, status %d", (int)rc, WEXITSTATUS(status));
+	retval = (WEXITSTATUS(status));
+      }
+      if(WIFSIGNALED(status)) {
+	debug(LOG_DEBUG, "Process PID %d exited due to signal %d", (int)rc, WTERMSIG(status));
+	retval = -1;
+      }
+    } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+    
+    debug(LOG_DEBUG, "Restoring previous SIGCHLD handler");
+    if (sigaction(SIGCHLD, &oldsa, NULL) == -1) {
+      debug(LOG_ERR, "sigaction() failed to restore SIGCHLD handler! Error %s", strerror(errno));
+    }
+
+    return retval;
+
   }
 
-  return (WEXITSTATUS(status));
 }
 
 struct in_addr *

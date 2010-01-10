@@ -621,7 +621,7 @@ void _httpd_sendStatic(httpd *server, request *r, char *data)
 	{
 		_httpd_send304(r);
 	}
-	_httpd_sendHeaders(r, server->startTime, strlen(data));
+	_httpd_sendHeaders(r, strlen(data), server->startTime);
 	httpdOutput(r, data);
 }
 

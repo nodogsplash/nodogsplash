@@ -196,7 +196,9 @@ tc_init_tc() {
  */
 int
 tc_destroy_tc() {
-  int rc = 0;
+  int rc = 0, old_tc_quiet;
+
+  old_tc_quiet = tc_quiet;
   tc_quiet = 1;
   s_config *config;
   char *download_imqname, *upload_imqname, *cmd;
@@ -211,8 +213,10 @@ tc_destroy_tc() {
   rc |= tc_do_command("qdisc del dev %s root",upload_imqname);
   /* bring down imq's */
   safe_asprintf(&cmd,"ip link set %s down", download_imqname);
+  debug(LOG_DEBUG, "Executing command: %s", cmd);
   rc |= execute(cmd,tc_quiet);
   free(cmd);
+  debug(LOG_DEBUG, "Executing command: %s", cmd);
   safe_asprintf(&cmd,"ip link set %s down", upload_imqname);
   rc |= execute(cmd,tc_quiet);
   free(cmd);
@@ -220,7 +224,7 @@ tc_destroy_tc() {
   free(upload_imqname);
   free(download_imqname);
 
-  tc_quiet = 0;
+  tc_quiet = old_tc_quiet;
 
   return rc;
   

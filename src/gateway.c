@@ -246,7 +246,7 @@ void get_clients_from_parent(void) {
  * @brief Handles SIGCHLD signals to avoid zombie processes
  *
  * When a child process exits, it causes a SIGCHLD to be sent to the
- * process. This handler catches it and reaps the child process so it
+ * parent process. This handler catches it and reaps the child process so it
  * can exit. Otherwise we'd get zombie processes.
  */
 void
@@ -254,11 +254,30 @@ sigchld_handler(int s) {
   int	status;
   pid_t rc;
 	
-  debug(LOG_DEBUG, "Handler for SIGCHLD called. Trying to reap a child");
+  debug(LOG_DEBUG, "SIGCHLD handler: Trying to reap a child");
 
-  rc = waitpid(-1, &status, WNOHANG);
 
-  debug(LOG_DEBUG, "Handler for SIGCHLD reaped child PID %d", rc);
+  rc = waitpid(-1, &status, WNOHANG | WUNTRACED);
+
+  if(rc == -1) {
+    if(errno == ECHILD) {
+      debug(LOG_DEBUG, "SIGCHLD handler: waitpid(): No child exists now.");
+    } else {
+      debug(LOG_ERR, "SIGCHLD handler: Error reaping child (waitpid() returned -1): %s", strerror(errno));
+    }
+    return;
+  }
+
+  if(WIFEXITED(status)) {
+    debug(LOG_DEBUG, "SIGCHLD handler: Process PID %d exited normally, status %d", (int)rc, WEXITSTATUS(status));
+    return;
+  }
+
+  if(WIFSIGNALED(status)) {
+    debug(LOG_DEBUG, "SIGCHLD handler: Process PID %d exited due to signal %d", (int)rc, WTERMSIG(status));
+    return;
+  }
+
 }
 
 /** Exits cleanly after cleaning up the firewall.  
@@ -300,6 +319,7 @@ termination_handler(int s) {
   exit(s == 0 ? 1 : 0);
 }
 
+
 /** @internal 
  * Registers all the signal handlers
  */
@@ -307,8 +327,7 @@ static void
 init_signals(void) {
   struct sigaction sa;
 
-  debug(LOG_DEBUG, "Initializing signal handlers");
-	
+  debug(LOG_DEBUG, "Setting SIGCHLD handler to sigchld_handler()");
   sa.sa_handler = sigchld_handler;
   sigemptyset(&sa.sa_mask);
   sa.sa_flags = SA_RESTART;
@@ -323,12 +342,14 @@ init_signals(void) {
    * and do nothing. The alternative is to exit. SIGPIPE are harmless
    * if not desirable.
    */
+  debug(LOG_DEBUG, "Setting SIGPIPE  handler to SIG_IGN");
   sa.sa_handler = SIG_IGN;
   if (sigaction(SIGPIPE, &sa, NULL) == -1) {
     debug(LOG_ERR, "sigaction(): %s", strerror(errno));
     exit(1);
   }
 
+  debug(LOG_DEBUG, "Setting SIGTERM,SIGQUIT,SIGINT  handlers to termination_handler()");
   sa.sa_handler = termination_handler;
   sigemptyset(&sa.sa_mask);
   sa.sa_flags = SA_RESTART;
@@ -374,7 +395,7 @@ main_loop(void) {
     started_time = time(NULL);
   }
 
-  /* If we don't have the Gateway IP address, get it. Can't fail. */
+  /* If we don't have the Gateway IP address, get it. Exit on failure. */
   if (!config->gw_address) {
     debug(LOG_DEBUG, "Finding IP address of %s", config->gw_interface);
     if ((config->gw_address = get_iface_ip(config->gw_interface)) == NULL) {

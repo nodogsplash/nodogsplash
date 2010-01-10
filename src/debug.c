@@ -64,6 +64,8 @@ _debug(char *filename, int line, int level, char *format, ...) {
       vsyslog(level, format, vlist);
       closelog();
     }
+
+    va_end(vlist);
   }
 }
 
