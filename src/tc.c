@@ -45,7 +45,7 @@
 
 
 /**
- * Make nonzero to supress the error output during destruction.
+ * Make this nonzero to supress the error output during destruction.
  */ 
 static int tc_quiet = 0;
 

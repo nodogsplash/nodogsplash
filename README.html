@@ -40,7 +40,7 @@ and how to customize its behavior for your application.
 
 <h3>1. Overview</h3>
 
-A simple hotspot controller like Nodogsplash offers a solution to this
+Nodogsplash offers a solution to this
 problem: You want to provide controlled and reasonably secure public access
 to an internet connection; and while you want to require users to give some
 acknowledgment of the service you are providing, you don't need or want the
@@ -49,12 +49,12 @@ maintaining a separate database-backed authentication server.
  <p>
 When installed and running, Nodogsplash implements a simple 'authentication'
 protocol.  First, it detects any user attempting to
-use your internet connection to visit a website.  It captures
+use your internet connection to request a a web page.  It captures
 the request, and instead serves back a 'splash' web page using its own
 builtin web server.
-The splash page provides a link which, when the user clicks on
+The splash page contains a link which, when the user clicks on
 it, opens limited access for them to the internet via your connection,
-beginning by being redirected to their originally requested website.
+beginning by being redirected to their originally requested page.
 This access expires after a certain time interval.
  <p>
  <p>
@@ -139,14 +139,14 @@ ipkg remove nodogsplash
 A wireless router running OpenWRT has two or more interfaces; nodogsplash
 manages one of them.  This will typically be <code>br0</code>,
 the bridge to both the wireless and wired LAN; or the wireless lan
-interface is typically named <code>eth1</code>
+interface may be named something else
 if you have broken the <code>br0</code> bridge to separate the wired and
 wireless LAN's.
 <p>
 <h4>3.1 Packet filtering</h4>
 Nodogsplash considers four
 kinds of packets coming into the router
-over the managed interface.  Each packet is of exactly one of these kinds:
+over the managed interface.  Each packet is one of these kinds:
 <ol>
 <li>
 <em>Blocked</em>, if the MAC mechanism is <code>block</code>, and
@@ -195,7 +195,7 @@ and its packets revert to being <em>Preauthenticated</em>.
 </ol>
 Nodogsplash implements these actions by 
 inserting rules in the router's iptables mangle
-PREROUTING table to mark packets, and by inserting
+PREROUTING chain to mark packets, and by inserting
 rules in the nat PREROUTING, filter INPUT and
 filter FORWARD chains which match on those marks.
 Because it inserts its rules at the beginning
@@ -361,33 +361,25 @@ some information about your nodogsplash process:
 </pre>
 </li>
 <li>
-To block a MAC address, when the MAC mechanism is <code>block</code> 
-(but if you want this to persist across nodogsplash
-restarts, you have to edit the configuration file):
+To block a MAC address, when the MAC mechanism is <code>block</code>:
 <pre>
 /usr/bin/ndsctl block <em>MAC</em>
 </pre>
 </li>
 <li>
-To unblock a MAC address, when the MAC mechanism is <code>block</code> 
-(but if you want this to persist across nodogsplash
-restarts, you have to edit the configuration file):
+To unblock a MAC address, when the MAC mechanism is <code>block</code>:
 <pre>
 /usr/bin/ndsctl unblock <em>MAC</em>
 </pre>
 </li>
 <li>
-To allow a MAC address, when the MAC mechanism is <code>allow</code> 
-(but if you want this to persist across nodogsplash
-restarts, you have to edit the configuration file):
+To allow a MAC address, when the MAC mechanism is <code>allow</code>:
 <pre>
 /usr/bin/ndsctl allow <em>MAC</em>
 </pre>
 </li>
 <li>
-To unallow a MAC address, when the MAC mechanism is <code>allow</code> 
-(but if you want this to persist across nodogsplash
-restarts, you have to edit the configuration file):
+To unallow a MAC address, when the MAC mechanism is <code>allow</code>:
 <pre>
 /usr/bin/ndsctl unallow <em>MAC</em>
 </pre>
@@ -406,7 +398,9 @@ To set the verbosity of logged messages to <em>n</em>:
 </pre>
 </li>
 </ul>
-For more options, run <code>ndsctl -h</code>.
+For more options, run <code>ndsctl -h</code>.  (Note that if you want
+the effect of ndsctl commands to to persist across nodogsplash
+restarts, you have to edit the configuration file.)
 
 <h3>7. Debugging nodogsplash</h3>
 <ul>

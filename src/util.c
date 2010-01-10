@@ -71,9 +71,9 @@ extern	pthread_mutex_t	config_mutex;
 /* Defined in auth.c */
 extern unsigned int authenticated_this_session;
 
-/** Fork a child and execute a shell command, the parent
- * process waits for the child to return and returns the child's exit()
- * value.
+/** Fork a child and execute a shell command.
+ * the parent process waits for the child to return,
+ * and returns the child's exit() value.
  * @return Return code of the command
  */
 int
@@ -100,7 +100,7 @@ execute(char *cmd_line, int quiet) {
   else {        /* for the parent:      */
     debug(LOG_DEBUG, "Waiting for PID %d to exit", pid);
     rc = waitpid(pid, &status, 0);
-    debug(LOG_DEBUG, "Process PID %d exited", rc);
+    debug(LOG_DEBUG, "Process PID %d exited, status %d", rc, WEXITSTATUS(status));
   }
 
   return (WEXITSTATUS(status));

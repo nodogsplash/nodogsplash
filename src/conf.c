@@ -510,10 +510,19 @@ Return a pointer to the first nonspace char in the string.
 */
 static char*
 _strip_whitespace(char* p1) {
-  char *p2;
-  /* strip any comment */
-  p2 = strchr(p1,'#');
-  if(p2) *p2 = '\0';
+  char *p2, *p3;
+
+  p3 = p1;
+  while (p2 = strchr(p3,'#')) {  /* strip the comment */
+    /* but allow # to be escaped by \ */
+    if (p2 > p1 && (*(p2 - 1) == '\\')) {
+      p3 = p2 + 1;
+      continue;
+    }
+    *p2 = '\0';
+    break;
+  }
+  
   /* strip leading whitespace */
   while(isspace(p1[0])) p1++;
   /* strip trailing whitespace */
@@ -568,7 +577,7 @@ config_read(char *filename) {
     *p1 = '\0';
     p1++;
 
-    /* skip delimiting whitespace, make p1 point at arg */
+    /* skip any additional leading whitespace, make p1 point at start of arg */
     while (isblank(*p1)) p1++;
 
     debug(LOG_DEBUG, "Parsing option: %s, arg: %s", s, p1);
@@ -633,6 +642,8 @@ config_read(char *filename) {
      }
      break;
     case oWebRoot:
+      /* remove any trailing slashes from webroot path */
+      while((p2 = strrchr(p1,'/')) == (p1 + strlen(p1) - 1)) *p2 = '\0';
       config.webroot = safe_strdup(p1);
       break;
     case oSplashPage:
@@ -759,21 +770,24 @@ config_read(char *filename) {
       }
       break;
     case oFWMarkAuthenticated:
-      if(sscanf(p1, "%i", &config.FW_MARK_AUTHENTICATED) < 1) {
+      if(sscanf(p1, "%i", &config.FW_MARK_AUTHENTICATED) < 1 ||
+	 config.FW_MARK_AUTHENTICATED == 0) {
 	debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 	debug(LOG_ERR, "Exiting...");
 	exit(-1);
       }
       break;
     case oFWMarkBlocked:
-      if(sscanf(p1, "%i", &config.FW_MARK_BLOCKED) < 1) {
+      if(sscanf(p1, "%i", &config.FW_MARK_BLOCKED) < 1 ||
+	 config.FW_MARK_BLOCKED == 0) {
 	debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 	debug(LOG_ERR, "Exiting...");
 	exit(-1);
       }
       break;
     case oFWMarkTrusted:
-      if(sscanf(p1, "%i", &config.FW_MARK_TRUSTED) < 1) {
+      if(sscanf(p1, "%i", &config.FW_MARK_TRUSTED) < 1 ||
+	 config.FW_MARK_TRUSTED == 0) {
 	debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 	debug(LOG_ERR, "Exiting...");
 	exit(-1);
@@ -819,7 +833,7 @@ parse_boolean_value(char *line) {
   return -1;
 }
 
-/* Parse possibleip to see if it is valid decimal dotted quad IP format */
+/* Parse a string to see if it is valid decimal dotted quad IP V4 format */
 int check_ip_format(char *possibleip) {
   unsigned int a1,a2,a3,a4;
   
@@ -829,7 +843,7 @@ int check_ip_format(char *possibleip) {
 }
 
 
-/* Parse possiblemac to see if it is valid MAC address format */
+/* Parse a string to see if it is valid MAC address format */
 int check_mac_format(char *possiblemac) {
  char hex2[3];
   return
@@ -843,7 +857,6 @@ int add_to_trusted_mac_list(char *possiblemac) {
   
   char *mac = NULL;
   t_MAC *p = NULL;
-  int found = 0;
  
   /* check for valid format */
   if (!check_mac_format(possiblemac)) {
@@ -855,32 +868,20 @@ int add_to_trusted_mac_list(char *possiblemac) {
 
   sscanf(possiblemac, "%17[A-Fa-f0-9:]", mac);
 
-  /* If empty list, add this MAC to it */
-  if (config.trustedmaclist == NULL) {
-    config.trustedmaclist = safe_malloc(sizeof(t_MAC));
-    config.trustedmaclist->mac = safe_strdup(mac);
-    config.trustedmaclist->next = NULL;
-    debug(LOG_INFO, "Added MAC address [%s] to trusted list", mac);
-    free(mac);
-    return 0;
-  }
-
   /* See if MAC is already on the list; don't add duplicates */
-  
-  for (p = config.trustedmaclist; p->next != NULL; p = p->next) {
-    if (!strcasecmp(p->mac,mac)) { found = 1; }
-  }
-  if (found) {
-    debug(LOG_INFO, "MAC address [%s] already on trusted list", mac);
-    free(mac);
-    return 1;
+  for (p = config.trustedmaclist; p != NULL; p = p->next) {
+    if (!strcasecmp(p->mac,mac)) { 
+      debug(LOG_INFO, "MAC address [%s] already on trusted list", mac);
+      free(mac);
+      return 1;
+    }
   }
 
-  /* Add MAC at end of list */
-  p->next = safe_malloc(sizeof(t_MAC));
-  p = p->next;
+  /* Add MAC to head of list */
+  p = safe_malloc(sizeof(t_MAC));
   p->mac = safe_strdup(mac);
-  p->next = NULL;
+  p->next = config.trustedmaclist;
+  config.trustedmaclist = p;
   debug(LOG_INFO, "Added MAC address [%s] to trusted list", mac);
   free(mac);
   return 0;
@@ -965,7 +966,6 @@ int add_to_blocked_mac_list(char *possiblemac) {
   
   char *mac = NULL;
   t_MAC *p = NULL;
-  int found = 0;
 
   /* check for valid format */
   if (!check_mac_format(possiblemac)) {
@@ -1084,7 +1084,6 @@ int add_to_allowed_mac_list(char *possiblemac) {
   
   char *mac = NULL;
   t_MAC *p = NULL;
-  int found = 0;
 
   /* check for valid format */
   if (!check_mac_format(possiblemac)) {

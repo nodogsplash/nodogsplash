@@ -120,7 +120,7 @@ http_nodogsplash_first_contact(request *r) {
     /* Don't serve splash, just authenticate */
     http_nodogsplash_callback_action(r,authtarget,AUTH_MAKE_AUTHENTICATED);
   } else {
-    /* Serve the splash page (or redirect to remote authenticator */
+    /* Serve the splash page (or redirect to remote authenticator) */
     http_nodogsplash_serve_splash(r,authtarget);
   }
 

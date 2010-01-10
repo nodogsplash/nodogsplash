@@ -53,7 +53,7 @@
 
 static char * _iptables_compile(char *, char *, t_firewall_rule *);
 static int _iptables_append_ruleset(char *, char *, char *);
-static void _iptables_init_marks(void);
+static int _iptables_init_marks(void);
 
 extern pthread_mutex_t	client_list_mutex;
 extern pthread_mutex_t	config_mutex;
@@ -67,6 +67,7 @@ static int fw_quiet = 0;
  * Used to configure use of --or-mark vs. --set-mark
  */
 static char* markop;
+
 /**
  * Used to configure use of mark mask, or not
  */
@@ -74,11 +75,27 @@ static char* markmask;
 
 
 /** @internal */
-void
+int
 _iptables_init_marks() {
 
+  /* Check FW_MARK values are distinct.  */
+  if (FW_MARK_BLOCKED == FW_MARK_TRUSTED ||
+      FW_MARK_TRUSTED == FW_MARK_AUTHENTICATED ||
+      FW_MARK_AUTHENTICATED == FW_MARK_BLOCKED) {
+    debug(LOG_ERR, "FW_MARK_BLOCKED, FW_MARK_TRUSTED, FW_MARK_AUTHENTICATED not distinct values.");
+    return -1;
+  }
+
+  /* Check FW_MARK values nonzero.  */
+  if (FW_MARK_BLOCKED == 0 ||
+      FW_MARK_TRUSTED == 0 ||
+      FW_MARK_AUTHENTICATED == 0) {
+    debug(LOG_ERR, "FW_MARK_BLOCKED, FW_MARK_TRUSTED, FW_MARK_AUTHENTICATED not all nonzero.");
+    return -1;
+  }
+
   FW_MARK_PREAUTHENTICATED = 0;  /* always 0 */
-  /* FW_MARK_MASK is bitwise or of other marks */
+  /* FW_MARK_MASK is bitwise OR of other marks */
   FW_MARK_MASK = FW_MARK_BLOCKED | FW_MARK_TRUSTED | FW_MARK_AUTHENTICATED;
 
   /* See if kernel supports mark or-ing */
@@ -117,6 +134,8 @@ _iptables_init_marks() {
   debug(LOG_INFO,"Iptables mark op \"%s\" and mark mask \"%s\".", markop, markmask);
   
   fw_quiet = 0;
+
+  return 0;
 
 }
 
@@ -285,29 +304,31 @@ iptables_fw_init(void) {
   UNLOCK_CONFIG();
     
 
-  _iptables_init_marks();
+  /* Set up packet marking methods */
+  rc |= _iptables_init_marks();
 
 
 
   /*
    *
-   * Everything in the mangle table
+   **************************************
+   * Set up mangle table chains and rules
    *
    */
 
   /* Create new chains in the mangle table */
-  rc |= iptables_do_command("-t mangle -N " CHAIN_TRUSTED);
-  rc |= iptables_do_command("-t mangle -N " CHAIN_BLOCKED);
-  rc |= iptables_do_command("-t mangle -N " CHAIN_INCOMING);
-  rc |= iptables_do_command("-t mangle -N " CHAIN_OUTGOING);
+  rc |= iptables_do_command("-t mangle -N " CHAIN_TRUSTED); /* for marking trusted packets */
+  rc |= iptables_do_command("-t mangle -N " CHAIN_BLOCKED); /* for marking blocked packets */
+  rc |= iptables_do_command("-t mangle -N " CHAIN_INCOMING); /* for counting incoming packets */
+  rc |= iptables_do_command("-t mangle -N " CHAIN_OUTGOING); /* for counting outgoing packets */
 
-  /* Assign links and rules to these new chains */
+  /* Assign jumps to these new chains */
   rc |= iptables_do_command("-t mangle -I PREROUTING 1 -i %s -s %s -j " CHAIN_OUTGOING, gw_interface, gw_iprange);
   rc |= iptables_do_command("-t mangle -I PREROUTING 2 -i %s -s %s -j " CHAIN_BLOCKED, gw_interface, gw_iprange);
   rc |= iptables_do_command("-t mangle -I PREROUTING 3 -i %s -s %s -j " CHAIN_TRUSTED, gw_interface, gw_iprange);
   rc |= iptables_do_command("-t mangle -I POSTROUTING 1 -o %s -d %s -j " CHAIN_INCOMING, gw_interface, gw_iprange);
 
-  /* Rules to mark trusted MAC address packets in mangle PREROUTING */
+  /* Rules to mark as trusted MAC address packets in mangle PREROUTING */
   for (; pt != NULL; pt = pt->next) {
     rc |= iptables_trust_mac(pt->mac);
   }
@@ -326,7 +347,7 @@ iptables_fw_init(void) {
      * everything else is to be marked as blocked */
     /* So, append at end of chain a rule to mark everything blocked */
     rc |= iptables_do_command("-t mangle -A " CHAIN_BLOCKED " -j MARK %s 0x%x", markop, FW_MARK_BLOCKED);
-    /* Insert at beginning of chain rules to pass allowed MAC's */
+    /* But insert at beginning of chain rules to pass allowed MAC's */
     for (; pa != NULL; pa = pa->next) {
       rc |= iptables_allow_mac(pa->mac);
     }
@@ -341,18 +362,26 @@ iptables_fw_init(void) {
     rc |= tc_init_tc();
   }
 
+  /*
+   * End of mangle table chains and rules
+   **************************************
+   */
+
 
   /*
    *
-   * Everything in the nat table
+   **************************************
+   * Set up nat table chains and rules
    *
    */
 
   /* Create new chains in nat table */
   rc |= iptables_do_command("-t nat -N " CHAIN_OUTGOING);
+
   /*
-   * nat PREROUTING
+   * nat PREROUTING chain
    */
+
   /* packets coming in on gw_interface jump to CHAIN_OUTGOING */
   rc |= iptables_do_command("-t nat -I PREROUTING -i %s -s %s -j " CHAIN_OUTGOING, gw_interface, gw_iprange);
   /* CHAIN_OUTGOING, packets marked TRUSTED  ACCEPT */
@@ -369,8 +398,14 @@ iptables_fw_init(void) {
 
 
   /*
+   * End of nat table chains and rules
+   **************************************
+   */
+  
+  /*
    *
-   * Everything in the filter table
+   **************************************
+   * Set up filter table chains and rules
    *
    */
 
@@ -380,8 +415,9 @@ iptables_fw_init(void) {
   rc |= iptables_do_command("-t filter -N " CHAIN_AUTHENTICATED);
 
   /*
-   * filter INPUT
+   * filter INPUT chain
    */
+
   /* packets coming in on gw_interface jump to CHAIN_TO_ROUTER */
   rc |= iptables_do_command("-t filter -I INPUT -i %s -s %s -j " CHAIN_TO_ROUTER, gw_interface, gw_iprange);
   /* CHAIN_TO_ROUTER packets marked BLOCKED  DROP */
@@ -403,8 +439,9 @@ iptables_fw_init(void) {
 
 
   /*
-   * filter FORWARD
+   * filter FORWARD chain
    */
+
   /* packets coming in on gw_interface jump to CHAIN_TO_INTERNET */
   rc |= iptables_do_command("-t filter -I FORWARD -i %s -s %s -j " CHAIN_TO_INTERNET, gw_interface, gw_iprange);
   /* CHAIN_TO_INTERNET packets marked BLOCKED  DROP */
@@ -434,16 +471,24 @@ iptables_fw_init(void) {
   } else {
     rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m mark --mark 0x%x%s -j " CHAIN_AUTHENTICATED,FW_MARK_AUTHENTICATED, markmask);
   }
+  
   /* CHAIN_AUTHENTICATED, related and established packets  ACCEPT */
   rc |= iptables_do_command("-t filter -A " CHAIN_AUTHENTICATED " -m state --state RELATED,ESTABLISHED -j ACCEPT");
   /* CHAIN_AUTHENTICATED, append the "authenticated-users" ruleset */
   rc |= _iptables_append_ruleset("filter", "authenticated-users", CHAIN_AUTHENTICATED);
   /* CHAIN_AUTHENTICATED, any packets not matching that ruleset  REJECT */
   rc |= iptables_do_command("-t filter -A " CHAIN_AUTHENTICATED " -j REJECT --reject-with icmp-port-unreachable");
+  
   /* CHAIN_TO_INTERNET, append the "preauthenticated-users" ruleset */
   rc |= _iptables_append_ruleset("filter", "preauthenticated-users", CHAIN_TO_INTERNET);
   /* CHAIN_TO_INTERNET, all other packets REJECT */
   rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -j REJECT --reject-with icmp-port-unreachable");
+  
+  /*
+   * End of filter table chains and rules
+   **************************************
+   */
+
   free(gw_interface);
   free(gw_iprange);
   free(gw_address);

@@ -94,18 +94,18 @@ extern char 	LIBHTTPD_VERSION[],
 */
 
 typedef	struct {
-	int	method,
-		contentLength,
-		authLength;
-	char	path[HTTP_MAX_URL],
-		host[HTTP_MAX_URL], /* acv@acv.ca/wifidog: Added decoding
-				       of host: header if present. */
-		userAgent[HTTP_MAX_URL],
-		referer[HTTP_MAX_URL],
-		ifModified[HTTP_MAX_URL],
-		contentType[HTTP_MAX_URL],
-		authUser[HTTP_MAX_AUTH],
-		authPassword[HTTP_MAX_AUTH];
+  int	method,
+    contentLength,
+    authLength;
+    char	path[HTTP_MAX_URL],
+    host[HTTP_MAX_URL], /* acv@acv.ca/wifidog: Added decoding
+			   of host: header if present. */
+    userAgent[HTTP_MAX_URL],
+    referer[HTTP_MAX_URL],
+    ifModified[HTTP_MAX_URL],
+    contentType[HTTP_MAX_URL],
+    authUser[HTTP_MAX_AUTH],
+    authPassword[HTTP_MAX_AUTH];
 } httpReq;
 
 

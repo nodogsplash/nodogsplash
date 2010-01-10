@@ -19,19 +19,18 @@ how to customize its behavior for your application.
 
 1. Overview
 
-A simple hotspot controller like Nodogsplash offers a solution to this problem:
-You want to provide controlled and reasonably secure public access to an
-internet connection; and while you want to require users to give some
-acknowledgment of the service you are providing, you don't need or want the
-complexity of user account names and passwords and maintaining a separate
-database-backed authentication server.
+Nodogsplash offers a solution to this problem: You want to provide controlled
+and reasonably secure public access to an internet connection; and while you
+want to require users to give some acknowledgment of the service you are
+providing, you don't need or want the complexity of user account names and
+passwords and maintaining a separate database-backed authentication server.
 When installed and running, Nodogsplash implements a simple 'authentication'
 protocol. First, it detects any user attempting to use your internet connection
-to visit a website. It captures the request, and instead serves back a 'splash'
-web page using its own builtin web server. The splash page provides a link
-which, when the user clicks on it, opens limited access for them to the
+to request a a web page. It captures the request, and instead serves back a
+'splash' web page using its own builtin web server. The splash page contains a
+link which, when the user clicks on it, opens limited access for them to the
 internet via your connection, beginning by being redirected to their originally
-requested website. This access expires after a certain time interval.
+requested page. This access expires after a certain time interval.
 Nodogsplash also permits limiting the aggregate bandwidth provided to users, if
 you don't want to grant all of your available upload or download bandwidth.
 Specific features of Nodogsplash are configurable, by editing the configuration
@@ -87,13 +86,14 @@ need, though.
 
 A wireless router running OpenWRT has two or more interfaces; nodogsplash
 manages one of them. This will typically be br0, the bridge to both the
-wireless and wired LAN; or the wireless lan interface is typically named eth1
-if you have broken the br0 bridge to separate the wired and wireless LAN's.
+wireless and wired LAN; or the wireless lan interface may be named something
+else if you have broken the br0 bridge to separate the wired and wireless
+LAN's.
 
 3.1 Packet filtering
 
 Nodogsplash considers four kinds of packets coming into the router over the
-managed interface. Each packet is of exactly one of these kinds:
+managed interface. Each packet is one of these kinds:
 
   1. Blocked, if the MAC mechanism is block, and the source MAC address of the
      packet matches one listed in the BlockedMACList; or if the MAC mechanism
@@ -121,7 +121,7 @@ managed interface. Each packet is of exactly one of these kinds:
      packets revert to being Preauthenticated.
 
 Nodogsplash implements these actions by inserting rules in the router's
-iptables mangle PREROUTING table to mark packets, and by inserting rules in the
+iptables mangle PREROUTING chain to mark packets, and by inserting rules in the
 nat PREROUTING, filter INPUT and filter FORWARD chains which match on those
 marks. Because it inserts its rules at the beginning of existing chains,
 nodogsplash should be insensitive to most typical existing firewall
@@ -237,27 +237,19 @@ unix socket. Some command line options:
 
     /usr/bin/ndsctl status
 
-* To block a MAC address, when the MAC mechanism is block (but if you want this
-  to persist across nodogsplash restarts, you have to edit the configuration
-  file):
+* To block a MAC address, when the MAC mechanism is block:
 
     /usr/bin/ndsctl block MAC
 
-* To unblock a MAC address, when the MAC mechanism is block (but if you want
-  this to persist across nodogsplash restarts, you have to edit the
-  configuration file):
+* To unblock a MAC address, when the MAC mechanism is block:
 
     /usr/bin/ndsctl unblock MAC
 
-* To allow a MAC address, when the MAC mechanism is allow (but if you want this
-  to persist across nodogsplash restarts, you have to edit the configuration
-  file):
+* To allow a MAC address, when the MAC mechanism is allow:
 
     /usr/bin/ndsctl allow MAC
 
-* To unallow a MAC address, when the MAC mechanism is allow (but if you want
-  this to persist across nodogsplash restarts, you have to edit the
-  configuration file):
+* To unallow a MAC address, when the MAC mechanism is allow:
 
     /usr/bin/ndsctl unallow MAC
 
@@ -271,7 +263,9 @@ unix socket. Some command line options:
     /usr/bin/ndsctl loglevel n
 
 
-For more options, run ndsctl -h.
+For more options, run ndsctl -h. (Note that if you want the effect of ndsctl
+commands to to persist across nodogsplash restarts, you have to edit the
+configuration file.)
 
 7. Debugging nodogsplash
 
