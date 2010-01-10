@@ -163,7 +163,25 @@ iptables_load_ruleset(char * table, char *ruleset, char *chain) {
   
 }
 
+int
+iptables_block_mac(char *mac) {
+    return iptables_do_command("-t mangle -A " CHAIN_BLOCKED " -m mac --mac-source %s -j MARK --set-mark 0x%x", mac, FW_MARK_BLOCKED);
+}
 
+int
+iptables_unblock_mac(char *mac) {
+    return iptables_do_command("-t mangle -D " CHAIN_BLOCKED " -m mac --mac-source %s -j MARK --set-mark 0x%x", mac, FW_MARK_BLOCKED);
+}
+
+int
+iptables_trust_mac(char *mac) {
+    return iptables_do_command("-t mangle -A " CHAIN_TRUSTED " -m mac --mac-source %s -j MARK --set-mark 0x%x", mac, FW_MARK_TRUSTED);
+}
+
+int
+iptables_untrust_mac(char *mac) {
+    return iptables_do_command("-t mangle -D " CHAIN_TRUSTED " -m mac --mac-source %s -j MARK --set-mark 0x%x", mac, FW_MARK_TRUSTED);
+}
 
 /** Initialize the firewall rules.
  *  TODO: masking of marks when setting (when iptables supports it).
@@ -220,12 +238,14 @@ iptables_fw_init(void) {
   rc |= iptables_do_command("-t mangle -I POSTROUTING 1 -o %s -j " CHAIN_INCOMING, gw_interface);
 
   /* Rules to mark trusted MAC address packets in mangle PREROUTING */
-  for (; pt != NULL; pt = pt->next)
-    rc |= iptables_do_command("-t mangle -A " CHAIN_TRUSTED " -m mac --mac-source %s -j MARK --set-mark 0x%x", pt->mac, FW_MARK_TRUSTED);
+  for (; pt != NULL; pt = pt->next) {
+    rc |= iptables_trust_mac(pt->mac);
+  }
 
   /* Rules to mark blocked MAC address packets in mangle PREROUTING */
-  for (; pb != NULL; pb = pb->next)
-    rc |= iptables_do_command("-t mangle -A " CHAIN_BLOCKED " -m mac --mac-source %s -j MARK --set-mark 0x%x", pb->mac, FW_MARK_BLOCKED);
+  for (; pb != NULL; pb = pb->next) {
+    rc |= iptables_block_mac(pb->mac);
+  }
 
   /* Set up for traffic control */
   if(traffic_control) {
@@ -366,8 +386,8 @@ iptables_fw_init(void) {
 }
 
 /** Remove the firewall rules
- * This is used when we do a clean shutdown of nodogsplash, and when it starts, to make
- * sure there are no rules left over
+ * This is used when we do a clean shutdown of nodogsplash,
+ * and when it starts, to make sure there are no rules left over from a crash
  */
 int
 iptables_fw_destroy(void) {

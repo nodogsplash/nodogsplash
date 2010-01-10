@@ -63,7 +63,7 @@ void client_list_init(void);
 int get_client_list_length();
 
 /** @brief Adds a new client to the client list */
-t_client *client_list_append(char *ip, char *mac, char *token);
+t_client *client_list_add_client(char *ip);
 
 /** @brief Finds a client by its IP and MAC */
 t_client *client_list_find(char *ip, char *mac);

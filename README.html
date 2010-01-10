@@ -118,12 +118,6 @@ any website.  You should see the nodogsplash splash page instead.  Click on the
 icon; the browser should redirect to the initially requested website.
 </li>
 <li>
-To see the current status of your nodogsplash process:
-<pre>
-/usr/bin/ndsctl status
-</pre>
-</li>
-<li>
 To stop nodogsplash:
 <pre>
 /etc/init.d/S65nodogsplash stop
@@ -296,7 +290,43 @@ nodogsplash server.
 </ul>
 </ul>
 
-<h3>5. Debugging nodogsplash</h3>
+<h3>5. Using ndsctl</h3>
+A nodogsplash install
+includes <code>ndsctl</code>, by default installed under
+<code>/usr/bin</code>, which is a separate application which communicates
+with the nodogsplash process over a unix socket.  Some command line options:
+<ul>
+<li>
+To see the current status of your nodogsplash process:
+<pre>
+/usr/bin/ndsctl status
+</pre>
+</li>
+<li>
+To block a MAC address (but if you want this to persist across nodogsplash
+restarts, you have to edit the configuration file):
+<pre>
+/usr/bin/ndsctl block MAC
+</pre>
+</li>
+<li>
+To unblock a MAC address (but if you want this to persist across nodogsplash
+restarts, you have to edit the configuration file):
+<pre>
+/usr/bin/ndsctl unblock MAC
+</pre>
+</li>
+<li>
+To deauthenticate a currently authenticated user given their IP or MAC
+address:
+<pre>
+/usr/bin/ndsctl deauth IP|MAC
+</pre>
+</li>
+</ul>
+For more options, run <code>ndsctl -h</code>.
+
+<h3>6. Debugging nodogsplash</h3>
 <ul>
 <li>
 To see maximally verbose debugging output from nodogsplash, 
@@ -338,7 +368,7 @@ For extensive suggestions on debugging iptables, see for example
 Oskar Andreasson's tutorial</a>.
 </li>
 </ul>
-<h3 id="kamikaze">6. Using Nodogsplash with Kamikaze</h3>
+<h3 id="kamikaze">7. Using Nodogsplash with Kamikaze</h3>
 Eventually, new releases of Nodogsplash will be compiled against
 some stable version of OpenWRT Kamikaze.  Meanwhile, 
 Nodogsplash has been tested on some versions of Kamikaze and found

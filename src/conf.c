@@ -418,7 +418,7 @@ _parse_firewall_rule(char *ruleset, char *leftover) {
       return -4; /*< Fail */
     }
 
-    /* Get IP address/range now */
+    /* Get IP address/mask now */
     mask = leftover;
     TO_NEXT_WORD(leftover, finished);
     all_nums = 1;
@@ -748,6 +748,126 @@ parse_boolean_value(char *line) {
   return -1;
 }
 
+/* Parse possibleip to see if it is valid decimal dotted quad IP format */
+int check_ip_format(char *possibleip) {
+  unsigned int a1,a2,a3,a4;
+  
+  return (sscanf(possibleip,"%u.%u.%u.%u",&a1,&a2,&a3,&a4) == 4
+	  && a1 < 256 && a2 < 256 && a3 < 256 && a4 < 256);
+
+}
+
+
+/* Parse possiblemac to see if it is valid MAC address format */
+int check_mac_format(char *possiblemac) {
+ char hex2[3];
+  return
+    sscanf(possiblemac,
+	   "%2[A-Fa-f0-9]:%2[A-Fa-f0-9]:%2[A-Fa-f0-9]:%2[A-Fa-f0-9]:%2[A-Fa-f0-9]:%2[A-Fa-f0-9]",
+	   hex2,hex2,hex2,hex2,hex2,hex2) == 6;
+
+}
+
+int add_to_trusted_mac_list(char *possiblemac) {
+  
+  char *mac = NULL;
+  t_MAC *p = NULL;
+  int found = 0;
+ 
+  mac = safe_malloc(18);
+
+  /* check for valid format */
+  if (!check_mac_format(possiblemac)) {
+    debug(LOG_NOTICE, "[%s] not a valid MAC address to trust", possiblemac);
+    return -1;
+  }
+
+  sscanf(possiblemac, "%17[A-Fa-f0-9:]", mac);
+
+  /* If empty list, add this MAC to it */
+  if (config.trustedmaclist == NULL) {
+    config.trustedmaclist = safe_malloc(sizeof(t_MAC));
+    config.trustedmaclist->mac = safe_strdup(mac);
+    config.trustedmaclist->next = NULL;
+    debug(LOG_INFO, "Added MAC address [%s] to trusted list", mac);
+    free(mac);
+    return 0;
+  }
+
+  /* See if MAC is already on the list; don't add duplicates */
+  
+  for (p = config.trustedmaclist; p->next != NULL; p = p->next) {
+    if (!strcasecmp(p->mac,mac)) { found = 1; }
+  }
+  if (found) {
+    debug(LOG_INFO, "MAC address [%s] already on trusted list", mac);
+    free(mac);
+    return 1;
+  }
+
+  /* Add MAC at end of list */
+  p->next = safe_malloc(sizeof(t_MAC));
+  p = p->next;
+  p->mac = safe_strdup(mac);
+  p->next = NULL;
+  debug(LOG_INFO, "Added MAC address [%s] to trusted list", mac);
+  free(mac);
+  return 0;
+
+}
+
+
+/* Remove given MAC address from the config's trusted mac list.
+ * Return 0 on success, nonzero on failure
+ */
+int remove_from_trusted_mac_list(char *possiblemac) {
+
+  char *mac = NULL;
+  t_MAC **p = NULL;
+  t_MAC *del = NULL;
+  int found = 0;
+
+  mac = safe_malloc(18);
+
+  /* check for valid format */
+  if (!check_mac_format(possiblemac)) {
+    debug(LOG_NOTICE, "[%s] not a valid MAC address", possiblemac);
+    return -1;
+  }
+
+  sscanf(possiblemac, "%17[A-Fa-f0-9:]", mac);
+
+  /* If empty list, nothing to do */
+  if (config.trustedmaclist == NULL) {
+    debug(LOG_INFO, "MAC address [%s] not on empty trusted list", mac);
+    free(mac);
+    return -1;
+  }
+
+  /* Find MAC on the list, remove it */
+  for (p = &(config.trustedmaclist); *p != NULL; p = &((*p)->next)) {
+    if (!strcasecmp((*p)->mac,mac)) {
+      /* found it */
+      del = *p;
+      *p = del->next;
+      debug(LOG_INFO, "Removed MAC address [%s] from trusted list", mac);
+      free(del);
+      free(mac);
+      return 0;
+    }
+  }
+
+  /* MAC was not on list */
+  debug(LOG_INFO, "MAC address [%s] not on  trusted list", mac);
+  free(mac);
+  return -1;
+
+}
+
+
+/* Given a pointer to a comma or whitespace delimited sequence of
+ * MAC addresses, add each MAC address to config.trustedmaclist.
+ */
 void parse_trusted_mac_list(char *ptr) {
   char *ptrcopy = NULL, *ptrcopyptr;
   char *possiblemac = NULL;
@@ -756,72 +876,122 @@ void parse_trusted_mac_list(char *ptr) {
 
   debug(LOG_DEBUG, "Parsing string [%s] for trusted MAC addresses", ptr);
 
-  mac = safe_malloc(18);
-
   /* strsep modifies original, so let's make a copy */
   ptrcopyptr = ptrcopy = safe_strdup(ptr);
-
-  while (possiblemac = strsep(&ptrcopy, ", \t")) {
-    if (sscanf(possiblemac, "%17[A-Fa-f0-9:]", mac) == 1) {
-      /* Copy mac to the list */
-
-      debug(LOG_DEBUG, "Adding MAC address [%s] to trusted list", mac);
-
-      if (config.trustedmaclist == NULL) {
-	config.trustedmaclist = safe_malloc(sizeof(t_MAC));
-	config.trustedmaclist->mac = safe_strdup(mac);
-	config.trustedmaclist->next = NULL;
-      }
-      else {
-	/* Advance to the last entry */
-	for (p = config.trustedmaclist; p->next != NULL; p = p->next);
-	p->next = safe_malloc(sizeof(t_MAC));
-	p = p->next;
-	p->mac = safe_strdup(mac);
-	p->next = NULL;
-      }
-    }
+  
+  while ((possiblemac = strsep(&ptrcopy, ", \t"))) {
+    add_to_trusted_mac_list(possiblemac);
   }
+  
   free(ptrcopyptr);
-  free(mac);
 }
 
+
+/* Add given MAC address to the config's blocked mac list.
+ * Return 0 on success, nonzero on failure
+ */
+int add_to_blocked_mac_list(char *possiblemac) {
+  
+  char *mac = NULL;
+  t_MAC *p = NULL;
+  int found = 0;
+
+  mac = safe_malloc(18);
+
+  /* check for valid format */
+  if (!check_mac_format(possiblemac)) {
+    debug(LOG_NOTICE, "[%s] not a valid MAC address to block", possiblemac);
+    return -1;
+  }
+
+  sscanf(possiblemac, "%17[A-Fa-f0-9:]", mac);
+
+  /* See if MAC is already on the list; don't add duplicates */
+  for (p = config.blockedmaclist; p != NULL; p = p->next) {
+    if (!strcasecmp(p->mac,mac)) { 
+      debug(LOG_INFO, "MAC address [%s] already on blocked list", mac);
+      free(mac);
+      return 1;
+    }
+  }
+
+  /* Add MAC to head of list */
+  p = safe_malloc(sizeof(t_MAC));
+  p->mac = safe_strdup(mac);
+  p->next = config.blockedmaclist;
+  config.blockedmaclist = p;
+  debug(LOG_INFO, "Added MAC address [%s] to blocked list", mac);
+  free(mac);
+  return 0;
+
+}
+
+
+/* Remove given MAC address from the config's blocked mac list.
+ * Return 0 on success, nonzero on failure
+ */
+int remove_from_blocked_mac_list(char *possiblemac) {
+
+  char *mac = NULL;
+  t_MAC **p = NULL;
+  t_MAC *del = NULL;
+  int found = 0;
+
+  mac = safe_malloc(18);
+
+  /* check for valid format */
+  if (!check_mac_format(possiblemac)) {
+    debug(LOG_NOTICE, "[%s] not a valid MAC address", possiblemac);
+    return -1;
+  }
+
+  sscanf(possiblemac, "%17[A-Fa-f0-9:]", mac);
+
+  /* If empty list, nothing to do */
+  if (config.blockedmaclist == NULL) {
+    debug(LOG_INFO, "MAC address [%s] not on empty blocked list", mac);
+    free(mac);
+    return -1;
+  }
+
+  /* Find MAC on the list, remove it */
+  for (p = &(config.blockedmaclist); *p != NULL; p = &((*p)->next)) {
+    if (!strcasecmp((*p)->mac,mac)) {
+      /* found it */
+      del = *p;
+      *p = del->next;
+      debug(LOG_INFO, "Removed MAC address [%s] from blocked list", mac);
+      free(del);
+      free(mac);
+      return 0;
+    }
+  }
+
+  /* MAC was not on list */
+  debug(LOG_INFO, "MAC address [%s] not on  blocked list", mac);
+  free(mac);
+  return -1;
+
+}
+
+
+/* Given a pointer to a comma or whitespace delimited sequence of
+ * MAC addresses, add each MAC address to config.blockedmaclist
+ */
 void parse_blocked_mac_list(char *ptr) {
   char *ptrcopy = NULL, *ptrcopyptr;
   char *possiblemac = NULL;
-  char *mac = NULL;
-  t_MAC *p = NULL;
 
-  debug(LOG_DEBUG, "Parsing string [%s] for blocked MAC addresses", ptr);
-
-  mac = safe_malloc(18);
+  debug(LOG_DEBUG, "Parsing string [%s] for MAC addresses to block", ptr);
 
   /* strsep modifies original, so let's make a copy */
   ptrcopyptr = ptrcopy = safe_strdup(ptr);
   
   while ((possiblemac = strsep(&ptrcopy, ", \t"))) {
-    if (sscanf(possiblemac, "%17[A-Fa-f0-9:]", mac) == 1) {
-      /* Copy mac to the list */
-
-      debug(LOG_DEBUG, "Adding MAC address [%s] to blocked list", mac);
-
-      if (config.blockedmaclist == NULL) {
-	config.blockedmaclist = safe_malloc(sizeof(t_MAC));
-	config.blockedmaclist->mac = safe_strdup(mac);
-	config.blockedmaclist->next = NULL;
-      }
-      else {
-	/* Advance to the last entry */
-	for (p = config.blockedmaclist; p->next != NULL; p = p->next);
-	p->next = safe_malloc(sizeof(t_MAC));
-	p = p->next;
-	p->mac = safe_strdup(mac);
-	p->next = NULL;
-      }
-    }
+    add_to_blocked_mac_list(possiblemac);
   }
+  
   free(ptrcopyptr);
-  free(mac);
 }
 
 /** Verifies if the configuration is complete and valid.  Terminates the program if it isn't */
@@ -840,11 +1010,10 @@ config_validate(void)
     Verifies that a required parameter is not a null pointer
 */
 static void
-config_notnull(void *parm, char *parmname)
-{
-	if (parm == NULL) {
-		debug(LOG_ERR, "%s is not set", parmname);
-		missing_parms = 1;
-	}
+config_notnull(void *parm, char *parmname) {
+  if (parm == NULL) {
+    debug(LOG_ERR, "%s is not set", parmname);
+    missing_parms = 1;
+  }
 }
 

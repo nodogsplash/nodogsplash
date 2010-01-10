@@ -46,6 +46,7 @@
 #include "conf.h"
 #include "debug.h"
 #include "auth.h"
+#include "safe.h"
 #include "fw_iptables.h"
 #include "firewall.h"
 #include "client_list.h"
@@ -55,12 +56,18 @@
 extern	pthread_mutex_t	client_list_mutex;
 extern	pthread_mutex_t	config_mutex;
 
-/* From commandline.c: */
+/* Defined in commandline.c */
 extern char ** restartargv;
+
 static void *thread_ndsctl_handler(void *);
 static void ndsctl_status(int);
 static void ndsctl_stop(int);
-static void ndsctl_reset(int, char *);
+static void ndsctl_block(int, char *);
+static void ndsctl_unblock(int, char *);
+static void ndsctl_trust(int, char *);
+static void ndsctl_untrust(int, char *);
+static void ndsctl_auth(int, char *);
+static void ndsctl_deauth(int, char *);
 static void ndsctl_restart(int);
 
 /** Launches a thread that monitors the control socket for request
@@ -181,8 +188,18 @@ thread_ndsctl_handler(void *arg) {
     ndsctl_status(fd);
   } else if (strncmp(request, "stop", 4) == 0) {
     ndsctl_stop(fd);
-  } else if (strncmp(request, "reset", 5) == 0) {
-    ndsctl_reset(fd, (request + 6));
+  } else if (strncmp(request, "block", 5) == 0) {
+    ndsctl_block(fd, (request + 6));
+  } else if (strncmp(request, "unblock", 7) == 0) {
+    ndsctl_unblock(fd, (request + 8));
+  } else if (strncmp(request, "trust", 5) == 0) {
+    ndsctl_trust(fd, (request + 6));
+  } else if (strncmp(request, "untrust", 7) == 0) {
+    ndsctl_untrust(fd, (request + 8));
+  } else if (strncmp(request, "auth", 4) == 0) {
+    ndsctl_auth(fd, (request + 5));
+  } else if (strncmp(request, "deauth", 6) == 0) {
+    ndsctl_deauth(fd, (request + 7));
   } else if (strncmp(request, "restart", 7) == 0) {
     ndsctl_restart(fd);
   }
@@ -225,6 +242,7 @@ ndsctl_stop(int fd) {
   kill(pid, SIGINT);
 }
 
+/** Semantics of a restart not well defined in nodogsplash; we don't use it. */
 static void
 ndsctl_restart(int afd) {
   int	sock,
@@ -361,17 +379,48 @@ ndsctl_restart(int afd) {
 }
 
 static void
-ndsctl_reset(int fd, char *arg) {
-  t_client	*node;
-
-  debug(LOG_DEBUG, "Entering ndsctl_reset...");
+ndsctl_auth(int fd, char *arg) {
+  t_client	*client;
+  char *ip, *mac;
+  debug(LOG_DEBUG, "Entering ndsctl_auth...");
 	
   LOCK_CLIENT_LIST();
   debug(LOG_DEBUG, "Argument: %s (@%x)", arg, arg);
 	
-  /* We get the node or return... */
-  if ((node = client_list_find_by_ip(arg)) != NULL);
-  else if ((node = client_list_find_by_mac(arg)) != NULL);
+  /* Add client to client list... */
+  if ((client = client_list_add_client(arg)) == NULL) {
+    debug(LOG_DEBUG, "Could not add client.");
+    UNLOCK_CLIENT_LIST();
+    write(fd, "No", 2);
+    return;
+  }
+
+  /* We have a client.  Get both ip and mac address */
+  ip = safe_strdup(client->ip);
+  mac = safe_strdup(client->mac);
+  UNLOCK_CLIENT_LIST();
+
+  auth_client_action(ip, mac, AUTH_MAKE_AUTHENTICATED);
+	
+  free(ip); free(mac);
+  write(fd, "Yes", 3);
+	
+  debug(LOG_DEBUG, "Exiting ndsctl_auth...");
+}
+
+
+static void
+ndsctl_deauth(int fd, char *arg) {
+  t_client	*client;
+  char *ip, *mac;
+  debug(LOG_DEBUG, "Entering ndsctl_deauth...");
+	
+  LOCK_CLIENT_LIST();
+  debug(LOG_DEBUG, "Argument: %s (@%x)", arg, arg);
+	
+  /* We get the client or return... */
+  if ((client = client_list_find_by_ip(arg)) != NULL);
+  else if ((client = client_list_find_by_mac(arg)) != NULL);
   else {
     debug(LOG_DEBUG, "Client not found.");
     UNLOCK_CLIENT_LIST();
@@ -379,17 +428,97 @@ ndsctl_reset(int fd, char *arg) {
     return;
   }
 
-  debug(LOG_DEBUG, "Got node %x.", node);
-	
-  /* deny.... */
-  /* TODO: maybe just deleting the connection is not best... But this
-   * is a manual command, I don't anticipate it'll be that useful. */
-  iptables_fw_access(AUTH_MAKE_DEAUTHENTICATED, node->ip, node->mac);
-  client_list_delete(node);
-	
+  /* We have the client.  Get both ip and mac address */
+  ip = safe_strdup(client->ip);
+  mac = safe_strdup(client->mac);
   UNLOCK_CLIENT_LIST();
+
+  auth_client_action(ip, mac, AUTH_MAKE_DEAUTHENTICATED);
 	
+  free(ip); free(mac);
   write(fd, "Yes", 3);
 	
-  debug(LOG_DEBUG, "Exiting ndsctl_reset...");
+  debug(LOG_DEBUG, "Exiting ndsctl_deauth...");
 }
+
+static void
+ndsctl_block(int fd, char *arg) {
+
+  debug(LOG_DEBUG, "Entering ndsctl_block...");
+	
+  LOCK_CONFIG();
+  debug(LOG_DEBUG, "Argument: [%s]", arg);
+	
+  /* We get the node or return... */
+  if (!add_to_blocked_mac_list(arg) && !iptables_block_mac(arg)) {
+    write(fd, "Yes", 3);
+  } else {
+    write(fd, "No", 2);
+  }
+
+  UNLOCK_CONFIG();
+	
+  debug(LOG_DEBUG, "Exiting ndsctl_block.");
+}
+
+static void
+ndsctl_unblock(int fd, char *arg) {
+
+  debug(LOG_DEBUG, "Entering ndsctl_unblock...");
+	
+  LOCK_CONFIG();
+  debug(LOG_DEBUG, "Argument: [%s]", arg);
+	
+  /* We get the node or return... */
+  if (!remove_from_blocked_mac_list(arg) && !iptables_unblock_mac(arg)) {
+    write(fd, "Yes", 3);
+  } else {
+    write(fd, "No", 2);
+  }
+
+  UNLOCK_CONFIG();
+	
+  debug(LOG_DEBUG, "Exiting ndsctl_unblock.");
+}
+
+static void
+ndsctl_trust(int fd, char *arg) {
+
+  debug(LOG_DEBUG, "Entering ndsctl_trust...");
+	
+  LOCK_CONFIG();
+  debug(LOG_DEBUG, "Argument: [%s]", arg);
+	
+  /* We get the node or return... */
+  if (!add_to_trusted_mac_list(arg) && !iptables_trust_mac(arg)) {
+    write(fd, "Yes", 3);
+  } else {
+    write(fd, "No", 2);
+  }
+
+  UNLOCK_CONFIG();
+	
+  debug(LOG_DEBUG, "Exiting ndsctl_trust.");
+}
+
+static void
+ndsctl_untrust(int fd, char *arg) {
+
+  debug(LOG_DEBUG, "Entering ndsctl_untrust...");
+	
+  LOCK_CONFIG();
+  debug(LOG_DEBUG, "Argument: [%s]", arg);
+	
+  /* We get the node or return... */
+  if (!remove_from_trusted_mac_list(arg) && !iptables_untrust_mac(arg)) {
+    write(fd, "Yes", 3);
+  } else {
+    write(fd, "No", 2);
+  }
+
+  UNLOCK_CONFIG();
+	
+  debug(LOG_DEBUG, "Exiting ndsctl_untrust.");
+}
+
+

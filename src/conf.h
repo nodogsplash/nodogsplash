@@ -108,7 +108,7 @@ typedef struct _MAC_t {
  * Configuration structure
  */
 typedef struct {
-  char configfile[255];	/**< @brief name of the config file */
+  char configfile[255];		/**< @brief name of the config file */
   char *ndsctl_sock;		/**< @brief ndsctl path to socket */
   char *internal_sock;		/**< @brief internal path to socket */
   int daemon;			/**< @brief if daemon > 0, use daemon mode */
@@ -176,6 +176,8 @@ static int _parse_firewall_rule(char *ruleset, char *leftover);
 static void parse_firewall_ruleset(char *, FILE *, char *, int *);
 void parse_trusted_mac_list(char *);
 void parse_blocked_mac_list(char *);
+int check_ip_format(char *);
+int check_mac_format(char *);
 
 #define LOCK_CONFIG() do { \
 	debug(LOG_DEBUG, "Locking config"); \

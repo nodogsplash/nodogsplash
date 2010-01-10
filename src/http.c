@@ -262,37 +262,18 @@ http_nodogsplash_callback_deny(httpd *webserver, request *r) {
 
 
 /**
- *  Add client making a request to client list, creating a
- *  random token for them.
- *  Does nothing if a client with the same IP and MAC address
- *  is already on the list.
+ *  Add client making a request to client list.
+ *  Return pointer to the client list entry for this client.
  *
  *  N.B.: This does not authenticate the client; it only makes
  *  their information available on the client list.
  */
 t_client *
 http_nodogsplash_add_client(request *r) {
-  t_client	*client;
-  char	*mac, *token;
-  s_config	*config;
-
-  if (!(mac = arp_get(r->clientAddr))) {
-    /* We could not get their MAC address */
-    debug(LOG_NOTICE, "Could not arp MAC address for %s", r->clientAddr);
-  } 
-
+  t_client	*client;  
   LOCK_CLIENT_LIST();
-			
-  if ((client = client_list_find(r->clientAddr, mac)) == NULL) {
-    token = http_make_auth_token();  /* get a new random token */
-    client = client_list_append(r->clientAddr, mac, token);
-    free(token);
-  } else {
-    debug(LOG_INFO, "Client %s %s token %s already on client list",
-	  r->clientAddr, mac, client->token);
-  }
+  client = client_list_add_client(r->clientAddr);
   UNLOCK_CLIENT_LIST();
-  free(mac);
   return client;
 }
  
@@ -624,15 +605,3 @@ http_nodogsplash_check_password(request *r, t_auth_target *authtarget) {
 
 }
 
-/** Allocate and return a random string of 8 hex digits
- *  suitable as an authentication token.
- *  Caller must free.
- */
-char *
-http_make_auth_token() {
-  char * token;
-
-  safe_asprintf(&token,"%04hx%04hx", rand16(), rand16());
-
-  return token;
-}

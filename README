@@ -71,10 +71,6 @@ need, though.
   wireless lan) and in a browser on that machine, attempt to visit any website.
   You should see the nodogsplash splash page instead. Click on the icon; the
   browser should redirect to the initially requested website.
-* To see the current status of your nodogsplash process:
-
-    /usr/bin/ndsctl status
-
 * To stop nodogsplash:
 
     /etc/init.d/S65nodogsplash stop
@@ -188,7 +184,35 @@ secure as-is for basic internet sharing applications, but it is customizable.
 
 
 
-5. Debugging nodogsplash
+5. Using ndsctl
+
+A nodogsplash install includes ndsctl, by default installed under /usr/bin,
+which is a separate application which communicates with the nodogsplash process
+over a unix socket. Some command line options:
+
+* To see the current status of your nodogsplash process:
+
+    /usr/bin/ndsctl status
+
+* To block a MAC address (but if you want this to persist across nodogsplash
+  restarts, you have to edit the configuration file):
+
+    /usr/bin/ndsctl block MAC
+
+* To unblock a MAC address (but if you want this to persist across nodogsplash
+  restarts, you have to edit the configuration file):
+
+    /usr/bin/ndsctl unblock MAC
+
+* To deauthenticate a currently authenticated user given their IP or MAC
+  address:
+
+    /usr/bin/ndsctl deauth IP|MAC
+
+
+For more options, run ndsctl -h.
+
+6. Debugging nodogsplash
 
 
 * To see maximally verbose debugging output from nodogsplash, edit the /etc/
@@ -218,7 +242,7 @@ secure as-is for basic internet sharing applications, but it is customizable.
   Andreasson's_tutorial.
 
 
-6. Using Nodogsplash with Kamikaze
+7. Using Nodogsplash with Kamikaze
 
 Eventually, new releases of Nodogsplash will be compiled against some stable
 version of OpenWRT Kamikaze. Meanwhile, Nodogsplash has been tested on some

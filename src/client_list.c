@@ -73,7 +73,7 @@ client_get_first_client(void)
 }
 
 /**
- * Initializes the list of connected clients (client)
+ * Initialize the list of connected clients
  */
 void
 client_list_init(void) {
@@ -81,15 +81,20 @@ client_list_init(void) {
   client_count = 0;
 }
 
-/** Based on the parameters it receives, this function creates a new entry
- * in the client list. All the memory allocation is done here.
+
+/** @internal
+ * Given IP, MAC, and client token, appends a new entry
+ * to the end of the client list and returns a pointer to the new entry.
+ * All the memory allocation for a list entry is done here.
+ * Checks for number of current clients.
+ * Does not check for duplicate entries; so check before calling.
  * @param ip IP address
  * @param mac MAC address
  * @param token Token
  * @return Pointer to the client we just created
  */
 t_client         *
-client_list_append(char *ip, char *mac, char *token) {
+_client_list_append(char *ip, char *mac, char *token) {
   t_client         *client, *prevclient;
   s_config *config;
   int maxclients;
@@ -135,6 +140,58 @@ client_list_append(char *ip, char *mac, char *token) {
   return client;
 }
 
+/** @internal
+ *  Allocate and return an authentication token.
+ *  Caller must free.
+ *  We just generate a random string of 8 hex digits,
+ *  independent of ip and mac.
+ */
+char *
+_client_list_make_auth_token(char* ip, char* mac) {
+  char * token;
+
+  safe_asprintf(&token,"%04hx%04hx", rand16(), rand16());
+
+  return token;
+}
+
+/**
+ *  Given an IP address, add a client corresponding to that IP to client list.
+ *  Return a pointer to the new client list entry, or to an existing entry
+ *  if one with the given IP already exists.
+ *  Return NULL if no new client entry can be created.
+ */
+t_client *
+client_list_add_client(char *ip) {
+  
+  t_client	*client;
+  char	*mac, *token;
+  s_config	*config;
+
+  if(!check_ip_format(ip)) {
+    /* Inappropriate format in IP address */
+    debug(LOG_NOTICE, "Illegal IP format [%s]", ip);
+    return NULL;
+  } 
+
+  if (!(mac = arp_get(ip))) {
+    /* We could not get their MAC address */
+    debug(LOG_NOTICE, "Could not arp MAC address for %s", ip);
+    return NULL;
+  } 
+
+  if ((client = client_list_find(ip, mac)) == NULL) {
+    token = _client_list_make_auth_token(ip,mac);  /* get a new token */
+    client = _client_list_append(ip, mac, token);
+    free(token);
+  } else {
+    debug(LOG_INFO, "Client %s %s token %s already on client list",
+	  ip, mac, client->token);
+  }
+  free(mac);
+  return client;
+}
+
 /** Finds a  client by its IP and MAC, returns NULL if the client could not
  * be found
  * @param ip IP we are looking for in the linked list
@@ -147,7 +204,7 @@ client_list_find(char *ip, char *mac) {
 
   ptr = firstclient;
   while (NULL != ptr) {
-    if (0 == strcmp(ptr->ip, ip) && 0 == strcmp(ptr->mac, mac))
+    if (!strcmp(ptr->ip, ip) && !strcmp(ptr->mac, mac))
       return ptr;
     ptr = ptr->next;
   }
@@ -168,7 +225,7 @@ client_list_find_by_ip(char *ip) {
 
   ptr = firstclient;
   while (NULL != ptr) {
-    if (0 == strcmp(ptr->ip, ip))
+    if (!strcmp(ptr->ip, ip))
       return ptr;
     ptr = ptr->next;
   }
@@ -188,7 +245,7 @@ client_list_find_by_mac(char *mac) {
 
   ptr = firstclient;
   while (NULL != ptr) {
-    if (0 == strcmp(ptr->mac, mac))
+    if (!strcmp(ptr->mac, mac))
       return ptr;
     ptr = ptr->next;
   }
@@ -206,7 +263,7 @@ client_list_find_by_token(char *token) {
 
   ptr = firstclient;
   while (NULL != ptr) {
-    if (0 == strcmp(ptr->token, token))
+    if (!strcmp(ptr->token, token))
       return ptr;
     ptr = ptr->next;
   }
@@ -274,3 +331,4 @@ client_list_delete(t_client * client) {
     }
   }
 }
+

@@ -41,6 +41,7 @@
 
 #include "ndsctl.h"
 
+/* N.B. this is ndsctl.h s_config, not conf.h s_config */
 s_config config;
 
 static void usage(void);
@@ -50,8 +51,13 @@ static int connect_to_server(char *);
 static int send_request(int, char *);
 static void ndsctl_status(void);
 static void ndsctl_stop(void);
-static void ndsctl_reset(void);
 static void ndsctl_restart(void);
+static void ndsctl_block(void);
+static void ndsctl_unblock(void);
+static void ndsctl_trust(void);
+static void ndsctl_untrust(void);
+static void ndsctl_auth(void);
+static void ndsctl_deauth(void);
 
 /** @internal
  * @brief Print usage
@@ -67,14 +73,14 @@ usage(void) {
   printf("  -h                Print usage\n");
   printf("\n");
   printf("commands:\n");
-  /*
-    printf("  reset [mac|ip]    Reset the specified mac or ip connection\n");
-  */
   printf("  status            Obtain the status of nodogsplash\n");
   printf("  stop              Stop the running nodogsplash\n");
-  /*
-    printf("  restart           Re-start the running nodogsplash (without disconnecting active users!)\n");
-  */
+  printf("  auth ip           Authenticate user with specified ip\n");
+  printf("  deauth mac|ip     Deauthenticate user with specified mac or ip\n");
+  printf("  block mac         Block the given MAC address\n");
+  printf("  unblock mac       Unblock the given MAC address\n");
+  printf("  trust mac         Trust the given MAC address\n");
+  printf("  untrust mac       Untrust the given MAC address\n");
   printf("\n");
 }
 
@@ -130,20 +136,66 @@ parse_commandline(int argc, char **argv) {
   else if (strcmp(*(argv + optind), "stop") == 0) {
     config.command = NDSCTL_STOP;
   } 
-  /*  Nodogsplash doesn't use these; deal with S65nodogsplash instead.
-      else if (strcmp(*(argv + optind), "reset") == 0) {
-    config.command = NDSCTL_KILL;
+  else if (strcmp(*(argv + optind), "block") == 0) {
+    config.command = NDSCTL_BLOCK;
     if ((argc - (optind + 1)) <= 0) {
-      fprintf(stderr, "ndsctl: Error: You must specify an IP "
-	      "or a Mac address to reset\n");
+      fprintf(stderr, "ndsctl: Error: You must specify a "
+	      "MAC address to block\n");
       usage();
       exit(1);
     }
     config.param = strdup(*(argv + optind + 1));
-  } else if (strcmp(*(argv + optind), "restart") == 0) {
-    config.command = NDSCTL_RESTART;
   }
-  */
+  else if (strcmp(*(argv + optind), "unblock") == 0) {
+    config.command = NDSCTL_UNBLOCK;
+    if ((argc - (optind + 1)) <= 0) {
+      fprintf(stderr, "ndsctl: Error: You must specify a "
+	      "MAC address to unblock\n");
+      usage();
+      exit(1);
+    }
+    config.param = strdup(*(argv + optind + 1));
+  }
+  else if (strcmp(*(argv + optind), "trust") == 0) {
+    config.command = NDSCTL_TRUST;
+    if ((argc - (optind + 1)) <= 0) {
+      fprintf(stderr, "ndsctl: Error: You must specify a "
+	      "MAC address to trust\n");
+      usage();
+      exit(1);
+    }
+    config.param = strdup(*(argv + optind + 1));
+  }
+  else if (strcmp(*(argv + optind), "untrust") == 0) {
+    config.command = NDSCTL_UNTRUST;
+    if ((argc - (optind + 1)) <= 0) {
+      fprintf(stderr, "ndsctl: Error: You must specify a "
+	      "MAC address to untrust\n");
+      usage();
+      exit(1);
+    }
+    config.param = strdup(*(argv + optind + 1));
+  }
+  else if (strcmp(*(argv + optind), "auth") == 0) {
+    config.command = NDSCTL_AUTH;
+    if ((argc - (optind + 1)) <= 0) {
+      fprintf(stderr, "ndsctl: Error: You must specify an IP "
+	      "address to auth\n");
+      usage();
+      exit(1);
+    }
+    config.param = strdup(*(argv + optind + 1));
+  }
+  else if (strcmp(*(argv + optind), "deauth") == 0) {
+    config.command = NDSCTL_DEAUTH;
+    if ((argc - (optind + 1)) <= 0) {
+      fprintf(stderr, "ndsctl: Error: You must specify an IP "
+	      "or a Mac address to deauth\n");
+      usage();
+      exit(1);
+    }
+    config.param = strdup(*(argv + optind + 1));
+  }
   else {
     fprintf(stderr, "ndsctl: Error: Invalid command \"%s\"\n", *(argv + optind));
     usage();
@@ -235,7 +287,7 @@ ndsctl_stop(void) {
 }
 
 void
-ndsctl_reset(void) {
+ndsctl_deauth(void) {
   int	sock;
   char	buffer[4096];
   char	request[64];
@@ -244,7 +296,7 @@ ndsctl_reset(void) {
 
   sock = connect_to_server(config.socket);
 		
-  strncpy(request, "reset ", 64);
+  strncpy(request, "deauth ", 64);
   strncat(request, config.param, (64 - strlen(request)));
   strncat(request, "\r\n\r\n", (64 - strlen(request)));
 
@@ -258,9 +310,9 @@ ndsctl_reset(void) {
   }
 
   if (strcmp(buffer, "Yes") == 0) {
-    printf("Connection %s successfully reset.\n", config.param);
+    printf("Client %s deauthenticated.\n", config.param);
   } else if (strcmp(buffer, "No") == 0) {
-    printf("Connection %s was not active.\n", config.param);
+    printf("Client %s not found.\n", config.param);
   } else {
     fprintf(stderr, "ndsctl: Error: nodogsplash sent an abnormal "
 	    "reply.\n");
@@ -269,6 +321,188 @@ ndsctl_reset(void) {
   shutdown(sock, 2);
   close(sock);
 }
+
+void
+ndsctl_auth(void) {
+  int	sock;
+  char	buffer[4096];
+  char	request[64];
+  int	len,
+    rlen;
+
+  sock = connect_to_server(config.socket);
+		
+  strncpy(request, "auth ", 64);
+  strncat(request, config.param, (64 - strlen(request)));
+  strncat(request, "\r\n\r\n", (64 - strlen(request)));
+
+  len = send_request(sock, request);
+	
+  len = 0;
+  memset(buffer, 0, sizeof(buffer));
+  while ((len < sizeof(buffer)) && ((rlen = read(sock, (buffer + len),
+						 (sizeof(buffer) - len))) > 0)){
+    len += rlen;
+  }
+
+  if (strcmp(buffer, "Yes") == 0) {
+    printf("Client %s authenticated.\n", config.param);
+  } else if (strcmp(buffer, "No") == 0) {
+    printf("Failed to authenticate client %s.\n", config.param);
+  } else {
+    fprintf(stderr, "ndsctl: Error: nodogsplash sent an abnormal "
+	    "reply:\n  \"%s\"",buffer);
+  }
+
+  shutdown(sock, 2);
+  close(sock);
+}
+
+void
+ndsctl_block(void) {
+  int	sock;
+  char	buffer[4096];
+  char	request[64];
+  int	len,
+    rlen;
+
+  sock = connect_to_server(config.socket);
+		
+  strncpy(request, "block ", 64);
+  strncat(request, config.param, (64 - strlen(request)));
+  strncat(request, "\r\n\r\n", (64 - strlen(request)));
+
+  len = send_request(sock, request);
+	
+  len = 0;
+  memset(buffer, 0, sizeof(buffer));
+  while ((len < sizeof(buffer)) && ((rlen = read(sock, (buffer + len),
+						 (sizeof(buffer) - len))) > 0)){
+    len += rlen;
+  }
+
+  if (strcmp(buffer, "Yes") == 0) {
+    printf("MAC %s blocked.\n", config.param);
+  } else if (strcmp(buffer, "No") == 0) {
+    printf("Failed to block MAC %s.\n", config.param);
+  } else {
+    fprintf(stderr, "ndsctl: Error: nodogsplash sent an abnormal "
+	    "reply.\n");
+  }
+
+  shutdown(sock, 2);
+  close(sock);
+}
+
+void
+ndsctl_unblock(void) {
+  int	sock;
+  char	buffer[4096];
+  char	request[64];
+  int	len,
+    rlen;
+
+  sock = connect_to_server(config.socket);
+		
+  strncpy(request, "unblock ", 64);
+  strncat(request, config.param, (64 - strlen(request)));
+  strncat(request, "\r\n\r\n", (64 - strlen(request)));
+
+  len = send_request(sock, request);
+	
+  len = 0;
+  memset(buffer, 0, sizeof(buffer));
+  while ((len < sizeof(buffer)) && ((rlen = read(sock, (buffer + len),
+						 (sizeof(buffer) - len))) > 0)){
+    len += rlen;
+  }
+
+  if (strcmp(buffer, "Yes") == 0) {
+    printf("MAC %s unblocked.\n", config.param);
+  } else if (strcmp(buffer, "No") == 0) {
+    printf("Failed to unblock MAC %s.\n", config.param);
+  } else {
+    fprintf(stderr, "ndsctl: Error: nodogsplash sent an abnormal "
+	    "reply.\n");
+  }
+
+  shutdown(sock, 2);
+  close(sock);
+}
+
+
+void
+ndsctl_trust(void) {
+  int	sock;
+  char	buffer[4096];
+  char	request[64];
+  int	len,
+    rlen;
+
+  sock = connect_to_server(config.socket);
+		
+  strncpy(request, "trust ", 64);
+  strncat(request, config.param, (64 - strlen(request)));
+  strncat(request, "\r\n\r\n", (64 - strlen(request)));
+
+  len = send_request(sock, request);
+	
+  len = 0;
+  memset(buffer, 0, sizeof(buffer));
+  while ((len < sizeof(buffer)) && ((rlen = read(sock, (buffer + len),
+						 (sizeof(buffer) - len))) > 0)){
+    len += rlen;
+  }
+
+  if (strcmp(buffer, "Yes") == 0) {
+    printf("MAC %s trusted.\n", config.param);
+  } else if (strcmp(buffer, "No") == 0) {
+    printf("Failed to trust MAC %s.\n", config.param);
+  } else {
+    fprintf(stderr, "ndsctl: Error: nodogsplash sent an abnormal "
+	    "reply.\n");
+  }
+
+  shutdown(sock, 2);
+  close(sock);
+}
+
+void
+ndsctl_untrust(void) {
+  int	sock;
+  char	buffer[4096];
+  char	request[64];
+  int	len,
+    rlen;
+
+  sock = connect_to_server(config.socket);
+		
+  strncpy(request, "untrust ", 64);
+  strncat(request, config.param, (64 - strlen(request)));
+  strncat(request, "\r\n\r\n", (64 - strlen(request)));
+
+  len = send_request(sock, request);
+	
+  len = 0;
+  memset(buffer, 0, sizeof(buffer));
+  while ((len < sizeof(buffer)) && ((rlen = read(sock, (buffer + len),
+						 (sizeof(buffer) - len))) > 0)){
+    len += rlen;
+  }
+
+  if (strcmp(buffer, "Yes") == 0) {
+    printf("MAC %s untrusted.\n", config.param);
+  } else if (strcmp(buffer, "No") == 0) {
+    printf("Failed to untrust MAC %s.\n", config.param);
+  } else {
+    fprintf(stderr, "ndsctl: Error: nodogsplash sent an abnormal "
+	    "reply.\n");
+  }
+
+  shutdown(sock, 2);
+  close(sock);
+}
+
 
 static void
 ndsctl_restart(void) {
@@ -308,17 +542,37 @@ main(int argc, char **argv) {
     ndsctl_stop();
     break;
 
-  case NDSCTL_KILL:
-    ndsctl_reset();
-    break;
-		
   case NDSCTL_RESTART:
     ndsctl_restart();
     break;
 
+  case NDSCTL_BLOCK:
+    ndsctl_block();
+    break;
+
+  case NDSCTL_UNBLOCK:
+    ndsctl_unblock();
+    break;
+
+  case NDSCTL_TRUST:
+    ndsctl_trust();
+    break;
+
+  case NDSCTL_UNTRUST:
+    ndsctl_untrust();
+    break;
+
+  case NDSCTL_AUTH:
+    ndsctl_auth();
+    break;
+
+  case NDSCTL_DEAUTH:
+    ndsctl_deauth();
+    break;
+		
   default:
     /* XXX NEVER REACHED */
-    fprintf(stderr, "Oops\n");
+    fprintf(stderr, "Unknown opcode: %d\n", config.command);
     exit(1);
     break;
   }
