@@ -668,7 +668,10 @@ int _httpd_sendDirectoryEntry(httpd *server, request *r, httpContent *entry,
 		char *entryName)
 {
 	char		path[HTTP_MAX_URL];
-
+	/* We do not want to serve directory entry directly.  (Mitar) */ 
+	if (entryName[0] == '\0') { 
+	  return(-1); 
+	} 
 	snprintf(path, HTTP_MAX_URL, "%s/%s", entry->path, entryName);
 	_httpd_sendFile(server, r, path);
 	return(0);

@@ -154,6 +154,7 @@ iptables_do_command(char *format, ...) {
   char *fmt_cmd,
     *cmd;
   int rc;
+  int i;
 
   va_start(vlist, format);
   safe_vasprintf(&fmt_cmd, format, vlist);
@@ -165,7 +166,16 @@ iptables_do_command(char *format, ...) {
 
   debug(LOG_DEBUG, "Executing command: %s", cmd);
 	
-  rc = execute(cmd, fw_quiet);
+  for (i = 0; i < 5; i++) { 
+    rc = execute(cmd, fw_quiet); 
+    if (rc == 4) { 
+      /* iptables error code 4 indicates a resource problem that might 
+       * be temporary. So we retry to insert the rule a few times. (Mitar) */ 
+      sleep(1); 
+    } else { 
+      break; 
+    } 
+  } 
   if(!fw_quiet && rc != 0) {
     debug(LOG_ERR, "Nonzero exit status %d from command: %s", rc, cmd);
   }

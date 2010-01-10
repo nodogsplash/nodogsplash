@@ -26,7 +26,7 @@ providing, you don't need or want the complexity of user account names and
 passwords and maintaining a separate database-backed authentication server.
 When installed and running, Nodogsplash implements a simple 'authentication'
 protocol. First, it detects any user attempting to use your internet connection
-to request a a web page. It captures the request, and instead serves back a
+to request a web page. It captures the request, and instead serves back a
 'splash' web page using its own builtin web server. The splash page contains a
 link which, when the user clicks on it, opens limited access for them to the
 internet via your connection, beginning by being redirected to their originally
