@@ -88,6 +88,8 @@ typedef enum {
 	oClientForceTimeout,
 	oCheckInterval,
 	oAuthenticateImmediately,
+	oSetMSS,
+	oMSSValue,
 	oTrafficControl,
 	oDownloadLimit,
 	oUploadLimit,
@@ -133,6 +135,8 @@ static const struct {
 	{ "clientforcetimeout", oClientForceTimeout },
 	{ "checkinterval",      oCheckInterval },
 	{ "authenticateimmediately",	oAuthenticateImmediately },
+	{ "setmss",		oSetMSS },
+	{ "mssvalue",		oMSSValue },
 	{ "trafficcontrol",	oTrafficControl },
 	{ "downloadlimit",	oDownloadLimit },
 	{ "uploadlimit",	oUploadLimit },
@@ -197,6 +201,8 @@ config_init(void) {
   config.username = NULL;
   config.password = NULL;
   config.authenticate_immediately = DEFAULT_AUTHENTICATE_IMMEDIATELY;
+  config.set_mss = DEFAULT_SET_MSS;
+  config.mss_value = DEFAULT_MSS_VALUE;
   config.traffic_control = DEFAULT_TRAFFIC_CONTROL;
   config.upload_limit =  DEFAULT_UPLOAD_LIMIT;
   config.download_limit = DEFAULT_DOWNLOAD_LIMIT;
@@ -679,6 +685,22 @@ config_read(char *filename) {
       break;
     case oPassword:
       set_password(p1);
+      break;
+    case oSetMSS:
+      if ((value = parse_boolean_value(p1)) != -1) {
+	config.set_mss = value;
+      } else {
+	debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
+	debug(LOG_ERR, "Exiting...");
+	exit(-1);
+      }
+      break;
+    case oMSSValue:
+      if(sscanf(p1, "%d", &config.mss_value) < 1) {
+	debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
+	debug(LOG_ERR, "Exiting...");
+	exit(-1);
+      }
       break;
     case oTrafficControl:
       if ((value = parse_boolean_value(p1)) != -1) {

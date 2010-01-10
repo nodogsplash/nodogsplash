@@ -66,6 +66,8 @@
 #define DEFAULT_USERNAME_AUTH 0
 #define DEFAULT_PASSWORD_ATTEMPTS 5
 #define DEFAULT_AUTHENTICATE_IMMEDIATELY 0
+#define DEFAULT_SET_MSS 1
+#define DEFAULT_MSS_VALUE 0
 #define DEFAULT_TRAFFIC_CONTROL 0
 #define DEFAULT_UPLOAD_LIMIT 0
 #define DEFAULT_DOWNLOAD_LIMIT 0
@@ -142,6 +144,8 @@ typedef struct {
   int checkinterval;		/**< @brief Period the the client timeout check
 				   thread will run, in seconds */
   int authenticate_immediately;	/**< @brief boolean, whether to auth noninteractively */
+  int set_mss;			/**< @brief boolean, whether to set mss */
+  int mss_value;		/**< @brief int, mss value; <= 0 clamp to pmtu */
   int traffic_control;		/**< @brief boolean, whether to do tc */
   int download_limit;		/**< @brief Download limit, kb/s */
   int upload_limit;		/**< @brief Upload limit, kb/s */

@@ -203,6 +203,7 @@ iptables_fw_init(void) {
   char * gw_address = NULL;
   int gw_port = 0;
   int traffic_control, upload_limit, download_limit;
+  int set_mss, mss_value;
   int upload_imq, download_imq;
   char *upload_imqname, *download_imqname;
   char *cmd;
@@ -222,6 +223,8 @@ iptables_fw_init(void) {
   pb = config->blockedmaclist;
   pa = config->allowedmaclist;
   macmechanism = config->macmechanism;
+  set_mss = config->set_mss;
+  mss_value = config->mss_value;
   traffic_control = config->traffic_control;
   download_limit = config->download_limit;
   upload_limit = config->upload_limit;
@@ -381,11 +384,17 @@ iptables_fw_init(void) {
   rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m mark --mark 0x%x -j DROP", FW_MARK_BLOCKED);
   /* CHAIN_TO_INTERNET, invalid packets  DROP */
   rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m state --state INVALID -j DROP");
-  /* CHAIN_TO_INTERNET, allow MSS as large as possible */
-  /* XXX this mangles, so 'should' be done in the mangle POSTROUTING chain.
-   * However OpenWRT standard S35firewall does it in filter FORWARD, and since
-   * we are pre-empting that chain here, we put it in */
-  rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu");
+  /* CHAIN_TO_INTERNET, deal with MSS */
+  if (set_mss) {
+    /* XXX this mangles, so 'should' be done in the mangle POSTROUTING chain.
+     * However OpenWRT standard S35firewall does it in filter FORWARD, 
+     * and since we are pre-empting that chain here, we put it in */
+    if (mss_value > 0) { /* set specific MSS value */
+      rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss %d", mss_value);
+    } else { /* allow MSS as large as possible */
+      rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu");
+    }
+  }
   /* CHAIN_TO_INTERNET, packets marked TRUSTED  ACCEPT */
   rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m mark --mark 0x%x -j ACCEPT", FW_MARK_TRUSTED);
   /* CHAIN_TO_INTERNET, packets marked AUTHENTICATED jump to CHAIN_AUTHENTICATED */
@@ -593,7 +602,7 @@ iptables_fw_total_upload() {
   while (('\n' != fgetc(output)) && !feof(output)) {}
 
   while ( !(feof(output) )) {
-    rc = fscanf(output, "%*s %llu %s ", &counter,target);
+    rc = fscanf(output, "%*d %llu %s ", &counter,target);
     if (2 == rc && !strcmp(target,CHAIN_OUTGOING)) {
       debug(LOG_DEBUG, "Total outgoing Bytes=%llu", counter);
       pclose(output);
