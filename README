@@ -90,17 +90,14 @@ if you have broken the br0 bridge to separate the wired and wireless LAN's.
 
 3.1 Packet filtering
 
-Nodogsplash considers four mutually-exclusive kinds of packets coming into the
-router over the managed interface:
+Nodogsplash considers four kinds of packets coming into the router over the
+managed interface. Each packet is of exactly one of these kinds:
 
   1. Blocked, if the source MAC address of the packet matches one listed in the
      BlockedMACList in the configuration file. These packets are dropped.
-     (Caveat: this is not a particularly secure mechanism, since MAC addresses
-     are easy to spoof.)
   2. Trusted, if the source MAC address of the packet matches one listed in the
      TrustedMACList in the configuration file. These packets are accepted and
-     routed to any destination address and port. (Caveat: this is not a
-     particularly secure mechanism, since MAC addresses are easy to spoof.)
+     routed to any destination address and port.
   3. Authenticated, if the packet's IP and MAC source address has gone through
      the nodogsplash authentication process and has not yet expired. These
      packets are accepted and routed to a limited set of addresses and ports
@@ -159,8 +156,8 @@ secure as-is for basic internet sharing applications, but it is customizable.
   o port portrange is optional. If present, protocol must be tcp or udp.
     portrange can be a single integer port number, or a colon-separated port
     range, e.g. 1024:1028. Defaults to all ports.
-  o to ip is optional. If present, ip must be a numerical dotted-quad IP
-    address with optional mask. Defaults to 0.0.0.0/0, i.e. all addresses.
+  o to ip is optional. If present, ip must be a decimal dotted-quad IP address
+    with optional mask. Defaults to 0.0.0.0/0, i.e. all addresses.
 
 * To change the contents of the splash page, edit the splash page file:
 
@@ -170,27 +167,46 @@ secure as-is for basic internet sharing applications, but it is customizable.
   replaced by their values:
 
   o $gatewayname The value of GatewayName as set in nodogsplash.conf.
-  o $authtarget A URL which encodes a unique token and the URL of the user's
+  o $authtarget A URL which a encodes a unique token and the URL of the user's
     original web request. If nodogsplash receives a request at this URL, it
     completes the authentication process for the client and replies to the
     request with a "307 Temporary Redirect" to the encoded originally requested
-    URL.
+    URL. (Alternatively, you can use a GET-method HTML form to send this
+    information to the nodogsplash server; see below.) As a simple example:
+
+      <a href="$authtarget">Enter</a>
+
   o $imagesdir The directory in nodogsplash's web hierarchy where images to be
     displayed in the splash page must be located.
   o $tok,$redir,$authaction, and $denyaction are also available and can be
-    useful if you want to write the splash page to use an HTML form instead of
-    using $authtarget as the value of an href attribute to communicate with the
-    nodogsplash server.
+    useful if you want to write the splash page to use a GET-method HTML form
+    instead of using $authtarget as the value of an href attribute to
+    communicate with the nodogsplash server. As a simple example:
 
+      <form method='GET' action='$authaction'>
+      <input type='hidden' name='tok' value='$tok'>
+      <input type='hidden' name='redir' value='$redir'>
+      <input type='submit' value='Enter'>
+      </form>
+
+
+* To change the appearance of informational and error pages which may
+  occasionally be served by nodogsplash, edit the infoskel file:
+
+    /etc/nodogsplash/htdocs/infoskel.html
+
+  In this file, variables $gatewayname,$version,$title, and $content will be
+  replaced by their values. $title is a summary of the information or kind of
+  error; $content is the content of the information or error message.
 
 
 5. Using ndsctl
 
-A nodogsplash install includes ndsctl, by default installed under /usr/bin,
-which is a separate application which communicates with the nodogsplash process
-over a unix socket. Some command line options:
+A nodogsplash install includes ndsctl, a separate application which
+communicates with the running nodogsplash process over a unix socket. Some
+command line options:
 
-* To see the current status of your nodogsplash process:
+* To print to stdout some information about your nodogsplash process:
 
     /usr/bin/ndsctl status
 
@@ -221,8 +237,8 @@ For more options, run ndsctl -h.
   syslog; the -d 7 flag sets level 7, LOG_DEBUG, for debugging messages (see
   syslog.h). You don't want to run with these flags routinely, as it will
   quickly fill the syslog circular buffer, unless you enable remote logging. A
-  lower level of logging, for example -d 5, is more appropriate for routine use
-  (this is the default).
+  lower level of logging, for example level 5, LOG_NOTICE, is more appropriate
+  for routine use (this is the default).
   Alternatively, you can set the flag -f instead of -s, and restart. This will
   run nodogsplash in the foreground, logging to stdout.
 * When stopped, nodogsplash deletes its iptables rules, attempting to leave the

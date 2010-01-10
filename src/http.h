@@ -47,6 +47,7 @@ typedef struct _auth_target_t {
   char *redir;			/**< @brief Client redirect target */
   char *username;		/**< @brief User name */
   char *password;		/**< @brief User password */
+  char *info;			/**< @brief Auxilliary info */
 } t_auth_target;
 
 /**@brief Callback for libhttpd, serves nodogsplash splash page */

@@ -880,7 +880,7 @@ void parse_trusted_mac_list(char *ptr) {
   ptrcopyptr = ptrcopy = safe_strdup(ptr);
   
   while ((possiblemac = strsep(&ptrcopy, ", \t"))) {
-    add_to_trusted_mac_list(possiblemac);
+    if(strlen(possiblemac)>0) add_to_trusted_mac_list(possiblemac);
   }
   
   free(ptrcopyptr);
@@ -988,10 +988,18 @@ void parse_blocked_mac_list(char *ptr) {
   ptrcopyptr = ptrcopy = safe_strdup(ptr);
   
   while ((possiblemac = strsep(&ptrcopy, ", \t"))) {
-    add_to_blocked_mac_list(possiblemac);
+    if(strlen(possiblemac)>0) add_to_blocked_mac_list(possiblemac);
   }
   
   free(ptrcopyptr);
+}
+
+/** Set the debug log level.  See syslog.h
+ *  Return 0 on success.
+ */
+int set_log_level(int level) {
+  config.debuglevel = level;
+  return 0;
 }
 
 /** Verifies if the configuration is complete and valid.  Terminates the program if it isn't */

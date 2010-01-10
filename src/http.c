@@ -207,6 +207,12 @@ http_nodogsplash_callback_action(request *r,
     return;
   }
 
+  /* Log value of info string, if any */
+  if(authtarget->info) {
+    debug(LOG_NOTICE, "Client %s %s info: %s",
+	  ip, mac, authtarget->info);
+  }
+    
 
   /* take action */
   switch(action) {
@@ -455,6 +461,11 @@ http_nodogsplash_decode_authtarget(request *r) {
   if(var && var->value) {
     authtarget->password = safe_strdup(var->value);
   }
+  var = httpdGetVariableByName(r,"info");
+  if(var && var->value) {
+    authtarget->info = safe_strdup(var->value);
+  }
+
 
   return authtarget;
 
@@ -521,8 +532,6 @@ http_nodogsplash_make_authtarget(char* token, char* redir) {
 }
 
 
-
-
 void
 http_nodogsplash_free_authtarget(t_auth_target* authtarget) {
 
@@ -536,6 +545,7 @@ http_nodogsplash_free_authtarget(t_auth_target* authtarget) {
   if(authtarget->redir) free(authtarget->redir);
   if(authtarget->username) free(authtarget->username);
   if(authtarget->password) free(authtarget->password);
+  if(authtarget->info) free(authtarget->info);
   free(authtarget);
 
 }

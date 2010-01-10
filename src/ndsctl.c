@@ -58,6 +58,7 @@ static void ndsctl_trust(void);
 static void ndsctl_untrust(void);
 static void ndsctl_auth(void);
 static void ndsctl_deauth(void);
+static void ndsctl_loglevel(void);
 
 /** @internal
  * @brief Print usage
@@ -81,6 +82,7 @@ usage(void) {
   printf("  unblock mac       Unblock the given MAC address\n");
   printf("  trust mac         Trust the given MAC address\n");
   printf("  untrust mac       Untrust the given MAC address\n");
+  printf("  loglevel n        Set logging level to n\n");
   printf("\n");
 }
 
@@ -196,6 +198,16 @@ parse_commandline(int argc, char **argv) {
     }
     config.param = strdup(*(argv + optind + 1));
   }
+  else if (strcmp(*(argv + optind), "loglevel") == 0) {
+    config.command = NDSCTL_LOGLEVEL;
+    if ((argc - (optind + 1)) <= 0) {
+      fprintf(stderr, "ndsctl: Error: You must specify an integer "
+	      "loglevel to loglevel\n");
+      usage();
+      exit(1);
+    }
+    config.param = strdup(*(argv + optind + 1));
+  }
   else {
     fprintf(stderr, "ndsctl: Error: Invalid command \"%s\"\n", *(argv + optind));
     usage();
@@ -285,6 +297,43 @@ ndsctl_stop(void) {
   shutdown(sock, 2);
   close(sock);
 }
+
+void
+ndsctl_loglevel(void) {
+  int	sock;
+  char	buffer[4096];
+  char	request[64];
+  int	len,
+    rlen;
+
+  sock = connect_to_server(config.socket);
+		
+  strncpy(request, "loglevel ", 64);
+  strncat(request, config.param, (64 - strlen(request)));
+  strncat(request, "\r\n\r\n", (64 - strlen(request)));
+
+  len = send_request(sock, request);
+	
+  len = 0;
+  memset(buffer, 0, sizeof(buffer));
+  while ((len < sizeof(buffer)) && ((rlen = read(sock, (buffer + len),
+						 (sizeof(buffer) - len))) > 0)){
+    len += rlen;
+  }
+
+  if (strcmp(buffer, "Yes") == 0) {
+    printf("Log level set to %s.\n", config.param);
+  } else if (strcmp(buffer, "No") == 0) {
+    printf("Failed to set log level to %s.\n", config.param);
+  } else {
+    fprintf(stderr, "ndsctl: Error: nodogsplash sent an abnormal "
+	    "reply.\n");
+  }
+
+  shutdown(sock, 2);
+  close(sock);
+}
+
 
 void
 ndsctl_deauth(void) {
@@ -568,6 +617,10 @@ main(int argc, char **argv) {
 
   case NDSCTL_DEAUTH:
     ndsctl_deauth();
+    break;
+
+  case NDSCTL_LOGLEVEL:
+    ndsctl_loglevel();
     break;
 		
   default:

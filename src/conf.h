@@ -178,6 +178,7 @@ void parse_trusted_mac_list(char *);
 void parse_blocked_mac_list(char *);
 int check_ip_format(char *);
 int check_mac_format(char *);
+int set_log_level(int);
 
 #define LOCK_CONFIG() do { \
 	debug(LOG_DEBUG, "Locking config"); \

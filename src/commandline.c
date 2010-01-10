@@ -116,7 +116,7 @@ void parse_commandline(int argc, char **argv) {
 
     case 'd':
       if (optarg) {
-	config->debuglevel = atoi(optarg);
+	set_log_level(atoi(optarg));
       }
       break;
 

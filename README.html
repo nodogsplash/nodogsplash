@@ -142,21 +142,18 @@ wireless LAN's.
 <p>
 <h4>3.1 Packet filtering</h4>
 Nodogsplash considers four
-mutually-exclusive kinds of packets coming into the router
-over the managed interface:
+kinds of packets coming into the router
+over the managed interface.  Each packet is of exactly one of these kinds:
 <ol>
 <li>
 <em>Blocked</em>, if the source MAC address of the packet matches one 
 listed in the BlockedMACList in the configuration file.
-These packets are dropped.  (Caveat: this is not
-a particularly secure mechanism, since MAC addresses are easy to spoof.)
+These packets are dropped.
 </li>
 <li>
 <em>Trusted</em>, if the source MAC address of the packet matches one
 listed in the TrustedMACList in the configuration file.
 These packets are accepted and routed to any destination address and port.
-(Caveat: this is not
-a particularly secure mechanism, since MAC addresses are easy to spoof.)
 </li>
 <li>
 <em>Authenticated</em>, if the packet's IP and MAC source address has gone
@@ -250,7 +247,7 @@ all ports.
 </li>
 <li>
 <code>to <em>ip</em></code> is optional.  If present,
-<code><em>ip</em></code> must be a numerical dotted-quad IP address 
+<code><em>ip</em></code> must be a decimal dotted-quad IP address 
 with optional mask.  Defaults to <code>0.0.0.0/0</code>, i.e. all
 addresses.
 </li>
@@ -268,12 +265,17 @@ replaced by their values:
 <code>GatewayName</code> as set in <code>nodogsplash.conf</code>.
 </li>
 <li>
-<code>$authtarget</code>  A URL which encodes a unique token and
+<code>$authtarget</code>  A URL which a encodes a unique token and
 the URL of the user's original web request.  If nodogsplash receives a
 request at this URL, it completes the authentication process for
 the client and replies
 to the request with a "307 Temporary Redirect" to the encoded originally
-requested URL.
+requested URL.  (Alternatively, you can use a GET-method HTML form to
+send this information to the nodogsplash server; see below.) As a simple
+example:
+<pre>
+&lt;a href="$authtarget"&gt;Enter&lt;/a&gt;
+</pre>
 </li>
 <li>
 <code>$imagesdir</code>  The directory in nodogsplash's web hierarchy
@@ -283,21 +285,43 @@ where images to be displayed in the splash page must be located.
 <code>$tok</code>,<code>$redir</code>,<code>$authaction</code>, and
 <code>$denyaction</code> are also available and can be useful if
 you want to write the splash page to 
-use an HTML form instead of using <code>$authtarget</code> as the value
+use a GET-method 
+HTML form instead of using <code>$authtarget</code> as the value
 of an href attribute to communicate with the
-nodogsplash server.
+nodogsplash server.  As a simple example:
+<pre>
+&lt;form method='GET' action='$authaction'&gt;
+&lt;input type='hidden' name='tok' value='$tok'&gt;
+&lt;input type='hidden' name='redir' value='$redir'&gt;
+&lt;input type='submit' value='Enter'&gt;
+&lt;/form>
+</pre>
 </li>
 </ul>
+<li>
+To change the appearance of informational and 
+error pages which may occasionally be served
+by nodogsplash, edit the infoskel file:
+<pre>
+/etc/nodogsplash/htdocs/infoskel.html
+</pre>
+In this file, variables
+<code>$gatewayname</code>,<code>$version</code>,<code>$title</code>, and
+<code>$content</code> will be replaced by their values.  <code>$title</code>
+is a summary of the information or kind of error; <code>$content</code> is
+the content of the information or error message.
 </ul>
 
 <h3>5. Using ndsctl</h3>
 A nodogsplash install
-includes <code>ndsctl</code>, by default installed under
-<code>/usr/bin</code>, which is a separate application which communicates
-with the nodogsplash process over a unix socket.  Some command line options:
+includes <code>ndsctl</code>, 
+a separate application which
+communicates with the running 
+nodogsplash process over a unix socket.  Some command line options:
 <ul>
 <li>
-To see the current status of your nodogsplash process:
+To print to stdout
+some information about your nodogsplash process:
 <pre>
 /usr/bin/ndsctl status
 </pre>
@@ -306,21 +330,21 @@ To see the current status of your nodogsplash process:
 To block a MAC address (but if you want this to persist across nodogsplash
 restarts, you have to edit the configuration file):
 <pre>
-/usr/bin/ndsctl block MAC
+/usr/bin/ndsctl block <em>MAC</em>
 </pre>
 </li>
 <li>
 To unblock a MAC address (but if you want this to persist across nodogsplash
 restarts, you have to edit the configuration file):
 <pre>
-/usr/bin/ndsctl unblock MAC
+/usr/bin/ndsctl unblock <em>MAC</em>
 </pre>
 </li>
 <li>
 To deauthenticate a currently authenticated user given their IP or MAC
 address:
 <pre>
-/usr/bin/ndsctl deauth IP|MAC
+/usr/bin/ndsctl deauth <em>IP</em>|<em>MAC</em>
 </pre>
 </li>
 </ul>
@@ -338,7 +362,7 @@ The <code>-s</code> flag logs to syslog; the <code>-d 7</code> flag
 sets level 7, LOG_DEBUG, for debugging messages (see syslog.h).
 You don't want to run with these flags routinely, as it will 
 quickly fill the syslog  circular buffer, unless you enable remote logging.
-A lower level of logging, for example <code>-d 5</code>,
+A lower level of logging, for example level 5, LOG_NOTICE,
 is more appropriate for routine use (this is the default).
 <p>
 Alternatively, you can set the flag <code>-f</code> instead of <code>-s</code>,

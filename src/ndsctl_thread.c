@@ -68,6 +68,7 @@ static void ndsctl_trust(int, char *);
 static void ndsctl_untrust(int, char *);
 static void ndsctl_auth(int, char *);
 static void ndsctl_deauth(int, char *);
+static void ndsctl_loglevel(int, char *);
 static void ndsctl_restart(int);
 
 /** Launches a thread that monitors the control socket for request
@@ -200,6 +201,8 @@ thread_ndsctl_handler(void *arg) {
     ndsctl_auth(fd, (request + 5));
   } else if (strncmp(request, "deauth", 6) == 0) {
     ndsctl_deauth(fd, (request + 7));
+  } else if (strncmp(request, "loglevel", 8) == 0) {
+    ndsctl_loglevel(fd, (request + 9));
   } else if (strncmp(request, "restart", 7) == 0) {
     ndsctl_restart(fd);
   }
@@ -395,7 +398,7 @@ ndsctl_auth(int fd, char *arg) {
     return;
   }
 
-  /* We have a client.  Get both ip and mac address */
+  /* We have a client.  Get both ip and mac address and authenticate */
   ip = safe_strdup(client->ip);
   mac = safe_strdup(client->mac);
   UNLOCK_CLIENT_LIST();
@@ -428,7 +431,7 @@ ndsctl_deauth(int fd, char *arg) {
     return;
   }
 
-  /* We have the client.  Get both ip and mac address */
+  /* We have the client.  Get both ip and mac address and deauthenticate */
   ip = safe_strdup(client->ip);
   mac = safe_strdup(client->mac);
   UNLOCK_CLIENT_LIST();
@@ -449,7 +452,6 @@ ndsctl_block(int fd, char *arg) {
   LOCK_CONFIG();
   debug(LOG_DEBUG, "Argument: [%s]", arg);
 	
-  /* We get the node or return... */
   if (!add_to_blocked_mac_list(arg) && !iptables_block_mac(arg)) {
     write(fd, "Yes", 3);
   } else {
@@ -469,7 +471,6 @@ ndsctl_unblock(int fd, char *arg) {
   LOCK_CONFIG();
   debug(LOG_DEBUG, "Argument: [%s]", arg);
 	
-  /* We get the node or return... */
   if (!remove_from_blocked_mac_list(arg) && !iptables_unblock_mac(arg)) {
     write(fd, "Yes", 3);
   } else {
@@ -489,7 +490,6 @@ ndsctl_trust(int fd, char *arg) {
   LOCK_CONFIG();
   debug(LOG_DEBUG, "Argument: [%s]", arg);
 	
-  /* We get the node or return... */
   if (!add_to_trusted_mac_list(arg) && !iptables_trust_mac(arg)) {
     write(fd, "Yes", 3);
   } else {
@@ -509,7 +509,6 @@ ndsctl_untrust(int fd, char *arg) {
   LOCK_CONFIG();
   debug(LOG_DEBUG, "Argument: [%s]", arg);
 	
-  /* We get the node or return... */
   if (!remove_from_trusted_mac_list(arg) && !iptables_untrust_mac(arg)) {
     write(fd, "Yes", 3);
   } else {
@@ -519,6 +518,26 @@ ndsctl_untrust(int fd, char *arg) {
   UNLOCK_CONFIG();
 	
   debug(LOG_DEBUG, "Exiting ndsctl_untrust.");
+}
+
+static void
+ndsctl_loglevel(int fd, char *arg) {
+
+  debug(LOG_DEBUG, "Entering ndsctl_loglevel...");
+	
+  LOCK_CONFIG();
+  debug(LOG_DEBUG, "Argument: [%s]", arg);
+	
+    
+  if (!set_log_level(atoi(arg))) {
+    write(fd, "Yes", 3);
+  } else {
+    write(fd, "No", 2);
+  }
+
+  UNLOCK_CONFIG();
+	
+  debug(LOG_DEBUG, "Exiting ndsctl_loglevel.");
 }
 
 
