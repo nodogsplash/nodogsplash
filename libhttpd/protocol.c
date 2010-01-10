@@ -25,6 +25,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <time.h>
+#include <syslog.h> /* for debug P. Kube */
 
 #if defined(_WIN32) 
 #else
@@ -35,6 +36,7 @@
 #include "config.h"
 #include "httpd.h"
 #include "httpd_priv.h"
+#include "../src/debug.h"
 
 int _httpd_net_read(sock, buf, len)
 	int	sock;
@@ -153,12 +155,15 @@ int _httpd_readBuf(request *r, char *destBuf, int len)
 
 void _httpd_writeAccessLog(httpd *server, request *r)
 {
+  /*
 	char	dateBuf[30];
 	struct 	tm *timePtr;
 	time_t	clock;
+  */
 	int	responseCode;
 
 
+	/*  In preference of using nodogsplash's log utility. P. Kube
 	if (server->accessLog == NULL)
 		return;
 	clock = time(NULL);
@@ -169,15 +174,25 @@ void _httpd_writeAccessLog(httpd *server, request *r)
 		r->clientAddr, dateBuf, httpdRequestMethodName(r), 
 		httpdRequestPath(r), responseCode, 
 		r->response.responseLength);
+	*/
+
+	responseCode = atoi(r->response.response);
+	debug(LOG_INFO,  "[libhttpd] %s - - %s \"%s\" %d %d\n", 
+	      r->clientAddr, httpdRequestMethodName(r), 
+	      httpdRequestPath(r), responseCode, 
+	      r->response.responseLength);
+
 }
 
 void _httpd_writeErrorLog(httpd *server, request *r, char *level, char *message)
 {
+  /*
 	char	dateBuf[30];
 	struct 	tm *timePtr;
 	time_t	clock;
+  */
 
-
+	/*  In preference of using nodogsplash's log utility. P. Kube
 	if (server->errorLog == NULL)
 		return;
 	clock = time(NULL);
@@ -193,6 +208,19 @@ void _httpd_writeErrorLog(httpd *server, request *r, char *level, char *message)
 		fprintf(server->errorLog, "[%s] [%s] %s\n",
 			dateBuf, level, message);
 	}
+	*/
+
+	if (r != NULL && *r->clientAddr != 0)
+	{
+		debug(LOG_INFO, "[libhttpd] [%s] [client %s] %s\n",
+			level, r->clientAddr, message);
+	}
+	else
+	{
+		debug(LOG_ERR, "[libhttpd] [%s] %s\n",
+			level, message);
+	}
+
 }
 
 
@@ -617,6 +645,9 @@ void _httpd_sendFile(httpd *server, request *r, char *path)
 			strcpy(r->response.contentType,"image/xbm");
 		if (strcasecmp(suffix,".png") == 0) 
 			strcpy(r->response.contentType,"image/png");
+		/* To handle css files --P. Kube */
+		if (strcasecmp(suffix,".css") == 0) 
+			strcpy(r->response.contentType,"text/css");
 	}
 	if (stat(path, &sbuf) < 0)
 	{

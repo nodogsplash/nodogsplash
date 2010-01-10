@@ -565,13 +565,13 @@ int httpdReadRequest(httpd *server, request *r)
 #endif
 
   /*
-  ** Process any URL data
+  ** Process any URL i.e. GET data
   */
   cp = index(r->request.path,'?');
   if (cp != NULL)
     {
       /* since _httpd_storeData modifies its second argument,
-       * we copy it first.  P. Kube
+       * we copy it first.  --P. Kube
        */
       cp++;
       buf[HTTP_MAX_LEN-1] = '\0';
