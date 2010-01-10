@@ -70,6 +70,9 @@ char * get_status_text();
  */
 char * get_clients_text();
 
+/** @brief cheap random */
+unsigned short rand16(void);
+
 #define LOCK_GHBN() do { \
 	debug(LOG_DEBUG, "Locking wd_gethostbyname()"); \
 	pthread_mutex_lock(&ghbn_mutex); \

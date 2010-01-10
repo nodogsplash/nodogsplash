@@ -348,6 +348,7 @@ main_loop(void) {
       *params = webserver;
       *(params + 1) = r;
       *(params + 2) = thread_serial_num_p;
+      created_httpd_threads++;
       result = pthread_create(&tid, NULL, (void *)thread_httpd, (void *)params);
       if (result != 0) {
 	debug(LOG_ERR, "FATAL: pthread_create failed to create httpd request thread - exiting...");

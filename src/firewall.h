@@ -50,10 +50,8 @@ char *arp_get(char *req_ip);
 /** @brief Return a string representing a connection state */
 char *fw_connection_state_as_string(int mark);
 
-/** @brief ICMP Ping an IP */
+/** @brief ICMP Ping an IP 
 void icmp_ping(char *host);
-
-/** @brief cheap random */
-unsigned short rand16(void);
+*/
 
 #endif /* _FIREWALL_H_ */

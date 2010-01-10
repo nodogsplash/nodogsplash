@@ -81,9 +81,9 @@
 #define DEFAULT_FW_MARK_AUTHENTICATED 0x400
 #define DEFAULT_FW_MARK_TRUSTED 0x200
 #define DEFAULT_FW_MARK_BLOCKED 0x100
-#define DEFAULT_DECONGEST_HTTPD_THREADS 1
-#define DEFAULT_HTTPD_THREAD_THRESHOLD 4
-#define DEFAULT_HTTPD_THREAD_DELAY_MS 100
+#define DEFAULT_DECONGEST_HTTPD_THREADS 0
+#define DEFAULT_HTTPD_THREAD_THRESHOLD 3
+#define DEFAULT_HTTPD_THREAD_DELAY_MS 200
 /* N.B.: default policies here must be ACCEPT, REJECT, or RETURN
  * In the .conf file, they must be allow, block, or passthrough
  * Mapping between these enforced by parse_empty_ruleset_policy() */

@@ -433,10 +433,15 @@ char * get_status_text() {
   snprintf((buffer + len), (sizeof(buffer) - len), "Httpd request threads created/current: %d/%d\n", created_httpd_threads, current_httpd_threads);
   len = strlen(buffer);
   
+  if(config->decongest_httpd_threads) {
+    snprintf((buffer + len), (sizeof(buffer) - len), "Httpd thread decongest threshold: %d threads\n", config->httpd_thread_threshold);
+    len = strlen(buffer);
+    snprintf((buffer + len), (sizeof(buffer) - len), "Httpd thread decongest delay: %d ms\n", config->httpd_thread_delay_ms);
+    len = strlen(buffer);
+  }
 
   /* Update the client's counters so info is current */
   iptables_fw_counters_update();
-  
 
   LOCK_CLIENT_LIST();
 	
@@ -630,3 +635,28 @@ char * get_clients_text() {
   return safe_strdup(buffer);
 }
 
+unsigned short rand16(void) {
+  static int been_seeded = 0;
+
+  if (!been_seeded) {
+    int fd, n = 0;
+    unsigned int c = 0, seed = 0;
+    char sbuf[sizeof(seed)];
+    char *s;
+    struct timeval now;
+
+    /* not a very good seed but what the heck, it needs to be quickly acquired */
+    gettimeofday(&now, NULL);
+    seed = now.tv_sec ^ now.tv_usec ^ (getpid() << 16);
+
+    srand(seed);
+    been_seeded = 1;
+  }
+
+  /* Some rand() implementations have less randomness in low bits
+   * than in high bits, so we only pay attention to the high ones.
+   * But most implementations don't touch the high bit, so we 
+   * ignore that one.
+   **/
+  return( (unsigned short) (rand() >> 15) );
+}

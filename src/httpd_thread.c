@@ -57,7 +57,6 @@ thread_httpd(void *args) {
   request	*r;
   int serialnum;
 	
-  created_httpd_threads++;
   current_httpd_threads++;
 
   params = (void **)args;

@@ -180,20 +180,18 @@ fw_refresh_client_list(void) {
     outgoing = cp1->counters.outgoing;
     incoming = cp1->counters.incoming;
 
-    UNLOCK_CLIENT_LIST();
-    
     /* If the client is authenticated, ping him.
      * If he responds it'll keep activity on the link.
      * However, if the firewall blocks it, it will not help.  The suggested
      * way to deal with this is to keep the DHCP lease time extremely 
      * short:  Shorter than config->checkinterval * config->clienttimeout */
-    /*** removed as useless ***
+    /*** removed as useless for nodogsplash ***
+    UNLOCK_CLIENT_LIST();
     if(FW_MARK_AUTHENTICATED == cp1->fw_connection_state) {
       icmp_ping(ip);
     }
-    */
-    
     LOCK_CLIENT_LIST();
+    ***/
 	
     if (!(cp1 = client_list_find(ip, mac))) {
       debug(LOG_ERR, "Node %s was freed while being re-validated!", ip);
@@ -241,6 +239,7 @@ fw_connection_state_as_string(int mark) {
 }
 
 
+/*** removed as useless for nodogsplash. ***
 void 
 icmp_ping(char *host) {
   struct sockaddr_in saddr;
@@ -287,29 +286,5 @@ icmp_ping(char *host) {
 
   return;
 }
+***/
 
-unsigned short rand16(void) {
-  static int been_seeded = 0;
-
-  if (!been_seeded) {
-    int fd, n = 0;
-    unsigned int c = 0, seed = 0;
-    char sbuf[sizeof(seed)];
-    char *s;
-    struct timeval now;
-
-    /* not a very good seed but what the heck, it needs to be quickly acquired */
-    gettimeofday(&now, NULL);
-    seed = now.tv_sec ^ now.tv_usec ^ (getpid() << 16);
-
-    srand(seed);
-    been_seeded = 1;
-  }
-
-  /* Some rand() implementations have less randomness in low bits
-   * than in high bits, so we only pay attention to the high ones.
-   * But most implementations don't touch the high bit, so we 
-   * ignore that one.
-   **/
-  return( (unsigned short) (rand() >> 15) );
-}
