@@ -70,6 +70,7 @@ typedef enum {
 	oExternalInterface,
 	oGatewayName,
 	oGatewayInterface,
+	oGatewayIPRange,
 	oGatewayAddress,
 	oGatewayPort,
 	oRemoteAuthenticatorAction,
@@ -118,6 +119,7 @@ static const struct {
 	{ "externalinterface",  oExternalInterface },
 	{ "gatewayname",        oGatewayName },
 	{ "gatewayinterface",   oGatewayInterface },
+	{ "gatewayiprange",     oGatewayIPRange },
 	{ "gatewayaddress",     oGatewayAddress },
 	{ "gatewayport",        oGatewayPort },
 	{ "remoteauthenticatoraction",     oRemoteAuthenticatorAction },
@@ -180,6 +182,7 @@ config_init(void) {
   config.maxclients = DEFAULT_MAXCLIENTS;
   config.gw_name = DEFAULT_GATEWAYNAME;
   config.gw_interface = NULL;
+  config.gw_iprange = DEFAULT_GATEWAY_IPRANGE;
   config.gw_address = NULL;
   config.gw_port = DEFAULT_GATEWAYPORT;
   config.remote_auth_action = NULL;
@@ -582,6 +585,9 @@ config_read(char *filename) {
       break;
     case oGatewayInterface:
       config.gw_interface = safe_strdup(p1);
+      break;
+    case oGatewayIPRange:
+      config.gw_iprange = safe_strdup(p1);
       break;
     case oGatewayAddress:
       config.gw_address = safe_strdup(p1);

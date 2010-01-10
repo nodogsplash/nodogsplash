@@ -201,6 +201,7 @@ iptables_fw_init(void) {
   s_config *config;
   char * gw_interface = NULL;
   char * gw_address = NULL;
+  char * gw_iprange = NULL;
   int gw_port = 0;
   int traffic_control, upload_limit, download_limit;
   int set_mss, mss_value;
@@ -218,6 +219,7 @@ iptables_fw_init(void) {
   config = config_get_config();
   gw_interface = safe_strdup(config->gw_interface); /* must free */
   gw_address = safe_strdup(config->gw_address);    /* must free */
+  gw_iprange = safe_strdup(config->gw_iprange);    /* must free */
   gw_port = config->gw_port;
   pt = config->trustedmaclist;
   pb = config->blockedmaclist;
@@ -248,10 +250,10 @@ iptables_fw_init(void) {
   rc |= iptables_do_command("-t mangle -N " CHAIN_OUTGOING);
 
   /* Assign links and rules to these new chains */
-  rc |= iptables_do_command("-t mangle -I PREROUTING 1 -i %s -j " CHAIN_OUTGOING, gw_interface);
-  rc |= iptables_do_command("-t mangle -I PREROUTING 2 -i %s -j " CHAIN_BLOCKED, gw_interface);
-  rc |= iptables_do_command("-t mangle -I PREROUTING 3 -i %s -j " CHAIN_TRUSTED, gw_interface);
-  rc |= iptables_do_command("-t mangle -I POSTROUTING 1 -o %s -j " CHAIN_INCOMING, gw_interface);
+  rc |= iptables_do_command("-t mangle -I PREROUTING 1 -i %s -s %s -j " CHAIN_OUTGOING, gw_interface, gw_iprange);
+  rc |= iptables_do_command("-t mangle -I PREROUTING 2 -i %s -s %s -j " CHAIN_BLOCKED, gw_interface, gw_iprange);
+  rc |= iptables_do_command("-t mangle -I PREROUTING 3 -i %s -s %s -j " CHAIN_TRUSTED, gw_interface, gw_iprange);
+  rc |= iptables_do_command("-t mangle -I POSTROUTING 1 -o %s -d %s -j " CHAIN_INCOMING, gw_interface, gw_iprange);
 
   /* Rules to mark trusted MAC address packets in mangle PREROUTING */
   for (; pt != NULL; pt = pt->next) {
@@ -328,7 +330,7 @@ iptables_fw_init(void) {
    * nat PREROUTING
    */
   /* packets coming in on gw_interface jump to CHAIN_OUTGOING */
-  rc |= iptables_do_command("-t nat -I PREROUTING -i %s -j " CHAIN_OUTGOING, gw_interface);
+  rc |= iptables_do_command("-t nat -I PREROUTING -i %s -s %s -j " CHAIN_OUTGOING, gw_interface, gw_iprange);
   /* CHAIN_OUTGOING, packets marked TRUSTED  ACCEPT */
   rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -m mark --mark 0x%x -j ACCEPT", FW_MARK_TRUSTED);
   /* CHAIN_OUTGOING, packets marked AUTHENTICATED  ACCEPT */
@@ -356,7 +358,7 @@ iptables_fw_init(void) {
    * filter INPUT
    */
   /* packets coming in on gw_interface jump to CHAIN_TO_ROUTER */
-  rc |= iptables_do_command("-t filter -I INPUT -i %s -j " CHAIN_TO_ROUTER, gw_interface);
+  rc |= iptables_do_command("-t filter -I INPUT -i %s -s %s -j " CHAIN_TO_ROUTER, gw_interface, gw_iprange);
   /* CHAIN_TO_ROUTER packets marked BLOCKED  DROP */
   rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -m mark --mark 0x%x -j DROP", FW_MARK_BLOCKED);
   /* CHAIN_TO_ROUTER, invalid packets  DROP */
@@ -379,7 +381,7 @@ iptables_fw_init(void) {
    * filter FORWARD
    */
   /* packets coming in on gw_interface jump to CHAIN_TO_INTERNET */
-  rc |= iptables_do_command("-t filter -I FORWARD -i %s -j " CHAIN_TO_INTERNET, gw_interface);
+  rc |= iptables_do_command("-t filter -I FORWARD -i %s -s %s -j " CHAIN_TO_INTERNET, gw_interface, gw_iprange);
   /* CHAIN_TO_INTERNET packets marked BLOCKED  DROP */
   rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m mark --mark 0x%x -j DROP", FW_MARK_BLOCKED);
   /* CHAIN_TO_INTERNET, invalid packets  DROP */
@@ -421,6 +423,7 @@ iptables_fw_init(void) {
   rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -j REJECT --reject-with icmp-port-unreachable");
 
   free(gw_interface);
+  free(gw_iprange);
   free(gw_address);
   free(download_imqname);
   free(upload_imqname);

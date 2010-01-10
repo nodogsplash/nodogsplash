@@ -48,6 +48,7 @@
 #define DEFAULT_DAEMON 1
 #define DEFAULT_DEBUGLEVEL LOG_NOTICE
 #define DEFAULT_MAXCLIENTS 20
+#define DEFAULT_GATEWAY_IPRANGE "0.0.0.0/0"
 #define DEFAULT_GATEWAYNAME "NoDogSplash"
 #define DEFAULT_GATEWAYPORT 2050
 #define DEFAULT_REMOTE_AUTH_PORT 80
@@ -120,7 +121,8 @@ typedef struct {
   int maxclients;		/**< @brief Maximum number of clients allowed */
   char *ext_interface;		/**< @brief Interface to external network */
   char *gw_name;		/**< @brief Name of the gateway; e.g. its SSID */
-  char *gw_interface;		/**< @brief Interface we will accept connections on */
+  char *gw_interface;		/**< @brief Interface we will manage */
+  char *gw_iprange;		/**< @brief IP range on gw_interface we will manage */
   char *gw_address;		/**< @brief Internal IP address for our web server */
   int gw_port;			/**< @brief Port the webserver will run on */
   char *remote_auth_action;	/**< @brief Path for remote auth */

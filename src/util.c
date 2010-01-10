@@ -314,6 +314,9 @@ char * get_status_text() {
   snprintf((buffer + len), (sizeof(buffer) - len), "Managed interface: %s\n", config->gw_interface);
   len = strlen(buffer);
 
+  snprintf((buffer + len), (sizeof(buffer) - len), "Managed IP range: %s\n", config->gw_iprange);
+  len = strlen(buffer);
+     
   snprintf((buffer + len), (sizeof(buffer) - len), "Server listening: %s:%d\n",
 	   config->gw_address, config->gw_port);
   len = strlen(buffer);
