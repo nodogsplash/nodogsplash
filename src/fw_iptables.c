@@ -51,9 +51,9 @@
 #include "client_list.h"
 #include "tc.h"
 
-static int iptables_do_command(char *format, ...);
-static char *iptables_compile(char *, char *, t_firewall_rule *);
-static int iptables_append_ruleset(char *, char *, char *);
+static char * _iptables_compile(char *, char *, t_firewall_rule *);
+static int _iptables_append_ruleset(char *, char *, char *);
+static void _iptables_init_marks(void);
 
 extern pthread_mutex_t	client_list_mutex;
 extern pthread_mutex_t	config_mutex;
@@ -63,8 +63,65 @@ extern pthread_mutex_t	config_mutex;
  */ 
 static int fw_quiet = 0;
 
+/**
+ * Used to configure use of --or-mark vs. --set-mark
+ */
+static char* markop;
+/**
+ * Used to configure use of mark mask, or not
+ */
+static char* markmask;
+
+
 /** @internal */
-static int
+void
+_iptables_init_marks() {
+
+  FW_MARK_PREAUTHENTICATED = 0;  /* always 0 */
+  /* FW_MARK_MASK is bitwise or of other marks */
+  FW_MARK_MASK = FW_MARK_BLOCKED | FW_MARK_TRUSTED | FW_MARK_AUTHENTICATED;
+
+  /* See if kernel supports mark or-ing */
+  fw_quiet = 1;
+  if (0 == iptables_do_command("-t mangle -I PREROUTING 1 -j MARK --or-mark 0x%x", FW_MARK_BLOCKED)) {
+    iptables_do_command("-t mangle -D PREROUTING 1"); /* delete test rule we just inserted */
+    debug(LOG_DEBUG, "Kernel supports --or-mark.");
+    markop = "--or-mark";
+  } else {
+    debug(LOG_INFO,"Kernel does not support iptables --or-mark.  Using --set-mark instead.");
+    markop = "--set-mark";
+  }
+    
+  /* See if kernel supports mark masking */
+  if(0 == iptables_do_command("-t filter -I FORWARD 1 -m mark --mark 0x%x/0x%x -j REJECT", FW_MARK_BLOCKED, FW_MARK_MASK)) {
+    iptables_do_command("-t filter -D FORWARD 1"); /* delete test rule we just inserted */
+    debug(LOG_DEBUG,"Kernel supports mark masking.");
+    safe_asprintf(&markmask,"/0x%x",FW_MARK_MASK);
+  } else {
+    debug(LOG_INFO,"Kernel does not support iptables mark masking.  Using empty mask.");
+    markmask = "";
+  }
+
+  debug(LOG_INFO,"Iptables mark %s: 0x%x",
+	fw_connection_state_as_string(FW_MARK_PREAUTHENTICATED),
+	FW_MARK_PREAUTHENTICATED);
+  debug(LOG_INFO,"Iptables mark %s: 0x%x",
+	fw_connection_state_as_string(FW_MARK_AUTHENTICATED),
+	FW_MARK_AUTHENTICATED);
+  debug(LOG_INFO,"Iptables mark %s: 0x%x",
+	fw_connection_state_as_string(FW_MARK_TRUSTED),
+	FW_MARK_TRUSTED);
+  debug(LOG_INFO,"Iptables mark %s: 0x%x",
+	fw_connection_state_as_string(FW_MARK_BLOCKED),
+	FW_MARK_BLOCKED);
+  debug(LOG_INFO,"Iptables mark op \"%s\" and mark mask \"%s\".", markop, markmask);
+  
+  fw_quiet = 0;
+
+}
+
+/** @internal */
+int
 iptables_do_command(char *format, ...) {
   va_list vlist;
   char *fmt_cmd,
@@ -100,7 +157,7 @@ iptables_do_command(char *format, ...) {
  * @arg rule Definition of a rule into a struct, from conf.c.
  */
 static char *
-iptables_compile(char * table, char *chain, t_firewall_rule *rule)
+_iptables_compile(char * table, char *chain, t_firewall_rule *rule)
 {
     char	command[MAX_BUF],
     		*mode;
@@ -144,7 +201,7 @@ iptables_compile(char * table, char *chain, t_firewall_rule *rule)
  * @arg chain IPTables chain the rules go into
  */
 static int
-iptables_append_ruleset(char * table, char *ruleset, char *chain) {
+_iptables_append_ruleset(char * table, char *ruleset, char *chain) {
   t_firewall_rule   *rule;
   char		    *cmd;
   int               ret=0;
@@ -152,7 +209,7 @@ iptables_append_ruleset(char * table, char *ruleset, char *chain) {
   debug(LOG_DEBUG, "Load ruleset %s into table %s, chain %s", ruleset, table, chain);
 	
   for (rule = get_ruleset(ruleset); rule != NULL; rule = rule->next) {
-    cmd = iptables_compile(table, chain, rule);
+    cmd = _iptables_compile(table, chain, rule);
     debug(LOG_DEBUG, "Loading rule \"%s\" into table %s, chain %s", cmd, table, chain);
     ret |= iptables_do_command(cmd);
     free(cmd);
@@ -165,12 +222,12 @@ iptables_append_ruleset(char * table, char *ruleset, char *chain) {
 
 int
 iptables_block_mac(char *mac) {
-    return iptables_do_command("-t mangle -A " CHAIN_BLOCKED " -m mac --mac-source %s -j MARK --set-mark 0x%x", mac, FW_MARK_BLOCKED);
+    return iptables_do_command("-t mangle -A " CHAIN_BLOCKED " -m mac --mac-source %s -j MARK %s 0x%x", mac, markop, FW_MARK_BLOCKED);
 }
 
 int
 iptables_unblock_mac(char *mac) {
-    return iptables_do_command("-t mangle -D " CHAIN_BLOCKED " -m mac --mac-source %s -j MARK --set-mark 0x%x", mac, FW_MARK_BLOCKED);
+    return iptables_do_command("-t mangle -D " CHAIN_BLOCKED " -m mac --mac-source %s -j MARK %s 0x%x", mac, markop, FW_MARK_BLOCKED);
 }
 
 int
@@ -185,16 +242,15 @@ iptables_unallow_mac(char *mac) {
 
 int
 iptables_trust_mac(char *mac) {
-    return iptables_do_command("-t mangle -A " CHAIN_TRUSTED " -m mac --mac-source %s -j MARK --set-mark 0x%x", mac, FW_MARK_TRUSTED);
+    return iptables_do_command("-t mangle -A " CHAIN_TRUSTED " -m mac --mac-source %s -j MARK %s 0x%x", mac, markop, FW_MARK_TRUSTED);
 }
 
 int
 iptables_untrust_mac(char *mac) {
-    return iptables_do_command("-t mangle -D " CHAIN_TRUSTED " -m mac --mac-source %s -j MARK --set-mark 0x%x", mac, FW_MARK_TRUSTED);
+    return iptables_do_command("-t mangle -D " CHAIN_TRUSTED " -m mac --mac-source %s -j MARK %s 0x%x", mac, markop, FW_MARK_TRUSTED);
 }
 
 /** Initialize the firewall rules.
- *  TODO: masking of marks when setting (when iptables supports it).
  */
 int
 iptables_fw_init(void) {
@@ -203,18 +259,13 @@ iptables_fw_init(void) {
   char * gw_address = NULL;
   char * gw_iprange = NULL;
   int gw_port = 0;
-  int traffic_control, upload_limit, download_limit;
+  int traffic_control;
   int set_mss, mss_value;
-  int upload_imq, download_imq;
-  char *upload_imqname, *download_imqname;
-  char *cmd;
   t_MAC *pt;
   t_MAC *pb;
   t_MAC *pa;
-  int rc=0, macmechanism, ret;
+  int rc=0, mmask=0, macmechanism;
    
-  fw_quiet = 0;
-
   LOCK_CONFIG();
   config = config_get_config();
   gw_interface = safe_strdup(config->gw_interface); /* must free */
@@ -228,14 +279,15 @@ iptables_fw_init(void) {
   set_mss = config->set_mss;
   mss_value = config->mss_value;
   traffic_control = config->traffic_control;
-  download_limit = config->download_limit;
-  upload_limit = config->upload_limit;
-  download_imq = config->download_imq;
-  upload_imq = config->upload_imq;
+  FW_MARK_BLOCKED = config->FW_MARK_BLOCKED;
+  FW_MARK_TRUSTED = config->FW_MARK_TRUSTED;
+  FW_MARK_AUTHENTICATED = config->FW_MARK_AUTHENTICATED;
   UNLOCK_CONFIG();
     
-  safe_asprintf(&download_imqname,"imq%d",download_imq); /* must free */
-  safe_asprintf(&upload_imqname,"imq%d",upload_imq);  /* must free */
+
+  _iptables_init_marks();
+
+
 
   /*
    *
@@ -271,9 +323,9 @@ iptables_fw_init(void) {
   } else if(MAC_ALLOW == macmechanism) {
     /* with the MAC_ALLOW mechanism,
      * MAC's on the allow list pass;
-     * everything else is marked as blocked */
+     * everything else is to be marked as blocked */
     /* So, append at end of chain a rule to mark everything blocked */
-    rc |= iptables_do_command("-t mangle -A " CHAIN_BLOCKED " -j MARK --set-mark 0x%x", FW_MARK_BLOCKED);
+    rc |= iptables_do_command("-t mangle -A " CHAIN_BLOCKED " -j MARK %s 0x%x", markop, FW_MARK_BLOCKED);
     /* Insert at beginning of chain rules to pass allowed MAC's */
     for (; pa != NULL; pa = pa->next) {
       rc |= iptables_allow_mac(pa->mac);
@@ -286,37 +338,9 @@ iptables_fw_init(void) {
 
   /* Set up for traffic control */
   if(traffic_control) {
-    if(download_limit > 0) {
-      safe_asprintf(&cmd,"ip link set %s up", download_imqname);
-      ret = execute(cmd ,fw_quiet);
-      free(cmd);
-      if( ret != 0 ) {
-	debug(LOG_ERR, "Could not set %s up. Download limiting will not work",
-	      download_imqname);
-	rc = -1;
-      } else {
-	/* jump to the imq in mangle CHAIN_INCOMING */
-	rc |= iptables_do_command("-t mangle -A " CHAIN_INCOMING " -j IMQ --todev %d ", download_imq);
-	/* attach download shaping qdisc to this imq */
-	rc |= tc_attach_download_qdisc(download_imqname,download_limit);
-      }
-    }
-     if(upload_limit > 0) {
-      safe_asprintf(&cmd,"ip link set %s up", upload_imqname);
-      ret = execute(cmd ,fw_quiet);
-      free(cmd);
-       if( ret != 0 ) {
-	 debug(LOG_ERR, "Could not set %s up. Upload limiting will not work",
-	       upload_imqname);
-	 rc = -1;
-       } else {
-	 /* jump to the imq in mangle CHAIN_OUTGOING */
-	 rc |= iptables_do_command("-t mangle -A " CHAIN_OUTGOING " -j IMQ --todev %d ", upload_imq);
-	 /* attach upload shaping qdisc to this imq */
-	 rc |= tc_attach_upload_qdisc(upload_imqname,upload_limit);
-       }
-     }
+    rc |= tc_init_tc();
   }
+
 
   /*
    *
@@ -332,11 +356,11 @@ iptables_fw_init(void) {
   /* packets coming in on gw_interface jump to CHAIN_OUTGOING */
   rc |= iptables_do_command("-t nat -I PREROUTING -i %s -s %s -j " CHAIN_OUTGOING, gw_interface, gw_iprange);
   /* CHAIN_OUTGOING, packets marked TRUSTED  ACCEPT */
-  rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -m mark --mark 0x%x -j ACCEPT", FW_MARK_TRUSTED);
+  rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -m mark --mark 0x%x%s -j ACCEPT", FW_MARK_TRUSTED, markmask);
   /* CHAIN_OUTGOING, packets marked AUTHENTICATED  ACCEPT */
-  rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -m mark --mark 0x%x -j ACCEPT", FW_MARK_AUTHENTICATED);
+  rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -m mark --mark 0x%x%s -j ACCEPT",FW_MARK_AUTHENTICATED, markmask);
   /* CHAIN_OUTGOING, append the "preauthenticated-users" ruleset */
-  rc |= iptables_append_ruleset("nat", "preauthenticated-users", CHAIN_OUTGOING);
+  rc |= _iptables_append_ruleset("nat", "preauthenticated-users", CHAIN_OUTGOING);
 
   /* CHAIN_OUTGOING, packets for tcp port 80, redirect to gw_port on primary address for the iface */
   rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p tcp --dport 80 -j DNAT --to-destination %s:%d", gw_address, gw_port);
@@ -361,7 +385,7 @@ iptables_fw_init(void) {
   /* packets coming in on gw_interface jump to CHAIN_TO_ROUTER */
   rc |= iptables_do_command("-t filter -I INPUT -i %s -s %s -j " CHAIN_TO_ROUTER, gw_interface, gw_iprange);
   /* CHAIN_TO_ROUTER packets marked BLOCKED  DROP */
-  rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -m mark --mark 0x%x -j DROP", FW_MARK_BLOCKED);
+  rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -m mark --mark 0x%x%s -j DROP", FW_MARK_BLOCKED, markmask);
   /* CHAIN_TO_ROUTER, invalid packets  DROP */
   rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -m state --state INVALID -j DROP");
   /* CHAIN_TO_ROUTER, related and established packets  ACCEPT */
@@ -369,11 +393,11 @@ iptables_fw_init(void) {
   /* CHAIN_TO_ROUTER, bogus SYN packets  DROP */
   rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -p tcp --tcp-flags SYN SYN --tcp-option \\! 2 -j  DROP");
   /* CHAIN_TO_ROUTER, packets marked TRUSTED  ACCEPT */
-  rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -m mark --mark 0x%x -j ACCEPT", FW_MARK_TRUSTED);
+  rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -m mark --mark 0x%x%s -j ACCEPT", FW_MARK_TRUSTED, markmask);
   /* CHAIN_TO_ROUTER, packets to HTTP listening on gw_port on router ACCEPT */
   rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -p tcp --dport %d -j ACCEPT", gw_port);
   /* CHAIN_TO_ROUTER, append the "users-to-router" ruleset */
-  rc |= iptables_append_ruleset("filter", "users-to-router", CHAIN_TO_ROUTER);
+  rc |= _iptables_append_ruleset("filter", "users-to-router", CHAIN_TO_ROUTER);
   /* everything else, REJECT */
   rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -j REJECT --reject-with icmp-port-unreachable");
 
@@ -384,7 +408,7 @@ iptables_fw_init(void) {
   /* packets coming in on gw_interface jump to CHAIN_TO_INTERNET */
   rc |= iptables_do_command("-t filter -I FORWARD -i %s -s %s -j " CHAIN_TO_INTERNET, gw_interface, gw_iprange);
   /* CHAIN_TO_INTERNET packets marked BLOCKED  DROP */
-  rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m mark --mark 0x%x -j DROP", FW_MARK_BLOCKED);
+  rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m mark --mark 0x%x%s -j DROP", FW_MARK_BLOCKED, markmask);
   /* CHAIN_TO_INTERNET, invalid packets  DROP */
   rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m state --state INVALID -j DROP");
   /* CHAIN_TO_INTERNET, deal with MSS */
@@ -399,26 +423,33 @@ iptables_fw_init(void) {
     }
   }
   /* CHAIN_TO_INTERNET, packets marked TRUSTED  ACCEPT */
-  rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m mark --mark 0x%x -j ACCEPT", FW_MARK_TRUSTED);
-  /* CHAIN_TO_INTERNET, packets marked AUTHENTICATED jump to CHAIN_AUTHENTICATED */
-  rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m mark --mark 0x%x -j " CHAIN_AUTHENTICATED, FW_MARK_AUTHENTICATED);
+  rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m mark --mark 0x%x%s -j ACCEPT", FW_MARK_TRUSTED, markmask);
+  /* if authenticated-users ruleset is empty:
+   *    CHAIN_TO_INTERNET, packets marked AUTHENTICATED  RETURN (to hit preexisting firewall)
+   * else:
+   *    CHAIN_TO_INTERNET, packets marked AUTHENTICATED jump to CHAIN_AUTHENTICATED
+   */
+  if(get_ruleset("authenticated-users") == NULL) {
+    rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m mark --mark 0x%x%s -j RETURN", FW_MARK_AUTHENTICATED, markmask);
+  } else {
+    rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m mark --mark 0x%x%s -j " CHAIN_AUTHENTICATED,FW_MARK_AUTHENTICATED, markmask);
+  }
   /* CHAIN_AUTHENTICATED, related and established packets  ACCEPT */
   rc |= iptables_do_command("-t filter -A " CHAIN_AUTHENTICATED " -m state --state RELATED,ESTABLISHED -j ACCEPT");
   /* CHAIN_AUTHENTICATED, append the "authenticated-users" ruleset */
-  rc |= iptables_append_ruleset("filter", "authenticated-users", CHAIN_AUTHENTICATED);
+  rc |= _iptables_append_ruleset("filter", "authenticated-users", CHAIN_AUTHENTICATED);
   /* CHAIN_AUTHENTICATED, any packets not matching that ruleset  REJECT */
   rc |= iptables_do_command("-t filter -A " CHAIN_AUTHENTICATED " -j REJECT --reject-with icmp-port-unreachable");
   /* CHAIN_TO_INTERNET, append the "preauthenticated-users" ruleset */
-  rc |= iptables_append_ruleset("filter", "preauthenticated-users", CHAIN_TO_INTERNET);
+  rc |= _iptables_append_ruleset("filter", "preauthenticated-users", CHAIN_TO_INTERNET);
   /* CHAIN_TO_INTERNET, all other packets REJECT */
   rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -j REJECT --reject-with icmp-port-unreachable");
-
   free(gw_interface);
   free(gw_iprange);
   free(gw_address);
-  free(download_imqname);
-  free(upload_imqname);
+
   return rc;
+
 }
 
 /** Remove the firewall rules
@@ -556,14 +587,14 @@ iptables_fw_access(t_authaction action, char *ip, char *mac) {
   case AUTH_MAKE_AUTHENTICATED:
     debug(LOG_NOTICE, "Authenticating %s %s", ip, mac);
     /* This rule is for marking upload packets, and for upload byte counting */
-    rc = iptables_do_command("-t mangle -A " CHAIN_OUTGOING " -s %s -m mac --mac-source %s -j MARK --set-mark 0x%x", ip, mac, FW_MARK_AUTHENTICATED);
+    rc = iptables_do_command("-t mangle -A " CHAIN_OUTGOING " -s %s -m mac --mac-source %s -j MARK %s 0x%x", ip, mac, markop, FW_MARK_AUTHENTICATED);
     /* This rule is just for download byte counting, see iptables_fw_counters_update() */
     rc = iptables_do_command("-t mangle -A " CHAIN_INCOMING " -d %s -j ACCEPT", ip);
     break;
   case AUTH_MAKE_DEAUTHENTICATED:
     /* Remove the authentication rules. */
     debug(LOG_NOTICE, "Deauthenticating %s %s", ip, mac);
-    rc = iptables_do_command("-t mangle -D " CHAIN_OUTGOING " -s %s -m mac --mac-source %s -j MARK --set-mark 0x%x", ip, mac, FW_MARK_AUTHENTICATED);
+    rc = iptables_do_command("-t mangle -D " CHAIN_OUTGOING " -s %s -m mac --mac-source %s -j MARK %s 0x%x", ip, mac, markop, FW_MARK_AUTHENTICATED);
     rc = iptables_do_command("-t mangle -D " CHAIN_INCOMING " -d %s -j ACCEPT", ip);
     break;
   default:

@@ -27,14 +27,13 @@
 #ifndef _FIREWALL_H_
 #define _FIREWALL_H_
 
-/** Used by fw_iptables.c to mark packets. Unmarked packets are considered 'preauthenticated' */
-typedef enum _t_fw_marks {
-  FW_MARK_PREAUTHENTICATED = 0x000,  /**< @brief Actually not used as a packet mark */ 
-  FW_MARK_AUTHENTICATED = 0x100,  /**< @brief The client is authenticated */ 
-  FW_MARK_BLOCKED = 0x200, /**< @brief The client is blocked */
-  FW_MARK_TRUSTED = 0x400,  /**< @brief The client is trusted */
-  FW_MARK_MASK = 0x700 /**< @brief Mask to use with FW_MARK's */
-} t_fw_marks;
+/** Used to mark packets, and characterize client state.  Unmarked packets are considered 'preauthenticated' */
+extern unsigned int  FW_MARK_PREAUTHENTICATED; /**< @brief 0: Actually not used as a packet mark */ 
+extern unsigned int  FW_MARK_AUTHENTICATED;    /**< @brief The client is authenticated */ 
+extern unsigned int  FW_MARK_BLOCKED;          /**< @brief The client is blocked */
+extern unsigned int  FW_MARK_TRUSTED;          /**< @brief The client is trusted */
+extern unsigned int  FW_MARK_MASK;             /**< @brief Iptables mask: bitwise or of the others */
+
 
 /** @brief Initialize the firewall */
 int fw_init(void);
@@ -49,7 +48,7 @@ void fw_refresh_client_list(void);
 char *arp_get(char *req_ip);
 
 /** @brief Return a string representing a connection state */
-char *fw_connection_state_as_string(t_fw_marks mark);
+char *fw_connection_state_as_string(int mark);
 
 /** @brief ICMP Ping an IP */
 void icmp_ping(char *host);

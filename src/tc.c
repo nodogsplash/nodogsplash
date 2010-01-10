@@ -82,7 +82,7 @@ tc_do_command(char *format, ...) {
  * Some ideas here from Rudy's qos-scripts 
  * http://forum.openwrt.org/viewtopic.php?id=4112&p=1
  */
-int
+static int
 tc_attach_upload_qdisc(char *dev, int upload_limit) {
   int burst;
   int mtu = MTU + 40;
@@ -110,7 +110,7 @@ tc_attach_upload_qdisc(char *dev, int upload_limit) {
  * Some ideas here from Rudy's qos-scripts 
  * http://forum.openwrt.org/viewtopic.php?id=4112&p=1
  */
-int
+static int
 tc_attach_download_qdisc(char *dev, int download_limit) {
   int burst;
   int mtu = MTU + 40;
@@ -131,9 +131,68 @@ tc_attach_download_qdisc(char *dev, int download_limit) {
 
 }
 
+/**
+ * Bring up intermediate queueing devices, and attach qdiscs to them.
+ * PRE: mangle table chains CHAIN_INCOMING, CHAIN_OUTGOING must exist;
+ * see fw_iptables.c
+ */
+int 
+tc_init_tc() {
+  int upload_limit, download_limit;
+  int upload_imq, download_imq;
+  char *download_imqname, *upload_imqname, *cmd;
+  s_config *config;
+  int rc = 0, ret = 0;
 
-/** Remove qdiscs from interfaces, and bring interfaces down
- *  as appropriate.
+  config = config_get_config();
+  download_limit = config->download_limit;
+  upload_limit = config->upload_limit;
+  download_imq = config->download_imq;
+  upload_imq = config->upload_imq;
+
+  safe_asprintf(&download_imqname,"imq%d",download_imq); /* must free */
+  safe_asprintf(&upload_imqname,"imq%d",upload_imq);  /* must free */
+
+  tc_quiet = 0;
+
+  if(download_limit > 0) {
+    safe_asprintf(&cmd,"ip link set %s up", download_imqname);
+    ret = execute(cmd ,tc_quiet);
+    free(cmd);
+    if( ret != 0 ) {
+      debug(LOG_ERR, "Could not set %s up. Download limiting will not work",
+	    download_imqname);
+    } else {
+      /* jump to the imq in mangle CHAIN_INCOMING */
+      rc |= iptables_do_command("-t mangle -A " CHAIN_INCOMING " -j IMQ --todev %d ", download_imq);
+      /* attach download shaping qdisc to this imq */
+      rc |= tc_attach_download_qdisc(download_imqname,download_limit);
+    }
+  }
+  if(upload_limit > 0) {
+    safe_asprintf(&cmd,"ip link set %s up", upload_imqname);
+    ret = execute(cmd ,tc_quiet);
+    free(cmd);
+    if( ret != 0 ) {
+      debug(LOG_ERR, "Could not set %s up. Upload limiting will not work",
+	    upload_imqname);
+      rc = -1;
+    } else {
+      /* jump to the imq in mangle CHAIN_OUTGOING */
+      rc |= iptables_do_command("-t mangle -A " CHAIN_OUTGOING " -j IMQ --todev %d ", upload_imq);
+      /* attach upload shaping qdisc to this imq */
+      rc |= tc_attach_upload_qdisc(upload_imqname,upload_limit);
+    }
+  }
+
+  free(download_imqname);
+  free(upload_imqname);
+
+}
+
+
+/**
+ * Remove qdiscs from intermediate queueing devices, and bring IMQ's down
  */
 int
 tc_destroy_tc() {

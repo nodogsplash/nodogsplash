@@ -62,8 +62,10 @@ unsigned long long int iptables_fw_total_download();
 /** @brief Return the total upload usage in bytes */
 unsigned long long int iptables_fw_total_upload();
 
-
 /** @brief All counters in the client list */
 int iptables_fw_counters_update(void);
+
+/** @brief Fork an iptables command */
+int iptables_do_command(char *format, ...);
 
 #endif /* _IPTABLES_H_ */

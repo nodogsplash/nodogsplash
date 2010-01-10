@@ -25,11 +25,8 @@
 #define MTU 1500
 #define HZ 100
 
-int
-tc_attach_download_qdisc(char *dev, int download_limit);
-
-int
-tc_attach_upload_qdisc(char *dev, int upload_limit);
+int 
+tc_init_tc(void);
 
 int
 tc_destroy_tc(void);

@@ -73,6 +73,14 @@ extern pid_t restart_orig_pid;
 
 int icmp_fd = 0;
 
+/** Used to mark packets, and characterize client state.  Unmarked packets are considered 'preauthenticated' */
+unsigned int  FW_MARK_PREAUTHENTICATED; /**< @brief 0: Actually not used as a packet mark */ 
+unsigned int  FW_MARK_AUTHENTICATED;    /**< @brief The client is authenticated */ 
+unsigned int  FW_MARK_BLOCKED;          /**< @brief The client is blocked */
+unsigned int  FW_MARK_TRUSTED;          /**< @brief The client is trusted */
+unsigned int  FW_MARK_MASK;             /**< @brief Iptables mask: bitwise or of the others */
+
+
 /**
  * Get an IP's MAC address from the ARP cache.
  * Go through all the entries in /proc/net/arp until we find the requested
@@ -241,22 +249,14 @@ fw_refresh_client_list(void) {
 
 /** Return a string representing a connection state */
 char *
-fw_connection_state_as_string(t_fw_marks mark) {
+fw_connection_state_as_string(int mark) {
 
-  switch(mark) {
-  case FW_MARK_PREAUTHENTICATED:
-    return "Preauthenticated";
-  case FW_MARK_AUTHENTICATED:
-    return "Authenticated";
-  case   FW_MARK_TRUSTED:
-    return "Trusted";
-  case FW_MARK_BLOCKED:
-    return "Blocked";
-  default:
-    return "ERROR: unrecognized mark";
-  }
+  if(mark == FW_MARK_PREAUTHENTICATED) return "Preauthenticated";
+  if(mark == FW_MARK_AUTHENTICATED) return "Authenticated";
+  if(mark == FW_MARK_TRUSTED) return "Trusted";
+  if(mark == FW_MARK_BLOCKED) return "Blocked";
+  return "ERROR: unrecognized mark";
 
-  return ""; /* unreached */
 }
 
 

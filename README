@@ -96,7 +96,7 @@ Nodogsplash considers four kinds of packets coming into the router over the
 managed interface. Each packet is of exactly one of these kinds:
 
   1. Blocked, if the MAC mechanism is block, and the source MAC address of the
-     packet matches one listed in the BlockedMACList; if if the MAC mechanism
+     packet matches one listed in the BlockedMACList; or if the MAC mechanism
      is allow, and source MAC address of the packet does not match one listed
      in the AllowedMACList or the TrustedMACList. These packets are dropped.
   2. Trusted, if the source MAC address of the packet matches one listed in the

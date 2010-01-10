@@ -103,7 +103,10 @@ typedef enum {
 	oMACmechanism,
 	oTrustedMACList,
 	oBlockedMACList,
-	oAllowedMACList
+	oAllowedMACList,
+	oFWMarkAuthenticated,
+	oFWMarkTrusted,
+	oFWMarkBlocked
 } OpCodes;
 
 /** @internal
@@ -153,6 +156,9 @@ static const struct {
 	{ "blockedmaclist",	oBlockedMACList },
 	{ "allowedmaclist",	oAllowedMACList },
 	{ "MACmechanism",	oMACmechanism },
+	{ "FW_MARK_AUTHENTICATED",	oFWMarkAuthenticated },
+	{ "FW_MARK_TRUSTED",	oFWMarkTrusted },
+	{ "FW_MARK_BLOCKED",	oFWMarkBlocked },
 	{ NULL,                 oBadOption },
 };
 
@@ -220,6 +226,9 @@ config_init(void) {
   config.blockedmaclist = NULL;
   config.allowedmaclist = NULL;
   config.macmechanism = DEFAULT_MACMECHANISM;
+  config.FW_MARK_AUTHENTICATED = DEFAULT_FW_MARK_AUTHENTICATED;
+  config.FW_MARK_TRUSTED = DEFAULT_FW_MARK_TRUSTED;
+  config.FW_MARK_BLOCKED = DEFAULT_FW_MARK_BLOCKED;
 }
 
 /**
@@ -593,7 +602,11 @@ config_read(char *filename) {
       config.gw_address = safe_strdup(p1);
       break;
     case oGatewayPort:
-      sscanf(p1, "%d", &config.gw_port);
+      if(sscanf(p1, "%u", &config.gw_port) < 1) {
+	debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
+	debug(LOG_ERR, "Exiting...");
+	exit(-1);
+      }
       break;
     case oRemoteAuthenticatorAction:
       config.remote_auth_action = safe_strdup(p1);
@@ -745,7 +758,27 @@ config_read(char *filename) {
 	exit(-1);
       }
       break;
-
+    case oFWMarkAuthenticated:
+      if(sscanf(p1, "%i", &config.FW_MARK_AUTHENTICATED) < 1) {
+	debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
+	debug(LOG_ERR, "Exiting...");
+	exit(-1);
+      }
+      break;
+    case oFWMarkBlocked:
+      if(sscanf(p1, "%i", &config.FW_MARK_BLOCKED) < 1) {
+	debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
+	debug(LOG_ERR, "Exiting...");
+	exit(-1);
+      }
+      break;
+    case oFWMarkTrusted:
+      if(sscanf(p1, "%i", &config.FW_MARK_TRUSTED) < 1) {
+	debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
+	debug(LOG_ERR, "Exiting...");
+	exit(-1);
+      }
+      break;
       
     case oSyslogFacility:
       if(sscanf(p1, "%d", &config.syslog_facility) < 1) {

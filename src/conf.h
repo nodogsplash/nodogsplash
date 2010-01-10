@@ -78,6 +78,9 @@
 #define DEFAULT_SYSLOG_FACILITY LOG_DAEMON
 #define DEFAULT_NDSCTL_SOCK "/tmp/ndsctl.sock"
 #define DEFAULT_INTERNAL_SOCK "/tmp/ndsctl.sock"
+#define DEFAULT_FW_MARK_AUTHENTICATED 0x400
+#define DEFAULT_FW_MARK_TRUSTED 0x200
+#define DEFAULT_FW_MARK_BLOCKED 0x100
 /*@}*/ 
 
 /**
@@ -124,7 +127,7 @@ typedef struct {
   char *gw_interface;		/**< @brief Interface we will manage */
   char *gw_iprange;		/**< @brief IP range on gw_interface we will manage */
   char *gw_address;		/**< @brief Internal IP address for our web server */
-  int gw_port;			/**< @brief Port the webserver will run on */
+  unsigned int gw_port;		/**< @brief Port the webserver will run on */
   char *remote_auth_action;	/**< @brief Path for remote auth */
   char *webroot;		/**< @brief Directory containing splash pages, etc. */
   char *splashpage;		/**< @brief Name of main splash page */
@@ -161,6 +164,9 @@ typedef struct {
   t_MAC *trustedmaclist; 	/**< @brief list of trusted macs */
   t_MAC *blockedmaclist; 	/**< @brief list of blocked macs */
   t_MAC *allowedmaclist; 	/**< @brief list of allowed macs */
+  unsigned int  FW_MARK_AUTHENTICATED;    /**< @brief iptables mark for authenticated packets */ 
+  unsigned int  FW_MARK_BLOCKED;          /**< @brief iptables mark for blocked packets */ 
+  unsigned int  FW_MARK_TRUSTED;          /**< @brief iptables mark for trusted packets */ 
 } s_config;
 
 /** @brief Get the current gateway configuration */
