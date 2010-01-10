@@ -243,7 +243,7 @@ http_nodogsplash_callback_auth(httpd *webserver, request *r) {
   /* Get info we need from request, and do action */
   authtarget = http_nodogsplash_decode_authtarget(r);
 
-  if(http_nodogsplash_check_password(r,authtarget)) {
+  if(http_nodogsplash_check_userpass(r,authtarget)) {
     http_nodogsplash_callback_action (r,authtarget,AUTH_MAKE_AUTHENTICATED);
   } else {
     /* Password check failed; just serve them the splash page again */
@@ -553,7 +553,7 @@ http_nodogsplash_free_authtarget(t_auth_target* authtarget) {
 /** Perform username/password check if configured to use it.
  */
 int
-http_nodogsplash_check_password(request *r, t_auth_target *authtarget) {
+http_nodogsplash_check_userpass(request *r, t_auth_target *authtarget) {
   s_config *config;
   t_client  *client;
   config = config_get_config();
@@ -561,7 +561,7 @@ http_nodogsplash_check_password(request *r, t_auth_target *authtarget) {
   char *ip;
   char *mac;
 
-  if(!config->passwordauth) {
+  if(!config->passwordauth && !config->usernameauth) {
     /* Not configured to use username/password check; can't fail. */
     return 1;
   }
@@ -570,7 +570,7 @@ http_nodogsplash_check_password(request *r, t_auth_target *authtarget) {
 
   if (!(mac = arp_get(ip))) {
     /* we could not get their MAC address; fail */
-    debug(LOG_NOTICE, "Could not arp MAC address for %s to check password", ip);
+    debug(LOG_NOTICE, "Could not arp MAC address for %s to check user/password", ip);
     return 0;
   }
 
@@ -583,7 +583,7 @@ http_nodogsplash_check_password(request *r, t_auth_target *authtarget) {
 
   if(!client) {
     /* not on client list; fail */
-    debug(LOG_NOTICE, "Client %s %s not on client list to check password",
+    debug(LOG_NOTICE, "Client %s %s not on client list to check user/password",
 	  ip, mac);
     free(mac);
     return 0;
@@ -597,10 +597,16 @@ http_nodogsplash_check_password(request *r, t_auth_target *authtarget) {
     return 0;
   }
 
-  if (authtarget->username && authtarget->password &&
-      !strcmp(config->username,authtarget->username) &&
-      !strcmp(config->password,authtarget->password)) {
+  if ((!config->usernameauth ||
+       authtarget->username && !strcmp(config->username,authtarget->username))
+      &&
+      (!config->passwordauth ||
+       authtarget->password && !strcmp(config->password,authtarget->password))) {
     /* password and username match; success */
+    debug(LOG_NOTICE, "Client %s %s username/password '%s'/'%s'",
+	  ip, mac,
+	  authtarget->username,
+	  authtarget->password);
     free(mac);
     return 1;
   }

@@ -60,9 +60,8 @@
 #define DEFAULT_AUTHDIR "nodogsplash_auth"
 #define DEFAULT_DENYDIR "nodogsplash_deny"
 #define DEFAULT_PASSWORD_AUTH 0
+#define DEFAULT_USERNAME_AUTH 0
 #define DEFAULT_PASSWORD_ATTEMPTS 5
-#define DEFAULT_USERNAME "guest"
-#define DEFAULT_PASSWORD "nodog"
 #define DEFAULT_AUTHENTICATE_IMMEDIATELY 0
 #define DEFAULT_TRAFFIC_CONTROL 0
 #define DEFAULT_UPLOAD_LIMIT 0
@@ -129,7 +128,8 @@ typedef struct {
   char *authdir;		/**< @brief Notional relative dir for authentication URL */
   char *denydir;		/**< @brief Notional relative dir for denial URL */
   int passwordauth;		/**< @brief boolean, whether to use password authentication */
-  char *username;		/**< @brief Username for password authentication */
+  int usernameauth;		/**< @brief boolean, whether to use username authentication */
+  char *username;		/**< @brief Username for username authentication */
   char *password;		/**< @brief Password for password authentication */
   int passwordattempts;		/**< @brief Number of attempted password authentications allowed */
   int clienttimeout;		/**< @brief How many CheckIntervals before an inactive client
@@ -179,6 +179,8 @@ void parse_blocked_mac_list(char *);
 int check_ip_format(char *);
 int check_mac_format(char *);
 int set_log_level(int);
+int set_password(char *);
+int set_username(char *);
 
 #define LOCK_CONFIG() do { \
 	debug(LOG_DEBUG, "Locking config"); \

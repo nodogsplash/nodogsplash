@@ -324,6 +324,18 @@ char * get_status_text() {
     len = strlen(buffer);
   }
 
+  if(config->passwordauth) {
+    snprintf((buffer + len), (sizeof(buffer) - len), "Gateway password: %s\n",
+	     config->password);
+    len = strlen(buffer);
+  }
+
+  if(config->usernameauth) {
+    snprintf((buffer + len), (sizeof(buffer) - len), "Gateway username: %s\n",
+	     config->username);
+    len = strlen(buffer);
+  }
+
   snprintf((buffer + len), (sizeof(buffer) - len), "Traffic control: %s\n", config->traffic_control ? "yes" : "no");
   len = strlen(buffer);
 

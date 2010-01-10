@@ -347,6 +347,12 @@ address:
 /usr/bin/ndsctl deauth <em>IP</em>|<em>MAC</em>
 </pre>
 </li>
+<li>
+To set the verbosity of logged messages to <em>n</em>:
+<pre>
+/usr/bin/ndsctl loglevel <em>n</em>
+</pre>
+</li>
 </ul>
 For more options, run <code>ndsctl -h</code>.
 
@@ -363,7 +369,8 @@ sets level 7, LOG_DEBUG, for debugging messages (see syslog.h).
 You don't want to run with these flags routinely, as it will 
 quickly fill the syslog  circular buffer, unless you enable remote logging.
 A lower level of logging, for example level 5, LOG_NOTICE,
-is more appropriate for routine use (this is the default).
+is more appropriate for routine use (this is the default).  Logging level
+can also be set using <code>ndsctl</code> as shown above.
 <p>
 Alternatively, you can set the flag <code>-f</code> instead of <code>-s</code>,
 and restart.

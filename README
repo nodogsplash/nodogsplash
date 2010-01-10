@@ -225,6 +225,10 @@ command line options:
 
     /usr/bin/ndsctl deauth IP|MAC
 
+* To set the verbosity of logged messages to n:
+
+    /usr/bin/ndsctl loglevel n
+
 
 For more options, run ndsctl -h.
 
@@ -238,7 +242,8 @@ For more options, run ndsctl -h.
   syslog.h). You don't want to run with these flags routinely, as it will
   quickly fill the syslog circular buffer, unless you enable remote logging. A
   lower level of logging, for example level 5, LOG_NOTICE, is more appropriate
-  for routine use (this is the default).
+  for routine use (this is the default). Logging level can also be set using
+  ndsctl as shown above.
   Alternatively, you can set the flag -f instead of -s, and restart. This will
   run nodogsplash in the foreground, logging to stdout.
 * When stopped, nodogsplash deletes its iptables rules, attempting to leave the

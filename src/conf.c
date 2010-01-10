@@ -74,6 +74,7 @@ typedef enum {
 	oGatewayPort,
 	oRemoteAuthenticatorAction,
 	oPasswordAuthentication,
+	oUsernameAuthentication,
 	oPasswordAttempts,
 	oUsername,
 	oPassword,
@@ -117,6 +118,7 @@ static const struct {
 	{ "gatewayport",        oGatewayPort },
 	{ "remoteauthenticatoraction",     oRemoteAuthenticatorAction },
 	{ "passwordauthentication",         oPasswordAuthentication },
+	{ "usernameauthentication",         oUsernameAuthentication },
 	{ "passwordattempts",         oPasswordAttempts },
 	{ "username",           oUsername },
 	{ "password",           oPassword },
@@ -180,9 +182,10 @@ config_init(void) {
   config.checkinterval = DEFAULT_CHECKINTERVAL;
   config.daemon = -1;
   config.passwordauth = DEFAULT_PASSWORD_AUTH;
+  config.usernameauth = DEFAULT_USERNAME_AUTH;
   config.passwordattempts = DEFAULT_PASSWORD_ATTEMPTS;
-  config.username = DEFAULT_USERNAME;
-  config.password = DEFAULT_PASSWORD;
+  config.username = NULL;
+  config.password = NULL;
   config.authenticate_immediately = DEFAULT_AUTHENTICATE_IMMEDIATELY;
   config.traffic_control = DEFAULT_TRAFFIC_CONTROL;
   config.upload_limit =  DEFAULT_UPLOAD_LIMIT;
@@ -651,6 +654,15 @@ config_read(char *filename) {
 	exit(-1);
       }
       break;
+    case oUsernameAuthentication:
+      if ((value = parse_boolean_value(p1)) != -1) {
+	config.usernameauth = value;
+      } else {
+	debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
+	debug(LOG_ERR, "Exiting...");
+	exit(-1);
+      }
+      break;
     case oPasswordAttempts:
       if(sscanf(p1, "%d", &config.passwordattempts) < 1) {
 	debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
@@ -659,10 +671,10 @@ config_read(char *filename) {
       }
       break;
     case oUsername:
-      config.username = safe_strdup(p1);
+      set_username(p1);
       break;
     case oPassword:
-      config.password = safe_strdup(p1);
+      set_password(p1);
       break;
     case oTrafficControl:
       if ((value = parse_boolean_value(p1)) != -1) {
@@ -1000,6 +1012,32 @@ void parse_blocked_mac_list(char *ptr) {
 int set_log_level(int level) {
   config.debuglevel = level;
   return 0;
+}
+
+/** Set the gateway password. 
+ *  Return 0 on success.
+ */
+int set_password(char *s) {
+  char *old = config.password;
+  if(s) {
+    config.password = safe_strdup(s);
+    if(old) free(old);
+    return 0;
+  }
+  return 1;
+}
+
+/** Set the gateway username. 
+ *  Return 0 on success.
+ */
+int set_username(char *s) {
+  char *old = config.username;
+  if(s) {
+    config.username = safe_strdup(s);
+    if(old) free(old);
+    return 0;
+  }
+  return 1;
 }
 
 /** Verifies if the configuration is complete and valid.  Terminates the program if it isn't */

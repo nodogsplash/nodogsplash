@@ -69,6 +69,8 @@ static void ndsctl_untrust(int, char *);
 static void ndsctl_auth(int, char *);
 static void ndsctl_deauth(int, char *);
 static void ndsctl_loglevel(int, char *);
+static void ndsctl_password(int, char *);
+static void ndsctl_username(int, char *);
 static void ndsctl_restart(int);
 
 /** Launches a thread that monitors the control socket for request
@@ -203,6 +205,10 @@ thread_ndsctl_handler(void *arg) {
     ndsctl_deauth(fd, (request + 7));
   } else if (strncmp(request, "loglevel", 8) == 0) {
     ndsctl_loglevel(fd, (request + 9));
+  } else if (strncmp(request, "password", 8) == 0) {
+    ndsctl_password(fd, (request + 9));
+  } else if (strncmp(request, "username", 8) == 0) {
+    ndsctl_username(fd, (request + 9));
   } else if (strncmp(request, "restart", 7) == 0) {
     ndsctl_restart(fd);
   }
@@ -523,14 +529,17 @@ ndsctl_untrust(int fd, char *arg) {
 static void
 ndsctl_loglevel(int fd, char *arg) {
 
+  int level = atoi(arg);
+
   debug(LOG_DEBUG, "Entering ndsctl_loglevel...");
 	
   LOCK_CONFIG();
   debug(LOG_DEBUG, "Argument: [%s]", arg);
 	
     
-  if (!set_log_level(atoi(arg))) {
+  if (!set_log_level(level)) {
     write(fd, "Yes", 3);
+    debug(LOG_NOTICE, "Set debug loglevel to %d.", level);
   } else {
     write(fd, "No", 2);
   }
@@ -538,6 +547,48 @@ ndsctl_loglevel(int fd, char *arg) {
   UNLOCK_CONFIG();
 	
   debug(LOG_DEBUG, "Exiting ndsctl_loglevel.");
+}
+
+static void
+ndsctl_password(int fd, char *arg) {
+
+  debug(LOG_DEBUG, "Entering ndsctl_password...");
+	
+  LOCK_CONFIG();
+  debug(LOG_DEBUG, "Argument: [%s]", arg);
+	
+    
+  if (!set_password(arg)) {
+    write(fd, "Yes", 3);
+    debug(LOG_NOTICE, "Set password to %s.", arg);
+  } else {
+    write(fd, "No", 2);
+  }
+
+  UNLOCK_CONFIG();
+	
+  debug(LOG_DEBUG, "Exiting ndsctl_password.");
+}
+
+static void
+ndsctl_username(int fd, char *arg) {
+
+  debug(LOG_DEBUG, "Entering ndsctl_username...");
+	
+  LOCK_CONFIG();
+  debug(LOG_DEBUG, "Argument: [%s]", arg);
+	
+    
+  if (!set_username(arg)) {
+    write(fd, "Yes", 3);
+    debug(LOG_NOTICE, "Set username to %s.", arg);
+  } else {
+    write(fd, "No", 2);
+  }
+
+  UNLOCK_CONFIG();
+	
+  debug(LOG_DEBUG, "Exiting ndsctl_username.");
 }
 
 

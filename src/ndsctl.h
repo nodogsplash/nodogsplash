@@ -42,6 +42,8 @@
 #define NDSCTL_AUTH		9
 #define NDSCTL_DEAUTH		10
 #define NDSCTL_LOGLEVEL		11
+#define NDSCTL_PASSWORD		12
+#define NDSCTL_USERNAME		13
 
 typedef struct {
 	char	*socket;
