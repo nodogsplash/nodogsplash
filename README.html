@@ -158,15 +158,18 @@ These packets are dropped.
 </li>
 <li>
 <em>Trusted</em>, if the source MAC address of the packet matches one
-listed in the TrustedMACList.
-These packets are accepted and routed to a set of 
-addresses and ports controlled by
+listed in the TrustedMACList.  By default, these packets are accepted
+and routed to all destination addresses and ports.  If desired, this 
+behavior can be customized by
 <code>FirewallRuleSet trusted-users</code> and 
 <code>FirewallRuleSet trusted-users-to-router</code>
-in the <code>nodogsplash.conf</code> configuration file.
+lists in the <code>nodogsplash.conf</code> configuration file,
+or by the 
+<code>EmptyRuleSetPolicy trusted-users</code>
+<code>EmptyRuleSetPolicy trusted-users-to-router</code> directives.
 </li>
 <li>
-<em>Authenticated</em>, if the packet's IP and MAC source address has gone
+<em>Authenticated</em>, if the packet's IP and MAC source addresses have gone
 through the nodogsplash authentication process and has not yet
 expired.  These packets are accepted and routed to a limited set of 
 addresses and ports (see <code>FirewallRuleSet authenticated-users</code>
@@ -186,7 +189,7 @@ Any other packet is dropped, except that a packet
 for destination port 80 at any address is redirected to port 2050 on
 the router, where nodogsplash's builtin 
 <a href="http://www.hughes.com.au/products/libhttpd/">
-libhttpd-based</a> 
+libhttpd</a>-based
 web server is listening.  This begins
 the 'authentication' process. The
 server will serve a splash page back to the source IP address of the
@@ -303,7 +306,7 @@ nodogsplash server.  As a simple example:
 &lt;form method='GET' action='$authaction'&gt;
 &lt;input type='hidden' name='tok' value='$tok'&gt;
 &lt;input type='hidden' name='redir' value='$redir'&gt;
-&lt;input type='submit' value='Enter'&gt;
+&lt;input type='submit' value='Click Here to Enter'&gt;
 &lt;/form>
 </pre>
 </li>
@@ -453,7 +456,14 @@ Oskar Andreasson's tutorial</a>.
 Eventually, new releases of Nodogsplash will be compiled against
 some stable version of OpenWRT Kamikaze.  Meanwhile, 
 Nodogsplash has been tested on some versions of Kamikaze and found
-to work, if these changes are made:
+to work.
+<p>
+An explanation of steps that may be required to successfully
+install Nodogsplash on Kamikaze is available here:
+<a href="http://forum.openwrt.org/viewtopic.php?id=20282">anarcat post
+on forum.opernwrt.org</a>
+<p>
+Here is a shorter summary of what is required:
 <ul>
 <li>
 The default name for the (wired and wireless) LAN interface in Kamikaze is
@@ -477,7 +487,7 @@ And then use <code>/etc/init.d/nodogsplash</code> to start and stop
 Nodogsplash from the command line.
 </li>
 </ul>
-Thanks to Tobias Pal and Jeff Allen for testing on Kamikaze.
+Thanks to Tobias Pal and Jeff Allen and anarcat for testing on Kamikaze.
 <hr>
 Email contact: nodogsplash (at) kokoro.ucsd.edu
 

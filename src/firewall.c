@@ -68,9 +68,6 @@
 
 extern pthread_mutex_t client_list_mutex;
 
-/* from commandline.c */
-extern pid_t restart_orig_pid;
-
 int icmp_fd = 0;
 
 /** Used to mark packets, and characterize client state.  Unmarked packets are considered 'preauthenticated' */
@@ -136,24 +133,6 @@ fw_init(void) {
   debug(LOG_INFO, "Initializing Firewall");
   result = iptables_fw_init();
 
-  if (restart_orig_pid) {
-    /** TODO: when restarting, may have a different conf file to read.
-     *  If so, should check if any authenticated clients have been blocked; etc.
-     *  Until this is implemented, best not to use ndsctl restart.
-     *  Instead, just stop and start the nodogsplash parent process.
-     */
-    debug(LOG_INFO, "Restoring firewall rules for clients inherited from parent");
-    LOCK_CLIENT_LIST();
-    client = client_get_first_client();
-    while (client) {
-      if(client->fw_connection_state == FW_MARK_AUTHENTICATED) {
-	iptables_fw_access(AUTH_MAKE_AUTHENTICATED, client->ip, client->mac);
-      }
-      client = client->next;
-    }
-    UNLOCK_CLIENT_LIST();
-  }
-
   return result;
 }
 
@@ -208,10 +187,12 @@ fw_refresh_client_list(void) {
      * However, if the firewall blocks it, it will not help.  The suggested
      * way to deal with this is to keep the DHCP lease time extremely 
      * short:  Shorter than config->checkinterval * config->clienttimeout */
+    /*** removed as useless ***
     if(FW_MARK_AUTHENTICATED == cp1->fw_connection_state) {
       icmp_ping(ip);
     }
-
+    */
+    
     LOCK_CLIENT_LIST();
 	
     if (!(cp1 = client_list_find(ip, mac))) {

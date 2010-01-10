@@ -24,6 +24,7 @@
   @brief Main loop
   @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
   @author Copyright (C) 2004 Alexandre Carmel-Veilleux <acv@miniguru.ca>
+  @author Copyright (C) 2008 Paul Kube <nodogsplash@kokoro.ucsd.edu>
  */
 
 #include <stdio.h>
@@ -63,184 +64,19 @@
  * We need to remember the thread IDs of threads that simulate wait with pthread_cond_timedwait
  * so we can explicitly kill them in the termination handler
  */
-static pthread_t tid_fw_counter = 0;
-static pthread_t tid_ping = 0; 
+static pthread_t tid_client_check = 0;
 
 /* The internal web server */
 httpd * webserver = NULL;
 
-/* from commandline.c */
-extern char ** restartargv;
-extern pid_t restart_orig_pid;
-t_client *firstclient;
-
-/* from client_list.c */
-extern pthread_mutex_t client_list_mutex;
-
 /* Time when nodogsplash started  */
 time_t started_time = 0;
 
-/* Appends -x, the current PID, and NULL to restartargv
- * see parse_commandline in commandline.c for details
- *
- * Why is restartargv global? Shouldn't it be at most static to commandline.c
- * and this function static there? -Alex @ 8oct2006
- */
-void append_x_restartargv(void) {
-  int i;
+/* Total number of httpd request handling threads started */
+int created_httpd_threads;
+/* Number of current httpd request handling threads */
+int current_httpd_threads;
 
-  for (i=0; restartargv[i]; i++);
-
-  restartargv[i++] = safe_strdup("-x");
-  safe_asprintf(&(restartargv[i++]), "%d", getpid());
-}
-
-/* @internal
- * @brief During gateway restart, connects to the parent process via the internal socket
- * Downloads from it the active client list
- */
-void get_clients_from_parent(void) {
-  int sock;
-  struct sockaddr_un	sa_un;
-  s_config * config = NULL;
-  char linebuffer[MAX_BUF];
-  int len = 0;
-  char *running1 = NULL;
-  char *running2 = NULL;
-  char *token1 = NULL;
-  char *token2 = NULL;
-  char onechar;
-  char *command = NULL;
-  char *key = NULL;
-  char *value = NULL;
-  t_client * client = NULL;
-  t_client * lastclient = NULL;
-
-  config = config_get_config();
-	
-  debug(LOG_INFO, "Connecting to parent to download clients");
-
-  /* Connect to socket */
-  sock = socket(AF_UNIX, SOCK_STREAM, 0);
-  memset(&sa_un, 0, sizeof(sa_un));
-  sa_un.sun_family = AF_UNIX;
-  strncpy(sa_un.sun_path, config->internal_sock, (sizeof(sa_un.sun_path) - 1));
-
-  if (connect(sock, (struct sockaddr *)&sa_un, strlen(sa_un.sun_path) + sizeof(sa_un.sun_family))) {
-    debug(LOG_ERR, "Failed to connect to parent (%s) - client list not downloaded", strerror(errno));
-    return;
-  }
-
-  debug(LOG_INFO, "Connected to parent.  Downloading clients");
-
-  LOCK_CLIENT_LIST();
-
-  command = NULL;
-  memset(linebuffer, 0, sizeof(linebuffer));
-  len = 0;
-  client = NULL;
-  /* Get line by line */
-  while (read(sock, &onechar, 1) == 1) {
-    if (onechar == '\n') {
-      /* End of line */
-      onechar = '\0';
-    }
-    linebuffer[len++] = onechar;
-
-    if (!onechar) {
-      /* We have a complete entry in linebuffer - parse it */
-      debug(LOG_DEBUG, "Received from parent: [%s]", linebuffer);
-      running1 = linebuffer;
-      while ((token1 = strsep(&running1, "|")) != NULL) {
-	if (!command) {
-	  /* The first token is the command */
-	  command = token1;
-	}
-	else {
-	  /* Token1 has something like "foo=bar" */
-	  running2 = token1;
-	  key = value = NULL;
-	  while ((token2 = strsep(&running2, "=")) != NULL) {
-	    if (!key) {
-	      key = token2;
-	    }
-	    else if (!value) {
-	      value = token2;
-	    }
-	  }
-	}
-
-	if (strcmp(command, "CLIENT") == 0) {
-	  /* This line has info about a client in the client list */
-	  if (!client) {
-	    /* Create a new client struct */
-	    client = safe_malloc(sizeof(t_client));
-	    memset(client, 0, sizeof(t_client));
-	  }
-	}
-
-	if (key && value) {
-	  if (strcmp(command, "CLIENT") == 0) {
-	    /* Assign the key into the appropriate slot in the connection structure */
-	    if (strcmp(key, "ip") == 0) {
-	      client->ip = safe_strdup(value);
-	    }
-	    else if (strcmp(key, "mac") == 0) {
-	      client->mac = safe_strdup(value);
-	    }
-	    else if (strcmp(key, "token") == 0) {
-	      client->token = strcmp(value,"NULL") ? safe_strdup(value) : NULL;
-	    }
-	    else if (strcmp(key, "fw_connection_state") == 0) {
-	      client->fw_connection_state = atoi(value);
-	    }
-	    else if (strcmp(key, "added_time") == 0) {
-	      client->added_time = (time_t) atoll(value);
-	    }
-	    else if (strcmp(key, "counters_incoming") == 0) {
-	      client->counters.incoming_history = atoll(value);
-	      client->counters.incoming = client->counters.incoming_history;
-	    }
-	    else if (strcmp(key, "counters_outgoing") == 0) {
-	      client->counters.outgoing_history = atoll(value);
-	      client->counters.outgoing = client->counters.outgoing_history;
-	    }
-	    else if (strcmp(key, "counters_last_updated") == 0) {
-	      client->counters.last_updated = (time_t) atoll(value);
-	    }
-	    else {
-	      debug(LOG_WARNING, "I don't know how to inherit key [%s] value [%s] from parent", key, value);
-	    }
-	  }
-	}
-      }
-
-      /* End of parsing this command */
-      if (client) {
-	/* Add this client to the client list */
-	if (!firstclient) {
-	  firstclient = client;
-	  lastclient = firstclient;
-	}
-	else {
-	  lastclient->next = client;
-	  lastclient = client;
-	}
-      }
-
-      /* Clean up */
-      command = NULL;
-      memset(linebuffer, 0, sizeof(linebuffer));
-      len = 0;
-      client = NULL;
-    }
-  }
-
-  UNLOCK_CLIENT_LIST();
-  debug(LOG_INFO, "Client list downloaded successfully from parent");
-
-  close(sock);
-}
 
 /**@internal
  * @brief Handles SIGCHLD signals to avoid zombie processes
@@ -278,6 +114,9 @@ sigchld_handler(int s) {
     return;
   }
 
+  debug(LOG_DEBUG, "SIGCHLD handler: Process PID %d changed state, status %d not exited, ignoring", (int)rc, status);
+  return;
+
 }
 
 /** Exits cleanly after cleaning up the firewall.  
@@ -287,7 +126,7 @@ termination_handler(int s) {
   static	pthread_mutex_t	sigterm_mutex = PTHREAD_MUTEX_INITIALIZER;
   s_config *config = config_get_config();
 
-  debug(LOG_INFO, "Handler for termination caught signal %d", s);
+  debug(LOG_NOTICE, "Handler for termination caught signal %d", s);
 
   /* Makes sure we only call fw_destroy() once. */
   if (pthread_mutex_trylock(&sigterm_mutex)) {
@@ -306,13 +145,9 @@ termination_handler(int s) {
    * termination handler) from happening so we need to explicitly kill the threads 
    * that use that
    */
-  if (tid_fw_counter) {
+  if (tid_client_check) {
     debug(LOG_INFO, "Explicitly killing the fw_counter thread");
-    pthread_kill(tid_fw_counter, SIGKILL);
-  }
-  if (tid_ping) {
-    debug(LOG_INFO, "Explicitly killing the ping thread");
-    pthread_kill(tid_ping, SIGKILL);
+    pthread_kill(tid_client_check, SIGKILL);
   }
 
   debug(LOG_NOTICE, "Exiting...");
@@ -378,12 +213,16 @@ init_signals(void) {
  */
 static void
 main_loop(void) {
+
   int result;
   pthread_t	tid;
   s_config *config = config_get_config();
+  struct timespec wait_time;
+  int msec;
   request *r;
   void **params;
   FILE *fh;
+  int* thread_serial_num_p;
 
   /* Set the time when nodogsplash started */
   if (!started_time) {
@@ -402,15 +241,15 @@ main_loop(void) {
       debug(LOG_ERR, "Could not get IP address information of %s, exiting...", config->gw_interface);
       exit(1);
     }
-    debug(LOG_DEBUG, "Detected gateway %s = %s", config->gw_interface, config->gw_address);
+    debug(LOG_NOTICE, "Detected gateway %s at %s", config->gw_interface, config->gw_address);
   }
 
   /* Initializes the web server */
-  debug(LOG_NOTICE, "Creating web server on %s:%d", config->gw_address, config->gw_port);
   if ((webserver = httpdCreate(config->gw_address, config->gw_port)) == NULL) {
     debug(LOG_ERR, "Could not create web server: %s", strerror(errno));
     exit(1);
   }
+  debug(LOG_NOTICE, "Created web server on %s:%d", config->gw_address, config->gw_port);
 
   /* Set web root for server */
   debug(LOG_DEBUG, "Setting web root: %s",config->webroot);
@@ -425,16 +264,18 @@ main_loop(void) {
   httpdAddWildcardContent(webserver,config->pagesdir,NULL,config->pagesdir);
 
 
-  debug(LOG_DEBUG, "Assigning callbacks to web server");
+  debug(LOG_DEBUG, "Registering callbacks to web server");
 	
   httpdAddCContent(webserver, "/", "", 0, NULL, http_nodogsplash_callback_index);
   httpdAddCWildcardContent(webserver, config->authdir, NULL, http_nodogsplash_callback_auth);
   httpdAddCWildcardContent(webserver, config->denydir, NULL, http_nodogsplash_callback_deny);
   httpdAddC404Content(webserver, http_nodogsplash_callback_404);
 
-  /* Reset the firewall (cleans it, if we are restarting after nodogsplash crash) */
+  /* Reset the firewall (cleans it, in case we are restarting after nodogsplash crash) */
+  
   fw_destroy();
   /* Then initialize it */
+  debug(LOG_NOTICE, "Initializing firewall rules");
   if( fw_init() != 0 ) {
     debug(LOG_ERR, "Error initializing firewall rules! Cleaning up");
     fw_destroy();
@@ -442,23 +283,28 @@ main_loop(void) {
     exit(1);
   }
 
-  /* Start clean up thread */
-  result = pthread_create(&tid_fw_counter, NULL, (void *)thread_client_timeout_check, NULL);
+  /* Start client statistics and timeout clean-up thread */
+  result = pthread_create(&tid_client_check, NULL, (void *)thread_client_timeout_check, NULL);
   if (result != 0) {
-    debug(LOG_ERR, "FATAL: Failed to create a new thread (fw_counter) - exiting");
+    debug(LOG_ERR, "FATAL: Failed to create thread_client_timeout_check - exiting");
     termination_handler(0);
   }
-  pthread_detach(tid_fw_counter);
+  pthread_detach(tid_client_check);
 
   /* Start control thread */
   result = pthread_create(&tid, NULL, (void *)thread_ndsctl, (void *)safe_strdup(config->ndsctl_sock));
   if (result != 0) {
-    debug(LOG_ERR, "FATAL: Failed to create a new thread (ndsctl) - exiting");
+    debug(LOG_ERR, "FATAL: Failed to create thread_ndsctl - exiting");
     termination_handler(0);
   }
   pthread_detach(tid);
 	
-  debug(LOG_INFO, "Waiting for connections");
+  /*
+   * Enter the httpd request handling loop
+   */
+  debug(LOG_NOTICE, "Waiting for connections");
+  created_httpd_threads = 0;
+  current_httpd_threads = 0;
   while(1) {
     r = httpdGetConnection(webserver, NULL);
 
@@ -466,7 +312,7 @@ main_loop(void) {
      * values that are not -1, 0 or 1. */
     if (webserver->lastError == -1) {
       /* Interrupted system call */
-      continue; /* restart loop */
+      continue; /* continue loop from the top */
     }
     else if (webserver->lastError < -1) {
       /*
@@ -481,18 +327,30 @@ main_loop(void) {
       /*
        * We got a connection
        *
-       * We should create another thread  (memory leak here?)
+       * We create another thread to handle the request,
+       * possibly sleeping first if there are too many already
        */
-      debug(LOG_INFO, "Received connection from %s, spawning worker thread", r->clientAddr);
+      debug(LOG_DEBUG,"%d current httpd threads.", current_httpd_threads);
+      if(config->decongest_httpd_threads && current_httpd_threads >= config->httpd_thread_threshold) {
+	msec = current_httpd_threads * config->httpd_thread_delay_ms;
+	wait_time.tv_sec = msec / 1000;
+	wait_time.tv_nsec = (msec % 1000) * 1000000;
+	debug(LOG_INFO, "Httpd thread creation delayed %ld sec %ld nanosec for congestion.",
+	      wait_time.tv_sec, wait_time.tv_nsec);
+	nanosleep(&wait_time,NULL);
+      }
+      thread_serial_num_p = (int*) malloc(sizeof(int)); /* thread_httpd() must free */
+      *thread_serial_num_p = created_httpd_threads;
+      debug(LOG_INFO, "Creating httpd request thread %d for %s", *thread_serial_num_p, r->clientAddr);
       /* The void**'s are a simulation of the normal C
        * function calling sequence. */
-      params = safe_malloc(2 * sizeof(void *));
+      params = safe_malloc(3 * sizeof(void *)); /* thread_httpd() must free */
       *params = webserver;
       *(params + 1) = r;
-
+      *(params + 2) = thread_serial_num_p;
       result = pthread_create(&tid, NULL, (void *)thread_httpd, (void *)params);
       if (result != 0) {
-	debug(LOG_ERR, "FATAL: Failed to create a new thread (httpd) - exiting");
+	debug(LOG_ERR, "FATAL: pthread_create failed to create httpd request thread - exiting...");
 	termination_handler(0);
       }
       pthread_detach(tid);
@@ -518,6 +376,7 @@ int main(int argc, char **argv) {
   parse_commandline(argc, argv);
 
   /* Initialize the config */
+  debug(LOG_NOTICE,"Reading and validating configuration file %s", config->configfile);
   config_read(config->configfile);
   config_validate();
 
@@ -525,34 +384,16 @@ int main(int argc, char **argv) {
   client_list_init();
 
   /* Init the signals to catch chld/quit/etc */
+  debug(LOG_NOTICE,"Initializing signal handlers");
   init_signals();
-
-  if (restart_orig_pid) {
-    /*
-     * We were restarted and our parent is waiting for us to talk to it over the socket
-     */
-    get_clients_from_parent();
-
-    /*
-     * At this point the parent will start destroying itself and the firewall.
-     * Let it finish its job before we continue
-     */
-    while (kill(restart_orig_pid, 0) != -1) {
-      debug(LOG_INFO, "Waiting for parent PID %d to die before continuing loading", restart_orig_pid);
-      sleep(1);
-    }
-
-    debug(LOG_INFO, "Parent PID %d seems to be dead. Continuing loading.");
-  }
 
   if (config->daemon) {
 
-    debug(LOG_INFO, "Forking into background");
+    debug(LOG_NOTICE, "Starting as daemon, forking to background");
 
     switch(safe_fork()) {
     case 0: /* child */
       setsid();
-      append_x_restartargv();
       main_loop();
       break;
 
@@ -562,7 +403,6 @@ int main(int argc, char **argv) {
     }
   }
   else {
-    append_x_restartargv();
     main_loop();
   }
 

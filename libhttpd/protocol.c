@@ -36,7 +36,7 @@
 #include "config.h"
 #include "httpd.h"
 #include "httpd_priv.h"
-#include "../src/debug.h"
+#include "../src/debug.h" /* for debug P. Kube */
 
 int _httpd_net_read(sock, buf, len)
 	int	sock;
@@ -176,7 +176,7 @@ void _httpd_writeAccessLog(httpd *server, request *r)
 	int	responseCode;
 
 	responseCode = atoi(r->response.response);
-	debug(LOG_INFO,  "[libhttpd] %s - - %s \"%s\" %d %d\n", 
+	debug(LOG_INFO,  "[libhttpd] %s - - %s \"%s\" %d %d", 
 	      r->clientAddr, httpdRequestMethodName(r), 
 	      httpdRequestPath(r), responseCode, 
 	      r->response.responseLength);

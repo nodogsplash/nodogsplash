@@ -100,15 +100,17 @@ managed interface. Each packet is one of these kinds:
      is allow, and source MAC address of the packet does not match one listed
      in the AllowedMACList or the TrustedMACList. These packets are dropped.
   2. Trusted, if the source MAC address of the packet matches one listed in the
-     TrustedMACList. These packets are accepted and routed to a set of
-     addresses and ports controlled by FirewallRuleSet trusted-users and
-     FirewallRuleSet trusted-users-to-router in the nodogsplash.conf
-     configuration file.
-  3. Authenticated, if the packet's IP and MAC source address has gone through
-     the nodogsplash authentication process and has not yet expired. These
-     packets are accepted and routed to a limited set of addresses and ports
-     (see FirewallRuleSet authenticated-users and FirewallRuleSet users-to-
-     router in the nodogsplash.conf configuration file).
+     TrustedMACList. By default, these packets are accepted and routed to all
+     destination addresses and ports. If desired, this behavior can be
+     customized by FirewallRuleSet trusted-users and FirewallRuleSet trusted-
+     users-to-router lists in the nodogsplash.conf configuration file, or by
+     the EmptyRuleSetPolicy trusted-users EmptyRuleSetPolicy trusted-users-to-
+     router directives.
+  3. Authenticated, if the packet's IP and MAC source addresses have gone
+     through the nodogsplash authentication process and has not yet expired.
+     These packets are accepted and routed to a limited set of addresses and
+     ports (see FirewallRuleSet authenticated-users and FirewallRuleSet users-
+     to-router in the nodogsplash.conf configuration file).
   4. Preauthenticated. Any other packet. These packets are accepted and routed
      to a limited set of addresses and ports (see FirewallRuleSet
      preauthenticated-users and FirewallRuleSet users-to-router in the
@@ -192,7 +194,7 @@ secure as-is for basic internet sharing applications, but it is customizable.
       <form method='GET' action='$authaction'>
       <input type='hidden' name='tok' value='$tok'>
       <input type='hidden' name='redir' value='$redir'>
-      <input type='submit' value='Enter'>
+      <input type='submit' value='Click Here to Enter'>
       </form>
 
 
@@ -304,7 +306,10 @@ configuration file.)
 
 Eventually, new releases of Nodogsplash will be compiled against some stable
 version of OpenWRT Kamikaze. Meanwhile, Nodogsplash has been tested on some
-versions of Kamikaze and found to work, if these changes are made:
+versions of Kamikaze and found to work.
+An explanation of steps that may be required to successfully install
+Nodogsplash on Kamikaze is available here: anarcat_post_on_forum.opernwrt.org
+Here is a shorter summary of what is required:
 
 * The default name for the (wired and wireless) LAN interface in Kamikaze is
   br-lan. Edit /etc/nodogsplash/nodogsplash.conf and set GatewayInterface
@@ -322,6 +327,6 @@ versions of Kamikaze and found to work, if these changes are made:
   And then use /etc/init.d/nodogsplash to start and stop Nodogsplash from the
   command line.
 
-Thanks to Tobias Pal and Jeff Allen for testing on Kamikaze.
+Thanks to Tobias Pal and Jeff Allen and anarcat for testing on Kamikaze.
 -------------------------------------------------------------------------------
 Email contact: nodogsplash (at) kokoro.ucsd.edu

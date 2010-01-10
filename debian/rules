@@ -7,7 +7,7 @@ build: build-stamp
 build-stamp:
 	dh_testdir
 
-	./configure --prefix=/usr
+	./configure --prefix=/usr --sysconfdir=/etc
 	$(MAKE)
 
 	touch build-stamp
@@ -30,8 +30,8 @@ install: build
 
 	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
 	mkdir -p $(CURDIR)/debian/tmp/etc
-	cp wifidog.conf $(CURDIR)/debian/tmp/etc
-	cp scripts/init.d/wifidog debian/wifidog.init
+	cp nodogsplash.conf $(CURDIR)/debian/tmp/etc
+	cp scripts/init.d/S65nodogsplash debian/nodogsplash.init
 
 # Build architecture-independent files here.
 binary-indep: build install

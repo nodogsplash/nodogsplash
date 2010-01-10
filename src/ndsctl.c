@@ -54,7 +54,6 @@ static void ndsctl_print(char *);
 static void ndsctl_status(void);
 static void ndsctl_clients(void);
 static void ndsctl_stop(void);
-static void ndsctl_restart(void);
 static void ndsctl_block(void);
 static void ndsctl_unblock(void);
 static void ndsctl_allow(void);
@@ -478,10 +477,6 @@ ndsctl_untrust(void) {
 		"MAC %s untrusted.\n",
 		"Failed to untrust MAC %s.\n");
 }
-static void
-ndsctl_restart(void) {
-  ndsctl_print("restart");
-}
 
 int
 main(int argc, char **argv) {
@@ -501,10 +496,6 @@ main(int argc, char **argv) {
 	
   case NDSCTL_STOP:
     ndsctl_stop();
-    break;
-
-  case NDSCTL_RESTART:
-    ndsctl_restart();
     break;
 
   case NDSCTL_BLOCK:

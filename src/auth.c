@@ -51,11 +51,10 @@
 extern	pthread_mutex_t	client_list_mutex;
 
 /* Count number of authentications */
-unsigned int authenticated_this_session = 0;
+unsigned int authenticated_since_start = 0;
 
-/** Launches a thread that periodically checks if any of the connections has timed out
-@param arg Must contain a pointer to a string containing the IP adress of the client to check to check
-@todo Also pass MAC adress? 
+/** Launched in its own thread.
+ *  This just wakes up every config.checkinterval seconds, and calls fw_refresh_client_list()
 @todo This thread loops infinitely, need a watchdog to verify that it is still running?
 */  
 void
@@ -110,7 +109,7 @@ auth_client_action(char *ip, char *mac, t_authaction action) {
     if(client->fw_connection_state != FW_MARK_AUTHENTICATED) {
       client->fw_connection_state = FW_MARK_AUTHENTICATED;
       iptables_fw_access(AUTH_MAKE_AUTHENTICATED,client->ip,client->mac);
-      authenticated_this_session++;
+      authenticated_since_start++;
     } else {
       debug(LOG_INFO, "Nothing to do, %s %s already authenticated", client->ip, client->mac);
     }

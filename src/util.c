@@ -26,7 +26,7 @@
   @brief Misc utility functions
   @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
   @author Copyright (C) 2006 Benoit Gr√©goire <bock@step.polymtl.ca>
-  @author Copyright (C) 2008 Paul Kube©goire <nodogsplash@kokoro.ucsd.edu>
+  @author Copyright (C) 2008 Paul Kube <nodogsplash@kokoro.ucsd.edu>
  */
 
 #define _GNU_SOURCE
@@ -70,7 +70,12 @@ extern	pthread_mutex_t	client_list_mutex;
 extern	pthread_mutex_t	config_mutex;
 
 /* Defined in auth.c */
-extern unsigned int authenticated_this_session;
+extern unsigned int authenticated_since_start;
+
+/* Defined in gateway.c */
+extern int created_httpd_threads;
+extern int current_httpd_threads;
+
 
 /** Fork a child and execute a shell command.
  * The parent process waits for the child to return,
@@ -88,8 +93,8 @@ execute(char *cmd_line, int quiet) {
   new_argv[2] = cmd_line;
   new_argv[3] = NULL;
 
-  /* Temporarily get rid of SIGCHLD handler (see gateway.c),
-   * until child exits.  Will handle SIGCHLD with waitpid() in the parent. */
+  /* Temporarily get rid of SIGCHLD handler (see gateway.c), until child exits.
+   * Will handle SIGCHLD here with waitpid() in the parent. */
   debug(LOG_DEBUG,"Setting default SIGCHLD handler SIG_DFL"); 
   sa.sa_handler = SIG_DFL;
   sigemptyset(&sa.sa_mask);
@@ -109,8 +114,8 @@ execute(char *cmd_line, int quiet) {
     }
 
   } else {        /* for the parent:      */
-    debug(LOG_DEBUG, "Waiting for PID %d to exit", (int)pid);
 
+    debug(LOG_DEBUG, "Waiting for PID %d to exit", (int)pid);
     do {
       rc = waitpid(pid, &status, 0);
       if(rc == -1) {
@@ -422,10 +427,11 @@ char * get_status_text() {
   snprintf((buffer + len), (sizeof(buffer) - len), "====\n");
   len = strlen(buffer);
 
-  snprintf((buffer + len), (sizeof(buffer) - len), "Client authentications this session: %lu\n", authenticated_this_session);
+  snprintf((buffer + len), (sizeof(buffer) - len), "Client authentications since start: %lu\n", authenticated_since_start);
   len = strlen(buffer);
 
-  
+  snprintf((buffer + len), (sizeof(buffer) - len), "Httpd request threads created/current: %d/%d\n", created_httpd_threads, current_httpd_threads);
+  len = strlen(buffer);
   
 
   /* Update the client's counters so info is current */

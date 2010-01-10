@@ -25,6 +25,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <time.h>
+#include <syslog.h> /* for debug P. Kube */
+#include <errno.h>  /* for debug P. Kube */
+
 
 #if defined(_WIN32)
 #include <winsock2.h>
@@ -41,6 +44,7 @@
 #include "config.h"
 #include "httpd.h"
 #include "httpd_priv.h"
+#include "../src/debug.h" /* for debug P. Kube */
 
 #ifdef HAVE_STDARG_H
 #  include <stdarg.h>
@@ -251,11 +255,10 @@ httpd *httpdCreate(host, port)
 #endif
 
   sock = socket(AF_INET, SOCK_STREAM, 0);
-  if (sock  < 0)
-    {
-      free(new);
-      return(NULL);
-    }
+  if (sock  < 0)    {
+    free(new);
+    return(NULL);
+  }
 #	ifdef SO_REUSEADDR
   opt = 1;
   setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&opt,sizeof(int));
@@ -263,22 +266,25 @@ httpd *httpdCreate(host, port)
   new->serverSock = sock;
   bzero(&addr, sizeof(addr));
   addr.sin_family = AF_INET;
-  if (new->host == HTTP_ANY_ADDR)
-    {
-      addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    }
-  else
-    {
-      addr.sin_addr.s_addr = inet_addr(new->host);
-    }
+  if (new->host == HTTP_ANY_ADDR)    {
+    addr.sin_addr.s_addr = htonl(INADDR_ANY);
+  }
+  else    {
+    addr.sin_addr.s_addr = inet_addr(new->host);
+  }
   addr.sin_port = htons((u_short)new->port);
-  if (bind(sock,(struct sockaddr *)&addr,sizeof(addr)) <0)
-    {
-      close(sock);
-      free(new);
-      return(NULL);
-    }
-  listen(sock, 128);
+  if (bind(sock,(struct sockaddr *)&addr,sizeof(addr)) <0)    {
+    close(sock);
+    free(new);
+    debug(LOG_ERR,"[libhttpd] bind() on server socket error:  %s", strerror(errno));
+    return(NULL);
+  }
+  if(listen(sock, 128) < 0) {
+    close(sock);
+    free(new);
+    debug(LOG_ERR,"[libhttpd] listen() on server socket error:  %s", strerror(errno));
+    return(NULL);
+  }
   new->startTime = time(NULL);
   return(new);
 }
@@ -309,24 +315,21 @@ request *httpdGetConnection(server, timeout)
   FD_ZERO(&fds);
   FD_SET(server->serverSock, &fds);
   result = 0;
-  while(result == 0)
-    {
-      result = select(server->serverSock + 1, &fds, 0, 0, timeout);
-      if (result < 0)
-	{
-	  server->lastError = -1;
-	  return(NULL);
-	}
-      if (timeout != 0 && result == 0)
-	{
-	  return(NULL);
-	  server->lastError = 0;
-	}
-      if (result > 0)
-	{
-	  break;
-	}
+  while(result == 0)    {
+    result = select(server->serverSock + 1, &fds, 0, 0, timeout);
+    if (result < 0)	{
+      debug(LOG_ERR,"[libhttpd] select() on server socket error:  %s", strerror(errno));
+      server->lastError = -1;
+      return(NULL);
     }
+    if (timeout != 0 && result == 0)	{
+      server->lastError = 0;
+      return(NULL);
+    }
+    if (result > 0)	{
+      break;
+    }
+  }
   /* Allocate request struct */
   r = (request *)malloc(sizeof(request));
   if (r == NULL) {
@@ -339,27 +342,33 @@ request *httpdGetConnection(server, timeout)
   addrLen = sizeof(addr);
   r->clientSock = accept(server->serverSock,(struct sockaddr *)&addr,
 			 &addrLen);
+  if (r->clientSock == -1) {
+    debug(LOG_ERR,"[libhttpd] accept() server socket error:  %s", strerror(errno));
+    return(NULL);
+  }
   ipaddr = inet_ntoa(addr.sin_addr);
-  if (ipaddr)
+  if (ipaddr) {
     strncpy(r->clientAddr, ipaddr, HTTP_IP_ADDR_LEN);
-  else
-    *r->clientAddr = 0;
+  }
+  else {
+    debug(LOG_WARNING,"[libhttpd] accept() unable to get client IP.");
+    r->clientAddr[0] = '\0';
+  }
   r->readBufRemain = 0;
   r->readBufPtr = NULL;
 
   /*
   ** Check the default ACL
   */
-  if (server->defaultAcl)
-    {
-      if (httpdCheckAcl(server, r, server->defaultAcl)
-	  == HTTP_ACL_DENY)
-	{
-	  httpdEndRequest(r);
-	  server->lastError = 2;
-	  return(NULL);
-	}
+  if (server->defaultAcl)    {
+    if (httpdCheckAcl(server, r, server->defaultAcl)
+	== HTTP_ACL_DENY)	{
+      debug(LOG_WARNING,"[libhttpd] server ACL deny");
+      httpdEndRequest(r);
+      server->lastError = 2;
+      return(NULL);
     }
+  }
   return(r);
 }
 

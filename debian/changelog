@@ -1,4 +1,14 @@
-wifidog (1.0.0-1) stable; urgency=low
+nodogsplash (0.9.9-3) stable; urgency=low
+
+  * Fixed buffer overflow bug in ndsctl.
+  * Improved SIGCHLD handling in gateway.c and util.c.
+  * Added FirewallRulesets trusted-users and trusted-users-to-router. This permits customized access control for trusted users, as for authenticated users, with the same ruleset semantics, instead of always accepting all trusted packets.
+  * Added EmptyRuleSetPolicy directives for .conf file.  Permits optionally passing packets through to pre-existing firewall rules.
+  * updated debian rules (for building debian package)
+
+ -- Andraz Sraka <a@frubsd.org>  Sun, 11 Aug 2009 09:15:00 -0100
+
+nodogsplash (0.3.0-1) stable; urgency=low
 
   * New init.d file.
   * Inclu
@@ -7,7 +17,7 @@ wifidog (1.0.0-1) stable; urgency=low
 
  -- Guillaume Beaudoin <isf@soli.ca>  Sun, 29 Aug 2004 23:14:12 -0400
 
-wifidog (0.2.0-1) stable; urgency=low
+nodogsplash (0.2.0-1) stable; urgency=low
 
   * Initial Package
 

@@ -81,6 +81,12 @@
 #define DEFAULT_FW_MARK_AUTHENTICATED 0x400
 #define DEFAULT_FW_MARK_TRUSTED 0x200
 #define DEFAULT_FW_MARK_BLOCKED 0x100
+#define DEFAULT_DECONGEST_HTTPD_THREADS 1
+#define DEFAULT_HTTPD_THREAD_THRESHOLD 4
+#define DEFAULT_HTTPD_THREAD_DELAY_MS 100
+/* N.B.: default policies here must be ACCEPT, REJECT, or RETURN
+ * In the .conf file, they must be allow, block, or passthrough
+ * Mapping between these enforced by parse_empty_ruleset_policy() */
 #define DEFAULT_EMPTY_TRUSTED_USERS_POLICY "ACCEPT"
 #define DEFAULT_EMPTY_TRUSTED_USERS_TO_ROUTER_POLICY "ACCEPT"
 #define DEFAULT_EMPTY_USERS_TO_ROUTER_POLICY "REJECT"
@@ -164,8 +170,10 @@ typedef struct {
   int download_imq;		/**< @brief Number of IMQ handling download */
   int upload_imq;		/**< @brief Number of IMQ handling upload */
   int log_syslog;		/**< @brief boolean, whether to log to syslog */
-  int syslog_facility;		/**< @brief facility to use when using syslog for
-			   	logging */
+  int syslog_facility;		/**< @brief facility to use when using syslog for logging */
+  int decongest_httpd_threads;	/**< @brief boolean, whether to avoid httpd thread congestion */
+  int httpd_thread_threshold; 	/**< @brief number of concurrent httpd threads before trying decongestion */
+  int httpd_thread_delay_ms; /**< @brief ms delay before starting a httpd thread after threshold */
   int macmechanism; 		/**< @brief mechanism wrt MAC addrs */
   t_firewall_ruleset *rulesets;	/**< @brief firewall rules */
   t_MAC *trustedmaclist; 	/**< @brief list of trusted macs */
@@ -216,6 +224,8 @@ void parse_blocked_mac_list(char *);
 void parse_allowed_mac_list(char *);
 int check_ip_format(char *);
 int check_mac_format(char *);
+
+/** config API, used in commandline.c */
 int set_log_level(int);
 int set_password(char *);
 int set_username(char *);

@@ -97,6 +97,9 @@ typedef enum {
 	oDownloadIMQ,
 	oUploadIMQ,
 	oNdsctlSocket,
+	oDecongestHttpdThreads,
+	oHttpdThreadThreshold,
+	oHttpdThreadDelayMS,
 	oSyslogFacility,
 	oFirewallRule,
 	oFirewallRuleSet,
@@ -151,6 +154,9 @@ static const struct {
 	{ "syslogfacility", 	oSyslogFacility },
 	{ "syslogfacility", 	oSyslogFacility },
 	{ "ndsctlsocket", 	oNdsctlSocket },
+	{ "decongesthttpdthreads",	oDecongestHttpdThreads },
+	{ "httpdthreadthreshold",	oHttpdThreadThreshold },
+	{ "httpdthreaddelayms",		oHttpdThreadDelayMS },
 	{ "firewallruleset",	oFirewallRuleSet },
 	{ "firewallrule",	oFirewallRule },
 	{ "emptyrulesetpolicy",	oEmptyRuleSetPolicy },
@@ -225,6 +231,9 @@ config_init(void) {
   config.log_syslog = DEFAULT_LOG_SYSLOG;
   config.ndsctl_sock = safe_strdup(DEFAULT_NDSCTL_SOCK);
   config.internal_sock = safe_strdup(DEFAULT_INTERNAL_SOCK);
+  config.decongest_httpd_threads = DEFAULT_DECONGEST_HTTPD_THREADS;
+  config.httpd_thread_threshold = DEFAULT_HTTPD_THREAD_THRESHOLD;
+  config.httpd_thread_delay_ms = DEFAULT_HTTPD_THREAD_DELAY_MS;
   config.rulesets = NULL;
   config.trustedmaclist = NULL;
   config.blockedmaclist = NULL;
@@ -338,7 +347,7 @@ parse_empty_ruleset_policy(char *ptr, char *filename, int lineno) {
   *ptr = '\0';
 
 
-  /* get the ruleset struct with this name */
+  /* get the ruleset struct with this name; error if it doesn't exist */
   debug(LOG_DEBUG, "Parsing EmptyRuleSetPolicy for %s", rulesetname);
   ruleset = get_ruleset(rulesetname);
   if(ruleset == NULL) {
@@ -648,7 +657,7 @@ config_read(char *filename) {
   debug(LOG_INFO, "Reading configuration file '%s'", filename);
 
   if (!(fd = fopen(filename, "r"))) {
-    debug(LOG_ERR, "Could not open configuration file '%s', "
+    debug(LOG_ERR, "FATAL: Could not open configuration file '%s', "
 	  "exiting...", filename);
     exit(1);
   }
@@ -765,6 +774,29 @@ config_read(char *filename) {
     case oNdsctlSocket:
       free(config.ndsctl_sock);
       config.ndsctl_sock = safe_strdup(p1);
+      break;
+    case oDecongestHttpdThreads:
+      if ((value = parse_boolean_value(p1)) != -1) {
+	config.decongest_httpd_threads = value;
+      } else {
+	debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
+	debug(LOG_ERR, "Exiting...");
+	exit(-1);
+      }
+      break;
+    case oHttpdThreadThreshold:
+      if(sscanf(p1, "%d", &config.httpd_thread_threshold) < 1) {
+	debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
+	debug(LOG_ERR, "Exiting...");
+	exit(-1);
+      }
+      break;
+    case oHttpdThreadDelayMS:
+      if(sscanf(p1, "%d", &config.httpd_thread_delay_ms) < 1) {
+	debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
+	debug(LOG_ERR, "Exiting...");
+	exit(-1);
+      }
       break;
     case oClientIdleTimeout:
       if(sscanf(p1, "%d", &config.clienttimeout) < 1) {
@@ -914,6 +946,10 @@ config_read(char *filename) {
   }
 
   fclose(fd);
+  
+  debug(LOG_INFO, "Done reading configuration file '%s'", filename);
+
+
 }
 
 /** @internal

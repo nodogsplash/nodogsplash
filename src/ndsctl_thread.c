@@ -56,9 +56,6 @@
 extern	pthread_mutex_t	client_list_mutex;
 extern	pthread_mutex_t	config_mutex;
 
-/* Defined in commandline.c */
-extern char ** restartargv;
-
 static void *thread_ndsctl_handler(void *);
 static void ndsctl_status(int);
 static void ndsctl_clients(int);
@@ -74,7 +71,6 @@ static void ndsctl_deauth(int, char *);
 static void ndsctl_loglevel(int, char *);
 static void ndsctl_password(int, char *);
 static void ndsctl_username(int, char *);
-static void ndsctl_restart(int);
 
 /** Launches a thread that monitors the control socket for request
 @param arg Must contain a pointer to a string containing the Unix domain socket to open
@@ -82,8 +78,7 @@ static void ndsctl_restart(int);
 */  
 void
 thread_ndsctl(void *arg) {
-  int	sock,
-    fd;
+  int	sock,    fd;
   char	*sock_name;
   struct 	sockaddr_un	sa_un;
   int result;
@@ -134,7 +129,9 @@ thread_ndsctl(void *arg) {
   }
 
   while (1) {
+
     memset(&sa_un, 0, sizeof(sa_un));
+    len = (socklen_t) sizeof(sa_un); /* <<< ADDED BY DPLACKO */
     if ((fd = accept(sock, (struct sockaddr *)&sa_un, &len)) == -1){
       debug(LOG_ERR, "Accept failed on control socket: %s",
 	    strerror(errno));
@@ -218,8 +215,6 @@ thread_ndsctl_handler(void *arg) {
     ndsctl_password(fd, (request + 9));
   } else if (strncmp(request, "username", 8) == 0) {
     ndsctl_username(fd, (request + 9));
-  } else if (strncmp(request, "restart", 7) == 0) {
-    ndsctl_restart(fd);
   }
 
   if (!done) {
@@ -271,142 +266,6 @@ ndsctl_stop(int fd) {
 
   pid = getpid();
   kill(pid, SIGINT);
-}
-
-/** Semantics of a restart not well defined in nodogsplash; we don't use it. */
-static void
-ndsctl_restart(int afd) {
-  int	sock,
-    fd;
-  char	*sock_name;
-  struct 	sockaddr_un	sa_un;
-  int result;
-  s_config * conf = NULL;
-  t_client * client = NULL;
-  char * tempstring = NULL;
-  pid_t pid;
-  ssize_t written;
-  socklen_t len;
-
-  conf = config_get_config();
-
-  debug(LOG_NOTICE, "Will restart myself");
-
-  /*
-   * First, prepare the internal socket
-   */
-  memset(&sa_un, 0, sizeof(sa_un));
-  sock_name = conf->internal_sock;
-  debug(LOG_DEBUG, "Socket name: %s", sock_name);
-
-  if (strlen(sock_name) > (sizeof(sa_un.sun_path) - 1)) {
-    /* TODO: Die handler with logging.... */
-    debug(LOG_ERR, "INTERNAL socket name too long");
-    return;
-  }
-
-  debug(LOG_DEBUG, "Creating socket");
-  sock = socket(PF_UNIX, SOCK_STREAM, 0);
-
-  debug(LOG_DEBUG, "Got internal socket %d", sock);
-
-  /* If it exists, delete... Not the cleanest way to deal. */
-  unlink(sock_name);
-
-  debug(LOG_DEBUG, "Filling sockaddr_un");
-  strcpy(sa_un.sun_path, sock_name); /* XXX No size check because we check a few lines before. */
-  sa_un.sun_family = AF_UNIX;
-	
-  debug(LOG_DEBUG, "Binding socket (%s) (%d)", sa_un.sun_path, strlen(sock_name));
-	
-  /* Which to use, AF_UNIX, PF_UNIX, AF_LOCAL, PF_LOCAL? */
-  if (bind(sock, (struct sockaddr *)&sa_un, strlen(sock_name) + sizeof(sa_un.sun_family))) {
-    debug(LOG_ERR, "Could not bind internal socket: %s", strerror(errno));
-    return;
-  }
-
-  if (listen(sock, 5)) {
-    debug(LOG_ERR, "Could not listen on internal socket: %s", strerror(errno));
-    return;
-  }
-	
-  /*
-   * The internal socket is ready, fork and exec ourselves
-   */
-  debug(LOG_DEBUG, "Forking in preparation for exec()...");
-  pid = safe_fork();
-  if (pid > 0) {
-    /* Parent */
-
-    /* Wait for the child to connect to our socket :*/
-    debug(LOG_DEBUG, "Waiting for child to connect on internal socket");
-    if ((fd = accept(sock, (struct sockaddr *)&sa_un, &len)) == -1){
-      debug(LOG_ERR, "Accept failed on internal socket: %s", strerror(errno));
-      close(sock);
-      return;
-    }
-
-    close(sock);
-
-    debug(LOG_DEBUG, "Received connection from child.  Sending them all existing clients");
-
-    /* The child is connected. Send them over the socket the existing clients */
-    LOCK_CLIENT_LIST();
-    client = client_get_first_client();
-    while (client) {
-      /* Send this client */
-      safe_asprintf(&tempstring,
-		    "CLIENT|ip=%s|mac=%s|token=%s|fw_connection_state=%u|added_time=%llu|counters_incoming=%llu|counters_outgoing=%llu|counters_last_updated=%llu\n",
-		    client->ip,
-		    client->mac,
-		    client->token ? client->token : "NULL",
-		    client->fw_connection_state,
-		    (unsigned long long) (client->added_time),
-		    client->counters.incoming,
-		    client->counters.outgoing,
-		    (unsigned long long) client->counters.last_updated);
-      debug(LOG_DEBUG, "Sending to child client data: %s", tempstring);
-      len = 0;
-      while (len != strlen(tempstring)) {
-	written = write(fd, (tempstring + len), strlen(tempstring) - len);
-	if (written == -1) {
-	  debug(LOG_ERR, "Failed to write client data to child: %s", strerror(errno));
-	  free(tempstring);
-	  break;
-	}
-	else {
-	  len += written;
-	}
-      }
-      free(tempstring);
-      client = client->next;
-    }
-    UNLOCK_CLIENT_LIST();
-
-    close(fd);
-
-    debug(LOG_INFO, "Sent all existing clients to child.  Committing suicide!");
-
-    shutdown(afd, 2);
-    close(afd);
-
-    /* Our job in life is done. Commit suicide! */
-    ndsctl_stop(afd);
-  }
-  else {
-    /* Child */
-    close(sock);
-    shutdown(afd, 2);
-    close(afd);
-    debug(LOG_NOTICE, "Re-executing myself (%s)", restartargv[0]);
-    setsid();
-    execvp(restartargv[0], restartargv);
-    /* If we've reached here the exec() failed - die quickly and silently */
-    debug(LOG_ERR, "I failed to re-execute myself: %s", strerror(errno));
-    debug(LOG_ERR, "Exiting without cleanup");
-    exit(1);
-  }
-
 }
 
 static void
