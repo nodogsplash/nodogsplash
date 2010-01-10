@@ -71,8 +71,9 @@ typedef enum {
 	oGatewayInterface,
 	oGatewayAddress,
 	oGatewayPort,
-	oAuthenticatorAddress,
-	oAuthenticatorPort,
+	oRemoteAuthenticatorAddress,
+	oRemoteAuthenticatorPort,
+	oRemoteAuthenticatorPath,
 	oHTTPDMaxConn,
 	oWebRoot,
 	oSplashPage,
@@ -111,8 +112,9 @@ static const struct {
 	{ "gatewayinterface",   oGatewayInterface },
 	{ "gatewayaddress",     oGatewayAddress },
 	{ "gatewayport",        oGatewayPort },
-	{ "authenticatoraddress",     oAuthenticatorAddress },
-	{ "authenticatorport",        oAuthenticatorPort },
+	{ "remoteauthenticatoraddress",     oRemoteAuthenticatorAddress },
+	{ "remoteauthenticatorport",        oRemoteAuthenticatorPort },
+	{ "remoteauthenticatorpath",        oRemoteAuthenticatorPath },
 	{ "webroot",      	oWebRoot },
 	{ "splashpage",      	oSplashPage },
 	{ "imagesdir",   	oImagesDir },
@@ -159,8 +161,8 @@ config_init(void) {
   config.gw_interface = NULL;
   config.gw_address = NULL;
   config.gw_port = DEFAULT_GATEWAYPORT;
-  config.authenticator_address = NULL;
-  config.authenticator_port = DEFAULT_AUTHENTICATORPORT;
+  config.remote_auth_address = NULL;
+  config.remote_auth_port = DEFAULT_REMOTE_AUTH_PORT;
   config.webroot = DEFAULT_WEBROOT;
   config.splashpage = DEFAULT_SPLASHPAGE;
   config.imagesdir = DEFAULT_IMAGESDIR;
@@ -571,11 +573,14 @@ config_read(char *filename) {
     case oGatewayPort:
       sscanf(p1, "%d", &config.gw_port);
       break;
-    case oAuthenticatorAddress:
-      config.authenticator_address = safe_strdup(p1);
+    case oRemoteAuthenticatorAddress:
+      config.remote_auth_address = safe_strdup(p1);
       break;
-    case oAuthenticatorPort:
-      sscanf(p1, "%d", &config.authenticator_port);
+    case oRemoteAuthenticatorPort:
+      sscanf(p1, "%d", &config.remote_auth_port);
+      break;
+    case oRemoteAuthenticatorPath:
+      config.remote_auth_path = safe_strdup(p1);
       break;
     case oFirewallRuleSet:
       parse_firewall_ruleset(p1, fd, filename, &linenum);

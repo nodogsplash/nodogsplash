@@ -27,8 +27,21 @@
 #ifndef _HTTP_H_
 #define _HTTP_H_
 
+#include "auth.h"
 #include "httpd.h"
 #include "client_list.h"
+
+/**
+ * Define parts of an authentication target.
+ */
+typedef struct _auth_target_t {
+  char *ip;			/**< @brief IP of auth server */
+  int port;			/**< @brief Port of auth server */
+  char *authdir;		/**< @brief Auth dir */
+  char *denydir;		/**< @brief Deny dir */
+  char *token;			/**< @brief Client token */
+  char *redir;			/**< @brief Client redirect target */
+} t_auth_target;
 
 /**@brief Callback for libhttpd, serves nodogsplash splash page */
 void http_nodogsplash_callback_404(httpd *webserver, request *r);
@@ -38,18 +51,26 @@ void http_nodogsplash_callback_index(httpd *webserver, request *r);
 void http_nodogsplash_callback_auth(httpd *webserver, request *r);
 /**@brief Callback for libhttpd, denies a client for nodogsplash */
 void http_nodogsplash_callback_deny(httpd *webserver, request *r);
+/**@brief The multipurpose authentication action handler */
+void http_nodogsplash_callback_action(request *r, t_auth_target *authtarget, t_authaction action);
 /**@brief Add client identified in request to client list. */
 t_client* http_nodogsplash_add_client(request *r);
 /**@brief Serve a 307 Temporary Redirect */
 void http_nodogsplash_redirect(request *r, char *url);
 /**@brief Serve the splash page from its file */
-void http_nodogsplash_serve_splash(request *r, char *token);
+void http_nodogsplash_serve_splash(request *r, t_auth_target *authtarget);
 /**@brief Handle initial contact from client */
 void http_nodogsplash_first_contact(request *r);
 /**@brief Decode token and redirect URL from a request */
-void http_nodogsplash_decode_authtarget(request *r, char **token, char **redir);
+t_auth_target* http_nodogsplash_decode_authtarget(request *r);
 /**@brief Malloc and return a string that is the authenticating URL */
-char* http_nodogsplash_encode_authtarget(request *r, char *token);
+char* http_nodogsplash_encode_authtarget(t_auth_target *authtarget);
+/**@brief Malloc and return a t_auth_target struct encoding info */
+t_auth_target* http_nodogsplash_make_authtarget(char* token, char* redirhost, char* redirpath);
+/**@brief Malloc and return a t_auth_target struct encoding info */
+t_auth_target* http_nodogsplash_make_authtarget_from_request(request *r);
+/**@brief Free a t_auth_target struct */
+void http_nodogsplash_free_authtarget(t_auth_target* authtarget);
 /**@brief Allocate and return a random string of 8 hex digits
    suitable as an authentication token */
 char * http_make_auth_token();
@@ -57,5 +78,7 @@ char * http_make_auth_token();
 void http_nodogsplash_header(request *r, char *title);
 /** @brief Sends HTML footer to web browser */
 void http_nodogsplash_footer(request *r);
+
+
 
 #endif /* _HTTP_H_ */

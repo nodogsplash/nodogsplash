@@ -46,7 +46,7 @@
 #define DEFAULT_MAXCLIENTS 20
 #define DEFAULT_GATEWAYNAME "NoDogSplash"
 #define DEFAULT_GATEWAYPORT 2050
-#define DEFAULT_AUTHENTICATORPORT 80
+#define DEFAULT_REMOTE_AUTH_PORT 80
 #define DEFAULT_CHECKINTERVAL 60
 #define DEFAULT_CLIENTTIMEOUT 10
 #define DEFAULT_CLIENTFORCEOUT 360
@@ -112,8 +112,9 @@ typedef struct {
   char *gw_interface;		/**< @brief Interface we will accept connections on */
   char *gw_address;		/**< @brief Internal IP address for our web server */
   int gw_port;			/**< @brief Port the webserver will run on */
-  char *authenticator_address;	/**< @brief IP address for custom web server */
-  int authenticator_port;	/**< @brief Port the custom webserver will run on */
+  char *remote_auth_address;	/**< @brief IP address for remote auth */
+  int remote_auth_port;	        /**< @brief Port the remote auth listens on */
+  char *remote_auth_path;	/**< @brief Path for remote auth cgi */
   char *webroot;		/**< @brief Directory containing splash pages, etc. */
   char *splashpage;		/**< @brief Name of main splash page */
   char *imagesdir;		/**< @brief Subdir of webroot containing .png .gif files etc */

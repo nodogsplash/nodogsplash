@@ -306,10 +306,21 @@ char * get_status_text() {
 	   config->gw_address, config->gw_port);
   len = strlen(buffer);
 
-  snprintf((buffer + len), (sizeof(buffer) - len), "Splashpage: %s/%s\n",
-	   config->webroot, config->splashpage);
-  len = strlen(buffer);
+  if(config->authenticate_immediately) {
+    snprintf((buffer + len), (sizeof(buffer) - len), "Authenticate immediately: yes\n");
+    len = strlen(buffer);
+    
+  } else {
+    snprintf((buffer + len), (sizeof(buffer) - len), "Splashpage: %s/%s\n",
+	     config->webroot, config->splashpage);
+    len = strlen(buffer);
+  }
 
+  if(config->redirectURL) {
+    snprintf((buffer + len), (sizeof(buffer) - len), "Redirect URL: %s\n",
+	     config->redirectURL);
+    len = strlen(buffer);
+  }
 
   snprintf((buffer + len), (sizeof(buffer) - len), "Traffic control: %s\n", config->traffic_control ? "yes" : "no");
   len = strlen(buffer);
@@ -405,7 +416,7 @@ char * get_status_text() {
     uptime -= minutes * 60;
     seconds = uptime;
 
-    snprintf((buffer + len), (sizeof(buffer) - len), "Active time: %ud %uh %um %us\n", days, hours, minutes, seconds);
+    snprintf((buffer + len), (sizeof(buffer) - len), "  Active time: %ud %uh %um %us\n", days, hours, minutes, seconds);
     len = strlen(buffer);
 
     snprintf((buffer + len), (sizeof(buffer) - len), "  Token: %s\n", first->token ? first->token : "none");

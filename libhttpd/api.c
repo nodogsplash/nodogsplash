@@ -64,72 +64,72 @@ char *httpdUrlDecode(char *str) {
 
 char *httpdRequestMethodName(request *r)
 {
-	static	char	tmpBuf[255];
+  static	char	tmpBuf[255];
 
-	switch(r->request.method)
-	{
-		case HTTP_GET: return("GET");
-		case HTTP_POST: return("POST");
-		default: 
-			snprintf(tmpBuf,255,"Invalid method '%d'", 
-				r->request.method);
-			return(tmpBuf);
-	}
+  switch(r->request.method)
+    {
+    case HTTP_GET: return("GET");
+    case HTTP_POST: return("POST");
+    default: 
+      snprintf(tmpBuf,255,"Invalid method '%d'", 
+	       r->request.method);
+      return(tmpBuf);
+    }
 }
 
 
 httpVar *httpdGetVariableByName(request *r, char *name)
 {
-	httpVar	*curVar;
+  httpVar	*curVar;
 
-	curVar = r->variables;
-	while(curVar)
-	{
-		if (strcmp(curVar->name, name) == 0)
-			return(curVar);
-		curVar = curVar->nextVariable;
-	}
-	return(NULL);
+  curVar = r->variables;
+  while(curVar)
+    {
+      if (strcmp(curVar->name, name) == 0)
+	return(curVar);
+      curVar = curVar->nextVariable;
+    }
+  return(NULL);
 }
 
 
 
 httpVar *httpdGetVariableByPrefix(request *r, char *prefix)
 {
-	httpVar	*curVar;
+  httpVar	*curVar;
 
-	if (prefix == NULL)
-		return(r->variables);
-	curVar = r->variables;
-	while(curVar)
-	{
-		if (strncmp(curVar->name, prefix, strlen(prefix)) == 0)
-			return(curVar);
-		curVar = curVar->nextVariable;
-	}
-	return(NULL);
+  if (prefix == NULL)
+    return(r->variables);
+  curVar = r->variables;
+  while(curVar)
+    {
+      if (strncmp(curVar->name, prefix, strlen(prefix)) == 0)
+	return(curVar);
+      curVar = curVar->nextVariable;
+    }
+  return(NULL);
 }
 
 
 httpVar *httpdGetVariableByPrefixedName(request *r, char *prefix, char *name)
 {
-	httpVar	*curVar;
-	int	prefixLen;
+  httpVar	*curVar;
+  int	prefixLen;
 
-	if (prefix == NULL)
-		return(r->variables);
-	curVar = r->variables;
-	prefixLen = strlen(prefix);
-	while(curVar)
+  if (prefix == NULL)
+    return(r->variables);
+  curVar = r->variables;
+  prefixLen = strlen(prefix);
+  while(curVar)
+    {
+      if (strncmp(curVar->name, prefix, prefixLen) == 0 &&
+	  strcmp(curVar->name + prefixLen, name) == 0)
 	{
-		if (strncmp(curVar->name, prefix, prefixLen) == 0 &&
-			strcmp(curVar->name + prefixLen, name) == 0)
-		{
-			return(curVar);
-		}
-		curVar = curVar->nextVariable;
+	  return(curVar);
 	}
-	return(NULL);
+      curVar = curVar->nextVariable;
+    }
+  return(NULL);
 }
 
 
@@ -137,159 +137,164 @@ httpVar *httpdGetNextVariableByPrefix(curVar, prefix)
 	httpVar	*curVar;
 	char	*prefix;
 {
-	if(curVar)
-		curVar = curVar->nextVariable;
-	while(curVar)
-	{
-		if (strncmp(curVar->name, prefix, strlen(prefix)) == 0)
-			return(curVar);
-		curVar = curVar->nextVariable;
-	}
-	return(NULL);
+  if(curVar)
+    curVar = curVar->nextVariable;
+  while(curVar)
+    {
+      if (strncmp(curVar->name, prefix, strlen(prefix)) == 0)
+	return(curVar);
+      curVar = curVar->nextVariable;
+    }
+  return(NULL);
 }
 
 
 int httpdAddVariable(request *r, char *name, char *value)
 {
-	httpVar *curVar, *lastVar, *newVar;
+  httpVar *curVar, *lastVar, *newVar;
 
-	while(*name == ' ' || *name == '\t')
-		name++;
-	newVar = malloc(sizeof(httpVar));
-	bzero(newVar, sizeof(httpVar));
-	newVar->name = strdup(name);
-	newVar->value = strdup(value);
-	lastVar = NULL;
-	curVar = r->variables;
-	while(curVar)
+  while(*name == ' ' || *name == '\t')
+    name++;
+  newVar = malloc(sizeof(httpVar));
+  bzero(newVar, sizeof(httpVar));
+  newVar->name = strdup(name);
+  newVar->value = strdup(value);
+  lastVar = NULL;
+  curVar = r->variables;
+  while(curVar)
+    {
+      if (strcmp(curVar->name, name) != 0)
 	{
-		if (strcmp(curVar->name, name) != 0)
-		{
-			lastVar = curVar;
-			curVar = curVar->nextVariable;
-			continue;
-		}
-		while(curVar)
-		{
-			lastVar = curVar;
-			curVar = curVar->nextValue;
-		}
-		lastVar->nextValue = newVar;
-		return(0);
+	  lastVar = curVar;
+	  curVar = curVar->nextVariable;
+	  continue;
 	}
-	if (lastVar)
-		lastVar->nextVariable = newVar;
-	else
-		r->variables = newVar;
-	return(0);
+      while(curVar)
+	{
+	  lastVar = curVar;
+	  curVar = curVar->nextValue;
+	}
+      lastVar->nextValue = newVar;
+      return(0);
+    }
+  if (lastVar)
+    lastVar->nextVariable = newVar;
+  else
+    r->variables = newVar;
+  return(0);
 }
+
+void httpd_storeData(request *r, char *query) {
+  _httpd_storeData(r,query);
+}
+
 
 httpd *httpdCreate(host, port)
 	char	*host;
 	int	port;
 {
-	httpd	*new;
-	int	sock,
-		opt;
-        struct  sockaddr_in     addr;
+  httpd	*new;
+  int	sock,
+    opt;
+  struct  sockaddr_in     addr;
 
-	/*
-	** Create the handle and setup it's basic config
-	*/
-	new = malloc(sizeof(httpd));
-	if (new == NULL)
-		return(NULL);
-	bzero(new, sizeof(httpd));
-	new->port = port;
-	if (host == HTTP_ANY_ADDR)
-		new->host = HTTP_ANY_ADDR;
-	else
-		new->host = strdup(host);
-	new->content = (httpDir*)malloc(sizeof(httpDir));
-	bzero(new->content,sizeof(httpDir));
-	new->content->name = strdup("");
+  /*
+  ** Create the handle and setup it's basic config
+  */
+  new = malloc(sizeof(httpd));
+  if (new == NULL)
+    return(NULL);
+  bzero(new, sizeof(httpd));
+  new->port = port;
+  if (host == HTTP_ANY_ADDR)
+    new->host = HTTP_ANY_ADDR;
+  else
+    new->host = strdup(host);
+  new->content = (httpDir*)malloc(sizeof(httpDir));
+  bzero(new->content,sizeof(httpDir));
+  new->content->name = strdup("");
 
-	/*
-	** Setup the socket
-	*/
+  /*
+  ** Setup the socket
+  */
 #ifdef _WIN32
-	{ 
-	WORD 	wVersionRequested;
-	WSADATA wsaData;
-	int 	err;
+  { 
+    WORD 	wVersionRequested;
+    WSADATA wsaData;
+    int 	err;
 
-	wVersionRequested = MAKEWORD( 2, 2 );
+    wVersionRequested = MAKEWORD( 2, 2 );
 
-	err = WSAStartup( wVersionRequested, &wsaData );
+    err = WSAStartup( wVersionRequested, &wsaData );
 	
-	/* Found a usable winsock dll? */
-	if( err != 0 ) 
-	   return NULL;
+    /* Found a usable winsock dll? */
+    if( err != 0 ) 
+      return NULL;
 
-	/* 
-	** Confirm that the WinSock DLL supports 2.2.
-	** Note that if the DLL supports versions greater 
-	** than 2.2 in addition to 2.2, it will still return
-	** 2.2 in wVersion since that is the version we
-	** requested.
-	*/
+    /* 
+    ** Confirm that the WinSock DLL supports 2.2.
+    ** Note that if the DLL supports versions greater 
+    ** than 2.2 in addition to 2.2, it will still return
+    ** 2.2 in wVersion since that is the version we
+    ** requested.
+    */
 
-	if( LOBYTE( wsaData.wVersion ) != 2 || 
-	    HIBYTE( wsaData.wVersion ) != 2 ) {
+    if( LOBYTE( wsaData.wVersion ) != 2 || 
+	HIBYTE( wsaData.wVersion ) != 2 ) {
 
-		/* 
-		** Tell the user that we could not find a usable
-		** WinSock DLL.
-		*/
-		WSACleanup( );
-		return NULL;
-	}
+      /* 
+      ** Tell the user that we could not find a usable
+      ** WinSock DLL.
+      */
+      WSACleanup( );
+      return NULL;
+    }
 
-	/* The WinSock DLL is acceptable. Proceed. */
- 	}
+    /* The WinSock DLL is acceptable. Proceed. */
+  }
 #endif
 
-	sock = socket(AF_INET, SOCK_STREAM, 0);
-	if (sock  < 0)
-	{
-		free(new);
-		return(NULL);
-	}
+  sock = socket(AF_INET, SOCK_STREAM, 0);
+  if (sock  < 0)
+    {
+      free(new);
+      return(NULL);
+    }
 #	ifdef SO_REUSEADDR
-	opt = 1;
-	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&opt,sizeof(int));
+  opt = 1;
+  setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&opt,sizeof(int));
 #	endif
-	new->serverSock = sock;
-	bzero(&addr, sizeof(addr));
-	addr.sin_family = AF_INET;
-	if (new->host == HTTP_ANY_ADDR)
-	{
-		addr.sin_addr.s_addr = htonl(INADDR_ANY);
-	}
-	else
-	{
-		addr.sin_addr.s_addr = inet_addr(new->host);
-	}
-	addr.sin_port = htons((u_short)new->port);
-	if (bind(sock,(struct sockaddr *)&addr,sizeof(addr)) <0)
-	{
-		close(sock);
-		free(new);
-		return(NULL);
-	}
-	listen(sock, 128);
-	new->startTime = time(NULL);
-	return(new);
+  new->serverSock = sock;
+  bzero(&addr, sizeof(addr));
+  addr.sin_family = AF_INET;
+  if (new->host == HTTP_ANY_ADDR)
+    {
+      addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    }
+  else
+    {
+      addr.sin_addr.s_addr = inet_addr(new->host);
+    }
+  addr.sin_port = htons((u_short)new->port);
+  if (bind(sock,(struct sockaddr *)&addr,sizeof(addr)) <0)
+    {
+      close(sock);
+      free(new);
+      return(NULL);
+    }
+  listen(sock, 128);
+  new->startTime = time(NULL);
+  return(new);
 }
 
 void httpdDestroy(server)
 	httpd	*server;
 {
-	if (server == NULL)
-		return;
-	if (server->host)
-		free(server->host);
-	free(server);
+  if (server == NULL)
+    return;
+  if (server->host)
+    free(server->host);
+  free(server);
 }
 
 
@@ -298,73 +303,73 @@ request *httpdGetConnection(server, timeout)
 	httpd	*server;
 	struct	timeval *timeout;
 {
-	int	result;
-	fd_set	fds;
-	struct  sockaddr_in     addr;
-	size_t  addrLen;
-	char	*ipaddr;
-	request	*r;
+  int	result;
+  fd_set	fds;
+  struct  sockaddr_in     addr;
+  size_t  addrLen;
+  char	*ipaddr;
+  request	*r;
 
-	FD_ZERO(&fds);
-	FD_SET(server->serverSock, &fds);
-	result = 0;
-	while(result == 0)
+  FD_ZERO(&fds);
+  FD_SET(server->serverSock, &fds);
+  result = 0;
+  while(result == 0)
+    {
+      result = select(server->serverSock + 1, &fds, 0, 0, timeout);
+      if (result < 0)
 	{
-		result = select(server->serverSock + 1, &fds, 0, 0, timeout);
-		if (result < 0)
-		{
-			server->lastError = -1;
-			return(NULL);
-		}
-		if (timeout != 0 && result == 0)
-		{
-			return(NULL);
-			server->lastError = 0;
-		}
-		if (result > 0)
-		{
-			break;
-		}
+	  server->lastError = -1;
+	  return(NULL);
 	}
-	/* Allocate request struct */
-	r = (request *)malloc(sizeof(request));
-	if (r == NULL) {
-		server->lastError = -3;
-		return(NULL);
+      if (timeout != 0 && result == 0)
+	{
+	  return(NULL);
+	  server->lastError = 0;
 	}
-	memset((void *)r, 0, sizeof(request));
-	/* Get on with it */
-	bzero(&addr, sizeof(addr));
-	addrLen = sizeof(addr);
-	r->clientSock = accept(server->serverSock,(struct sockaddr *)&addr,
-		&addrLen);
-	ipaddr = inet_ntoa(addr.sin_addr);
-	if (ipaddr)
-		strncpy(r->clientAddr, ipaddr, HTTP_IP_ADDR_LEN);
-	else
-		*r->clientAddr = 0;
-	r->readBufRemain = 0;
-	r->readBufPtr = NULL;
+      if (result > 0)
+	{
+	  break;
+	}
+    }
+  /* Allocate request struct */
+  r = (request *)malloc(sizeof(request));
+  if (r == NULL) {
+    server->lastError = -3;
+    return(NULL);
+  }
+  memset((void *)r, 0, sizeof(request));
+  /* Get on with it */
+  bzero(&addr, sizeof(addr));
+  addrLen = sizeof(addr);
+  r->clientSock = accept(server->serverSock,(struct sockaddr *)&addr,
+			 &addrLen);
+  ipaddr = inet_ntoa(addr.sin_addr);
+  if (ipaddr)
+    strncpy(r->clientAddr, ipaddr, HTTP_IP_ADDR_LEN);
+  else
+    *r->clientAddr = 0;
+  r->readBufRemain = 0;
+  r->readBufPtr = NULL;
 
-	/*
-	** Check the default ACL
-	*/
-	if (server->defaultAcl)
+  /*
+  ** Check the default ACL
+  */
+  if (server->defaultAcl)
+    {
+      if (httpdCheckAcl(server, r, server->defaultAcl)
+	  == HTTP_ACL_DENY)
 	{
-		if (httpdCheckAcl(server, r, server->defaultAcl)
-				== HTTP_ACL_DENY)
-		{
-			httpdEndRequest(r);
-			server->lastError = 2;
-			return(NULL);
-		}
+	  httpdEndRequest(r);
+	  server->lastError = 2;
+	  return(NULL);
 	}
-	return(r);
+    }
+  return(r);
 }
 
 
 
-/** N.B.: Functionality removed when not needed for nodogsplash.
+/** N.B.: Functionality removed when not desired for nodogsplash.
  *  See #if 0 / #endif deletions below.  --P. Kube
  */
 int httpdReadRequest(httpd *server, request *r)
@@ -580,44 +585,44 @@ int httpdReadRequest(httpd *server, request *r)
 
 void httpdEndRequest(request *r)
 {
-	_httpd_freeVariables(r->variables);
-	shutdown(r->clientSock,2);
-	close(r->clientSock);
-	free(r);
+  _httpd_freeVariables(r->variables);
+  shutdown(r->clientSock,2);
+  close(r->clientSock);
+  free(r);
 }
 
 
 void httpdFreeVariables(request *r)
 {
-        _httpd_freeVariables(r->variables);
+  _httpd_freeVariables(r->variables);
 }
 
 
 
 void httpdDumpVariables(request *r)
 {
-	httpVar	*curVar,
-		*curVal;
+  httpVar	*curVar,
+    *curVal;
 
-	curVar = r->variables;
-	while(curVar)
+  curVar = r->variables;
+  while(curVar)
+    {
+      printf("Variable '%s'\n", curVar->name);
+      curVal = curVar;
+      while(curVal)
 	{
-		printf("Variable '%s'\n", curVar->name);
-		curVal = curVar;
-		while(curVal)
-		{
-			printf("\t= '%s'\n",curVal->value);
-			curVal = curVal->nextValue;
-		}
-		curVar = curVar->nextVariable;
+	  printf("\t= '%s'\n",curVal->value);
+	  curVal = curVal->nextValue;
 	}
+      curVar = curVar->nextVariable;
+    }
 }
 
 void httpdSetFileBase(server, path)
 	httpd	*server;
 	char	*path;
 {
-	strncpy(server->fileBasePath, path, HTTP_MAX_URL);
+  strncpy(server->fileBasePath, path, HTTP_MAX_URL);
 }
 
 
@@ -629,34 +634,34 @@ int httpdAddFileContent(server, dir, name, indexFlag, preload, path)
 	int	indexFlag;
 	char	*path;
 {
-	httpDir	*dirPtr;
-	httpContent *newEntry;
+  httpDir	*dirPtr;
+  httpContent *newEntry;
 
-	dirPtr = _httpd_findContentDir(server, dir, HTTP_TRUE);
-	newEntry =  malloc(sizeof(httpContent));
-	if (newEntry == NULL)
-		return(-1);
-	bzero(newEntry,sizeof(httpContent));
-	newEntry->name = strdup(name);
-	newEntry->type = HTTP_FILE;
-	newEntry->indexFlag = indexFlag;
-	newEntry->preload = preload;
-	newEntry->next = dirPtr->entries;
-	dirPtr->entries = newEntry;
-	if (*path == '/')
-	{
-		/* Absolute path */
-		newEntry->path = strdup(path);
-	}
-	else
-	{
-		/* Path relative to base path */
-		newEntry->path = malloc(strlen(server->fileBasePath) +
-			strlen(path) + 2);
-		snprintf(newEntry->path, HTTP_MAX_URL, "%s/%s",
-			server->fileBasePath, path);
-	}
-	return(0);
+  dirPtr = _httpd_findContentDir(server, dir, HTTP_TRUE);
+  newEntry =  malloc(sizeof(httpContent));
+  if (newEntry == NULL)
+    return(-1);
+  bzero(newEntry,sizeof(httpContent));
+  newEntry->name = strdup(name);
+  newEntry->type = HTTP_FILE;
+  newEntry->indexFlag = indexFlag;
+  newEntry->preload = preload;
+  newEntry->next = dirPtr->entries;
+  dirPtr->entries = newEntry;
+  if (*path == '/')
+    {
+      /* Absolute path */
+      newEntry->path = strdup(path);
+    }
+  else
+    {
+      /* Path relative to base path */
+      newEntry->path = malloc(strlen(server->fileBasePath) +
+			      strlen(path) + 2);
+      snprintf(newEntry->path, HTTP_MAX_URL, "%s/%s",
+	       server->fileBasePath, path);
+    }
+  return(0);
 }
 
 
@@ -667,34 +672,34 @@ int httpdAddWildcardContent(server, dir, preload, path)
 	int	(*preload)();
 	char	*path;
 {
-	httpDir	*dirPtr;
-	httpContent *newEntry;
+  httpDir	*dirPtr;
+  httpContent *newEntry;
 
-	dirPtr = _httpd_findContentDir(server, dir, HTTP_TRUE);
-	newEntry =  malloc(sizeof(httpContent));
-	if (newEntry == NULL)
-		return(-1);
-	bzero(newEntry,sizeof(httpContent));
-	newEntry->name = NULL;
-	newEntry->type = HTTP_WILDCARD;
-	newEntry->indexFlag = HTTP_FALSE;
-	newEntry->preload = preload;
-	newEntry->next = dirPtr->entries;
-	dirPtr->entries = newEntry;
-	if (*path == '/')
-	{
-		/* Absolute path */
-		newEntry->path = strdup(path);
-	}
-	else
-	{
-		/* Path relative to base path */
-		newEntry->path = malloc(strlen(server->fileBasePath) +
-			strlen(path) + 2);
-		snprintf(newEntry->path, HTTP_MAX_URL, "%s/%s",
-			server->fileBasePath, path);
-	}
-	return(0);
+  dirPtr = _httpd_findContentDir(server, dir, HTTP_TRUE);
+  newEntry =  malloc(sizeof(httpContent));
+  if (newEntry == NULL)
+    return(-1);
+  bzero(newEntry,sizeof(httpContent));
+  newEntry->name = NULL;
+  newEntry->type = HTTP_WILDCARD;
+  newEntry->indexFlag = HTTP_FALSE;
+  newEntry->preload = preload;
+  newEntry->next = dirPtr->entries;
+  dirPtr->entries = newEntry;
+  if (*path == '/')
+    {
+      /* Absolute path */
+      newEntry->path = strdup(path);
+    }
+  else
+    {
+      /* Path relative to base path */
+      newEntry->path = malloc(strlen(server->fileBasePath) +
+			      strlen(path) + 2);
+      snprintf(newEntry->path, HTTP_MAX_URL, "%s/%s",
+	       server->fileBasePath, path);
+    }
+  return(0);
 }
 
 
@@ -704,16 +709,16 @@ int httpdAddC404Content(server, function)
 	httpd	*server;
 	void	(*function)();
 {
-	if (!server->handle404) {
-		server->handle404 = (http404*)malloc(sizeof(http404));
-	}
+  if (!server->handle404) {
+    server->handle404 = (http404*)malloc(sizeof(http404));
+  }
 
-	if (!server->handle404) {
-		return(-1);
-	}
+  if (!server->handle404) {
+    return(-1);
+  }
 
-	server->handle404->function = function;
-	return(0);
+  server->handle404->function = function;
+  return(0);
 }
 
 int httpdAddCContent(server, dir, name, indexFlag, preload, function)
@@ -723,22 +728,22 @@ int httpdAddCContent(server, dir, name, indexFlag, preload, function)
 	int	(*preload)();
 	void	(*function)();
 {
-	httpDir	*dirPtr;
-	httpContent *newEntry;
+  httpDir	*dirPtr;
+  httpContent *newEntry;
 
-		dirPtr = _httpd_findContentDir(server, dir, HTTP_TRUE);
-	newEntry =  malloc(sizeof(httpContent));
-	if (newEntry == NULL)
-		return(-1);
-	bzero(newEntry,sizeof(httpContent));
-	newEntry->name = strdup(name);
-	newEntry->type = HTTP_C_FUNCT;
-	newEntry->indexFlag = indexFlag;
-	newEntry->function = function;
-	newEntry->preload = preload;
-	newEntry->next = dirPtr->entries;
-	dirPtr->entries = newEntry;
-	return(0);
+  dirPtr = _httpd_findContentDir(server, dir, HTTP_TRUE);
+  newEntry =  malloc(sizeof(httpContent));
+  if (newEntry == NULL)
+    return(-1);
+  bzero(newEntry,sizeof(httpContent));
+  newEntry->name = strdup(name);
+  newEntry->type = HTTP_C_FUNCT;
+  newEntry->indexFlag = indexFlag;
+  newEntry->function = function;
+  newEntry->preload = preload;
+  newEntry->next = dirPtr->entries;
+  dirPtr->entries = newEntry;
+  return(0);
 }
 
 
@@ -748,22 +753,22 @@ int httpdAddCWildcardContent(server, dir, preload, function)
 	int	(*preload)();
 	void	(*function)();
 {
-	httpDir	*dirPtr;
-	httpContent *newEntry;
+  httpDir	*dirPtr;
+  httpContent *newEntry;
 
-	dirPtr = _httpd_findContentDir(server, dir, HTTP_TRUE);
-	newEntry =  malloc(sizeof(httpContent));
-	if (newEntry == NULL)
-		return(-1);
-	bzero(newEntry,sizeof(httpContent));
-	newEntry->name = NULL;
-	newEntry->type = HTTP_C_WILDCARD;
-	newEntry->indexFlag = HTTP_FALSE;
-	newEntry->function = function;
-	newEntry->preload = preload;
-	newEntry->next = dirPtr->entries;
-	dirPtr->entries = newEntry;
-	return(0);
+  dirPtr = _httpd_findContentDir(server, dir, HTTP_TRUE);
+  newEntry =  malloc(sizeof(httpContent));
+  if (newEntry == NULL)
+    return(-1);
+  bzero(newEntry,sizeof(httpContent));
+  newEntry->name = NULL;
+  newEntry->type = HTTP_C_WILDCARD;
+  newEntry->indexFlag = HTTP_FALSE;
+  newEntry->function = function;
+  newEntry->preload = preload;
+  newEntry->next = dirPtr->entries;
+  dirPtr->entries = newEntry;
+  return(0);
 }
 
 int httpdAddStaticContent(server, dir, name, indexFlag, preload, data)
@@ -773,109 +778,103 @@ int httpdAddStaticContent(server, dir, name, indexFlag, preload, data)
 	int	(*preload)();
 	char	*data;
 {
-	httpDir	*dirPtr;
-	httpContent *newEntry;
+  httpDir	*dirPtr;
+  httpContent *newEntry;
 
-	dirPtr = _httpd_findContentDir(server, dir, HTTP_TRUE);
-	newEntry =  malloc(sizeof(httpContent));
-	if (newEntry == NULL)
-		return(-1);
-	bzero(newEntry,sizeof(httpContent));
-	newEntry->name = strdup(name);
-	newEntry->type = HTTP_STATIC;
-	newEntry->indexFlag = indexFlag;
-	newEntry->data = data;
-	newEntry->preload = preload;
-	newEntry->next = dirPtr->entries;
-	dirPtr->entries = newEntry;
-	return(0);
+  dirPtr = _httpd_findContentDir(server, dir, HTTP_TRUE);
+  newEntry =  malloc(sizeof(httpContent));
+  if (newEntry == NULL)
+    return(-1);
+  bzero(newEntry,sizeof(httpContent));
+  newEntry->name = strdup(name);
+  newEntry->type = HTTP_STATIC;
+  newEntry->indexFlag = indexFlag;
+  newEntry->data = data;
+  newEntry->preload = preload;
+  newEntry->next = dirPtr->entries;
+  dirPtr->entries = newEntry;
+  return(0);
 }
 
-void httpdSendHeaders(request *r)
-{
-	_httpd_sendHeaders(r, 0, 0);
+void httpdSendHeaders(request *r) {
+  _httpd_sendHeaders(r, 0, 0);
 }
 
-void httpdSetResponse(request *r, char *msg)
-{
-	strncpy(r->response.response, msg, HTTP_MAX_URL);
+void httpdSetResponse(request *r, char *msg) {
+  strncpy(r->response.response, msg, HTTP_MAX_URL);
 }
 
-void httpdSetContentType(request *r, char *type)
-{
-	strcpy(r->response.contentType, type);
+void httpdSetContentType(request *r, char *type) {
+  strcpy(r->response.contentType, type);
 }
 
 
-void httpdAddHeader(request *r, char *msg)
-{
-	strcat(r->response.headers,msg);
-	if (msg[strlen(msg) - 1] != '\n')
-		strcat(r->response.headers,"\n");
+void httpdAddHeader(request *r, char *msg) {
+  strcat(r->response.headers,msg);
+  if (msg[strlen(msg) - 1] != '\n')
+    strcat(r->response.headers,"\n");
 }
 
-void httpdSetCookie(request *r, char *name, char *value)
-{
-	char	buf[HTTP_MAX_URL];
+void httpdSetCookie(request *r, char *name, char *value) {
+  char	buf[HTTP_MAX_URL];
 
-	snprintf(buf,HTTP_MAX_URL, "Set-Cookie: %s=%s; path=/;", name, value);
-	httpdAddHeader(r, buf);
+  snprintf(buf,HTTP_MAX_URL, "Set-Cookie: %s=%s; path=/;", name, value);
+  httpdAddHeader(r, buf);
 }
 
-void httpdOutput(request *r, char *msg)
-{
-	char	buf[HTTP_MAX_LEN],
-		varName[80],
-		*src,
-		*dest;
-	int	count;
+void httpdOutput(request *r, char *msg) {
+  char	buf[HTTP_MAX_LEN],
+    varName[80],
+    *src,
+    *dest;
+  int	count;
 
-	src = msg;
-	dest = buf;
-	count = 0;
-	while(*src && count < HTTP_MAX_LEN)
+  src = msg;
+  dest = buf;
+  count = 0;
+  while(*src && count < HTTP_MAX_LEN)
+    {
+      if (*src == '$')
 	{
-		if (*src == '$')
-		{
-			char	*cp,
-				*tmp;
-			int	count2;
-			httpVar	*curVar;
+	  char	*cp,
+	    *tmp;
+	  int	count2;
+	  httpVar	*curVar;
 
-			tmp = src + 1;
-			cp = varName;
-			count2 = 0;
-			while(*tmp&&(isalnum(*tmp)||*tmp == '_')&&count2 < 80)
-			{
-				*cp++ = *tmp++;
-				count2++;
-			}
-			*cp = 0;
-			curVar = httpdGetVariableByName(r,varName);
-			if (curVar)
-			{
-				strcpy(dest, curVar->value);
-				dest = dest + strlen(dest);
-				count += strlen(dest);
-			}
-			else
-			{
-				*dest++ = '$';
-				strcpy(dest, varName);
-				dest += strlen(varName);
-				count += 1 + strlen(varName);
-			}
-			src = src + strlen(varName) + 1;
-			continue;
-		}
-		*dest++ = *src++;
-		count++;
-	}	
-	*dest = 0;
-	r->response.responseLength += strlen(buf);
-	if (r->response.headersSent == 0)
-		httpdSendHeaders(r);
-	_httpd_net_write( r->clientSock, buf, strlen(buf));
+	  tmp = src + 1;
+	  cp = varName;
+	  count2 = 0;
+	  while(*tmp&&(isalnum(*tmp)||*tmp == '_')&&count2 < 80)
+	    {
+	      *cp++ = *tmp++;
+	      count2++;
+	    }
+	  *cp = 0;
+	  curVar = httpdGetVariableByName(r,varName);
+	  if (curVar)
+	    {
+	      strcpy(dest, curVar->value);
+	      dest = dest + strlen(dest);
+	      count += strlen(dest);
+	    }
+	  else
+	    {
+	      *dest++ = '$';
+	      strcpy(dest, varName);
+	      dest += strlen(varName);
+	      count += 1 + strlen(varName);
+	    }
+	  src = src + strlen(varName) + 1;
+	  continue;
+	}
+      *dest++ = *src++;
+      count++;
+    }	
+  *dest = 0;
+  r->response.responseLength += strlen(buf);
+  if (r->response.headersSent == 0)
+    httpdSendHeaders(r);
+  _httpd_net_write( r->clientSock, buf, strlen(buf));
 }
 
 

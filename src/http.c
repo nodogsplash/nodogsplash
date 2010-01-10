@@ -176,7 +176,6 @@ http_nodogsplash_footer(request *r) {
 
 
 /** The 404 handler is one way a client can first hit nodogsplash.
- *  Adds the client to the client list and serves the splash page.
  */
 void
 http_nodogsplash_callback_404(httpd *webserver, request *r) {
@@ -189,7 +188,6 @@ http_nodogsplash_callback_404(httpd *webserver, request *r) {
 
 
 /** The index handler is one way a client can first hit nodogsplash.
- *  Adds the client to the client list and serves the splash page.
  */
 void 
 http_nodogsplash_callback_index(httpd *webserver, request *r) {
@@ -200,31 +198,39 @@ http_nodogsplash_callback_index(httpd *webserver, request *r) {
   http_nodogsplash_first_contact(r);
 }
 
-/** The index handler is one way a client can first hit nodogsplash.
- *  Adds the client to the client list and serves the splash page.
+/** Respond to attempted access from a preauthenticated client.
+ *  Add the client to the client list and serves the splash page.
  */
 void 
 http_nodogsplash_first_contact(request *r) {
   t_client *client;
-  char *authtarget;
+  t_auth_target *authtarget;
   s_config *config;
 
   config = config_get_config();
 
   client = http_nodogsplash_add_client(r);
-
+  /* http_nodogsplash_add_client() should log and return null on error */
   if(!client) return;
 
+  authtarget =
+    http_nodogsplash_make_authtarget(client->token,
+				     r->request.host,
+				     r->request.path);
+
   if(config->authenticate_immediately) {
-    authtarget = http_nodogsplash_encode_authtarget(r,client->token);
-    http_nodogsplash_redirect(r,authtarget);
-    free(authtarget);
+    http_nodogsplash_callback_action(r,authtarget,AUTH_MAKE_AUTHENTICATED);
   } else {
-      http_nodogsplash_serve_splash(r,client->token);
+    /* TODO: If RemoteAuthenticator is set,
+     * use http_nodogsplash_encode_remote_auth() to construct a URL
+     * and redirect to it instead of serving splash page
+     */
+    http_nodogsplash_serve_splash(r,authtarget);
   }
+
+  http_nodogsplash_free_authtarget(authtarget);
+
 }
-
-
 
 void
 _report_warning(request *r, char *msg) {
@@ -234,33 +240,39 @@ _report_warning(request *r, char *msg) {
     http_nodogsplash_footer(r);
 }
 
-/** The multipurpose handler */
+/** The multipurpose authentication action handler
+ */
 void
-http_nodogsplash_callback_action(request *r, t_authaction action) {
+http_nodogsplash_callback_action(request *r,
+				 t_auth_target *authtarget,
+				 t_authaction action) {
   t_client	*client;
   char *mac;
   char *ip;
-  char *redir = NULL;
   char *clienttoken = NULL;
-  char *requesttoken = NULL;
+  char *requesttoken = authtarget->token;
+  char *redir = authtarget->redir;
   s_config *config;
 
   config = config_get_config();
   
-  /* Get components of path in request */
-  http_nodogsplash_decode_authtarget(r, &requesttoken, &redir);
-
   ip = r->clientAddr;
+
+  if(!requesttoken) {
+    debug(LOG_WARNING, "No token in request from ip %s", ip);
+    return;
+  }
+  if(!redir) {
+    debug(LOG_WARNING, "No redirect in request from ip %s", ip);
+    return;
+  }
 
   if (!(mac = arp_get(ip))) {
     /* We could not get their MAC address */
-    
     debug(LOG_WARNING, "Failed to retrieve MAC address for ip %s", ip);
     http_nodogsplash_header(r, "Nodogsplash Error");
     httpdOutput(r, "Failed to retrieve your MAC address.");
     http_nodogsplash_footer(r);
-    free(requesttoken);
-    free(redir);
     return;
   }
 
@@ -277,17 +289,10 @@ http_nodogsplash_callback_action(request *r, t_authaction action) {
     httpdOutput(r, "You are not on the client list.");
     http_nodogsplash_footer(r);
     free(mac);
-    free(requesttoken);
-    free(redir);
     return;
   }
 
   /* We have a client */
-  /* If there is a redir in the config, use it instead of redir in this request */
-  if(config->redirectURL) {
-    free(redir);
-    redir = safe_strdup(config->redirectURL);
-  }
 
   /* Do we have a client token? */
   if(!clienttoken) {
@@ -296,8 +301,6 @@ http_nodogsplash_callback_action(request *r, t_authaction action) {
     httpdOutput(r, "No token available.");
     http_nodogsplash_footer(r);
     free(mac);
-    free(requesttoken);
-    free(redir);
     return;
   } 
 
@@ -315,7 +318,7 @@ http_nodogsplash_callback_action(request *r, t_authaction action) {
     case AUTH_MAKE_DEAUTHENTICATED:
       auth_client_action(ip,mac,action);
       http_nodogsplash_header(r, "Nodogsplash Deny");
-      httpdOutput(r, "OK, see you later!");
+      httpdOutput(r, "Authentication revoked.");
       http_nodogsplash_footer(r);
       break;
     default:
@@ -331,8 +334,6 @@ http_nodogsplash_callback_action(request *r, t_authaction action) {
     http_nodogsplash_footer(r);
   }
   free(mac);
-  free(redir);
-  free(requesttoken);
   free(clienttoken);
 
 }
@@ -340,17 +341,23 @@ http_nodogsplash_callback_action(request *r, t_authaction action) {
 /** The auth handler registers the client as authenticated, and redirects their web request */
 void
 http_nodogsplash_callback_auth(httpd *webserver, request *r) {
+  t_auth_target *authtarget;
 
-  http_nodogsplash_callback_action ( r, AUTH_MAKE_AUTHENTICATED );
-
+  /* Get info we need from request */
+  authtarget = http_nodogsplash_decode_authtarget(r);
+  http_nodogsplash_callback_action (r,authtarget,AUTH_MAKE_AUTHENTICATED );
+  http_nodogsplash_free_authtarget(authtarget);
 }
 
 /** The deny handler removes the client from the client list */
 void
 http_nodogsplash_callback_deny(httpd *webserver, request *r) {
+  t_auth_target *authtarget;
 
-  http_nodogsplash_callback_action ( r, AUTH_MAKE_DEAUTHENTICATED );
-
+  /* Get info we need from request */
+  authtarget = http_nodogsplash_decode_authtarget(r);
+  http_nodogsplash_callback_action (r,authtarget,AUTH_MAKE_DEAUTHENTICATED );
+  http_nodogsplash_free_authtarget(authtarget);
 }
 
 
@@ -375,7 +382,6 @@ http_nodogsplash_add_client(request *r) {
     debug(LOG_WARNING, "Failed to retrieve MAC address for ip %s", r->clientAddr);
   } 
 
-
   LOCK_CLIENT_LIST();
 			
   if ((client = client_list_find(r->clientAddr, mac)) == NULL) {
@@ -394,19 +400,23 @@ http_nodogsplash_add_client(request *r) {
 }
  
 /**
- *
  */
-void
-http_nodogsplash_decode_authtarget(request *r, char **token, char **redir) {
+t_auth_target *
+http_nodogsplash_decode_authtarget(request *r) {
   char *enccopy, *p1, *p2;
+  httpVar *var;
+  t_auth_target *authtarget;
+  
   /* Make a copy of encoded path because we will modify it */
   enccopy = safe_strdup(r->request.path);
   /* enccopy should have the form: /<directory>/<rest>,
-   * where <directory> has had its effect already so we ignore it here,
-   * and where <rest> has been httpdUrlEncoded.
+   * where <directory> has had its effect already in determining which
+   * callback is procesing the request, so we ignore it here,
+   * and where <rest> is a string encoding variables and values in the
+   * usual way.
    * (See http_nodogsplash_encode_authtarget() for details.)
-   * So, here we find <rest> and httpdUrlDecode it,
-   * to see that <rest> has the form: <requesttoken>/<redir>
+   * So, here we find <rest> and store variable/value pairs in the request,
+   * to find values of token and redir.
    */
   p1 = strchr(enccopy,'/');        /* initial slash */
   if(!p1) { _report_warning(r,"Malformed action request: first"); free(enccopy); return; }
@@ -414,61 +424,142 @@ http_nodogsplash_decode_authtarget(request *r, char **token, char **redir) {
   p1 = strchr(p1,'/');              /* second slash */
   if(!p1) { _report_warning(r,"Malformed action request: second"); free(enccopy); return; }
   p1++;
-  /* httpdUrlDecode the rest.  This recovers slashes, among other things. */
-  p1 = httpdUrlDecode(p1); /* Note: this decodes in-place */
-  /* now look for <requesttoken>/<redir> */
-  p2 = strchr(p1,'/');              /* third slash */
-  if(!p2) { _report_warning(r,"Malformed action request: third"); free(enccopy); return; }
-  *p2 = '\0';
-  /* p1 now pointing at terminated token; allocate a copy */
-  *token = safe_strdup(p1); 
-  p2++;
-  /* p2 now pointing at decoded redirect; allocate a copy */
-  safe_asprintf(redir,"http://%s",p2);
+  httpd_storeData(r,p1);
+  
+  authtarget = http_nodogsplash_make_authtarget_from_request(r);
   free(enccopy);
+  return authtarget;
 
 }
 
 /**
- * Return a pointer to a string encoding a URL which when served will authenticate
- * a client.
- * Caller must free.
+ * Allocate and return a pointer to a t_auth_target struct encoding information
+ * needed to eventually authenticate a client.
+ * The struct should be freed by http_nodogsplash_free_authtarget().
  */
-char *
-http_nodogsplash_encode_authtarget(request *r, char *token) {
-  char *encodedthp, *tokenhostpath, *authtarget;
-  s_config	*config;
+t_auth_target*
+http_nodogsplash_make_authtarget(char* token, char* redirhost, char* redirpath) {
+
+  t_auth_target* authtarget;
+  s_config *config;
 
   config = config_get_config();
-  
-  safe_asprintf(&tokenhostpath,"%s/%s%s", token, r->request.host, r->request.path);
-  /* We httpdUrlEncode() the concatenation of token, host, path.
-   * (host and path are ultimately for the redirect after authentication.)
-   * This requires a modified version of libhttpd's httpdUrlEncode()
-   * which encodes slashes (as well as the usual things).
-   * This is because we must have an
-   * authtarget that looks like a top-level directory and a file in it.
-   * (Similarly for denytarget.)
-   * Slashes will be recovered when we httpdUrlDecode() in
-   * http_nodogsplash_callback_action().
-   */
-  encodedthp = httpdUrlEncode(tokenhostpath);  /* malloc's */
-  safe_asprintf(&authtarget, "http://%s:%d/%s/%s",
-		config->gw_address, config->gw_port, config->authdir, encodedthp);
-  free(tokenhostpath);
-  free(encodedthp);
+
+  authtarget = safe_malloc(sizeof(t_auth_target));
+  memset(authtarget, 0, sizeof(t_auth_target));
+  authtarget->ip = safe_strdup(config->gw_address);
+  authtarget->port = config->gw_port;
+  authtarget->authdir = safe_strdup(config->authdir);
+  authtarget->denydir = safe_strdup(config->denydir);
+  authtarget->token = safe_strdup(token);
+  if(config->redirectURL) {
+    debug(LOG_DEBUG,"Client requested http://%s%s, substituting %s",
+	  redirhost,redirpath,config->redirectURL);
+    authtarget->redir = safe_strdup(config->redirectURL);
+  } else {
+    safe_asprintf(&(authtarget->redir),"http://%s%s",redirhost,redirpath);
+  }
+
+  return authtarget;
+}
+
+/**
+ * Allocate and return a pointer to a t_auth_target struct encoding information
+ * needed to eventually authenticate a client.
+ * The struct should be freed by http_nodogsplash_free_authtarget().
+ */
+t_auth_target*
+http_nodogsplash_make_authtarget_from_request(request *r) {
+
+  t_auth_target* authtarget;
+  httpVar* var;
+
+  authtarget = safe_malloc(sizeof(t_auth_target));
+  memset(authtarget, 0, sizeof(t_auth_target));
+
+  var = httpdGetVariableByName(r,"tok");
+  authtarget->token = safe_strdup(var->value);
+  var = httpdGetVariableByName(r,"redir");
+  authtarget->redir = safe_strdup(var->value);
+
   return authtarget;
 }
 
 
-/* Given a client request, serve the splash page from its file. */
+
 void
-http_nodogsplash_serve_splash(request *r, char *token) {
+http_nodogsplash_free_authtarget(t_auth_target* authtarget) {
+
+  if(authtarget->ip) free(authtarget->ip);
+  if(authtarget->authdir) free(authtarget->authdir);
+  if(authtarget->denydir) free(authtarget->denydir);
+  if(authtarget->token) free(authtarget->token);
+  if(authtarget->redir) free(authtarget->redir);
+  free(authtarget);
+
+}
+
+/**
+ * Return a pointer to a URL string
+ * which when served will authenticate a client.
+ * Caller must free.
+ */
+char *
+http_nodogsplash_encode_authtarget(t_auth_target *authtarget) {
+  char *encodedredir, *encodedtoken, *encodedauthtarget;
+  
+  /* URL encode the redirect URL and the token */
+  encodedredir = httpdUrlEncode(authtarget->redir);  /* malloc's */
+  encodedtoken = httpdUrlEncode(authtarget->token);  /* malloc's */
+
+  safe_asprintf(&encodedauthtarget, "http://%s:%d/%s/tok=%s&redir=%s",
+		authtarget->ip,
+		authtarget->port,
+		authtarget->authdir,
+		encodedtoken,
+		encodedredir);
+
+  free(encodedredir);
+  free(encodedtoken);
+  return encodedauthtarget;
+}
+
+/**
+ * Return a pointer to a URL string for a remote authenticator.
+ * Information passed to the remote cgi variable-value arguments.
+ * Caller must free.
+ */
+char *
+http_nodogsplash_encode_remote_auth(t_auth_target *authtarget) {
+  char *encodedredir, *url;
+  s_config	*config;
+
+  config = config_get_config();
+  encodedredir = httpdUrlEncode(authtarget->redir);  /* malloc's */  
+  safe_asprintf(&url,"http://%s:d/%s?ip=%s&pt=%d&auth=%s&deny=%s&tok=%s&redir=%s",
+		config->remote_auth_address,
+		config->remote_auth_port,
+		config->remote_auth_path,
+		authtarget->ip,
+		authtarget->port,
+		authtarget->authdir,
+		authtarget->denydir,
+		authtarget->token,
+		encodedredir);
+  free(encodedredir);
+  return url;
+}
+
+
+/* Given a client request, pipe the splash page from the splash page file. */
+void
+http_nodogsplash_serve_splash(request *r, t_auth_target *authtarget) {
   char *redirectURL;
   char line [MAX_BUF];
-  char *splashfilename, *authtarget, *denytarget, *imagesdir;
+  char *splashfilename, *authtargetstr,  *imagesdir;
   char *encodedthp, *tokenhostpath;
   FILE *fd;
+  
   s_config	*config;
 
   
@@ -477,17 +568,11 @@ http_nodogsplash_serve_splash(request *r, char *token) {
 
   httpdAddVariable(r,"gatewayname",config->gw_name);
 
-  /* Get auth and deny targets. */
-  authtarget = http_nodogsplash_encode_authtarget(r,token);
-  httpdAddVariable(r,"authtarget",authtarget);
-  free(authtarget);
+  /* Get auth target as a string */
+  authtargetstr = http_nodogsplash_encode_authtarget(authtarget);
+  httpdAddVariable(r,"authtarget",authtargetstr);
+  free(authtargetstr);
   
-  /*
-  denytarget = http_nodogsplash_encode_deyntarget(r,token);
-  httpdAddVariable(r,"denytarget",denytarget);
-  free(denytarget);
-  */
-
   safe_asprintf(&imagesdir, "/%s", config->imagesdir);
   httpdAddVariable(r,"imagesdir",imagesdir);
   free(imagesdir);

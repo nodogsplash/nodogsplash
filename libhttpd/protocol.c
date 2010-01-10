@@ -673,10 +673,9 @@ static unsigned char isAcceptable[96] =
 /*      Bit 0           xalpha          -- see HTFile.h
 **      Bit 1           xpalpha         -- as xalpha but with plus.
 **      Bit 2 ...       path            -- as xpalpha but with /
-** N.B.: changed to disallow space, /
 */
     /*   0 1 2 3 4 5 6 7 8 9 A B C D E F */
-    {    0,0,0,0,0,0,0,0,0,0,7,0,0,7,7,0,       /* 2x   !"#$%&'()*+,-./ */
+    {    7,0,0,0,0,0,0,0,0,0,7,0,0,7,7,0,       /* 2x   !"#$%&'()*+,-./ */
          7,7,7,7,7,7,7,7,7,7,0,0,0,0,0,0,       /* 3x  0123456789:;<=>?  */
          7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,       /* 4x  @ABCDEFGHIJKLMNO */
          7,7,7,7,7,7,7,7,7,7,7,0,0,0,0,7,       /* 5X  PQRSTUVWXYZ[\]^_ */
@@ -688,7 +687,6 @@ static unsigned char isAcceptable[96] =
 static char *hex = "0123456789ABCDEF";
 
 
-/*TODO: fix so spaces are encoded as + */
 char *_httpd_escape(str)
         char *str;
 {
@@ -697,9 +695,11 @@ char *_httpd_escape(str)
     char * q;
     char * result;
     int unacceptable = 0;
-    for(p=str; *p; p++)
-        if (!ACCEPTABLE((unsigned char)*p))
+    for(p=str; *p; p++) {
+      if (!ACCEPTABLE((unsigned char)*p)) {
                 unacceptable +=2;
+      }
+    }
     result = (char *) malloc(p-str + unacceptable + 1);
     bzero(result,(p-str + unacceptable + 1));
 
@@ -710,16 +710,18 @@ char *_httpd_escape(str)
     for(q=result, p=str; *p; p++) {
         unsigned char a = *p;
         if (!ACCEPTABLE(a)) {
-            *q++ = '%';  /* Means hex commming */
+            *q++ = '%';  /* Means hex coming */
             *q++ = hex[a >> 4];
             *q++ = hex[a & 15];
-        }
-        else *q++ = *p;
+        } else if (a == ' ') {
+	  *q++ = '+';  /* space becomes + */
+	} else {
+	  *q++ = *p;
+	}
     }
     *q++ = 0;                   /* Terminate */
     return result;
 }
-
 
 
 void _httpd_sanitiseUrl(url)
