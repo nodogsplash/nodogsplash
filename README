@@ -14,7 +14,7 @@ General Public License.
 * Nocatsplash: http://nocat.net/
 * GNU GPL: http://www.gnu.org/copyleft/gpl.html
 
-The following describes how Nodogsplash works, how to get it and run it, and
+The following describes what Nodogsplash does, how to get it and run it, and
 how to customize its behavior for your application.
 
 1. Overview
@@ -94,8 +94,8 @@ if you have broken the br0 bridge to separate the wired and wireless LAN's.
 
 3.1 Packet filtering
 
-Nodogsplash considers four kinds of packets coming into the router over the
-managed interface:
+Nodogsplash considers four mutually-exclusive kinds of packets coming into the
+router over the managed interface:
 
   1. Blocked, if the source MAC address of the packet matches one listed in the
      BlockedMACList in the configuration file. These packets are dropped.
@@ -129,11 +129,6 @@ nat PREROUTING, filter INPUT and filter FORWARD chains which match on those
 marks. Because it inserts its rules at the beginning of existing chains,
 nodogsplash should be insensitive to most typical existing firewall
 configurations.
-Of course, there is the usual tradeoff between security and usability. For
-example, not opening ports 25 and 80 in the FirewallRuleSet users-to-router
-helps to prevent unauthorized administrative access to your router, but (if you
-have an empty TrustedMACList) does this by blocking all ssh and http access to
-the router from the managed interface.
 
 3.2 Traffic control
 
@@ -155,6 +150,21 @@ secure as-is for basic internet sharing applications, but it is customizable.
 * To change basic nodogsplash settings, edit the configuration file:
 
     /etc/nodogsplash/nodogsplash.conf
+
+  In the configuration file, a FirewallRule has the form:
+
+    FirewallRule permission [protocol [port portrange]] [to ip]
+
+  where
+
+  o permission is required and must be either allow or block.
+  o protocol is optional. If present must be tcp, udp, icmp, or all. Defaults
+    to all.
+  o port portrange is optional. If present, protocol must be tcp or udp.
+    portrange can be a single integer port number, or a colon-separated port
+    range, e.g. 1024:1028. Defaults to all ports.
+  o to ip is optional. If present, ip must be a numerical dotted-quad IP
+    address with optional mask. Defaults to 0.0.0.0/0, i.e. all addresses.
 
 * To change the contents of the splash page, edit the splash page file:
 
@@ -184,10 +194,11 @@ secure as-is for basic internet sharing applications, but it is customizable.
 * To see maximally verbose debugging output from nodogsplash, edit the /etc/
   init.d/S65nodogsplash file to set the OPTIONS variable to the flags "-s -
   d 7", restart or reboot, and view messages with logread. The -s flag logs to
-  syslog; the -d 7 flag sets the maximally verbose level for debugging messages
-  (see syslog.h). You don't want to run with these flags routinely, as it will
+  syslog; the -d 7 flag sets level 7, LOG_DEBUG, for debugging messages (see
+  syslog.h). You don't want to run with these flags routinely, as it will
   quickly fill the syslog circular buffer, unless you enable remote logging. A
-  lower level of logging is more appropriate for routine use.
+  lower level of logging, for example -d 5, is more appropriate for routine use
+  (this is the default).
   Alternatively, you can set the flag -f instead of -s, and restart. This will
   run nodogsplash in the foreground, logging to stdout.
 * When stopped, nodogsplash deletes its iptables rules, attempting to leave the

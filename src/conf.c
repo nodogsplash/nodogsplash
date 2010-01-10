@@ -22,6 +22,7 @@
 /** @file conf.c
   @brief Config file parsing
   @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
+  @author Copyright (C) 2007 Paul Kube <nodogsplash@kokoro.ucsd.edu>
  */
 
 #define _GNU_SOURCE
@@ -71,10 +72,9 @@ typedef enum {
 	oGatewayInterface,
 	oGatewayAddress,
 	oGatewayPort,
-	oRemoteAuthenticatorAddress,
-	oRemoteAuthenticatorPort,
-	oRemoteAuthenticatorPath,
+	oRemoteAuthenticatorAction,
 	oPasswordAuthentication,
+	oPasswordAttempts,
 	oUsername,
 	oPassword,
 	oHTTPDMaxConn,
@@ -115,10 +115,9 @@ static const struct {
 	{ "gatewayinterface",   oGatewayInterface },
 	{ "gatewayaddress",     oGatewayAddress },
 	{ "gatewayport",        oGatewayPort },
-	{ "remoteauthenticatoraddress",     oRemoteAuthenticatorAddress },
-	{ "remoteauthenticatorport",        oRemoteAuthenticatorPort },
-	{ "remoteauthenticatorpath",        oRemoteAuthenticatorPath },
+	{ "remoteauthenticatoraction",     oRemoteAuthenticatorAction },
 	{ "passwordauthentication",         oPasswordAuthentication },
+	{ "passwordattempts",         oPasswordAttempts },
 	{ "username",           oUsername },
 	{ "password",           oPassword },
 	{ "webroot",      	oWebRoot },
@@ -167,10 +166,10 @@ config_init(void) {
   config.gw_interface = NULL;
   config.gw_address = NULL;
   config.gw_port = DEFAULT_GATEWAYPORT;
-  config.remote_auth_address = NULL;
-  config.remote_auth_port = DEFAULT_REMOTE_AUTH_PORT;
+  config.remote_auth_action = NULL;
   config.webroot = DEFAULT_WEBROOT;
   config.splashpage = DEFAULT_SPLASHPAGE;
+  config.infoskelpage = DEFAULT_INFOSKELPAGE;
   config.imagesdir = DEFAULT_IMAGESDIR;
   config.pagesdir = DEFAULT_PAGESDIR;
   config.authdir = DEFAULT_AUTHDIR;
@@ -181,6 +180,7 @@ config_init(void) {
   config.checkinterval = DEFAULT_CHECKINTERVAL;
   config.daemon = -1;
   config.passwordauth = DEFAULT_PASSWORD_AUTH;
+  config.passwordattempts = DEFAULT_PASSWORD_ATTEMPTS;
   config.username = DEFAULT_USERNAME;
   config.password = DEFAULT_PASSWORD;
   config.authenticate_immediately = DEFAULT_AUTHENTICATE_IMMEDIATELY;
@@ -387,8 +387,13 @@ _parse_firewall_rule(char *ruleset, char *leftover) {
     TO_NEXT_WORD(leftover, finished);
   }
 
-  /* Get the optional port or port range*/
+  /* Get the optional port or port range */
   if (strncmp(leftover, "port", 4) == 0) {
+    if(protocol == NULL ||
+       !(strncmp(protocol, "tcp", 3) == 0 || strncmp(protocol, "udp", 3) == 0)) {
+      debug(LOG_ERR, "Port without tcp or udp protocol");
+      return -3; /*< Fail */
+    }
     TO_NEXT_WORD(leftover, finished);
     /* Get port now */
     port = leftover;
@@ -583,14 +588,8 @@ config_read(char *filename) {
     case oGatewayPort:
       sscanf(p1, "%d", &config.gw_port);
       break;
-    case oRemoteAuthenticatorAddress:
-      config.remote_auth_address = safe_strdup(p1);
-      break;
-    case oRemoteAuthenticatorPort:
-      sscanf(p1, "%d", &config.remote_auth_port);
-      break;
-    case oRemoteAuthenticatorPath:
-      config.remote_auth_path = safe_strdup(p1);
+    case oRemoteAuthenticatorAction:
+      config.remote_auth_action = safe_strdup(p1);
       break;
     case oFirewallRuleSet:
       parse_firewall_ruleset(p1, fd, filename, &linenum);
@@ -647,6 +646,13 @@ config_read(char *filename) {
       if ((value = parse_boolean_value(p1)) != -1) {
 	config.passwordauth = value;
       } else {
+	debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
+	debug(LOG_ERR, "Exiting...");
+	exit(-1);
+      }
+      break;
+    case oPasswordAttempts:
+      if(sscanf(p1, "%d", &config.passwordattempts) < 1) {
 	debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 	debug(LOG_ERR, "Exiting...");
 	exit(-1);

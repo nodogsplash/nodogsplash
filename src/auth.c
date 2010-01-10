@@ -59,63 +59,50 @@ extern long authenticated_this_session;
 @todo This thread loops infinitely, need a watchdog to verify that it is still running?
 */  
 void
-thread_client_timeout_check(void *arg)
-{
-	pthread_cond_t		cond = PTHREAD_COND_INITIALIZER;
-	pthread_mutex_t		cond_mutex = PTHREAD_MUTEX_INITIALIZER;
-	struct	timespec	timeout;
+thread_client_timeout_check(void *arg) {
+  pthread_cond_t		cond = PTHREAD_COND_INITIALIZER;
+  pthread_mutex_t		cond_mutex = PTHREAD_MUTEX_INITIALIZER;
+  struct	timespec	timeout;
 	
-	while (1) {
-		debug(LOG_DEBUG, "Running fw_refresh_client_list()");
+  while (1) {
+    debug(LOG_DEBUG, "Running fw_refresh_client_list()");
 	
-		fw_refresh_client_list();
+    fw_refresh_client_list();
 
-		/* Sleep for config.checkinterval seconds... */
-		timeout.tv_sec = time(NULL) + config_get_config()->checkinterval;
-		timeout.tv_nsec = 0;
+    /* Sleep for config.checkinterval seconds... */
+    timeout.tv_sec = time(NULL) + config_get_config()->checkinterval;
+    timeout.tv_nsec = 0;
 
-		/* Mutex must be locked for pthread_cond_timedwait... */
-		pthread_mutex_lock(&cond_mutex);
+    /* Mutex must be locked for pthread_cond_timedwait... */
+    pthread_mutex_lock(&cond_mutex);
 		
-		/* Thread safe "sleep" */
-		pthread_cond_timedwait(&cond, &cond_mutex, &timeout);
+    /* Thread safe "sleep" */
+    pthread_cond_timedwait(&cond, &cond_mutex, &timeout);
 
-		/* No longer needs to be locked */
-		pthread_mutex_unlock(&cond_mutex);
+    /* No longer needs to be locked */
+    pthread_mutex_unlock(&cond_mutex);
 	
-	}
+  }
 }
 
-/** Take action on a client, identified in a request.
+/** Take action on a client.
  * Alter the firewall rules and client list accordingly.
-@param r httpd request struct
 */
 void
 auth_client_action(char *ip, char *mac, t_authaction action) {
   t_client	*client;
-  s_config	*config = NULL;
 
   LOCK_CLIENT_LIST();
 
-  client = client_list_find_by_ip(ip);
+  client = client_list_find(ip,mac);
 
   /* Client should already have hit the server and be on the client list */
   if (client == NULL) {
-    debug(LOG_ERR, "Could not find client for %s", ip);
+    debug(LOG_ERR, "Client %s %s action %d is not on client list",
+	  ip, mac, action);
     UNLOCK_CLIENT_LIST();
     return;
   }
-
-  /* Make sure MAC's match */
-  if (strcmp(client->mac,mac)) {
-    debug(LOG_ERR, "MAC's do not match: %s, %s", client->mac, mac);
-    UNLOCK_CLIENT_LIST();
-    return;
-  }
-  
-
-  /* Prepare some variables we'll need below */
-  config = config_get_config();
 
   switch(action) {
 

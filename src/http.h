@@ -22,6 +22,7 @@
 /** @file http.h
     @brief HTTP IO functions
     @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
+    @author Copyright (C) 2007 Paul Kube <nodogsplash@kokoro.ucsd.edu>
 */
 
 #ifndef _HTTP_H_
@@ -62,8 +63,12 @@ void http_nodogsplash_callback_action(request *r, t_auth_target *authtarget, t_a
 t_client* http_nodogsplash_add_client(request *r);
 /**@brief Serve a 307 Temporary Redirect */
 void http_nodogsplash_redirect(request *r, char *url);
+/**@brief Redirect to remote auth server */
+void http_nodogsplash_redirect_remote_auth(request *r, t_auth_target *authtarget);
 /**@brief Serve the splash page from its file */
 void http_nodogsplash_serve_splash(request *r, t_auth_target *authtarget);
+/**@brief Serve the info page from its file */
+void http_nodogsplash_serve_info(request *r, char *title, char *content);
 /**@brief Handle initial contact from client */
 void http_nodogsplash_first_contact(request *r);
 /**@brief Decode token and redirect URL from a request */

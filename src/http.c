@@ -22,6 +22,7 @@
 /** @file http.c
   @brief HTTP IO functions
   @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
+  @author Copyright (C) 2007 Paul Kube <nodogsplash@kokoro.ucsd.edu>
  */
 
 #define _GNU_SOURCE
@@ -54,124 +55,19 @@ extern pthread_mutex_t	client_list_mutex;
 
 void 
 http_callback_about(httpd *webserver, request *r) {
-  http_nodogsplash_header(r, "About nodogsplash");
-  httpdOutput(r, "This is nodogsplash version <b>" VERSION "</b>");
-  http_nodogsplash_footer(r);
+  http_nodogsplash_serve_info(r, "Nodogsplash Info",
+			      "This is Nodogsplash version <b>" VERSION "</b>");
 }
 
 void 
 http_callback_status(httpd *webserver, request *r) {
   char * status = NULL;
+  char * prestatus = NULL;
   status = get_status_text();
-  http_nodogsplash_header(r, "nodogsplash Status");
-  httpdOutput(r, "<pre>");
-  httpdOutput(r, status);
-  httpdOutput(r, "</pre>");
-  http_nodogsplash_footer(r);
+  safe_asprintf(&prestatus, "<pre>\n%s\n</pre>", status);
+  http_nodogsplash_serve_info(r, "Nodogsplash Status",prestatus);
   free(status);
-}
-
-
-void
-http_nodogsplash_header(request *r, char *title) {
-  httpdOutput(r, "<html>\n");
-  httpdOutput(r, "<head>\n");
-  httpdPrintf(r, "<title>%s</title>\n", title);
-  httpdOutput(r, "<meta HTTP-EQUIV='Pragma' CONTENT='no-cache'>\n");
-
-  httpdOutput(r, "<style>\n");
-  httpdOutput(r, "body {\n");
-  httpdOutput(r, "  margin: 10px 60px 0 60px; \n");
-  httpdOutput(r, "  font-family : bitstream vera sans, sans-serif;\n");
-  httpdOutput(r, "  color: #000000;\n");
-  httpdOutput(r, "}\n");
-
-  httpdOutput(r, "a {\n");
-  httpdOutput(r, "  color: #000000;\n");
-  httpdOutput(r, "}\n");
-
-  httpdOutput(r, "a:active {\n");
-  httpdOutput(r, "  color: #000000;\n");
-  httpdOutput(r, "}\n");
-
-  httpdOutput(r, "a:link {\n");
-  httpdOutput(r, "  color: #000000;\n");
-  httpdOutput(r, "}\n");
-
-  httpdOutput(r, "a:visited {\n");
-  httpdOutput(r, "  color: #000000;\n");
-  httpdOutput(r, "}\n");
-
-  httpdOutput(r, "#header {\n");
-  httpdOutput(r, "  height: 30px;\n");
-  httpdOutput(r, "  background-color: #DDDDDD;\n");
-  httpdOutput(r, "  padding: 20px;\n");
-  httpdOutput(r, "  font-size: 20pt;\n");
-  httpdOutput(r, "  text-align: center;\n");
-  httpdOutput(r, "  border: 2px solid #000000;\n");
-  httpdOutput(r, "  border-bottom: 0;\n");
-  httpdOutput(r, "}\n");
-
-  httpdOutput(r, "#menu {\n");
-  httpdOutput(r, "  width: 200px;\n");
-  httpdOutput(r, "  float: right;\n");
-  httpdOutput(r, "  background-color: #DDDDDD;\n");
-  httpdOutput(r, "  border: 2px solid #000000;\n");
-  httpdOutput(r, "  font-size: 80%;\n");
-  httpdOutput(r, "  min-height: 300px;\n");
-  httpdOutput(r, "}\n");
-
-  httpdOutput(r, "#menu h2 {\n");
-  httpdOutput(r, "  margin: 0;\n");
-  httpdOutput(r, "  background-color: #000000;\n");
-  httpdOutput(r, "  text-align: center;\n");
-  httpdOutput(r, "  color: #DDDDDD;\n");
-  httpdOutput(r, "}\n");
-
-  httpdOutput(r, "#copyright {\n");
-  httpdOutput(r, "}\n");
-
-  httpdOutput(r, "#content {\n");
-  httpdOutput(r, "  padding: 20px;\n");
-  httpdOutput(r, "  border: 2px solid #000000;\n");
-  httpdOutput(r, "  min-height: 300px;\n");
-  httpdOutput(r, "}\n");
-  httpdOutput(r, "</style>\n");
-
-  httpdOutput(r, "</head>\n");
-
-  httpdOutput(r, "<body\n");
-
-  httpdOutput(r, "<div id=\"header\">\n");
-  httpdPrintf(r, "    %s\n", title);
-  httpdOutput(r, "</div>\n");
-
-  httpdOutput(r, "<div id=\"menu\">\n");
-
-
-  httpdOutput(r, "    <h2>Info</h2>\n");
-  httpdOutput(r, "    <ul>\n");
-  httpdOutput(r, "    <li>Version: " VERSION "\n");
-  httpdPrintf(r, "    <li>Node ID: %s\n", config_get_config()->gw_name);
-  httpdOutput(r, "    </ul>\n");
-  httpdOutput(r, "    <br>\n");
-
-  httpdOutput(r, "</div>\n");
-
-  httpdOutput(r, "<div id=\"content\">\n");
-  httpdPrintf(r, "<h2>%s</h2>\n", title);
-}
-
-void
-http_nodogsplash_footer(request *r) {
-  httpdOutput(r, "</div>\n");
-
-  httpdOutput(r, "<div id=\"copyright\">\n");
-  httpdOutput(r, "Copyright (C) 2004-2007.  This software is released under the GNU GPL license.\n");
-  httpdOutput(r, "</div>\n");
-
-  httpdOutput(r, "</body>\n");
-  httpdOutput(r, "</html>\n");
+  free(prestatus);
 }
 
 
@@ -221,10 +117,10 @@ http_nodogsplash_first_contact(request *r) {
   free(redir);
 
   if(config->authenticate_immediately) {
+    /* Don't serve splash, just authenticate */
     http_nodogsplash_callback_action(r,authtarget,AUTH_MAKE_AUTHENTICATED);
   } else {
-    /* TODO: RemoteAuthenticator functionality?
-     */
+    /* Serve the splash page (or redirect to remote authenticator */
     http_nodogsplash_serve_splash(r,authtarget);
   }
 
@@ -263,22 +159,24 @@ http_nodogsplash_callback_action(request *r,
 
   if (!(mac = arp_get(ip))) {
     /* We could not get their MAC address */
-    debug(LOG_NOTICE, "Could not arp MAC address for %s on action %d", ip, action);
+    debug(LOG_NOTICE, "Could not arp MAC address for %s action %d", ip, action);
     return;
   }
 
   /* We have their MAC address, find them on the client list */
   LOCK_CLIENT_LIST();
-  client = client_list_find(ip, mac);
-  if(client && client->token) clienttoken = safe_strdup(client->token);
+  client = client_list_find(ip,mac);
+  if(client && client->token) {
+    clienttoken = safe_strdup(client->token);
+  }
   UNLOCK_CLIENT_LIST();
 
   if(!client) {
     debug(LOG_NOTICE, "Client %s %s action %d is not on client list",
 	  ip, mac, action);
-    http_nodogsplash_header(r, "Nodogsplash Error");
-    httpdOutput(r, "You are not on the client list.");
-    http_nodogsplash_footer(r);
+    http_nodogsplash_serve_info(r,
+				"Nodogsplash Error",
+				"You are not on the client list.");
     free(mac);
     return;
   }
@@ -293,18 +191,17 @@ http_nodogsplash_callback_action(request *r,
     return;
   } 
 
-  debug(LOG_DEBUG, "Action %d: IP %s MAC %s: client: %s, request: %s",
+  debug(LOG_DEBUG, "Action %d: %s %s tokens %s, %s",
 	action, ip, mac, clienttoken, requesttoken);  
   debug(LOG_DEBUG, "Redirect:  %s", redir);
 
   /* Check token match */
   if (strcmp(clienttoken,requesttoken)) {
     /* tokens don't match, reject */
-    debug(LOG_NOTICE, "Client %s at MAC %s tokens %s, %s do not match",
+    debug(LOG_NOTICE, "Client %s %s tokens %s, %s do not match",
 	  r->clientAddr, mac, clienttoken, requesttoken);
-    http_nodogsplash_header(r, "Nodogsplash Error");
-    httpdOutput(r, "Tokens do not match.");
-    http_nodogsplash_footer(r);
+    http_nodogsplash_serve_info(r, "Nodogsplash Error",
+				"Tokens do not match.");
     free(mac);
     free(clienttoken);
     return;
@@ -319,9 +216,8 @@ http_nodogsplash_callback_action(request *r,
     break;
   case AUTH_MAKE_DEAUTHENTICATED:
     auth_client_action(ip,mac,action);
-    http_nodogsplash_header(r, "Nodogsplash Deny");
-    httpdOutput(r, "Authentication revoked.");
-    http_nodogsplash_footer(r);
+    http_nodogsplash_serve_info(r, "Nodogsplash Deny",
+				"Authentication revoked.");
     break;
   default:
     debug(LOG_ERR, "Unknown auth action: %d", action);
@@ -402,7 +298,36 @@ http_nodogsplash_add_client(request *r) {
  
 
 
-/* Given a client request, pipe the splash page from the splash page file. */
+void
+http_nodogsplash_redirect_remote_auth(request *r, t_auth_target *authtarget) {
+  char *remoteurl;
+  char *encgateway, *encauthaction, *encredir, *enctoken;
+  s_config	*config;
+
+  config = config_get_config();
+
+  /* URL encode variables, redirect to remote auth server */
+  encgateway = httpdUrlEncode(config->gw_name);
+  encauthaction = httpdUrlEncode(authtarget->authaction);
+  encredir = httpdUrlEncode(authtarget->redir);
+  enctoken = httpdUrlEncode(authtarget->token);
+  safe_asprintf(&remoteurl, "%s?gateway=%s&authaction=%s&redir=%s&tok=%s",
+		config->remote_auth_action,
+		encgateway,
+		encauthaction,
+		encredir,
+		enctoken);
+  http_nodogsplash_redirect(r, remoteurl);
+  free(encgateway);
+  free(encauthaction);
+  free(encredir);
+  free(enctoken);
+  free(remoteurl);
+}
+
+/* Pipe the splash page from the splash page file,
+ * or redirect to remote authenticator as required.
+ */
 void
 http_nodogsplash_serve_splash(request *r, t_auth_target *authtarget) {
   char *abspath;
@@ -413,6 +338,12 @@ http_nodogsplash_serve_splash(request *r, t_auth_target *authtarget) {
 
   
   config = config_get_config();
+
+  if(config->remote_auth_action) {
+    /* Redirect to remote auth server instead of serving local splash page */
+    http_nodogsplash_redirect_remote_auth(r, authtarget);
+    return;
+  }
 
   /* Set variables; these can be interpolated in the splash page text. */
   httpdAddVariable(r,"gatewayname",config->gw_name);
@@ -438,9 +369,8 @@ http_nodogsplash_serve_splash(request *r, t_auth_target *authtarget) {
 	splashfilename,r->clientAddr);
   if (!(fd = fopen(splashfilename, "r"))) {
     debug(LOG_ERR, "Could not open splash page file '%s'", splashfilename);
-    http_nodogsplash_header(r, "Nodogsplash Error");
-    httpdOutput(r, "Failed to open splash page");
-    http_nodogsplash_footer(r);
+    http_nodogsplash_serve_info(r, "Nodogsplash Error",
+				"Failed to open splash page");
   } else {
     while (fgets(line, MAX_BUF, fd)) {
       httpdOutput(r,line);
@@ -451,6 +381,52 @@ http_nodogsplash_serve_splash(request *r, t_auth_target *authtarget) {
   free(splashfilename);
 
 }
+
+/* Pipe the info page from the info skeleton page file.
+ */
+void
+http_nodogsplash_serve_info(request *r, char *title, char *content) {
+  char *abspath;
+  char line [MAX_BUF];
+  char *infoskelfilename;
+  FILE *fd;
+  s_config	*config;
+  
+  config = config_get_config();
+
+  /* Set variables; these can be interpolated in the info page text. */
+  httpdAddVariable(r,"gatewayname",config->gw_name);
+  httpdAddVariable(r,"version",VERSION);
+  httpdAddVariable(r,"title",title);
+  httpdAddVariable(r,"content",content);
+  /* We need to have imagesdir and pagesdir appear in the page
+     as absolute paths, so they work no matter what the
+     initial user request URL was  */
+  safe_asprintf(&abspath, "/%s", config->imagesdir);
+  httpdAddVariable(r,"imagesdir",abspath);
+  free(abspath);
+  safe_asprintf(&abspath, "/%s", config->pagesdir);
+  httpdAddVariable(r,"pagesdir",abspath);
+  free(abspath);
+  
+  /* Pipe the page from its file */
+  safe_asprintf(&infoskelfilename, "%s/%s",
+		config->webroot,
+		config->infoskelpage );
+  debug(LOG_INFO,"Serving info page %s title %s to %s",
+	infoskelfilename,r->clientAddr);
+  if (!(fd = fopen(infoskelfilename, "r"))) {
+    debug(LOG_ERR, "Could not open info skel file '%s'", infoskelfilename);
+  } else {
+    while (fgets(line, MAX_BUF, fd)) {
+      httpdOutput(r,line);
+    }
+    fclose(fd);
+  }
+  free(infoskelfilename);
+}
+
+
 
 void
 http_nodogsplash_redirect(request *r, char *url) {
@@ -534,6 +510,7 @@ http_nodogsplash_make_redir(char* redirhost, char* redirpath) {
 t_auth_target*
 http_nodogsplash_make_authtarget(char* token, char* redir) {
   char *encodedredir;
+  char *encodedtok;
   t_auth_target* authtarget;
   s_config *config;
 
@@ -551,11 +528,13 @@ http_nodogsplash_make_authtarget(char* token, char* redir) {
   authtarget->token = safe_strdup(token);
   authtarget->redir = safe_strdup(redir);
   encodedredir = httpdUrlEncode(authtarget->redir);  /* malloc's */
+  encodedtok = httpdUrlEncode(authtarget->token);  /* malloc's */
   safe_asprintf(&(authtarget->authtarget), "%s?redir=%s&tok=%s",
 		authtarget->authaction,
 		encodedredir,
-		authtarget->token);
+		encodedtok);
   free(encodedredir);
+  free(encodedtok);
 
   return authtarget;
 }
@@ -580,24 +559,67 @@ http_nodogsplash_free_authtarget(t_auth_target* authtarget) {
 
 }
 
-/** Perform username/password check if configured to use password.
+/** Perform username/password check if configured to use it.
  */
 int
 http_nodogsplash_check_password(request *r, t_auth_target *authtarget) {
-  s_config	*config;
+  s_config *config;
+  t_client  *client;
   config = config_get_config();
+  int attempts = 0;
+  char *ip;
+  char *mac;
 
-  if(!config->passwordauth ||
-     (authtarget->username && authtarget->password &&
-      !strcmp(config->username,authtarget->username) &&
-      !strcmp(config->password,authtarget->password))) {
+  if(!config->passwordauth) {
+    /* Not configured to use username/password check; can't fail. */
     return 1;
   }
 
-  debug(LOG_NOTICE, "Bad username/password '%s'/'%s' from ip %s",
+  ip = r->clientAddr;
+
+  if (!(mac = arp_get(ip))) {
+    /* we could not get their MAC address; fail */
+    debug(LOG_NOTICE, "Could not arp MAC address for %s to check password", ip);
+    return 0;
+  }
+
+  /* We have their MAC address, find them on the client list
+     and increment their password attempt counter */
+  LOCK_CLIENT_LIST();
+  client = client_list_find(ip,mac);
+  if(client) attempts = ++(client->attempts);
+  UNLOCK_CLIENT_LIST();
+
+  if(!client) {
+    /* not on client list; fail */
+    debug(LOG_NOTICE, "Client %s %s not on client list to check password",
+	  ip, mac);
+    free(mac);
+    return 0;
+  }
+  
+  if(attempts > config->passwordattempts) {
+    /* too many attempts; fail */
+    debug(LOG_NOTICE, "Client %s %s exceeded %d password attempts",
+	  ip, mac, config->passwordattempts);
+    free(mac);
+    return 0;
+  }
+
+  if (authtarget->username && authtarget->password &&
+      !strcmp(config->username,authtarget->username) &&
+      !strcmp(config->password,authtarget->password)) {
+    /* password and username match; success */
+    free(mac);
+    return 1;
+  }
+
+  /* fail */
+  debug(LOG_NOTICE, "Client %s %s bad username/password '%s'/'%s'",
+	ip, mac,
 	authtarget->username,
-	authtarget->password,
-	r->clientAddr);
+	authtarget->password);
+  free(mac);
   return 0;
 
 }

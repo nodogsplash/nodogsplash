@@ -35,7 +35,7 @@ GNU GPL:
 </li>
 </ul>
  <p>
-The following describes how Nodogsplash works, how to get it and run it,
+The following describes what Nodogsplash does, how to get it and run it,
 and how to customize its behavior for your application.
 
 <h3>1. Overview</h3>
@@ -147,7 +147,8 @@ if you have broken the <code>br0</code> bridge to separate the wired and
 wireless LAN's.
 <p>
 <h4>3.1 Packet filtering</h4>
-Nodogsplash considers four kinds of packets coming into the router
+Nodogsplash considers four
+mutually-exclusive kinds of packets coming into the router
 over the managed interface:
 <ol>
 <li>
@@ -205,14 +206,6 @@ of existing chains, nodogsplash should be
 insensitive to most typical existing firewall
 configurations.
  <p>
-Of course, there is the usual tradeoff between security and usability.
-For example, not opening ports 25 and 80 in  the
-<code>FirewallRuleSet users-to-router</code>
-helps to prevent unauthorized administrative access to your router, 
-but (if you have an empty TrustedMACList) does this by blocking 
-<em>all</em> ssh and http access to the router from the managed
-interface.
- <p>
 <h4>3.2 Traffic control</h4>
 
 Nodogsplash also optionally implements basic traffic control on its
@@ -239,7 +232,35 @@ To change basic nodogsplash settings, edit the configuration file:
 <pre>
 /etc/nodogsplash/nodogsplash.conf
 </pre>
+In the configuration file, a <code>FirewallRule</code> has the form:
+<pre>
+FirewallRule <em>permission</em> [<em>protocol</em> [port <em>portrange</em>]] [to <em>ip</em>]
+</pre>
+where
+<ul>
+<li>
+<code><em>permission</em></code> is required and
+must be either <code>allow</code> or <code>block</code>.
 </li>
+<li>
+<code><em>protocol</em></code> is optional.  If present must be
+<code>tcp</code>, <code>udp</code>, <code>icmp</code>, or <code>all</code>.
+Defaults to <code>all</code>.
+</li>
+<li>
+<code>port <em>portrange</em></code> is optional.  If present,
+<code><em>protocol</em></code> must be <code>tcp</code> or <code>udp</code>.
+<code><em>portrange</em></code> can be a single integer port number, or a 
+colon-separated port range, e.g. <code>1024:1028</code>. Defaults to
+all ports.
+</li>
+<li>
+<code>to <em>ip</em></code> is optional.  If present,
+<code><em>ip</em></code> must be a numerical dotted-quad IP address 
+with optional mask.  Defaults to <code>0.0.0.0/0</code>, i.e. all
+addresses.
+</li>
+</ul>
 <li>
 To change the contents of the splash page, edit the splash page file:
 <pre>
@@ -284,10 +305,11 @@ edit the <code>/etc/init.d/S65nodogsplash</code> file to set the
 variable to the flags <code>"-s -d 7"</code>, restart or reboot, and
 view messages with logread.
 The <code>-s</code> flag logs to syslog; the <code>-d 7</code> flag
-sets the maximally verbose level for debugging messages (see syslog.h).
+sets level 7, LOG_DEBUG, for debugging messages (see syslog.h).
 You don't want to run with these flags routinely, as it will 
 quickly fill the syslog  circular buffer, unless you enable remote logging.
-A lower level of logging is more appropriate for routine use.
+A lower level of logging, for example <code>-d 5</code>,
+is more appropriate for routine use (this is the default).
 <p>
 Alternatively, you can set the flag <code>-f</code> instead of <code>-s</code>,
 and restart.

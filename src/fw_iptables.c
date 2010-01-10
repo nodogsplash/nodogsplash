@@ -23,6 +23,7 @@
   @file fw_iptables.c
   @brief Firewall iptables functions
   @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
+  @author Copyright (C) 2007 Paul Kube <nodogsplash@kokoro.ucsd.edu>
  */
 
 #define _GNU_SOURCE
@@ -164,7 +165,8 @@ iptables_load_ruleset(char * table, char *ruleset, char *chain) {
 
 
 
-/** Initialize the firewall rules
+/** Initialize the firewall rules.
+ *  TODO: masking of marks when setting (when iptables supports it).
  */
 int
 iptables_fw_init(void) {

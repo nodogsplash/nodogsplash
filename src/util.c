@@ -430,7 +430,7 @@ char * get_status_text() {
     uptime -= minutes * 60;
     seconds = uptime;
 
-    snprintf((buffer + len), (sizeof(buffer) - len), "  Added duration: %ud %uh %um %us\n", days, hours, minutes, seconds);
+    snprintf((buffer + len), (sizeof(buffer) - len), "  Added duration:  %ud %uh %um %us\n", days, hours, minutes, seconds);
     len = strlen(buffer);
 
     snprintf((buffer + len), (sizeof(buffer) - len), "  Token: %s\n", first->token ? first->token : "none");

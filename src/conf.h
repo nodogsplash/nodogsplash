@@ -22,6 +22,7 @@
 /** @file conf.h
     @brief Config file parsing
     @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
+    @author Copyright (C) 2007 Paul Kube <nodogsplash@kokoro.ucsd.edu>
 */
 
 #ifndef _CONFIG_H_
@@ -53,11 +54,13 @@
 #define DEFAULT_CLIENTFORCEOUT 360
 #define DEFAULT_WEBROOT "/etc/nodogsplash/htdocs"
 #define DEFAULT_SPLASHPAGE "splash.html"
+#define DEFAULT_INFOSKELPAGE "infoskel.html"
 #define DEFAULT_IMAGESDIR "images"
 #define DEFAULT_PAGESDIR "pages"
 #define DEFAULT_AUTHDIR "nodogsplash_auth"
 #define DEFAULT_DENYDIR "nodogsplash_deny"
 #define DEFAULT_PASSWORD_AUTH 0
+#define DEFAULT_PASSWORD_ATTEMPTS 5
 #define DEFAULT_USERNAME "guest"
 #define DEFAULT_PASSWORD "nodog"
 #define DEFAULT_AUTHENTICATE_IMMEDIATELY 0
@@ -116,11 +119,10 @@ typedef struct {
   char *gw_interface;		/**< @brief Interface we will accept connections on */
   char *gw_address;		/**< @brief Internal IP address for our web server */
   int gw_port;			/**< @brief Port the webserver will run on */
-  char *remote_auth_address;	/**< @brief IP address for remote auth */
-  int remote_auth_port;	        /**< @brief Port the remote auth listens on */
-  char *remote_auth_path;	/**< @brief Path for remote auth cgi */
+  char *remote_auth_action;	/**< @brief Path for remote auth */
   char *webroot;		/**< @brief Directory containing splash pages, etc. */
   char *splashpage;		/**< @brief Name of main splash page */
+  char *infoskelpage;		/**< @brief Name of info skeleton page */
   char *imagesdir;		/**< @brief Subdir of webroot containing .png .gif files etc */
   char *pagesdir;		/**< @brief Subdir of webroot containing other .html files */
   char *redirectURL;		/**< @brief URL to direct client to after authentication */
@@ -129,6 +131,7 @@ typedef struct {
   int passwordauth;		/**< @brief boolean, whether to use password authentication */
   char *username;		/**< @brief Username for password authentication */
   char *password;		/**< @brief Password for password authentication */
+  int passwordattempts;		/**< @brief Number of attempted password authentications allowed */
   int clienttimeout;		/**< @brief How many CheckIntervals before an inactive client
 				   must be re-authenticated */
   int clientforceout;		/**< @brief How many CheckIntervals before a client

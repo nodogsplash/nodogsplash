@@ -22,6 +22,7 @@
 /** @file client_list.h
     @brief Client List functions
     @author Copyright (C) 2004 Alexandre Carmel-Veilleux <acv@acv.ca>
+    @author Copyright (C) 2007 Paul Kube <nodogsplash@kokoro.ucsd.edu>
 */
 
 #ifndef _CLIENT_LIST_H_
@@ -48,7 +49,7 @@ typedef struct	_t_client {
   time_t added_time;		/**< @brief Time client added to list */
   t_counters	counters;	/**< @brief Counters for input/output of
 				   the client. */
-  int attempts;                 /**< @brief Number of password attempts */
+  int attempts;                 /**< @brief Number of authentication attempts */
 } t_client;
 
 /** @brief Get the first element of the list of connected clients

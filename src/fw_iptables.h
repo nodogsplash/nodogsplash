@@ -22,6 +22,7 @@
 /** @file fw_iptables.h
     @brief Firewall iptables functions
     @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
+    @author Copyright (C) 2007 Paul Kube <nodogsplash@kokoro.ucsd.edu>
 */
 
 #ifndef _FW_IPTABLES_H_
