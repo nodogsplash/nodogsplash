@@ -44,8 +44,8 @@ typedef struct _auth_target_t {
   char *authtarget;		/**< @brief Deny action */
   char *token;			/**< @brief Client token */
   char *redir;			/**< @brief Client redirect target */
-  char *user;			/**< @brief User name */
-  char *passwd;			/**< @brief User password */
+  char *username;		/**< @brief User name */
+  char *password;		/**< @brief User password */
 } t_auth_target;
 
 /**@brief Callback for libhttpd, serves nodogsplash splash page */
@@ -69,9 +69,13 @@ void http_nodogsplash_first_contact(request *r);
 /**@brief Decode token and redirect URL from a request */
 t_auth_target* http_nodogsplash_decode_authtarget(request *r);
 /**@brief Malloc and return a t_auth_target struct encoding info */
-t_auth_target* http_nodogsplash_make_authtarget(char* token, char* redirhost, char* redirpath);
+t_auth_target* http_nodogsplash_make_authtarget(char* token, char* redir);
 /**@brief Free a t_auth_target struct */
 void http_nodogsplash_free_authtarget(t_auth_target* authtarget);
+/**@brief Malloc and return a redirect URL */
+char* http_nodogsplash_make_redir(char* redirhost, char* redirpath);
+/**@brief Do password check if configured */
+int http_nodogsplash_check_password(request *r, t_auth_target *authtarget);
 /**@brief Allocate and return a random string of 8 hex digits
    suitable as an authentication token */
 char * http_make_auth_token();

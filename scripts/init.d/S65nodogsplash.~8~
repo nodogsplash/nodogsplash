@@ -14,9 +14,10 @@
 IPT=/usr/sbin/iptables
 WD_DIR=/usr/bin
 OPTIONS=""
+# -s -d 5 runs in background, with level 5 (not so verbose) messages to syslog
 # -f -d 7 runs in foreground, with level 7 (verbose) debug messages to terminal
 # N.B.: -f will fail if starting at boot from rcS
-#OPTIONS="-f -d 7"
+#OPTIONS="-s -d 5"
 
 case "$1" in
   start)

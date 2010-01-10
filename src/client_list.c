@@ -81,7 +81,7 @@ client_list_init(void) {
 }
 
 /** Based on the parameters it receives, this function creates a new entry
- * in the connections list. All the memory allocation is done here.
+ * in the client list. All the memory allocation is done here.
  * @param ip IP address
  * @param mac MAC address
  * @param token Token
@@ -89,50 +89,49 @@ client_list_init(void) {
  */
 t_client         *
 client_list_append(char *ip, char *mac, char *token) {
-  t_client         *curclient, *prevclient;
+  t_client         *client, *prevclient;
   s_config *config;
   int maxclients;
 
   config = config_get_config();
   maxclients = config->maxclients;
   if(client_count >= maxclients) {
-    debug(LOG_ERR, "Already list %d clients, cannot add IP %s MAC %s", client_count, ip, mac);
+    debug(LOG_NOTICE, "Already list %d clients, cannot add %s %s", client_count, ip, mac);
     return NULL;
   }
 
   prevclient = NULL;
-  curclient = firstclient;
+  client = firstclient;
 
-  while (curclient != NULL) {
-    prevclient = curclient;
-    curclient = curclient->next;
+  while (client != NULL) {
+    prevclient = client;
+    client = client->next;
   }
 
-  curclient = safe_malloc(sizeof(t_client));
-  memset(curclient, 0, sizeof(t_client));
+  client = safe_malloc(sizeof(t_client));
+  memset(client, 0, sizeof(t_client));
 
-  curclient->ip = safe_strdup(ip);
-  curclient->mac = safe_strdup(mac);
-  curclient->token = token ? safe_strdup(token) : NULL;
-  curclient->fw_connection_state = FW_MARK_PREAUTHENTICATED;
-  curclient->counters.incoming = curclient->counters.incoming_history = 0;
-  curclient->counters.outgoing = curclient->counters.outgoing_history = 0;
-  curclient->counters.last_updated = time(NULL);
-  curclient->added_time = time(NULL);
+  client->ip = safe_strdup(ip);
+  client->mac = safe_strdup(mac);
+  client->token = token ? safe_strdup(token) : NULL;
+  client->fw_connection_state = FW_MARK_PREAUTHENTICATED;
+  client->counters.incoming = client->counters.incoming_history = 0;
+  client->counters.outgoing = client->counters.outgoing_history = 0;
+  client->counters.last_updated = time(NULL);
+  client->added_time = time(NULL);
+
+  debug(LOG_NOTICE, "Adding %s %s token %s to client list",
+	    client->ip, client->mac, client->token ? client->token : "none");
 
   if (prevclient == NULL) {
-    firstclient = curclient;
+    firstclient = client;
   } else {
-    prevclient->next = curclient;
+    prevclient->next = client;
   }
-
-
-  debug(LOG_INFO, "Added client %d to linked list: IP: Token: %s",
-	client_count, ip,  token ? token : "none");
 
   client_count++;
 
-  return curclient;
+  return client;
 }
 
 /** Finds a  client by its IP and MAC, returns NULL if the client could not
@@ -236,9 +235,9 @@ _client_list_free_node(t_client * client) {
 }
 
 /**
- * @brief Deletes a client from the connections list
+ * @brief Deletes a client from the client list
  *
- * Removes the specified client from the connections list and then calls
+ * Removes the specified client from the client list and then calls
  * the function _client_list_free_node to free the memory taken by the client.
  * @param client Points to the client to be deleted
  */
@@ -262,11 +261,15 @@ client_list_delete(t_client * client) {
     /* If we reach the end before finding out element, complain. */
     if (ptr->next == NULL) {
       debug(LOG_ERR, "Node to delete could not be found.");
-      /* Free element. */
     } else {
+      /* Free element. */
+      debug(LOG_NOTICE, "Deleting %s %s token %s from client list",
+	    client->ip, client->mac, client->token ? client->token : "none");
       ptr->next = client->next;
       _client_list_free_node(client);
       client_count--;
+
+
     }
   }
 }

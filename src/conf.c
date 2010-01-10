@@ -74,6 +74,9 @@ typedef enum {
 	oRemoteAuthenticatorAddress,
 	oRemoteAuthenticatorPort,
 	oRemoteAuthenticatorPath,
+	oPasswordAuthentication,
+	oUsername,
+	oPassword,
 	oHTTPDMaxConn,
 	oWebRoot,
 	oSplashPage,
@@ -115,6 +118,9 @@ static const struct {
 	{ "remoteauthenticatoraddress",     oRemoteAuthenticatorAddress },
 	{ "remoteauthenticatorport",        oRemoteAuthenticatorPort },
 	{ "remoteauthenticatorpath",        oRemoteAuthenticatorPath },
+	{ "passwordauthentication",         oPasswordAuthentication },
+	{ "username",           oUsername },
+	{ "password",           oPassword },
 	{ "webroot",      	oWebRoot },
 	{ "splashpage",      	oSplashPage },
 	{ "imagesdir",   	oImagesDir },
@@ -174,6 +180,9 @@ config_init(void) {
   config.clientforceout = DEFAULT_CLIENTFORCEOUT;
   config.checkinterval = DEFAULT_CHECKINTERVAL;
   config.daemon = -1;
+  config.passwordauth = DEFAULT_PASSWORD_AUTH;
+  config.username = DEFAULT_USERNAME;
+  config.password = DEFAULT_PASSWORD;
   config.authenticate_immediately = DEFAULT_AUTHENTICATE_IMMEDIATELY;
   config.traffic_control = DEFAULT_TRAFFIC_CONTROL;
   config.upload_limit =  DEFAULT_UPLOAD_LIMIT;
@@ -339,7 +348,7 @@ _parse_firewall_rule(char *ruleset, char *leftover) {
   int finished = 0; /**< reached end of line */
   char *token = NULL; /**< First word */
   char *port = NULL; /**< port(s) to allow/block */
-  char *protocol = NULL; /**< protocol to allow/block: tcp/udp/icmp */
+  char *protocol = NULL; /**< protocol to allow/block: tcp/udp/icmp/all */
   char *mask = NULL; /**< Netmask */
   char *other_kw = NULL; /**< other key word */
   t_firewall_ruleset *tmpr;
@@ -372,6 +381,7 @@ _parse_firewall_rule(char *ruleset, char *leftover) {
   /* Get the optional protocol */
   if (strncmp(leftover, "tcp", 3) == 0
       || strncmp(leftover, "udp", 3) == 0
+      || strncmp(leftover, "all", 3) == 0
       || strncmp(leftover, "icmp", 4) == 0) {
     protocol = leftover;
     TO_NEXT_WORD(leftover, finished);
@@ -632,6 +642,21 @@ config_read(char *filename) {
 	debug(LOG_ERR, "Exiting...");
 	exit(-1);
       }
+      break;
+    case oPasswordAuthentication:
+      if ((value = parse_boolean_value(p1)) != -1) {
+	config.passwordauth = value;
+      } else {
+	debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
+	debug(LOG_ERR, "Exiting...");
+	exit(-1);
+      }
+      break;
+    case oUsername:
+      config.username = safe_strdup(p1);
+      break;
+    case oPassword:
+      config.password = safe_strdup(p1);
       break;
     case oTrafficControl:
       if ((value = parse_boolean_value(p1)) != -1) {

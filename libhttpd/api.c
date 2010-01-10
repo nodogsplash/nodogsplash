@@ -184,10 +184,6 @@ int httpdAddVariable(request *r, char *name, char *value)
   return(0);
 }
 
-void httpd_storeData(request *r, char *query) {
-  _httpd_storeData(r,query);
-}
-
 
 httpd *httpdCreate(host, port)
 	char	*host;
@@ -559,25 +555,29 @@ int httpdReadRequest(httpd *server, request *r)
   /*
   ** Process any POST data
   */
-  if (r->request.contentLength > 0)
+  if (r->request.method == HTTP_POST && r->request.contentLength > 0)
     {
       bzero(buf, HTTP_MAX_LEN);
       _httpd_readBuf(r, buf, r->request.contentLength);
       _httpd_storeData(r, buf);
 		
     }
+#endif
+
   /*
   ** Process any URL data
   */
   cp = index(r->request.path,'?');
   if (cp != NULL)
     {
-      *cp = 0;
+      /* since _httpd_storeData modifies its second argument,
+       * we copy it first.  P. Kube
+       */
       cp++;
-      _httpd_storeData(r, cp);
+      buf[HTTP_MAX_LEN-1] = '\0';
+      strncpy(buf,cp,HTTP_MAX_LEN-1);
+      _httpd_storeData(r, buf);
     }
-#endif
-
 
   return(0);
 }

@@ -20,7 +20,7 @@ OPTIONS=""
 #OPTIONS="-s -d 5"
 
 case "$1" in
-  start)
+  start|boot)
     echo "Starting nodogsplash ... "
     if $WD_DIR/ndsctl status 2> /dev/null
     then

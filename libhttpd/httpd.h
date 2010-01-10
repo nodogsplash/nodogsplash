@@ -192,7 +192,6 @@ int httpdAddStaticContent __ANSI_PROTO((httpd*,char*,char*,int,int(*)(),char*));
 int httpdAddWildcardContent __ANSI_PROTO((httpd*,char*,int(*)(),char*));
 int httpdAddCWildcardContent __ANSI_PROTO((httpd*,char*,int(*)(),void(*)()));
 int httpdAddVariable __ANSI_PROTO((request*, char*, char*));
-void httpd_storeData __ANSI_PROTO((request*, char*));
 
 request *httpdGetConnection __ANSI_PROTO((httpd*, struct timeval*));
 int httpdReadRequest __ANSI_PROTO((httpd*, request*));

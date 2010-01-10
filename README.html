@@ -174,11 +174,12 @@ in the <code>nodogsplash.conf</code> configuration file).
 </li>
 <li>
 <em>Preauthenticated</em>.
-Any other packet.  These packets are accepted only to the DNS port
-on addresses forwarded through the router, and to ports
-and protocols opened in 
+Any other packet.
+These packets are accepted and routed to a limited set of 
+addresses and ports (see <code>FirewallRuleSet preauthenticated-users</code>
+and 
 <code>FirewallRuleSet users-to-router</code>
-in the <code>nodogsplash.conf</code> configuration file.
+in the <code>nodogsplash.conf</code> configuration file).
 Any other packet is dropped, except that a packet
 for destination port 80 at any address is redirected to port 2050 on
 the router, where nodogsplash's builtin 
@@ -263,13 +264,21 @@ requested URL.
 <code>$imagesdir</code>  The directory in nodogsplash's web hierarchy
 where images to be displayed in the splash page must be located.
 </li>
+<li>
+<code>$tok</code>,<code>$redir</code>,<code>$authaction</code>, and
+<code>$denyaction</code> are also available and can be useful if
+you want to write the splash page to 
+use an HTML form instead of using <code>$authtarget</code> as the value
+of an href attribute to communicate with the
+nodogsplash server.
+</li>
 </ul>
 </ul>
 
 <h3>5. Debugging nodogsplash</h3>
 <ul>
 <li>
-To see verbose debugging output from nodogsplash, 
+To see maximally verbose debugging output from nodogsplash, 
 edit the <code>/etc/init.d/S65nodogsplash</code> file to set the 
 <code>OPTIONS</code>
 variable to the flags <code>"-s -d 7"</code>, restart or reboot, and
@@ -278,6 +287,7 @@ The <code>-s</code> flag logs to syslog; the <code>-d 7</code> flag
 sets the maximally verbose level for debugging messages (see syslog.h).
 You don't want to run with these flags routinely, as it will 
 quickly fill the syslog  circular buffer, unless you enable remote logging.
+A lower level of logging is more appropriate for routine use.
 <p>
 Alternatively, you can set the flag <code>-f</code> instead of <code>-s</code>,
 and restart.
@@ -320,7 +330,7 @@ Edit <code>/etc/nodogsplash/nodogsplash.conf</code> and set
 </li>
 <li>
 Kamikaze moves to a different
-(more standard) way of organizing init scripts.  Executable
+way of organizing init scripts.  Executable
 scripts reside in <code>/etc/init.d</code>, but appropriately named symlinks
 in <code>/etc/rc.d</code> determine the sequencing of scripts at boot.
 After installing Nodogsplash, do the following:
@@ -328,7 +338,7 @@ After installing Nodogsplash, do the following:
  cd /etc/init.d
  mv S65nodogsplash nodogsplash
  cd /etc/rc.d
- ln /etc/init.d/nodogsplash S65nodogsplash 
+ ln -s /etc/init.d/nodogsplash S65nodogsplash 
 </pre>
 And then use <code>/etc/init.d/nodogsplash</code> to start and stop 
 Nodogsplash from the command line.

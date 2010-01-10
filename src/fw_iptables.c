@@ -333,17 +333,26 @@ iptables_fw_init(void) {
   rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu");
   /* CHAIN_TO_INTERNET, packets marked TRUSTED  ACCEPT */
   rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m mark --mark 0x%x -j ACCEPT", FW_MARK_TRUSTED);
-  /* CHAIN_TO_INTERNET, all packets tcp/udp to DNS (port 53) ACCEPT */
-  rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -p tcp --dport 53 -j ACCEPT");
-  rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -p udp --dport 53 -j ACCEPT");
   /* CHAIN_TO_INTERNET, packets marked AUTHENTICATED jump to CHAIN_AUTHENTICATED */
   rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m mark --mark 0x%x -j " CHAIN_AUTHENTICATED, FW_MARK_AUTHENTICATED);
   /* CHAIN_AUTHENTICATED, related and established packets  ACCEPT */
   rc |= iptables_do_command("-t filter -A " CHAIN_AUTHENTICATED " -m state --state RELATED,ESTABLISHED -j ACCEPT");
   /* CHAIN_AUTHENTICATED, load the "authenticated-users" ruleset */
   rc |= iptables_load_ruleset("filter", "authenticated-users", CHAIN_AUTHENTICATED);
+  /* CHAIN_AUTHENTICATED, all packets tcp/udp to DNS (port 53) ACCEPT */
+  /* now require that these be explicitly opened in a FirewallRuleset 
+  rc |= iptables_do_command("-t filter -A " CHAIN_AUTHENTICATED " -p tcp --dport 53 -j ACCEPT");
+  rc |= iptables_do_command("-t filter -A " CHAIN_AUTHENTICATED " -p udp --dport 53 -j ACCEPT");
+  */
   /* CHAIN_AUTHENTICATED, any packets not matching that ruleset  REJECT */
   rc |= iptables_do_command("-t filter -A " CHAIN_AUTHENTICATED " -j REJECT --reject-with icmp-port-unreachable");
+  /* CHAIN_TO_INTERNET, load the "preauthenticated-users" ruleset */
+  rc |= iptables_load_ruleset("filter", "preauthenticated-users", CHAIN_TO_INTERNET);
+  /* CHAIN_TO_INTERNET, all packets tcp/udp to DNS (port 53) ACCEPT */
+  /* now require that these be explicitly opened in a FirewallRuleset 
+  rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -p tcp --dport 53 -j ACCEPT");
+  rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -p udp --dport 53 -j ACCEPT");
+  */
   /* CHAIN_TO_INTERNET, all other packets REJECT */
   rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -j REJECT --reject-with icmp-port-unreachable");
 
@@ -484,6 +493,7 @@ iptables_fw_access(t_authaction action, char *ip, char *mac) {
 
   switch(action) {
   case AUTH_MAKE_AUTHENTICATED:
+    debug(LOG_NOTICE, "Authenticating %s %s", ip, mac);
     /* This rule is for marking upload packets, and for upload byte counting */
     rc = iptables_do_command("-t mangle -A " CHAIN_OUTGOING " -s %s -m mac --mac-source %s -j MARK --set-mark 0x%x", ip, mac, FW_MARK_AUTHENTICATED);
     /* This rule is just for download byte counting, see iptables_fw_counters_update() */
@@ -491,6 +501,7 @@ iptables_fw_access(t_authaction action, char *ip, char *mac) {
     break;
   case AUTH_MAKE_DEAUTHENTICATED:
     /* Remove the authentication rules. */
+    debug(LOG_NOTICE, "Deauthenticating %s %s", ip, mac);
     rc = iptables_do_command("-t mangle -D " CHAIN_OUTGOING " -s %s -m mac --mac-source %s -j MARK --set-mark 0x%x", ip, mac, FW_MARK_AUTHENTICATED);
     rc = iptables_do_command("-t mangle -D " CHAIN_INCOMING " -d %s -j ACCEPT", ip);
     break;

@@ -345,13 +345,13 @@ char * get_status_text() {
   }
 
   download_bytes = iptables_fw_total_download();
-  snprintf((buffer + len), (sizeof(buffer) - len), "Total download: %llu kbytes", download_bytes/1000);
+  snprintf((buffer + len), (sizeof(buffer) - len), "Total download: %llu kByte", download_bytes/1000);
   len = strlen(buffer);
   snprintf((buffer + len), (sizeof(buffer) - len), "; avg: %.6g kbit/s\n", ((double) download_bytes) / 125 / uptimesecs);
   len = strlen(buffer);
 
   upload_bytes = iptables_fw_total_upload();
-  snprintf((buffer + len), (sizeof(buffer) - len), "Total upload: %llu kbytes", upload_bytes/1000);
+  snprintf((buffer + len), (sizeof(buffer) - len), "Total upload: %llu kByte", upload_bytes/1000);
   len = strlen(buffer);
   snprintf((buffer + len), (sizeof(buffer) - len), "; avg: %.6g kbit/s\n", ((double) upload_bytes) / 125 / uptimesecs);
   len = strlen(buffer);
@@ -373,7 +373,7 @@ char * get_status_text() {
   snprintf((buffer + len), (sizeof(buffer) - len), "====\n");
   len = strlen(buffer);
 
-  snprintf((buffer + len), (sizeof(buffer) - len), "Clients authenticated this session: %lu\n", authenticated_this_session);
+  snprintf((buffer + len), (sizeof(buffer) - len), "Client authentications this session: %lu\n", authenticated_this_session);
   len = strlen(buffer);
 
   
@@ -444,7 +444,7 @@ char * get_status_text() {
     upload_bytes = first->counters.outgoing;
 
     snprintf((buffer + len), (sizeof(buffer) - len),
-	     "  Download: %llu kbytes; avg: %.6g kbit/s\n  Upload:   %llu kbytes; avg: %.6g kbit/s\n\n",
+	     "  Download: %llu kByte; avg: %.6g kbit/s\n  Upload:   %llu kByte; avg: %.6g kbit/s\n\n",
 	     download_bytes/1000, ((double)download_bytes)/125/uptimesecs,
 	     upload_bytes/1000, ((double)upload_bytes)/125/uptimesecs);
     len = strlen(buffer);

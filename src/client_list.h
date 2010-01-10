@@ -48,6 +48,7 @@ typedef struct	_t_client {
   time_t added_time;		/**< @brief Time client added to list */
   t_counters	counters;	/**< @brief Counters for input/output of
 				   the client. */
+  int attempts;                 /**< @brief Number of password attempts */
 } t_client;
 
 /** @brief Get the first element of the list of connected clients

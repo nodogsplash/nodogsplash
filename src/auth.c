@@ -99,7 +99,7 @@ auth_client_action(char *ip, char *mac, t_authaction action) {
 
   client = client_list_find_by_ip(ip);
 
-  /* Client should already have hit the splash server and be on the client list */
+  /* Client should already have hit the server and be on the client list */
   if (client == NULL) {
     debug(LOG_ERR, "Could not find client for %s", ip);
     UNLOCK_CLIENT_LIST();
@@ -120,7 +120,6 @@ auth_client_action(char *ip, char *mac, t_authaction action) {
   switch(action) {
 
   case AUTH_MAKE_AUTHENTICATED:
-    debug(LOG_NOTICE, "AUTHENTICATE %s %s ", client->ip, client->mac);
     if(client->fw_connection_state != FW_MARK_AUTHENTICATED) {
       client->fw_connection_state = FW_MARK_AUTHENTICATED;
       iptables_fw_access(AUTH_MAKE_AUTHENTICATED,client->ip,client->mac);
@@ -131,11 +130,11 @@ auth_client_action(char *ip, char *mac, t_authaction action) {
     break;
 
   case AUTH_MAKE_DEAUTHENTICATED:
-    debug(LOG_NOTICE, "DEAUTHENTICATE %s %s ", client->ip, client->mac);
     if(client->fw_connection_state == FW_MARK_AUTHENTICATED) {
       iptables_fw_access(AUTH_MAKE_DEAUTHENTICATED, client->ip, client->mac);
     }
     client_list_delete(client);
+    break;
     
   default:
     debug(LOG_ERR, "Unknown auth action: %d",action);

@@ -206,17 +206,19 @@ http_nodogsplash_first_contact(request *r) {
   t_client *client;
   t_auth_target *authtarget;
   s_config *config;
+  char *redir;
 
   config = config_get_config();
 
   client = http_nodogsplash_add_client(r);
   /* http_nodogsplash_add_client() should log and return null on error */
   if(!client) return;
-
-  authtarget =
-    http_nodogsplash_make_authtarget(client->token,
-				     r->request.host,
-				     r->request.path);
+  
+  /* Create redirect URL for this contact as appropriate */
+  redir = http_nodogsplash_make_redir(r->request.host,r->request.path);
+  /* Create authtarget with all needed info */
+  authtarget = http_nodogsplash_make_authtarget(client->token,redir);
+  free(redir);
 
   if(config->authenticate_immediately) {
     http_nodogsplash_callback_action(r,authtarget,AUTH_MAKE_AUTHENTICATED);
@@ -230,13 +232,7 @@ http_nodogsplash_first_contact(request *r) {
 
 }
 
-void
-_report_warning(request *r, char *msg) {
-    debug(LOG_WARNING, msg);
-    http_nodogsplash_header(r, "Nodogsplash Error");
-    httpdOutput(r, msg);
-    http_nodogsplash_footer(r);
-}
+
 
 /** The multipurpose authentication action handler
  */
@@ -257,20 +253,17 @@ http_nodogsplash_callback_action(request *r,
   ip = r->clientAddr;
 
   if(!requesttoken) {
-    debug(LOG_WARNING, "No token in request from ip %s", ip);
+    debug(LOG_NOTICE, "No token in request from ip %s", ip);
     return;
   }
   if(!redir) {
-    debug(LOG_WARNING, "No redirect in request from ip %s", ip);
+    debug(LOG_NOTICE, "No redirect in request from ip %s", ip);
     return;
   }
 
   if (!(mac = arp_get(ip))) {
     /* We could not get their MAC address */
-    debug(LOG_WARNING, "Failed to retrieve MAC address for ip %s", ip);
-    http_nodogsplash_header(r, "Nodogsplash Error");
-    httpdOutput(r, "Failed to retrieve your MAC address.");
-    http_nodogsplash_footer(r);
+    debug(LOG_NOTICE, "Could not arp MAC address for %s on action %d", ip, action);
     return;
   }
 
@@ -281,7 +274,7 @@ http_nodogsplash_callback_action(request *r,
   UNLOCK_CLIENT_LIST();
 
   if(!client) {
-    debug(LOG_WARNING, "Client %s at %s requesting action %d is not on client list",
+    debug(LOG_NOTICE, "Client %s %s action %d is not on client list",
 	  ip, mac, action);
     http_nodogsplash_header(r, "Nodogsplash Error");
     httpdOutput(r, "You are not on the client list.");
@@ -294,10 +287,8 @@ http_nodogsplash_callback_action(request *r,
 
   /* Do we have a client token? */
   if(!clienttoken) {
-    debug(LOG_WARNING, "Client %s at %s does not have a token", ip, mac);
-    http_nodogsplash_header(r, "Nodogsplash Error");
-    httpdOutput(r, "No token available.");
-    http_nodogsplash_footer(r);
+    debug(LOG_NOTICE, "Client %s %s action %d does not have a token",
+	  ip, mac, action);
     free(mac);
     return;
   } 
@@ -305,49 +296,63 @@ http_nodogsplash_callback_action(request *r,
   debug(LOG_DEBUG, "Action %d: IP %s MAC %s: client: %s, request: %s",
 	action, ip, mac, clienttoken, requesttoken);  
   debug(LOG_DEBUG, "Redirect:  %s", redir);
-  /* Check if tokens match */
-  if (! strcmp(clienttoken,requesttoken)) {
-    /* take action */
-    switch(action) {
-    case AUTH_MAKE_AUTHENTICATED:
-      auth_client_action(ip,mac,action);
-      http_nodogsplash_redirect(r, redir);
-      break;
-    case AUTH_MAKE_DEAUTHENTICATED:
-      auth_client_action(ip,mac,action);
-      http_nodogsplash_header(r, "Nodogsplash Deny");
-      httpdOutput(r, "Authentication revoked.");
-      http_nodogsplash_footer(r);
-      break;
-    default:
-      debug(LOG_ERR, "Unknown auth action: %d", action);
-    }
-    
-  } else {
+
+  /* Check token match */
+  if (strcmp(clienttoken,requesttoken)) {
     /* tokens don't match, reject */
-    debug(LOG_WARNING, "Client %s at MAC %s tokens %s, %s do not match",
+    debug(LOG_NOTICE, "Client %s at MAC %s tokens %s, %s do not match",
 	  r->clientAddr, mac, clienttoken, requesttoken);
     http_nodogsplash_header(r, "Nodogsplash Error");
     httpdOutput(r, "Tokens do not match.");
     http_nodogsplash_footer(r);
+    free(mac);
+    free(clienttoken);
+    return;
   }
+
+
+  /* take action */
+  switch(action) {
+  case AUTH_MAKE_AUTHENTICATED:
+    auth_client_action(ip,mac,action);
+    http_nodogsplash_redirect(r, redir);
+    break;
+  case AUTH_MAKE_DEAUTHENTICATED:
+    auth_client_action(ip,mac,action);
+    http_nodogsplash_header(r, "Nodogsplash Deny");
+    httpdOutput(r, "Authentication revoked.");
+    http_nodogsplash_footer(r);
+    break;
+  default:
+    debug(LOG_ERR, "Unknown auth action: %d", action);
+  }
+   
   free(mac);
   free(clienttoken);
+  return;
 
 }
 
-/** The auth handler registers the client as authenticated, and redirects their web request */
+/** The auth callback responds to a request to serve from the authdir */
 void
 http_nodogsplash_callback_auth(httpd *webserver, request *r) {
   t_auth_target *authtarget;
-
+  
   /* Get info we need from request, and do action */
   authtarget = http_nodogsplash_decode_authtarget(r);
-  http_nodogsplash_callback_action (r,authtarget,AUTH_MAKE_AUTHENTICATED );
+
+  if(http_nodogsplash_check_password(r,authtarget)) {
+    http_nodogsplash_callback_action (r,authtarget,AUTH_MAKE_AUTHENTICATED);
+  } else {
+    /* Password check failed; just serve them the splash page again */
+    http_nodogsplash_serve_splash(r,authtarget);
+  }
+  
   http_nodogsplash_free_authtarget(authtarget);
 }
 
-/** The deny handler removes the client from the client list */
+
+/** The deny callback responds to a request to serve from the denydir */
 void
 http_nodogsplash_callback_deny(httpd *webserver, request *r) {
   t_auth_target *authtarget;
@@ -377,20 +382,18 @@ http_nodogsplash_add_client(request *r) {
 
   if (!(mac = arp_get(r->clientAddr))) {
     /* We could not get their MAC address */
-    debug(LOG_WARNING, "Failed to retrieve MAC address for ip %s", r->clientAddr);
+    debug(LOG_NOTICE, "Could not arp MAC address for %s", r->clientAddr);
   } 
 
   LOCK_CLIENT_LIST();
 			
   if ((client = client_list_find(r->clientAddr, mac)) == NULL) {
     token = http_make_auth_token();  /* get a new random token */
-    debug(LOG_DEBUG, "New client %s at %s token %s",
-	  r->clientAddr, mac, token);
     client = client_list_append(r->clientAddr, mac, token);
     free(token);
   } else {
-    debug(LOG_DEBUG, "Client %s at %s already exists",
-	  r->clientAddr, mac);
+    debug(LOG_INFO, "Client %s %s token %s already on client list",
+	  r->clientAddr, mac, client->token);
   }
   UNLOCK_CLIENT_LIST();
   free(mac);
@@ -428,12 +431,15 @@ http_nodogsplash_serve_splash(request *r, t_auth_target *authtarget) {
   httpdAddVariable(r,"pagesdir",abspath);
   free(abspath);
   
+
   /* Pipe the splash page from its file */
   safe_asprintf(&splashfilename, "%s/%s", config->webroot, config->splashpage );
+  debug(LOG_INFO,"Serving splash page %s to %s",
+	splashfilename,r->clientAddr);
   if (!(fd = fopen(splashfilename, "r"))) {
     debug(LOG_ERR, "Could not open splash page file '%s'", splashfilename);
     http_nodogsplash_header(r, "Nodogsplash Error");
-    httpdOutput(r, "Failed to open splash page file");
+    httpdOutput(r, "Failed to open splash page");
     http_nodogsplash_footer(r);
   } else {
     while (fgets(line, MAX_BUF, fd)) {
@@ -461,66 +467,63 @@ http_nodogsplash_redirect(request *r, char *url) {
 }
 
 /**
- * Allocate and return a pointer to a t_auth_target struct encoding information
- * needed to eventually authenticate a client.
+ * Allocate and return a pointer to a t_auth_target struct
+ * encoding information needed to authenticate a client.
  * See http_nodogsplash_make_authtarget().
- * Fields token and redir will be set;
- * all other fields in the struct are zeroed.
  * The struct should be freed by http_nodogsplash_free_authtarget().
  */
 t_auth_target *
 http_nodogsplash_decode_authtarget(request *r) {
-  char *p1;
   httpVar *var;
-  request *r2;
   t_auth_target *authtarget;
+  char *token=NULL, *redir=NULL;
   
-  /* r->request.path should have the form: /<directory>/<rest>,
-   * where <directory> has had its effect already in determining which
-   * callback is procesing the request, so we ignore it here,
-   * and where <rest> is a string encoding variables and values in the
-   * usual way.
-   * So, here we find <rest>, and store variable/value pairs in the request,
-   * to find values of token and redir.
-   */
-  p1 =   strchr(r->request.path,'/');        /* initial slash */
-  if(!p1) {
-    _report_warning(r,"Malformed action request: first");
-    return NULL;
-  }
-  p1++;
-  p1 = strchr(p1,'/');              /* second slash */
-  if(!p1) {
-    _report_warning(r,"Malformed action request: second");
-    return NULL;
-  }
-  p1++;
-  if(*p1 == '?') p1++;
-  
-  /* Create another request struct r2 to avoid polluting r */
-  r2 = safe_malloc(sizeof(request));
-  memset(r2, 0, sizeof(request));
 
-  /* Parse <rest>, store variables in r2
-   * N.B.: httpd_storeData() httpd_unescape's variable values
-   */
-  httpd_storeData(r2,p1);
-  /* now get variable values from r2 */
-  authtarget = safe_malloc(sizeof(t_auth_target));
-  memset(authtarget, 0, sizeof(t_auth_target));
-  var = httpdGetVariableByName(r2,"tok");
-  if(var) {
-    authtarget->token = safe_strdup(var->value);
+  var = httpdGetVariableByName(r,"tok");
+  if(var && var->value) {
+    token = var->value;
   }
-  var = httpdGetVariableByName(r2,"redir");
-  if(var) {
-    authtarget->redir = safe_strdup(var->value);
+  var = httpdGetVariableByName(r,"redir");
+  if(var && var->value) {
+    redir = var->value;
   }
-  httpdFreeVariables(r2);
-  free(r2);
+
+  authtarget = http_nodogsplash_make_authtarget(token,redir);
+
+  var = httpdGetVariableByName(r,"nodoguser");
+  if(var && var->value) {
+    authtarget->username = safe_strdup(var->value);
+  }
+  var = httpdGetVariableByName(r,"nodogpass");
+  if(var && var->value) {
+    authtarget->password = safe_strdup(var->value);
+  }
 
   return authtarget;
 
+}
+
+
+/* Allocate and return a pointer to a string that is the redirect URL.
+ * Caller must free.
+ */
+char*
+http_nodogsplash_make_redir(char* redirhost, char* redirpath) {
+  s_config *config;
+  char* redir;
+  config = config_get_config();
+
+  if(config->redirectURL) {
+    debug(LOG_DEBUG,"Redirect request http://%s%s, substituting %s",
+	  redirhost,redirpath,config->redirectURL);
+    redir = safe_strdup(config->redirectURL);
+  } else {
+    /* We just assume protocol http; after all we caught the client by
+       redirecting port 80 tcp packets
+    */
+    safe_asprintf(&redir,"http://%s%s",redirhost,redirpath);
+  }
+  return redir;
 }
 
 /**
@@ -529,7 +532,7 @@ http_nodogsplash_decode_authtarget(request *r) {
  * The struct should be freed by http_nodogsplash_free_authtarget().
  */
 t_auth_target*
-http_nodogsplash_make_authtarget(char* token, char* redirhost, char* redirpath) {
+http_nodogsplash_make_authtarget(char* token, char* redir) {
   char *encodedredir;
   t_auth_target* authtarget;
   s_config *config;
@@ -546,14 +549,7 @@ http_nodogsplash_make_authtarget(char* token, char* redirhost, char* redirpath) 
   safe_asprintf(&(authtarget->authaction),"http://%s:%d/%s/",authtarget->ip,authtarget->port,authtarget->authdir);
   safe_asprintf(&(authtarget->denyaction),"http://%s:%d/%s/",authtarget->ip,authtarget->port,authtarget->denydir);
   authtarget->token = safe_strdup(token);
-  if(config->redirectURL) {
-    debug(LOG_DEBUG,"Client requested http://%s%s, substituting %s",
-	  redirhost,redirpath,config->redirectURL);
-    authtarget->redir = safe_strdup(config->redirectURL);
-  } else {
-    safe_asprintf(&(authtarget->redir),"http://%s%s",redirhost,redirpath);
-  }
-  /* URL encode the redirect URL for authtarget */
+  authtarget->redir = safe_strdup(redir);
   encodedredir = httpdUrlEncode(authtarget->redir);  /* malloc's */
   safe_asprintf(&(authtarget->authtarget), "%s?redir=%s&tok=%s",
 		authtarget->authaction,
@@ -578,13 +574,33 @@ http_nodogsplash_free_authtarget(t_auth_target* authtarget) {
   if(authtarget->authtarget) free(authtarget->authtarget);
   if(authtarget->token) free(authtarget->token);
   if(authtarget->redir) free(authtarget->redir);
-  if(authtarget->user) free(authtarget->user);
-  if(authtarget->passwd) free(authtarget->passwd);
+  if(authtarget->username) free(authtarget->username);
+  if(authtarget->password) free(authtarget->password);
   free(authtarget);
 
 }
 
+/** Perform username/password check if configured to use password.
+ */
+int
+http_nodogsplash_check_password(request *r, t_auth_target *authtarget) {
+  s_config	*config;
+  config = config_get_config();
 
+  if(!config->passwordauth ||
+     (authtarget->username && authtarget->password &&
+      !strcmp(config->username,authtarget->username) &&
+      !strcmp(config->password,authtarget->password))) {
+    return 1;
+  }
+
+  debug(LOG_NOTICE, "Bad username/password '%s'/'%s' from ip %s",
+	authtarget->username,
+	authtarget->password,
+	r->clientAddr);
+  return 0;
+
+}
 
 /** Allocate and return a random string of 8 hex digits
  *  suitable as an authentication token.
