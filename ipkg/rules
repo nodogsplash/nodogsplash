@@ -98,14 +98,8 @@ binary: build install
 	echo "Package: nodogsplash" > $(TMP_DIR)/CONTROL/control
 	echo "Version: $(VERSION)" >> $(TMP_DIR)/CONTROL/control
 	echo "Architecture: $(ARCH)" >> $(TMP_DIR)/CONTROL/control
-	echo "Section: net" >> $(TMP_DIR)/CONTROL/control
-	echo "Maintainer: Paul Kube <nodogsplash@kokoro.ucsd.edu>" >> $(TMP_DIR)/CONTROL/control
-	echo "Priority: optional" >> $(TMP_DIR)/CONTROL/control
-	echo "Description: Nodogsplash is a simple, configurable hotspot controller" >> $(TMP_DIR)/CONTROL/control
-	echo "Source: http://kokoro.ucsd.edu/nodogsplash" >> $(TMP_DIR)/CONTROL/control
-	echo "/etc/nodogsplash/nodogsplash.conf" > $(TMP_DIR)/CONTROL/conffiles
-	echo "/etc/nodogsplash/htdocs/splash.html" >> $(TMP_DIR)/CONTROL/conffiles
-	echo "/etc/init.d/S65nodogsplash" >> $(TMP_DIR)/CONTROL/conffiles
+	cat $(BUILD_DIR)/nodogsplash.control >> $(TMP_DIR)/CONTROL/control
+	cat $(BUILD_DIR)/nodogsplash.conffiles > $(TMP_DIR)/CONTROL/conffiles
 	$(IPKG_BUILD) -c -o root -g root $(TMP_DIR) $(CURDIR)
 
 .PHONY: all clean build install binary

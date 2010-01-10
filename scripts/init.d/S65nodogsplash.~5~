@@ -190,6 +190,7 @@ case "$1" in
 
     do_module_tests "ipt_mac"
     do_module_tests "ipt_mark"
+    do_module_tests "ipt_REDIRECT"
     # if not using traffic control,
     # you can comment out the following 3 lines:
     do_module_tests "imq" "numdevs=2"

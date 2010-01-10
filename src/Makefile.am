@@ -22,7 +22,8 @@ nodogsplash_SOURCES = commandline.c \
 	util.c \
 	ndsctl_thread.c \
 	safe.c \
-	httpd_thread.c
+	httpd_thread.c \
+	tc.c
 
 noinst_HEADERS = commandline.h \
 	common.h \
@@ -38,7 +39,8 @@ noinst_HEADERS = commandline.h \
 	ndsctl_thread.h \
 	ndsctl.h \
 	safe.h \
-	httpd_thread.h
+	httpd_thread.h \
+	tc.h
 
 ndsctl_SOURCES = ndsctl.c
 

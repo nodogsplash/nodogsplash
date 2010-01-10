@@ -14,7 +14,8 @@ These are basic instructions for building a nodogsplash OpenWRT package
 from source.
 
 First, obtain and set up an OpenWRT buildroot of a version that you
-want to compile against.  Suppose the buildroot is at /path/to/OpenWRT/buildroot.
+want to compile against.  Suppose the buildroot is at
+/path/to/OpenWRT/buildroot.
 
 Then, untar the nodogsplash archive under the buildroot's package directory.
 

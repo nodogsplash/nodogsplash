@@ -406,10 +406,15 @@ main_loop(void) {
   httpdAddCWildcardContent(webserver, config->denydir, NULL, http_nodogsplash_callback_deny);
   httpdAddC404Content(webserver, http_nodogsplash_callback_404);
 
-  /* Reset the firewall (if nodogsplash crashed) */
+  /* Reset the firewall (cleans it, if we are restarting after nodogsplash crash) */
   fw_destroy();
   /* Then initialize it */
-  fw_init();
+  if( fw_init() != 0 ) {
+    debug(LOG_ERR, "Error initializing firewall rules! Cleaning up");
+    fw_destroy();
+    debug(LOG_ERR, "Exiting because of error initializing firewall rules");
+    exit(1);
+  }
 
   /* Start clean up thread */
   result = pthread_create(&tid_fw_counter, NULL, (void *)thread_client_timeout_check, NULL);

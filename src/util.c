@@ -133,8 +133,6 @@ wd_gethostbyname(const char *name) {
     return NULL;
   }
 
-  mark_online();
-
   in_addr_temp = (struct in_addr *)he->h_addr_list[0];
   h_addr->s_addr = in_addr_temp->s_addr;
 	
@@ -165,7 +163,7 @@ char *get_iface_ip(char *ifname) {
 
   /* Get the IP address */
   if (ioctl (sockd, SIOCGIFADDR, &if_data) < 0) {
-    debug(LOG_ERR, "ioctl(): SIOCGIFADDR %s", strerror(errno));
+    debug(LOG_ERR, "Finding IP for %s: ioctl(): SIOCGIFADDR %s", ifname,strerror(errno));
     return NULL;
   }
   memcpy ((void *) &ip, (void *) &if_data.ifr_addr.sa_data + 2, 4);
@@ -216,6 +214,9 @@ char *get_iface_mac (char *ifname) {
 #endif
 }
 
+/** Get name of external interface (the one with default route to the net).
+ *  Caller must free.
+ */
 char *get_ext_iface (void) {
 #ifdef __linux__
   FILE *input;
@@ -257,51 +258,9 @@ char *get_ext_iface (void) {
   return NULL;
 }
 
-void mark_online() {
-  int before;
-  int after;
-
-  before = is_online();
-  time(&last_online_time);
-  after = is_online();
-
-  if (before != after) {
-    debug(LOG_INFO, "ONLINE status became %s", (after ? "ON" : "OFF"));
-  }
-
-}
-
-void mark_offline() {
-  int before;
-  int after;
-
-  before = is_online();
-  time(&last_offline_time);
-  after = is_online();
-
-  if (before != after) {
-    debug(LOG_INFO, "ONLINE status became %s", (after ? "ON" : "OFF"));
-  }
-
-  /* If we're offline it definately means the auth server is offline */
-  /*   mark_auth_offline(); */
-
-}
-
-int is_online() {
-  if (last_online_time == 0 || (last_offline_time - last_online_time) >= (config_get_config()->checkinterval * 2) ) {
-    /* We're probably offline */
-    return (0);
-  }
-  else {
-    /* We're probably online */
-    return (1);
-  }
-}
-
-
 /*
- * @return A string containing human-readable status text. MUST BE free()d by caller
+ * @return A string containing human-readable status text.
+ * MUST BE free()d by caller
  */
 char * get_status_text() {
   char buffer[STATUS_BUF_SIZ];
@@ -310,8 +269,9 @@ char * get_status_text() {
   s_config *config;
   t_client	*first;
   int		indx;
-  unsigned long int uptime = 0;
+  unsigned long int uptime = 0, uptimesecs = 0;
   unsigned int days = 0, hours = 0, minutes = 0, seconds = 0;
+  unsigned long long int download_bytes, upload_bytes;
   t_MAC *trust_mac;
   t_MAC *block_mac;
 	
@@ -321,7 +281,7 @@ char * get_status_text() {
   snprintf(buffer, (sizeof(buffer) - len), "==================\nNoDogSplash Status\n====\n");
   len = strlen(buffer);
 
-  uptime = time(NULL) - started_time;
+  uptimesecs = uptime = time(NULL) - started_time;
   days    = uptime / (24 * 60 * 60);
   uptime -= days * (24 * 60 * 60);
   hours   = uptime / (60 * 60);
@@ -351,6 +311,39 @@ char * get_status_text() {
   len = strlen(buffer);
 
 
+  snprintf((buffer + len), (sizeof(buffer) - len), "Traffic control: %s\n", config->traffic_control ? "yes" : "no");
+  len = strlen(buffer);
+
+  if(config->traffic_control) {
+    if(config->download_limit > 0) {
+      snprintf((buffer + len), (sizeof(buffer) - len), "Download rate limit: %d kbit/s\n", config->download_limit);
+      len = strlen(buffer);
+    } else {
+      snprintf((buffer + len), (sizeof(buffer) - len), "Download rate limit: none\n");
+      len = strlen(buffer);
+    }
+    if(config->upload_limit > 0) {
+      snprintf((buffer + len), (sizeof(buffer) - len), "Upload rate limit: %d kbit/s\n", config->upload_limit);
+      len = strlen(buffer);
+    } else {
+      snprintf((buffer + len), (sizeof(buffer) - len), "Upload rate limit: none\n");
+      len = strlen(buffer);
+    }
+  }
+
+  download_bytes = iptables_fw_total_download();
+  snprintf((buffer + len), (sizeof(buffer) - len), "Total download: %llu kbytes", download_bytes/1000);
+  len = strlen(buffer);
+  snprintf((buffer + len), (sizeof(buffer) - len), "; avg: %.6g kbit/s\n", ((double) download_bytes) / 1000 * 8 / uptimesecs);
+  len = strlen(buffer);
+
+  upload_bytes = iptables_fw_total_upload();
+  snprintf((buffer + len), (sizeof(buffer) - len), "Total upload: %llu kbytes", upload_bytes/1000);
+  len = strlen(buffer);
+  snprintf((buffer + len), (sizeof(buffer) - len), "; avg: %.6g kbit/s\n", ((double) upload_bytes) / 1000 * 8 / uptimesecs);
+  len = strlen(buffer);
+
+
   /** not needed in nodogsplash, since we don't permit ndsctl restart
   snprintf((buffer + len), (sizeof(buffer) - len), "Has been restarted: ");
   len = strlen(buffer);
@@ -363,17 +356,16 @@ char * get_status_text() {
     len = strlen(buffer);
   }
   */
-  
-  /** doubtful usefulness in nodogsplash
-  snprintf((buffer + len), (sizeof(buffer) - len), "Internet Connectivity: %s\n", (is_online() ? "yes" : "no"));
-  len = strlen(buffer);
-  */
 
   snprintf((buffer + len), (sizeof(buffer) - len), "====\n");
   len = strlen(buffer);
 
   snprintf((buffer + len), (sizeof(buffer) - len), "Clients authenticated this session: %lu\n", authenticated_this_session);
   len = strlen(buffer);
+
+  /* Update the client's counters so info is current */
+  iptables_fw_counters_update();
+  
 
   LOCK_CLIENT_LIST();
 	
@@ -408,7 +400,7 @@ char * get_status_text() {
 	     fw_connection_state_as_string(first->fw_connection_state));
     len = strlen(buffer);
 
-    snprintf((buffer + len), (sizeof(buffer) - len), "  Download bytes: %llu\n  Upload bytes:   %llu\n\n" , first->counters.incoming, first->counters.outgoing);
+    snprintf((buffer + len), (sizeof(buffer) - len), "  Download: %llu kbytes\n  Upload:   %llu kbytes\n\n" , first->counters.incoming/1000, first->counters.outgoing/1000);
     len = strlen(buffer);
 
     indx++;

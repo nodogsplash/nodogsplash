@@ -48,16 +48,18 @@
 #include "debug.h"
 #include "util.h"
 #include "client_list.h"
+#include "tc.h"
 
 static int iptables_do_command(char *format, ...);
 static char *iptables_compile(char *, char *, t_firewall_rule *);
-static void iptables_load_ruleset(char *, char *, char *);
+static int iptables_load_ruleset(char *, char *, char *);
 
 extern pthread_mutex_t	client_list_mutex;
 extern pthread_mutex_t	config_mutex;
 
 /**
-Used to supress the error output of the firewall during destruction */ 
+ * Make nonzero to supress the error output of the firewall during destruction.
+ */ 
 static int fw_quiet = 0;
 
 /** @internal */
@@ -79,6 +81,9 @@ iptables_do_command(char *format, ...) {
   debug(LOG_DEBUG, "Executing command: %s", cmd);
 	
   rc = execute(cmd, fw_quiet);
+  if(!fw_quiet && rc != 0) {
+    debug(LOG_ERR, "Nonzero exit status %d from command: %s", rc, cmd);
+  }
 
   free(cmd);
 
@@ -137,22 +142,27 @@ iptables_compile(char * table, char *chain, t_firewall_rule *rule)
  * @arg table Table containing the chain.
  * @arg chain IPTables chain the rules go into
  */
-static void
+static int
 iptables_load_ruleset(char * table, char *ruleset, char *chain) {
   t_firewall_rule   *rule;
   char		    *cmd;
+  int               ret=0;
 
   debug(LOG_DEBUG, "Load ruleset %s into table %s, chain %s", ruleset, table, chain);
 	
   for (rule = get_ruleset(ruleset); rule != NULL; rule = rule->next) {
     cmd = iptables_compile(table, chain, rule);
     debug(LOG_DEBUG, "Loading rule \"%s\" into table %s, chain %s", cmd, table, chain);
-    iptables_do_command(cmd);
+    ret |= iptables_do_command(cmd);
     free(cmd);
   }
 
   debug(LOG_DEBUG, "Ruleset %s loaded into table %s, chain %s", ruleset, table, chain);
+  return ret;
+  
 }
+
+
 
 /** Initialize the firewall rules
  */
@@ -161,25 +171,34 @@ iptables_fw_init(void) {
   s_config *config;
   char * gw_interface = NULL;
   char * gw_address = NULL;
-  char * ext_interface = NULL;
   int gw_port = 0;
+  int traffic_control, upload_limit, download_limit;
+  int upload_imq, download_imq;
+  char *upload_imqname, *download_imqname;
+  char *cmd;
   t_MAC *pt;
   t_MAC *pb;
+  int rc=0, ret;
    
   fw_quiet = 0;
 
   LOCK_CONFIG();
   config = config_get_config();
-  gw_interface = safe_strdup(config->gw_interface);
-  gw_address = safe_strdup(config->gw_address);
+  gw_interface = safe_strdup(config->gw_interface); /* must free */
+  gw_address = safe_strdup(config->gw_address);    /* must free */
   gw_port = config->gw_port;
-  if (config->external_interface) {
-    ext_interface = safe_strdup(config->external_interface);
-  } else {
-    ext_interface = get_ext_iface();
-  }
+  pt = config->trustedmaclist;
+  pb = config->blockedmaclist;
+  traffic_control = config->traffic_control;
+  download_limit = config->download_limit;
+  upload_limit = config->upload_limit;
+  download_imq = config->download_imq;
+  upload_imq = config->upload_imq;
   UNLOCK_CONFIG();
     
+  safe_asprintf(&download_imqname,"imq%d",download_imq); /* must free */
+  safe_asprintf(&upload_imqname,"imq%d",upload_imq);  /* must free */
+
   /*
    *
    * Everything in the mangle table
@@ -187,25 +206,58 @@ iptables_fw_init(void) {
    */
 
   /* Create new chains in the mangle table */
-  iptables_do_command("-t mangle -N " CHAIN_TRUSTED);
-  iptables_do_command("-t mangle -N " CHAIN_BLOCKED);
-  iptables_do_command("-t mangle -N " CHAIN_INCOMING);
-  iptables_do_command("-t mangle -N " CHAIN_OUTGOING);
+  rc |= iptables_do_command("-t mangle -N " CHAIN_TRUSTED);
+  rc |= iptables_do_command("-t mangle -N " CHAIN_BLOCKED);
+  rc |= iptables_do_command("-t mangle -N " CHAIN_INCOMING);
+  rc |= iptables_do_command("-t mangle -N " CHAIN_OUTGOING);
 
   /* Assign links and rules to these new chains */
-  iptables_do_command("-t mangle -I PREROUTING 1 -i %s -j " CHAIN_OUTGOING, gw_interface);
-  iptables_do_command("-t mangle -I PREROUTING 2 -i %s -j " CHAIN_TRUSTED, gw_interface);
-  iptables_do_command("-t mangle -I PREROUTING 3 -i %s -j " CHAIN_BLOCKED, gw_interface);
-  iptables_do_command("-t mangle -I POSTROUTING 1 -o %s -j " CHAIN_INCOMING, gw_interface);
+  rc |= iptables_do_command("-t mangle -I PREROUTING 1 -i %s -j " CHAIN_OUTGOING, gw_interface);
+  rc |= iptables_do_command("-t mangle -I PREROUTING 2 -i %s -j " CHAIN_TRUSTED, gw_interface);
+  rc |= iptables_do_command("-t mangle -I PREROUTING 3 -i %s -j " CHAIN_BLOCKED, gw_interface);
+  rc |= iptables_do_command("-t mangle -I POSTROUTING 1 -o %s -j " CHAIN_INCOMING, gw_interface);
 
-  /* Rules to mark trusted MAC address packets */
-  for (pt = config->trustedmaclist; pt != NULL; pt = pt->next)
-    iptables_do_command("-t mangle -A " CHAIN_TRUSTED " -m mac --mac-source %s -j MARK --set-mark 0x%x", pt->mac, FW_MARK_TRUSTED);
+  /* Rules to mark trusted MAC address packets in mangle PREROUTING */
+  for (; pt != NULL; pt = pt->next)
+    rc |= iptables_do_command("-t mangle -A " CHAIN_TRUSTED " -m mac --mac-source %s -j MARK --set-mark 0x%x", pt->mac, FW_MARK_TRUSTED);
 
-  /* Rules to mark blocked MAC address packets */
-  for (pb = config->blockedmaclist; pb != NULL; pb = pb->next)
-    iptables_do_command("-t mangle -A " CHAIN_BLOCKED " -m mac --mac-source %s -j MARK --set-mark 0x%x", pb->mac, FW_MARK_BLOCKED);
+  /* Rules to mark blocked MAC address packets in mangle PREROUTING */
+  for (; pb != NULL; pb = pb->next)
+    rc |= iptables_do_command("-t mangle -A " CHAIN_BLOCKED " -m mac --mac-source %s -j MARK --set-mark 0x%x", pb->mac, FW_MARK_BLOCKED);
 
+  /* Set up for traffic control */
+  if(traffic_control) {
+    if(download_limit > 0) {
+      safe_asprintf(&cmd,"ip link set %s up", download_imqname);
+      ret = execute(cmd ,fw_quiet);
+      free(cmd);
+      if( ret != 0 ) {
+	debug(LOG_ERR, "Could not set %s up. Download limiting will not work",
+	      download_imqname);
+	rc = -1;
+      } else {
+	/* jump to the imq in mangle CHAIN_INCOMING */
+	rc |= iptables_do_command("-t mangle -A " CHAIN_INCOMING " -j IMQ --todev %d ", download_imq);
+	/* attach download shaping qdisc to this imq */
+	rc |= tc_attach_download_qdisc(download_imqname,download_limit);
+      }
+    }
+     if(upload_limit > 0) {
+      safe_asprintf(&cmd,"ip link set %s up", upload_imqname);
+      ret = execute(cmd ,fw_quiet);
+      free(cmd);
+       if( ret != 0 ) {
+	 debug(LOG_ERR, "Could not set %s up. Upload limiting will not work",
+	       upload_imqname);
+	 rc = -1;
+       } else {
+	 /* jump to the imq in mangle CHAIN_OUTGOING */
+	 rc |= iptables_do_command("-t mangle -A " CHAIN_OUTGOING " -j IMQ --todev %d ", upload_imq);
+	 /* attach upload shaping qdisc to this imq */
+	 rc |= tc_attach_upload_qdisc(upload_imqname,upload_limit);
+       }
+     }
+  }
 
   /*
    *
@@ -214,20 +266,22 @@ iptables_fw_init(void) {
    */
 
   /* Create new chains in nat table */
-  iptables_do_command("-t nat -N " CHAIN_OUTGOING);
+  rc |= iptables_do_command("-t nat -N " CHAIN_OUTGOING);
   /*
    * nat PREROUTING
    */
   /* packets coming in on gw_interface jump to CHAIN_OUTGOING */
-  iptables_do_command("-t nat -A PREROUTING -i %s -j " CHAIN_OUTGOING, gw_interface);
+  rc |= iptables_do_command("-t nat -I PREROUTING -i %s -j " CHAIN_OUTGOING, gw_interface);
   /* CHAIN_OUTGOING, packets marked TRUSTED  ACCEPT */
-  iptables_do_command("-t nat -A " CHAIN_OUTGOING " -m mark --mark 0x%x -j ACCEPT", FW_MARK_TRUSTED);
+  rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -m mark --mark 0x%x -j ACCEPT", FW_MARK_TRUSTED);
   /* CHAIN_OUTGOING, packets marked AUTHENTICATED  ACCEPT */
-  iptables_do_command("-t nat -A " CHAIN_OUTGOING " -m mark --mark 0x%x -j ACCEPT", FW_MARK_AUTHENTICATED);
+  rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -m mark --mark 0x%x -j ACCEPT", FW_MARK_AUTHENTICATED);
   /* CHAIN_OUTGOING, packets for tcp port 80, redirect to gw_port on primary address for the iface */
-  iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p tcp --dport 80 -j REDIRECT --to-ports %d", gw_port);
+  rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p tcp --dport 80 -j DNAT --to-destination %s:%d", gw_address, gw_port);
+  /* DNAT may be more 'portable' than REDIRECT, so use DNAT
+    rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p tcp --dport 80 -j REDIRECT --to-ports %d", gw_port); */
   /* CHAIN_OUTGOING, other packets  ACCEPT */
-  iptables_do_command("-t nat -A " CHAIN_OUTGOING " -j ACCEPT");
+  rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -j ACCEPT");
 
 
   /*
@@ -237,86 +291,91 @@ iptables_fw_init(void) {
    */
 
   /* Create new chains in the filter table */
-  iptables_do_command("-t filter -N " CHAIN_TO_INTERNET);
-  iptables_do_command("-t filter -N " CHAIN_TO_ROUTER);
-  iptables_do_command("-t filter -N " CHAIN_AUTHENTICATED);
+  rc |= iptables_do_command("-t filter -N " CHAIN_TO_INTERNET);
+  rc |= iptables_do_command("-t filter -N " CHAIN_TO_ROUTER);
+  rc |= iptables_do_command("-t filter -N " CHAIN_AUTHENTICATED);
 
   /*
    * filter INPUT
    */
   /* packets coming in on gw_interface jump to CHAIN_TO_ROUTER */
-  iptables_do_command("-t filter -I INPUT -i %s -j " CHAIN_TO_ROUTER, gw_interface);
+  rc |= iptables_do_command("-t filter -I INPUT -i %s -j " CHAIN_TO_ROUTER, gw_interface);
   /* CHAIN_TO_ROUTER packets marked BLOCKED  DROP */
-  iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -m mark --mark 0x%x -j DROP", FW_MARK_BLOCKED);
+  rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -m mark --mark 0x%x -j DROP", FW_MARK_BLOCKED);
   /* CHAIN_TO_ROUTER, invalid packets  DROP */
-  iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -m state --state INVALID -j DROP");
+  rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -m state --state INVALID -j DROP");
   /* CHAIN_TO_ROUTER, related and established packets  ACCEPT */
-  iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -m state --state RELATED,ESTABLISHED -j ACCEPT");
+  rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -m state --state RELATED,ESTABLISHED -j ACCEPT");
   /* CHAIN_TO_ROUTER, bogus SYN packets  DROP */
-  iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -p tcp --tcp-flags SYN SYN --tcp-option \\! 2 -j  DROP");
+  rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -p tcp --tcp-flags SYN SYN --tcp-option \\! 2 -j  DROP");
   /* CHAIN_TO_ROUTER, packets marked TRUSTED  ACCEPT */
-  iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -m mark --mark 0x%x -j ACCEPT", FW_MARK_TRUSTED);
+  rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -m mark --mark 0x%x -j ACCEPT", FW_MARK_TRUSTED);
   /* CHAIN_TO_ROUTER, packets to HTTP listening on gw_port on router ACCEPT */
-  iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -p tcp --dport %d -j ACCEPT", gw_port);
+  rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -p tcp --dport %d -j ACCEPT", gw_port);
   /* CHAIN_TO_ROUTER, udp packets to DHCP (port 67) on router ACCEPT */
-  iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -p udp --dport 67 -j ACCEPT");
+  rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -p udp --dport 67 -j ACCEPT");
   /* CHAIN_TO_ROUTER, tcp or udp packets to DNS (port 53) on router ACCEPT */
-  iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -p tcp --dport 53 -j ACCEPT");
-  iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -p udp --dport 53 -j ACCEPT");
+  rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -p tcp --dport 53 -j ACCEPT");
+  rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -p udp --dport 53 -j ACCEPT");
   /* CHAIN_TO_ROUTER, REJECT everything else */
-  iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -j REJECT --reject-with icmp-port-unreachable");
+  rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -j REJECT --reject-with icmp-port-unreachable");
 
 
   /*
    * filter FORWARD
    */
   /* packets coming in on gw_interface jump to CHAIN_TO_INTERNET */
-  iptables_do_command("-t filter -I FORWARD -i %s -j " CHAIN_TO_INTERNET, gw_interface);
+  rc |= iptables_do_command("-t filter -I FORWARD -i %s -j " CHAIN_TO_INTERNET, gw_interface);
   /* CHAIN_TO_INTERNET packets marked BLOCKED  DROP */
-  iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m mark --mark 0x%x -j DROP", FW_MARK_BLOCKED);
+  rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m mark --mark 0x%x -j DROP", FW_MARK_BLOCKED);
   /* CHAIN_TO_INTERNET, invalid packets  DROP */
-  iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m state --state INVALID -j DROP");
+  rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m state --state INVALID -j DROP");
   /* CHAIN_TO_INTERNET, allow MSS as large as possible */
   /* XXX this mangles, so 'should' be done in the mangle POSTROUTING chain.
    * However OpenWRT standard S35firewall does it in filter FORWARD, and since
    * we are pre-empting that chain here, we put it in */
-  iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu");
+  rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu");
   /* CHAIN_TO_INTERNET, related and established packets  ACCEPT */
-  iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m state --state RELATED,ESTABLISHED -j ACCEPT");
+  rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m state --state RELATED,ESTABLISHED -j ACCEPT");
 
   /* CHAIN_TO_INTERNET, packets marked TRUSTED  ACCEPT */
-  iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m mark --mark 0x%x -j ACCEPT", FW_MARK_TRUSTED);
+  rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m mark --mark 0x%x -j ACCEPT", FW_MARK_TRUSTED);
   /* CHAIN_TO_INTERNET, all packets tcp/udp to DNS (port 53) ACCEPT */
-  iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -p tcp --dport 53 -j ACCEPT");
-  iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -p udp --dport 53 -j ACCEPT");
+  rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -p tcp --dport 53 -j ACCEPT");
+  rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -p udp --dport 53 -j ACCEPT");
   /* CHAIN_TO_INTERNET, packets marked AUTHENTICATED jump to CHAIN_AUTHENTICATED */
-  iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m mark --mark 0x%x -j " CHAIN_AUTHENTICATED, FW_MARK_AUTHENTICATED);
+  rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m mark --mark 0x%x -j " CHAIN_AUTHENTICATED, FW_MARK_AUTHENTICATED);
   /* CHAIN_AUTHENTICATED, load the "authenticated-users" ruleset */
-  iptables_load_ruleset("filter", "authenticated-users", CHAIN_AUTHENTICATED);
+  rc |= iptables_load_ruleset("filter", "authenticated-users", CHAIN_AUTHENTICATED);
   /* CHAIN_AUTHENTICATED, any packets not matching that ruleset  REJECT */
-  iptables_do_command("-t filter -A " CHAIN_AUTHENTICATED " -j REJECT --reject-with icmp-port-unreachable");
+  rc |= iptables_do_command("-t filter -A " CHAIN_AUTHENTICATED " -j REJECT --reject-with icmp-port-unreachable");
   /* CHAIN_TO_INTERNET, all other packets REJECT */
-  iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -j REJECT --reject-with icmp-port-unreachable");
+  rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -j REJECT --reject-with icmp-port-unreachable");
 
   free(gw_interface);
   free(gw_address);
-
-  return 1;
+  free(download_imqname);
+  free(upload_imqname);
+  return rc;
 }
 
 /** Remove the firewall rules
- * This is used when we do a clean shutdown of nodogsplash and when it starts to make
+ * This is used when we do a clean shutdown of nodogsplash, and when it starts, to make
  * sure there are no rules left over
  */
 int
 iptables_fw_destroy(void) {
   fw_quiet = 1;
 
+  debug(LOG_DEBUG, "Destroying our tc hooks");
+
+  tc_destroy_tc();
+
   debug(LOG_DEBUG, "Destroying our iptables entries");
 
   /*
    *
-   * Everything in the manglends table
+   * Everything in the mangle table
    *
    */
   debug(LOG_DEBUG, "Destroying chains in the MANGLE table");
@@ -360,7 +419,7 @@ iptables_fw_destroy(void) {
   iptables_do_command("-t filter -X " CHAIN_TO_INTERNET);
   iptables_do_command("-t filter -X " CHAIN_AUTHENTICATED);
 
-  return 1;
+  return 0;
 }
 
 /*
@@ -380,7 +439,7 @@ iptables_fw_destroy_mention(
   char *command2 = NULL;
   char line[MAX_BUF];
   char rulenum[10];
-  int deleted = 0;
+  int retval = -1;
 
   debug(LOG_DEBUG, "Attempting to destroy all mention of %s from %s.%s", mention, table, chain);
 
@@ -401,7 +460,7 @@ iptables_fw_destroy_mention(
 	  safe_asprintf(&command2, "-t %s -D %s %s", table, chain, rulenum);
 	  iptables_do_command(command2);
 	  free(command2);
-	  deleted = 1;
+	  retval = 0;
 	  /* Do not keep looping - the captured rulenums will no longer be accurate */
 	  break;
 	}
@@ -412,12 +471,12 @@ iptables_fw_destroy_mention(
 
   free(command);
 
-  if (deleted) {
+  if (retval == 0) {
     /* Recurse just in case there are more in the same table+chain */
     iptables_fw_destroy_mention(table, chain, mention);
   }
 
-  return (deleted);
+  return (retval);
 }
 
 /** Insert or delete firewall mangle rules marking a client's packets.
@@ -432,7 +491,7 @@ iptables_fw_access(t_authaction action, char *ip, char *mac) {
   case AUTH_MAKE_AUTHENTICATED:
     /* This rule is for marking upload packets, and for upload byte counting */
     rc = iptables_do_command("-t mangle -A " CHAIN_OUTGOING " -s %s -m mac --mac-source %s -j MARK --set-mark 0x%x", ip, mac, FW_MARK_AUTHENTICATED);
-    /* This rule is just for download byte counting */
+    /* This rule is just for download byte counting, see iptables_fw_counters_update() */
     rc = iptables_do_command("-t mangle -A " CHAIN_INCOMING " -d %s -j ACCEPT", ip);
     break;
   case AUTH_MAKE_DEAUTHENTICATED:
@@ -448,13 +507,90 @@ iptables_fw_access(t_authaction action, char *ip, char *mac) {
   return rc;
 }
 
+/** Return the total upload usage in bytes */
+unsigned long long int
+iptables_fw_total_upload() {
+  FILE *output;
+  char *script,
+    target[MAX_BUF];
+  int rc;
+  unsigned long long int counter;
+
+  /* Look for outgoing traffic */
+  script =  "iptables -v -n -x -t mangle -L PREROUTING";
+  output = popen(script, "r");
+  if (!output) {
+    debug(LOG_ERR, "popen(): %s", strerror(errno));
+    return 0;
+  }
+
+  /* skip the first two lines */
+  while (('\n' != fgetc(output)) && !feof(output)) {}
+  while (('\n' != fgetc(output)) && !feof(output)) {}
+
+  while ( !(feof(output) )) {
+    rc = fscanf(output, "%*s %llu %s ", &counter,target);
+    if (2 == rc && !strcmp(target,CHAIN_OUTGOING)) {
+      debug(LOG_DEBUG, "Total outgoing Bytes=%llu", counter);
+      pclose(output);
+      return counter;
+    }
+    /* eat rest of line */
+    while (('\n' != fgetc(output)) && !feof(output)) {}
+  }
+  
+  pclose(output);
+  debug(LOG_ERR, "Can't find target %s in mangle table",CHAIN_OUTGOING);
+  return 0;
+
+}
+
+/** Return the total download usage in bytes */
+unsigned long long int
+iptables_fw_total_download() {
+  FILE *output;
+  char *script,
+    target[MAX_BUF];
+  int rc;
+  unsigned long long int counter;
+
+  /* Look for incoming traffic */
+  script =  "iptables -v -n -x -t mangle -L POSTROUTING";
+  output = popen(script, "r");
+  if (!output) {
+    debug(LOG_ERR, "popen(): %s", strerror(errno));
+    return 0;
+  }
+
+  /* skip the first two lines */
+  while (('\n' != fgetc(output)) && !feof(output)) {}
+  while (('\n' != fgetc(output)) && !feof(output)) {}
+
+  while ( !(feof(output) )) {
+    rc = fscanf(output, "%*s %llu %s ", &counter, target);
+    if (2 == rc && !strcmp(target,CHAIN_INCOMING)) {
+      debug(LOG_DEBUG, "Total incoming Bytes=%llu", counter);
+      pclose(output);
+      return counter;
+    }
+    /* eat rest of line */
+    while (('\n' != fgetc(output)) && !feof(output)) {}
+  }
+  
+  pclose(output);
+  debug(LOG_ERR, "Can't find target %s in mangle table",CHAIN_INCOMING);
+  return 0;
+
+}
+
 /** Update the counters of all the clients in the client list */
 int
 iptables_fw_counters_update(void) {
   FILE *output;
   char *script,
     ip[16],
-    rc;
+    target[MAX_BUF];
+  int rc;
   unsigned long long int counter;
   t_client *p1;
   struct in_addr tempaddr;
@@ -469,13 +605,14 @@ iptables_fw_counters_update(void) {
   }
 
   /* skip the first two lines */
-  while (('\n' != fgetc(output)) && !feof(output))
-    ;
-  while (('\n' != fgetc(output)) && !feof(output))
-    ;
-  while (output && !(feof(output))) {
-    rc = fscanf(output, "%*s %llu %*s %*s %*s %*s %*s %15[0-9.] %*s %*s %*s %*s %*s 0x%*u", &counter, ip);
-    if (2 == rc && EOF != rc) {
+  while (('\n' != fgetc(output)) && !feof(output)) {}
+  while (('\n' != fgetc(output)) && !feof(output)) {}
+
+  while ( !(feof(output) )) {
+    rc = fscanf(output, "%*s %llu %s %*s %*s %*s %*s %15[0-9.]", &counter,target,ip);
+    /* eat rest of line */
+    while (('\n' != fgetc(output)) && !feof(output)) {}
+    if (3 == rc && !strcmp(target,"MARK")) {
       /* Sanity*/
       if (!inet_aton(ip, &tempaddr)) {
 	debug(LOG_WARNING, "I was supposed to read an IP address but instead got [%s] - ignoring it", ip);
@@ -490,7 +627,7 @@ iptables_fw_counters_update(void) {
 	  debug(LOG_DEBUG, "%s - Updated counter.outgoing to %llu bytes", ip, counter);
 	}
       } else {
-	debug(LOG_ERR, "Could not find %s in client list", ip);
+	debug(LOG_WARNING, "Could not find %s in client list", ip);
       }
       UNLOCK_CLIENT_LIST();
     }
@@ -507,13 +644,14 @@ iptables_fw_counters_update(void) {
   }
 
   /* skip the first two lines */
-  while (('\n' != fgetc(output)) && !feof(output))
-    ;
-  while (('\n' != fgetc(output)) && !feof(output))
-    ;
-  while (output && !(feof(output))) {
-    rc = fscanf(output, "%*s %llu %*s %*s %*s %*s %*s %*s %15[0-9.]", &counter, ip);
-    if (2 == rc && EOF != rc) {
+  while (('\n' != fgetc(output)) && !feof(output)) {}
+  while (('\n' != fgetc(output)) && !feof(output)) {}
+
+  while ( !(feof(output) )) {
+    rc = fscanf(output, "%*s %llu %s %*s %*s %*s %*s %*s %15[0-9.]", &counter,target,ip);
+    /* eat rest of line */
+    while (('\n' != fgetc(output)) && !feof(output)) {}
+    if (3 == rc && !strcmp(target,"ACCEPT")) {
       /* Sanity*/
       if (!inet_aton(ip, &tempaddr)) {
 	debug(LOG_WARNING, "I was supposed to read an IP address but instead got [%s] - ignoring it", ip);
@@ -527,12 +665,12 @@ iptables_fw_counters_update(void) {
 	  debug(LOG_DEBUG, "%s - Updated counter.incoming to %llu bytes", ip, counter);
 	}
       } else {
-	debug(LOG_ERR, "Could not find %s in client list", ip);
+	debug(LOG_WARNING, "Could not find %s in client list", ip);
       }
       UNLOCK_CLIENT_LIST();
     }
   }
   pclose(output);
 
-  return 1;
+  return 0;
 }

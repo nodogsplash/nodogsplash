@@ -18,50 +18,22 @@
  *                                                                  *
 \********************************************************************/
 
-/* $Id: fw_iptables.h 901 2006-01-17 18:58:13Z mina $ */
-/** @file fw_iptables.h
-    @brief Firewall iptables functions
-    @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
-*/
 
-#ifndef _FW_IPTABLES_H_
-#define _FW_IPTABLES_H_
+#ifndef _TC_H_
+#define _TC_H_
 
-#include "firewall.h"
-#include "auth.h"
+#define MTU 1500
+#define HZ 100
 
-/*@{*/ 
-/**Iptable chain names used by nodogsplash */
-#define CHAIN_TO_INTERNET "ndsNET"
-#define CHAIN_TO_ROUTER "ndsRTR"
-#define CHAIN_OUTGOING  "ndsOUT"
-#define CHAIN_INCOMING  "ndsINC"
-#define CHAIN_AUTHENTICATED     "ndsAUT"
-#define CHAIN_PREAUTHENTICATED   "ndsPRE"
-#define CHAIN_BLOCKED    "ndsBLK"
-#define CHAIN_TRUSTED    "ndsTRU"
-/*@}*/ 
+int
+tc_attach_download_qdisc(char *dev, int download_limit);
 
-/** @brief Initialize the firewall */
-int iptables_fw_init(void);
+int
+tc_attach_upload_qdisc(char *dev, int upload_limit);
 
-/** @brief Destroy the firewall */
-int iptables_fw_destroy(void);
-
-/** @brief Helper function for iptables_fw_destroy */
-int iptables_fw_destroy_mention( char * table, char * chain, char * mention);
-
-/** @brief Define the access of a specific client */
-int iptables_fw_access(t_authaction action, char *ip, char *mac);
-
-/** @brief Return the total download usage in bytes */
-unsigned long long int iptables_fw_total_download();
-
-/** @brief Return the total upload usage in bytes */
-unsigned long long int iptables_fw_total_upload();
+int
+tc_destroy_tc(void);
 
 
-/** @brief All counters in the client list */
-int iptables_fw_counters_update(void);
+#endif /* _TC_H_ */
 
-#endif /* _IPTABLES_H_ */

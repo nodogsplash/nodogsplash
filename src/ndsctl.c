@@ -59,24 +59,23 @@ static void ndsctl_restart(void);
  * Prints usage, called when ndsctl is run with -h or with an unknown option
  */
 static void
-usage(void)
-{
-    printf("Usage: ndsctl [options] command [arguments]\n");
-    printf("\n");
-    printf("options:\n");
-    printf("  -s <path>         Path to the socket\n");
-    printf("  -h                Print usage\n");
-    printf("\n");
-    printf("commands:\n");
-    /*
+usage(void) {
+  printf("Usage: ndsctl [options] command [arguments]\n");
+  printf("\n");
+  printf("options:\n");
+  printf("  -s <path>         Path to the socket\n");
+  printf("  -h                Print usage\n");
+  printf("\n");
+  printf("commands:\n");
+  /*
     printf("  reset [mac|ip]    Reset the specified mac or ip connection\n");
-    */
-    printf("  status            Obtain the status of nodogsplash\n");
-    printf("  stop              Stop the running nodogsplash\n");
-    /*
+  */
+  printf("  status            Obtain the status of nodogsplash\n");
+  printf("  stop              Stop the running nodogsplash\n");
+  /*
     printf("  restart           Re-start the running nodogsplash (without disconnecting active users!)\n");
-    */
-    printf("\n");
+  */
+  printf("\n");
 }
 
 /** @internal
@@ -84,11 +83,9 @@ usage(void)
  * Init default values in config struct
  */
 static void
-init_config(void)
-{
-
-	config.socket = strdup(DEFAULT_SOCK);
-	config.command = NDSCTL_UNDEF;
+init_config(void) {
+  config.socket = strdup(DEFAULT_SOCK);
+  config.command = NDSCTL_UNDEF;
 }
 
 /** @internal

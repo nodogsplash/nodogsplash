@@ -4,7 +4,7 @@
 <h3>0. The Nodogsplash project</h3>
 
 Nodogsplash offers a simple way to
-open a free hotspot providing restricted access to an internet
+provide restricted access to an internet
 connection.  It is intended for use on wireless access points running
 OpenWRT (but may also work on other Linux-based devices).
  <p>
@@ -40,7 +40,7 @@ and how to customize its behavior for your application.
 
 <h3>1. Overview</h3>
 
-A simple hotspot controller like Nodogsplash is a solution to this
+A simple hotspot controller like Nodogsplash offers a solution to this
 problem: You want to provide controlled and reasonably secure public access
 to an internet connection; and while you want to require users to give some
 acknowledgment of the service you are providing, you don't need or want the
@@ -48,15 +48,19 @@ complexity of user account names and passwords and
 maintaining a separate database-backed authentication server.
  <p>
 When installed and running, Nodogsplash implements a simple 'authentication'
-process.  First, it detects any user attempting to
+protocol.  First, it detects any user attempting to
 use your internet connection to visit a website.  It captures
 the request, and instead serves back a 'splash' web page using its own
-builtin <a href="http://www.hughes.com.au/products/libhttpd/">
-libhttpd-based</a> web server.
+builtin web server.
 The splash page provides a link which, when the user clicks on
 it, opens limited access for them to the internet via your connection,
 beginning by being redirected to their originally requested website.
 This access expires after a certain time interval.
+ <p>
+ <p>
+Nodogsplash also permits specifying the amount of
+bandwidth provided to users, if you don't want to grant all of your
+available upload or download bandwidth.
  <p>
 Specific features of Nodogsplash are configurable, by editing the
 configuration file and the
@@ -78,7 +82,8 @@ Make sure your router is basically
 working before you try to install
 nodogsplash. In particular, make sure your DHCP daemon
 is serving addresses on the interface
-that nodogsplash will manage (typically <code>eth1</code>), and for the
+that nodogsplash will manage (typically <code>br0</code> or
+<code>eth1</code>), and for the
 following use ssh or telnet access to your router over a different interface.
 </li>
 <li>
@@ -91,7 +96,7 @@ ipkg install /tmp/nodogsplash*.ipk
 </pre>
 </li>
 <li>
-If the interface that you want nodogsplash to manage is not <code>eth1</code>,
+If the interface that you want nodogsplash to manage is not <code>br0</code>,
 edit <code>/etc/nodogsplash/nodogsplash.conf</code> and set 
 <code>GatewayInterface</code>.
 </li>
@@ -131,20 +136,24 @@ ipkg remove nodogsplash
 <h3>3. How nodogsplash works</h3>
 
 A wireless router running OpenWRT has two or more interfaces; nodogsplash
-manages one of them.  This will typically be <code>eth1</code>, which is
-conventionally bridged to both the wireless and wired LAN, or just the wireless
-LAN if the <code>br0</code> bridge has been broken.
+manages one of them.  This will typically be <code>br0</code>,
+the bridge to both the wireless and wired LAN; or the wireless lan
+interface is often named <code>eth1</code>
+if the <code>br0</code> bridge has been broken.
 <p>
+<h4>3.1 Packet filtering</h4>
 Nodogsplash considers four kinds of packets coming into the router
-over that interface, determined by source MAC address:
+over the managed interface:
 <ol>
 <li>
-<em>Blocked</em>, if listed in the BlockedMACList in the configuration file.
+<em>Blocked</em>, if the source MAC address of the packet matches one 
+listed in the BlockedMACList in the configuration file.
 These packets are dropped.  (Caveat: this is not
 a particularly secure mechanism, since MAC addresses are easy to spoof.)
 </li>
 <li>
-<em>Trusted</em>, if listed in the TrustedMACList in the configuration file.
+<em>Trusted</em>, if the source MAC address of the packet matches one
+listed in the TrustedMACList in the configuration file.
 These packets are accepted and routed to any destination address and port.
 (Caveat: this is not
 a particularly secure mechanism, since MAC addresses are easy to spoof.)
@@ -157,18 +166,22 @@ addresses and ports (see <code>FirewallRuleSet authenticated-users</code>
 in the <code>nodogsplash.conf</code> configuration file).
 </li>
 <li>
-<em>Unknown</em>.  Any other packet.  These packets are accepted only to DHCP
+<em>Preauthenticated</em>.
+Any other packet.  These packets are accepted only to DHCP
 and DNS ports on the router, and to the DNS port
 at other addresses.  Any other packet is dropped, except that a packet
 for destination port 80 at any address is redirected to port 2050 on
-the router, where nodogsplash's builtin web server is listening.  This begins
+the router, where nodogsplash's builtin 
+<a href="http://www.hughes.com.au/products/libhttpd/">
+libhttpd-based</a> 
+web server is listening.  This begins
 the 'authentication' process. The
 server will serve a splash page back to the source IP address of the
 packet. The user clicking the appropriate link on the splash page will complete
 the process, causing future packets from this 
 IP/MAC address to be marked as
 <em>Authenticated</em> until the inactive or forced timeout is reached, 
-and its packets revert to being <em>Unknown</em>.
+and its packets revert to being <em>Preauthenticated</em>.
 </li>
 </ol>
 Nodogsplash implements these actions by 
@@ -178,8 +191,23 @@ rules in the nat PREROUTING, filter INPUT and
 filter FORWARD chains which match on those marks.
 Because it inserts its rules at the beginning
 of existing chains, nodogsplash should be 
-insensitive to almost any existing firewall
-configuration.  
+insensitive to most typical existing firewall
+configurations.
+ <p>
+<h4>3.2 Traffic control</h4>
+
+Nodogsplash also optionally implements basic traffic control on its
+managed interface.  This feature lets you specify the maximum
+aggregate upload and download bandwidth that can be taken by clients
+connected on that interface.
+ <p> 
+Nodogsplash implements this functionality by enabling two
+intermediate queue devices (IMQ's), one for upload and one for download,
+and attaching simple rate-limited
+HTB qdiscs to them.  Rules are inserted in the router's iptables
+mangle PREROUTING and POSTROUTING tables to jump to these IMQ's.  The
+result is simple but effective tail-drop rate limiting (no packet
+classification or fairness queueing is done).
 
 <h3>4. Customizing nodogsplash</h3>
 
@@ -234,19 +262,25 @@ quickly fill the syslog  circular buffer, unless you enable remote logging.
 <p>
 Alternatively, you can set the flag <code>-f</code> instead of <code>-s</code>,
 and restart.
-This will run nodogsplash in the foreground, logging to stdout. However, 
-if you do this, don't reboot the router;
-nodogsplash will not start at boot with the  <code>-f</code> flag set.
+This will run nodogsplash in the foreground, logging to stdout.
 </li>
 <li>
 When stopped, nodogsplash deletes its iptables rules,
 attempting to leave the router's firewall in its original state.  If 
-not (for example, after a crash)
+not (for example, if nodogsplash crashes instead of exiting cleanly)
 subsequently starting and stopping nodogsplash should remove its rules.
+</li>
+<li>
+Nodogsplash operates by marking packets (and, if traffic control
+is enabled, passing packets through intermediate queueing devices).
+Most QOS packages will also mark packets and use IMQ's.  Therefore 
+one or both of Nodgsplash and a QOS package may malfunction
+if used together.  Potential conflicts may be investigated by 
+looking at your overall iptables setup.
 To check to see all the
-rules in, for example, the filter table chains, run
+rules in, for example, the mangle table chains, run
 <pre>
-iptables -t filter -L -v
+iptables -t mangle -v -n -L
 </pre>
 For extensive suggestions on debugging iptables, see for example
 <a href="http://iptables-tutorial.frozentux.net/iptables-tutorial.html">

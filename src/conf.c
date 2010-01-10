@@ -82,6 +82,8 @@ typedef enum {
 	oTrafficControl,
 	oDownloadLimit,
 	oUploadLimit,
+	oDownloadIMQ,
+	oUploadIMQ,
 	oNdsctlSocket,
 	oSyslogFacility,
 	oFirewallRule,
@@ -115,6 +117,8 @@ static const struct {
 	{ "trafficcontrol",	oTrafficControl },
 	{ "downloadlimit",	oDownloadLimit },
 	{ "uploadlimit",	oUploadLimit },
+	{ "downloadimq",	oDownloadIMQ },
+	{ "uploadimq",		oUploadIMQ },
 	{ "syslogfacility", 	oSyslogFacility },
 	{ "syslogfacility", 	oSyslogFacility },
 	{ "ndsctlsocket", 	oNdsctlSocket },
@@ -141,7 +145,7 @@ config_init(void) {
   debug(LOG_DEBUG, "Setting default config parameters");
   strncpy(config.configfile, DEFAULT_CONFIGFILE, sizeof(config.configfile));
   config.debuglevel = DEFAULT_DEBUGLEVEL;
-  config.external_interface = NULL;
+  config.ext_interface = NULL;
   config.maxclients = DEFAULT_MAXCLIENTS;
   config.gw_name = DEFAULT_GATEWAYNAME;
   config.gw_interface = NULL;
@@ -160,6 +164,8 @@ config_init(void) {
   config.traffic_control = DEFAULT_TRAFFIC_CONTROL;
   config.upload_limit =  DEFAULT_UPLOAD_LIMIT;
   config.download_limit = DEFAULT_DOWNLOAD_LIMIT;
+  config.upload_imq =  DEFAULT_UPLOAD_IMQ;
+  config.download_imq = DEFAULT_DOWNLOAD_IMQ;
   config.syslog_facility = DEFAULT_SYSLOG_FACILITY;
   config.log_syslog = DEFAULT_LOG_SYSLOG;
   config.ndsctl_sock = safe_strdup(DEFAULT_NDSCTL_SOCK);
@@ -501,7 +507,8 @@ config_read(char *filename) {
     /* if nothing left, get next line */
     if(s[0] == '\0') continue;
 
-    /* now we require the line must have form: <opcode><whitespace><arg> */
+    /* now we require the line must have form: <opcode><whitespace><arg>
+       even if <arg> is just a left brace, for example */
     
     /* see if there is a whitespace-delimited arg following the opcode */
     p1 = s;
@@ -537,7 +544,7 @@ config_read(char *filename) {
 	exit(-1);
       }
     case oExternalInterface:
-      config.external_interface = safe_strdup(p1);
+      config.ext_interface = safe_strdup(p1);
       break;
     case oGatewayName:
       config.gw_name = safe_strdup(p1);
@@ -613,6 +620,20 @@ config_read(char *filename) {
 	exit(-1);
       }
       break;
+    case oDownloadIMQ:
+      if(sscanf(p1, "%d", &config.download_imq) < 1) {
+	debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
+	debug(LOG_ERR, "Exiting...");
+	exit(-1);
+      }
+      break;
+    case oUploadIMQ:
+      if(sscanf(p1, "%d", &config.upload_imq) < 1) {
+	debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
+	debug(LOG_ERR, "Exiting...");
+	exit(-1);
+      }
+      break;
 
       
     case oSyslogFacility:
@@ -642,6 +663,12 @@ parse_boolean_value(char *line) {
     return 1;
   }
   if (strcasecmp(line, "no") == 0) {
+    return 0;
+  }
+  if (strcasecmp(line, "true") == 0) {
+    return 1;
+  }
+  if (strcasecmp(line, "false") == 0) {
     return 0;
   }
   if (strcmp(line, "1") == 0) {

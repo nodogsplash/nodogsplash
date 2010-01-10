@@ -27,9 +27,9 @@
 #ifndef _FIREWALL_H_
 #define _FIREWALL_H_
 
-/** Used by fw_iptables.c to mark packets. Unmarked packets are considered 'unknown' */
+/** Used by fw_iptables.c to mark packets. Unmarked packets are considered 'preauthenticated' */
 typedef enum _t_fw_marks {
-  FW_MARK_UNKNOWN = 0,  /**< @brief Actually not used as a packet mark */ 
+  FW_MARK_PREAUTHENTICATED = 0,  /**< @brief Actually not used as a packet mark */ 
   FW_MARK_AUTHENTICATED = 0xd,  /**< @brief The client is authenticated */ 
   FW_MARK_BLOCKED = 0xe, /**< @brief The client is blocked */
   FW_MARK_TRUSTED = 0xf  /**< @brief The client is trusted */

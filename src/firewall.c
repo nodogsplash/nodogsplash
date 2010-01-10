@@ -131,6 +131,8 @@ fw_init(void) {
   if (restart_orig_pid) {
     /** TODO: when restarting, may have a different conf file to read.
      *  If so, should check if any authenticated clients have been blocked; etc.
+     *  Until this is implemented, best not to use ndsctl restart.
+     *  Instead, just stop and start the nodogsplash parent process.
      */
     debug(LOG_INFO, "Restoring firewall rules for clients inherited from parent");
     LOCK_CLIENT_LIST();
@@ -170,7 +172,7 @@ fw_destroy(void) {
 void
 fw_refresh_client_list(void) {
   char            *ip, *mac;
-  t_client        *p1, *p2;
+  t_client        *cp1, *cp2;
   time_t now, added_time, last_updated;
   unsigned long long	    incoming, outgoing;
   s_config *config = config_get_config();
@@ -183,13 +185,13 @@ fw_refresh_client_list(void) {
 
   LOCK_CLIENT_LIST();
 
-  for (p1 = p2 = client_get_first_client(); NULL != p1; p1 = p2) {
-    p2 = p1->next;
+  for (cp1 = cp2 = client_get_first_client(); NULL != cp1; cp1 = cp2) {
+    cp2 = cp1->next;
 
-    ip = safe_strdup(p1->ip);
-    mac = safe_strdup(p1->mac);
-    outgoing = p1->counters.outgoing;
-    incoming = p1->counters.incoming;
+    ip = safe_strdup(cp1->ip);
+    mac = safe_strdup(cp1->mac);
+    outgoing = cp1->counters.outgoing;
+    incoming = cp1->counters.incoming;
 
     UNLOCK_CLIENT_LIST();
     
@@ -198,31 +200,35 @@ fw_refresh_client_list(void) {
      * However, if the firewall blocks it, it will not help.  The suggested
      * way to deal with this is to keep the DHCP lease time extremely 
      * short:  Shorter than config->checkinterval * config->clienttimeout */
-    if(FW_MARK_AUTHENTICATED == p1->fw_connection_state) {
+    if(FW_MARK_AUTHENTICATED == cp1->fw_connection_state) {
       icmp_ping(ip);
     }
 
     LOCK_CLIENT_LIST();
 	
-    if (!(p1 = client_list_find(ip, mac))) {
+    if (!(cp1 = client_list_find(ip, mac))) {
       debug(LOG_ERR, "Node %s was freed while being re-validated!", ip);
     } else {
       now = time(NULL);
-      last_updated = p1->counters.last_updated;
-      added_time = p1->added_time;
+      last_updated = cp1->counters.last_updated;
+      added_time = cp1->added_time;
       if (last_updated +  (config->checkinterval * config->clienttimeout) <= now) {
 	/* Timing out inactive user */
 	debug(LOG_INFO, "%s - Inactive for %ld seconds, deauthenticating client",
-	      p1->ip, config->checkinterval * config->clienttimeout);
+	      cp1->ip, config->checkinterval * config->clienttimeout);
 
-	iptables_fw_access(AUTH_MAKE_DEAUTHENTICATED, p1->ip, p1->mac);
-	client_list_delete(p1);
+	if(cp1->fw_connection_state == FW_MARK_AUTHENTICATED) {
+	  iptables_fw_access(AUTH_MAKE_DEAUTHENTICATED, cp1->ip, cp1->mac);
+	}
+	client_list_delete(cp1);
       } else if (added_time +  (config->checkinterval * config->clientforceout) <= now) {
 	/* Forcing out user */
 	debug(LOG_INFO, "%s - Connected for %ld seconds, deauthenticating client",
-	      p1->ip, config->checkinterval * config->clientforceout);
-	iptables_fw_access(AUTH_MAKE_DEAUTHENTICATED, p1->ip, p1->mac);
-	client_list_delete(p1);
+	      cp1->ip, config->checkinterval * config->clientforceout);
+	if(cp1->fw_connection_state == FW_MARK_AUTHENTICATED) {
+	  iptables_fw_access(AUTH_MAKE_DEAUTHENTICATED, cp1->ip, cp1->mac);
+	}
+	client_list_delete(cp1);
       }
     }
 
@@ -237,8 +243,8 @@ char *
 fw_connection_state_as_string(t_fw_marks mark) {
 
   switch(mark) {
-  case FW_MARK_UNKNOWN:
-    return "Unknown";
+  case FW_MARK_PREAUTHENTICATED:
+    return "Preauthenticated";
   case FW_MARK_AUTHENTICATED:
     return "Authenticated";
   case   FW_MARK_TRUSTED:

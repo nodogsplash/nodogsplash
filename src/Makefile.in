@@ -106,10 +106,10 @@ AM_CPPFLAGS =  	-I${top_srcdir}/libhttpd/ 	-DSYSCONFDIR='"$(sysconfdir)"'
 
 nodogsplash_LDADD = $(top_builddir)/libhttpd/libhttpd.la
 
-nodogsplash_SOURCES = commandline.c 	conf.c 	debug.c 	fw_iptables.c 	firewall.c 	gateway.c 	http.c 	auth.c 	client_list.c 	util.c 	ndsctl_thread.c 	safe.c 	httpd_thread.c
+nodogsplash_SOURCES = commandline.c 	conf.c 	debug.c 	fw_iptables.c 	firewall.c 	gateway.c 	http.c 	auth.c 	client_list.c 	util.c 	ndsctl_thread.c 	safe.c 	httpd_thread.c 	tc.c
 
 
-noinst_HEADERS = commandline.h 	common.h 	conf.h 	debug.h 	fw_iptables.h 	firewall.h 	gateway.h 	http.h 	auth.h 	client_list.h 	util.h 	ndsctl_thread.h 	ndsctl.h 	safe.h 	httpd_thread.h
+noinst_HEADERS = commandline.h 	common.h 	conf.h 	debug.h 	fw_iptables.h 	firewall.h 	gateway.h 	http.h 	auth.h 	client_list.h 	util.h 	ndsctl_thread.h 	ndsctl.h 	safe.h 	httpd_thread.h 	tc.h
 
 
 ndsctl_SOURCES = ndsctl.c
@@ -128,7 +128,7 @@ nodogsplash_OBJECTS =  commandline.$(OBJEXT) conf.$(OBJEXT) \
 debug.$(OBJEXT) fw_iptables.$(OBJEXT) firewall.$(OBJEXT) \
 gateway.$(OBJEXT) http.$(OBJEXT) auth.$(OBJEXT) client_list.$(OBJEXT) \
 util.$(OBJEXT) ndsctl_thread.$(OBJEXT) safe.$(OBJEXT) \
-httpd_thread.$(OBJEXT)
+httpd_thread.$(OBJEXT) tc.$(OBJEXT)
 nodogsplash_DEPENDENCIES =  $(top_builddir)/libhttpd/libhttpd.la
 nodogsplash_LDFLAGS = 
 ndsctl_OBJECTS =  ndsctl.$(OBJEXT)
@@ -152,7 +152,7 @@ GZIP_ENV = --best
 DEP_FILES =  .deps/auth.P .deps/client_list.P .deps/commandline.P \
 .deps/conf.P .deps/debug.P .deps/firewall.P .deps/fw_iptables.P \
 .deps/gateway.P .deps/http.P .deps/httpd_thread.P .deps/ndsctl.P \
-.deps/ndsctl_thread.P .deps/safe.P .deps/util.P
+.deps/ndsctl_thread.P .deps/safe.P .deps/tc.P .deps/util.P
 SOURCES = $(nodogsplash_SOURCES) $(ndsctl_SOURCES)
 OBJECTS = $(nodogsplash_OBJECTS) $(ndsctl_OBJECTS)
 

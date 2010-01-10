@@ -114,7 +114,7 @@ client_list_append(char *ip, char *mac, char *token) {
   curclient->ip = safe_strdup(ip);
   curclient->mac = safe_strdup(mac);
   curclient->token = token ? safe_strdup(token) : NULL;
-  curclient->fw_connection_state = FW_MARK_UNKNOWN;
+  curclient->fw_connection_state = FW_MARK_PREAUTHENTICATED;
   curclient->counters.incoming = curclient->counters.incoming_history = 0;
   curclient->counters.outgoing = curclient->counters.outgoing_history = 0;
   curclient->counters.last_updated = time(NULL);
