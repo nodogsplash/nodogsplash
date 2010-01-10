@@ -175,40 +175,56 @@ http_nodogsplash_footer(request *r) {
 }
 
 
-/** The 404 handler adds the client to the client list
- *  and serves the splash page
+/** The 404 handler is one way a client can first hit nodogsplash.
+ *  Adds the client to the client list and serves the splash page.
  */
 void
 http_nodogsplash_callback_404(httpd *webserver, request *r) {
-  t_client *client;
   
   debug(LOG_INFO, "Capturing as 404 request from %s for [%s%s]",
 	r->clientAddr, r->request.host, r->request.path);
 
-  
-  client = http_nodogsplash_add_client(r);
-  if(client) {
-    http_nodogsplash_serve_splash(r,client->token,r->request.host,r->request.path);
-  }
-
+  http_nodogsplash_first_contact(r);
 }
 
 
-/** The index handler adds the client to the client list
- *  and serves the splash page
+/** The index handler is one way a client can first hit nodogsplash.
+ *  Adds the client to the client list and serves the splash page.
  */
 void 
 http_nodogsplash_callback_index(httpd *webserver, request *r) {
-  t_client *client;
 
   debug(LOG_INFO, "Capturing index request from %s for [%s%s]",
 	r->clientAddr, r->request.host, r->request.path);
 
+  http_nodogsplash_first_contact(r);
+}
+
+/** The index handler is one way a client can first hit nodogsplash.
+ *  Adds the client to the client list and serves the splash page.
+ */
+void 
+http_nodogsplash_first_contact(request *r) {
+  t_client *client;
+  char *authtarget;
+  s_config *config;
+
+  config = config_get_config();
+
   client = http_nodogsplash_add_client(r);
-  if(client) {
-    http_nodogsplash_serve_splash(r,client->token,r->request.host,r->request.path);
+
+  if(!client) return;
+
+  if(config->authenticate_immediately) {
+    authtarget = http_nodogsplash_encode_authtarget(r,client->token);
+    http_nodogsplash_redirect(r,authtarget);
+    free(authtarget);
+  } else {
+      http_nodogsplash_serve_splash(r,client->token);
   }
 }
+
+
 
 void
 _report_warning(request *r, char *msg) {
@@ -220,11 +236,10 @@ _report_warning(request *r, char *msg) {
 
 /** The multipurpose handler */
 void
-http_nodogsplash_callback_action(httpd *webserver, request *r, t_authaction action) {
+http_nodogsplash_callback_action(request *r, t_authaction action) {
   t_client	*client;
   char *mac;
   char *ip;
-  char *p1, *p2, *pathcopy;
   char *redir = NULL;
   char *clienttoken = NULL;
   char *requesttoken = NULL;
@@ -233,34 +248,7 @@ http_nodogsplash_callback_action(httpd *webserver, request *r, t_authaction acti
   config = config_get_config();
   
   /* Get components of path in request */
-  /* Make a copy; we will modify it */
-  pathcopy = safe_strdup(r->request.path);
-  /* path has the form: /<directory>/<rest>,
-   * where <directory> is not needed here,and
-   * where <rest> has been httpdUrlEncoded to encode slashes.
-   * (See http_nodogsplash_serve_splash() for how this
-   * path is constructed.)
-   * So, here we first find <rest> and httpdUrlDecode it,
-   * to see that <rest> has the form: <requesttoken>/<redir>
-   */
-  p1 = strchr(pathcopy,'/');        /* initial slash */
-  if(!p1) { _report_warning(r,"Malformed action request: first"); free(pathcopy); return; }
-  p1++;
-  p1 = strchr(p1,'/');              /* second slash */
-  if(!p1) { _report_warning(r,"Malformed action request: second"); free(pathcopy); return; }
-  p1++;
-  /* httpdUrlDecode the rest.  This recovers slashes, among other things. */
-  p1 = httpdUrlDecode(p1); /* Note: this decodes in-place */
-  /* now look for <requesttoken>/<redir> */
-  p2 = strchr(p1,'/');              /* third slash */
-  if(!p2) { _report_warning(r,"Malformed action request: third"); free(pathcopy); return; }
-  *p2 = '\0';
-  /* p1 now pointing at terminated token; allocate a copy */
-  requesttoken = safe_strdup(p1); 
-  p2++;
-  /* p2 now pointing at decoded redirect; allocate a copy */
-  safe_asprintf(&redir,"http://%s",p2);
-  free(pathcopy);
+  http_nodogsplash_decode_authtarget(r, &requesttoken, &redir);
 
   ip = r->clientAddr;
 
@@ -336,7 +324,7 @@ http_nodogsplash_callback_action(httpd *webserver, request *r, t_authaction acti
     
   } else {
     /* tokens don't match, reject */
-    debug(LOG_NOTICE, "Client %s at MAC %s tokens %s, %s do not match",
+    debug(LOG_WARNING, "Client %s at MAC %s tokens %s, %s do not match",
 	  r->clientAddr, mac, clienttoken, requesttoken);
     http_nodogsplash_header(r, "Nodogsplash Error");
     httpdOutput(r, "Tokens do not match.");
@@ -353,7 +341,7 @@ http_nodogsplash_callback_action(httpd *webserver, request *r, t_authaction acti
 void
 http_nodogsplash_callback_auth(httpd *webserver, request *r) {
 
-  http_nodogsplash_callback_action ( webserver, r, AUTH_MAKE_AUTHENTICATED );
+  http_nodogsplash_callback_action ( r, AUTH_MAKE_AUTHENTICATED );
 
 }
 
@@ -361,7 +349,7 @@ http_nodogsplash_callback_auth(httpd *webserver, request *r) {
 void
 http_nodogsplash_callback_deny(httpd *webserver, request *r) {
 
-  http_nodogsplash_callback_action ( webserver, r, AUTH_MAKE_DEAUTHENTICATED );
+  http_nodogsplash_callback_action ( r, AUTH_MAKE_DEAUTHENTICATED );
 
 }
 
@@ -405,10 +393,77 @@ http_nodogsplash_add_client(request *r) {
   return client;
 }
  
-
-/* Serve the splash page from its file. */
+/**
+ *
+ */
 void
-http_nodogsplash_serve_splash(request *r, char *token, char *host, char *path) {
+http_nodogsplash_decode_authtarget(request *r, char **token, char **redir) {
+  char *enccopy, *p1, *p2;
+  /* Make a copy of encoded path because we will modify it */
+  enccopy = safe_strdup(r->request.path);
+  /* enccopy should have the form: /<directory>/<rest>,
+   * where <directory> has had its effect already so we ignore it here,
+   * and where <rest> has been httpdUrlEncoded.
+   * (See http_nodogsplash_encode_authtarget() for details.)
+   * So, here we find <rest> and httpdUrlDecode it,
+   * to see that <rest> has the form: <requesttoken>/<redir>
+   */
+  p1 = strchr(enccopy,'/');        /* initial slash */
+  if(!p1) { _report_warning(r,"Malformed action request: first"); free(enccopy); return; }
+  p1++;
+  p1 = strchr(p1,'/');              /* second slash */
+  if(!p1) { _report_warning(r,"Malformed action request: second"); free(enccopy); return; }
+  p1++;
+  /* httpdUrlDecode the rest.  This recovers slashes, among other things. */
+  p1 = httpdUrlDecode(p1); /* Note: this decodes in-place */
+  /* now look for <requesttoken>/<redir> */
+  p2 = strchr(p1,'/');              /* third slash */
+  if(!p2) { _report_warning(r,"Malformed action request: third"); free(enccopy); return; }
+  *p2 = '\0';
+  /* p1 now pointing at terminated token; allocate a copy */
+  *token = safe_strdup(p1); 
+  p2++;
+  /* p2 now pointing at decoded redirect; allocate a copy */
+  safe_asprintf(redir,"http://%s",p2);
+  free(enccopy);
+
+}
+
+/**
+ * Return a pointer to a string encoding a URL which when served will authenticate
+ * a client.
+ * Caller must free.
+ */
+char *
+http_nodogsplash_encode_authtarget(request *r, char *token) {
+  char *encodedthp, *tokenhostpath, *authtarget;
+  s_config	*config;
+
+  config = config_get_config();
+  
+  safe_asprintf(&tokenhostpath,"%s/%s%s", token, r->request.host, r->request.path);
+  /* We httpdUrlEncode() the concatenation of token, host, path.
+   * (host and path are ultimately for the redirect after authentication.)
+   * This requires a modified version of libhttpd's httpdUrlEncode()
+   * which encodes slashes (as well as the usual things).
+   * This is because we must have an
+   * authtarget that looks like a top-level directory and a file in it.
+   * (Similarly for denytarget.)
+   * Slashes will be recovered when we httpdUrlDecode() in
+   * http_nodogsplash_callback_action().
+   */
+  encodedthp = httpdUrlEncode(tokenhostpath);  /* malloc's */
+  safe_asprintf(&authtarget, "http://%s:%d/%s/%s",
+		config->gw_address, config->gw_port, config->authdir, encodedthp);
+  free(tokenhostpath);
+  free(encodedthp);
+  return authtarget;
+}
+
+
+/* Given a client request, serve the splash page from its file. */
+void
+http_nodogsplash_serve_splash(request *r, char *token) {
   char *redirectURL;
   char line [MAX_BUF];
   char *splashfilename, *authtarget, *denytarget, *imagesdir;
@@ -416,42 +471,28 @@ http_nodogsplash_serve_splash(request *r, char *token, char *host, char *path) {
   FILE *fd;
   s_config	*config;
 
-
+  
   config = config_get_config();
   /* Set variables; these can be interpolated in the splash page text. */
 
   httpdAddVariable(r,"gatewayname",config->gw_name);
 
-  /* Work on setting up auth and deny targets. */
-  safe_asprintf(&tokenhostpath,"%s/%s%s", token, host, path);
-  /* We httpdUrlEncode() the concatenation of token, host, path.
-   * This requires a modified version of httpdUrlEncode() which encodes slashes
-   * (as well as the usual things).
-   * This is because we must have an
-   * authtarget that looks like a top-level directory, and one file in it.
-   * (Similarly for denytarget.)
-   * Slashes will be recovered when we httpdUrlDecode() in
-   * http_nodogsplash_callback_action().
-   */
-  encodedthp = httpdUrlEncode(tokenhostpath);  /* malloc's */
-  free(tokenhostpath);
-  safe_asprintf(&authtarget, "http://%s:%d/%s/%s",
-		config->gw_address, config->gw_port, config->authdir, encodedthp);
+  /* Get auth and deny targets. */
+  authtarget = http_nodogsplash_encode_authtarget(r,token);
   httpdAddVariable(r,"authtarget",authtarget);
   free(authtarget);
   
-  safe_asprintf(&denytarget, "http://%s:%d/%s/%s",
-		config->gw_address, config->gw_port, config->denydir, encodedthp);
+  /*
+  denytarget = http_nodogsplash_encode_deyntarget(r,token);
   httpdAddVariable(r,"denytarget",denytarget);
   free(denytarget);
-  
-  free(encodedthp);
+  */
 
   safe_asprintf(&imagesdir, "/%s", config->imagesdir);
   httpdAddVariable(r,"imagesdir",imagesdir);
   free(imagesdir);
 
-  /* Pipe page from file */
+  /* Pipe splash page from file */
   safe_asprintf(&splashfilename, "%s/%s", config->webroot, config->splashpage );
   if (!(fd = fopen(splashfilename, "r"))) {
     debug(LOG_ERR, "Could not open splash page file '%s'", splashfilename);

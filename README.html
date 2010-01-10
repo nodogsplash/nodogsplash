@@ -75,7 +75,7 @@ Have a router working with
 <a href="http://openwrt.org/">OpenWRT</a>.
 Nodogsplash has been compiled against a OpenWRT White Russian 0.9 buildroot;
 it may or may not work on other versions of OpenWRT or on other kinds of 
-Linux-based router firmware.  
+Linux-based router firmware.  For notes on using Nodogsplash with OpenWRT Kamikaze, <a href="#kamikaze">see below</a>.
 </li>
 <li>
 Make sure your router is basically
@@ -87,12 +87,16 @@ that nodogsplash will manage (typically <code>br0</code> or
 following use ssh or telnet access to your router over a different interface.
 </li>
 <li>
-To install nodogsplash, obtain the latest <code>nodogsplash*.ipk</code> package
-file from the project website, copy it to 
+To install nodogsplash, obtain the <code>nodogsplash*.ipk</code> package you
+want to install from the project website, copy it to 
 <code>/tmp/</code> on your OpenWRT router,
 and, in as root on the router, run:
 <pre>
 ipkg install /tmp/nodogsplash*.ipk
+</pre>
+Or, to install the latest version, you can just run:
+<pre>
+ipkg install http://kokoro.ucsd.edu/nodogsplash/latest.ipk
 </pre>
 </li>
 <li>
@@ -114,19 +118,19 @@ any website.  You should see the nodogsplash splash page instead.  Click on the
 icon; the browser should redirect to the initially requested website.
 </li>
 <li>
-To see the current status of your nodogsplash process, run:
+To see the current status of your nodogsplash process:
 <pre>
-/usr/bin/ndctl status
+/usr/bin/ndsctl status
 </pre>
 </li>
 <li>
-To stop nodogsplash, run:
+To stop nodogsplash:
 <pre>
 /etc/init.d/S65nodogsplash stop
 </pre>
 </li>
 <li>
-To uninstall nodogsplash, run:
+To uninstall nodogsplash:
 <pre>
 ipkg remove nodogsplash
 </pre>
@@ -138,8 +142,9 @@ ipkg remove nodogsplash
 A wireless router running OpenWRT has two or more interfaces; nodogsplash
 manages one of them.  This will typically be <code>br0</code>,
 the bridge to both the wireless and wired LAN; or the wireless lan
-interface is often named <code>eth1</code>
-if the <code>br0</code> bridge has been broken.
+interface is typically named <code>eth1</code>
+if you have broken the <code>br0</code> bridge to separate the wired and
+wireless LAN's.
 <p>
 <h4>3.1 Packet filtering</h4>
 Nodogsplash considers four kinds of packets coming into the router
@@ -163,13 +168,18 @@ a particularly secure mechanism, since MAC addresses are easy to spoof.)
 through the nodogsplash authentication process and has not yet
 expired.  These packets are accepted and routed to a limited set of 
 addresses and ports (see <code>FirewallRuleSet authenticated-users</code>
+and 
+<code>FirewallRuleSet users-to-router</code>
 in the <code>nodogsplash.conf</code> configuration file).
 </li>
 <li>
 <em>Preauthenticated</em>.
-Any other packet.  These packets are accepted only to DHCP
-and DNS ports on the router, and to the DNS port
-at other addresses.  Any other packet is dropped, except that a packet
+Any other packet.  These packets are accepted only to the DNS port
+on addresses forwarded through the router, and to ports
+and protocols opened in 
+<code>FirewallRuleSet users-to-router</code>
+in the <code>nodogsplash.conf</code> configuration file.
+Any other packet is dropped, except that a packet
 for destination port 80 at any address is redirected to port 2050 on
 the router, where nodogsplash's builtin 
 <a href="http://www.hughes.com.au/products/libhttpd/">
@@ -193,6 +203,14 @@ Because it inserts its rules at the beginning
 of existing chains, nodogsplash should be 
 insensitive to most typical existing firewall
 configurations.
+ <p>
+Of course, there is the usual tradeoff between security and usability.
+For example, not opening ports 25 and 80 in  the
+<code>FirewallRuleSet users-to-router</code>
+helps to prevent unauthorized administrative access to your router, 
+but (if you have an empty TrustedMACList) does this by blocking 
+<em>all</em> ssh and http access to the router from the managed
+interface.
  <p>
 <h4>3.2 Traffic control</h4>
 
@@ -234,11 +252,12 @@ replaced by their values:
 <code>GatewayName</code> as set in <code>nodogsplash.conf</code>.
 </li>
 <li>
-<code>$authtarget</code>  A URL which encodes a token and
-the URL of the user's original web request.  When nodogsplash receives a
-request at this URL, it redirects them
-to their original web request, and subsequent packets from that
-user are marked as <em>Authenticated</em>.
+<code>$authtarget</code>  A URL which encodes a unique token and
+the URL of the user's original web request.  If nodogsplash receives a
+request at this URL, it completes the authentication process for
+the client and replies
+to the request with a "307 Temporary Redirect" to the encoded originally
+requested URL.
 </li>
 <li>
 <code>$imagesdir</code>  The directory in nodogsplash's web hierarchy
@@ -287,7 +306,35 @@ For extensive suggestions on debugging iptables, see for example
 Oskar Andreasson's tutorial</a>.
 </li>
 </ul>
-
+<h3 id="kamikaze">Using Nodogsplash with Kamikaze</h3>
+Eventually, new releases of Nodogsplash will be compiled against
+some stable version of OpenWRT Kamikaze.  Meanwhile, 
+Nodogsplash has been tested on some versions of Kamikaze and found
+to work, if these changes are made:
+<ul>
+<li>
+The default name for the (wired and wireless) LAN interface in Kamikaze is
+<code>br-lan</code>.
+Edit <code>/etc/nodogsplash/nodogsplash.conf</code> and set 
+<code>GatewayInterface</code> appropriately.
+</li>
+<li>
+Kamikaze moves to a different
+(more standard) way of organizing init scripts.  Executable
+scripts reside in <code>/etc/init.d</code>, but appropriately named symlinks
+in <code>/etc/rc.d</code> determine the sequencing of scripts at boot.
+After installing Nodogsplash, do the following:
+<pre>
+ cd /etc/init.d
+ mv S65nodogsplash nodogsplash
+ cd /etc/rc.d
+ ln /etc/init.d/nodogsplash S65nodogsplash 
+</pre>
+And then use <code>/etc/init.d/nodogsplash</code> to start and stop 
+Nodogsplash from the command line.
+</li>
+</ul>
+Thanks to Tobias Pal and Jeff Allen for testing on Kamikaze.
 <hr>
 Email contact: nodogsplash (at) kokoro.ucsd.edu
 

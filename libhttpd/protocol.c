@@ -688,6 +688,7 @@ static unsigned char isAcceptable[96] =
 static char *hex = "0123456789ABCDEF";
 
 
+/*TODO: fix so spaces are encoded as + */
 char *_httpd_escape(str)
         char *str;
 {

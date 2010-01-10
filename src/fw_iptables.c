@@ -312,12 +312,8 @@ iptables_fw_init(void) {
   rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -m mark --mark 0x%x -j ACCEPT", FW_MARK_TRUSTED);
   /* CHAIN_TO_ROUTER, packets to HTTP listening on gw_port on router ACCEPT */
   rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -p tcp --dport %d -j ACCEPT", gw_port);
-  /* CHAIN_TO_ROUTER, udp packets to DHCP (port 67) on router ACCEPT */
-  rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -p udp --dport 67 -j ACCEPT");
-  /* CHAIN_TO_ROUTER, tcp or udp packets to DNS (port 53) on router ACCEPT */
-  rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -p tcp --dport 53 -j ACCEPT");
-  rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -p udp --dport 53 -j ACCEPT");
-  /* CHAIN_TO_ROUTER, REJECT everything else */
+  /* CHAIN_TO_ROUTER, load the "users-to-router" ruleset */
+  rc |= iptables_load_ruleset("filter", "users-to-router", CHAIN_TO_ROUTER);
   rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -j REJECT --reject-with icmp-port-unreachable");
 
 

@@ -71,14 +71,18 @@ typedef enum {
 	oGatewayInterface,
 	oGatewayAddress,
 	oGatewayPort,
+	oAuthenticatorAddress,
+	oAuthenticatorPort,
 	oHTTPDMaxConn,
 	oWebRoot,
 	oSplashPage,
 	oImagesDir,
+	oPagesDir,
 	oRedirectURL,
 	oClientIdleTimeout,
 	oClientForceTimeout,
 	oCheckInterval,
+	oAuthenticateImmediately,
 	oTrafficControl,
 	oDownloadLimit,
 	oUploadLimit,
@@ -107,13 +111,17 @@ static const struct {
 	{ "gatewayinterface",   oGatewayInterface },
 	{ "gatewayaddress",     oGatewayAddress },
 	{ "gatewayport",        oGatewayPort },
+	{ "authenticatoraddress",     oAuthenticatorAddress },
+	{ "authenticatorport",        oAuthenticatorPort },
 	{ "webroot",      	oWebRoot },
 	{ "splashpage",      	oSplashPage },
 	{ "imagesdir",   	oImagesDir },
+	{ "pagesdir",   	oPagesDir },
 	{ "redirectURL",      	oRedirectURL },
 	{ "clientidletimeout",  oClientIdleTimeout },
 	{ "clientforcetimeout", oClientForceTimeout },
 	{ "checkinterval",      oCheckInterval },
+	{ "authenticateimmediately",	oAuthenticateImmediately },
 	{ "trafficcontrol",	oTrafficControl },
 	{ "downloadlimit",	oDownloadLimit },
 	{ "uploadlimit",	oUploadLimit },
@@ -151,9 +159,12 @@ config_init(void) {
   config.gw_interface = NULL;
   config.gw_address = NULL;
   config.gw_port = DEFAULT_GATEWAYPORT;
+  config.authenticator_address = NULL;
+  config.authenticator_port = DEFAULT_AUTHENTICATORPORT;
   config.webroot = DEFAULT_WEBROOT;
   config.splashpage = DEFAULT_SPLASHPAGE;
   config.imagesdir = DEFAULT_IMAGESDIR;
+  config.pagesdir = DEFAULT_PAGESDIR;
   config.authdir = DEFAULT_AUTHDIR;
   config.denydir = DEFAULT_DENYDIR;
   config.redirectURL = NULL;
@@ -161,6 +172,7 @@ config_init(void) {
   config.clientforceout = DEFAULT_CLIENTFORCEOUT;
   config.checkinterval = DEFAULT_CHECKINTERVAL;
   config.daemon = -1;
+  config.authenticate_immediately = DEFAULT_AUTHENTICATE_IMMEDIATELY;
   config.traffic_control = DEFAULT_TRAFFIC_CONTROL;
   config.upload_limit =  DEFAULT_UPLOAD_LIMIT;
   config.download_limit = DEFAULT_DOWNLOAD_LIMIT;
@@ -321,11 +333,11 @@ static int
 _parse_firewall_rule(char *ruleset, char *leftover) {
   int i;
   int block_allow = 0; /**< 0 == block, 1 == allow */
-  int all_nums = 1; /**< If 0, port contained non-numerics */
+  int all_nums = 1; /**< If 0, word contained illegal chars */
   int finished = 0; /**< reached end of line */
   char *token = NULL; /**< First word */
-  char *port = NULL; /**< port to open/block */
-  char *protocol = NULL; /**< protocol to block, tcp/udp/icmp */
+  char *port = NULL; /**< port(s) to allow/block */
+  char *protocol = NULL; /**< protocol to allow/block: tcp/udp/icmp */
   char *mask = NULL; /**< Netmask */
   char *other_kw = NULL; /**< other key word */
   t_firewall_ruleset *tmpr;
@@ -335,7 +347,7 @@ _parse_firewall_rule(char *ruleset, char *leftover) {
 
   debug(LOG_DEBUG, "leftover: %s", leftover);
 
-  /* lower case */
+  /* lowercase everything */
   for (i = 0; *(leftover + i) != '\0'
 	 && (*(leftover + i) = tolower(*(leftover + i))); i++);
 	
@@ -343,7 +355,7 @@ _parse_firewall_rule(char *ruleset, char *leftover) {
   TO_NEXT_WORD(leftover, finished);
 	
   /* Parse token */
-  if (!strcasecmp(token, "block") || finished) {
+  if (!strcasecmp(token, "block")) {
     block_allow = 0;
   } else if (!strcasecmp(token, "allow")) {
     block_allow = 1;
@@ -354,7 +366,8 @@ _parse_firewall_rule(char *ruleset, char *leftover) {
   }
 
   /* Parse the remainder */
-  /* Get the protocol */
+
+  /* Get the optional protocol */
   if (strncmp(leftover, "tcp", 3) == 0
       || strncmp(leftover, "udp", 3) == 0
       || strncmp(leftover, "icmp", 4) == 0) {
@@ -362,22 +375,22 @@ _parse_firewall_rule(char *ruleset, char *leftover) {
     TO_NEXT_WORD(leftover, finished);
   }
 
-  /* should be exactly "port" */
+  /* Get the optional port or port range*/
   if (strncmp(leftover, "port", 4) == 0) {
     TO_NEXT_WORD(leftover, finished);
     /* Get port now */
     port = leftover;
     TO_NEXT_WORD(leftover, finished);
     for (i = 0; *(port + i) != '\0'; i++)
-      if (!isdigit(*(port + i)))
-	all_nums = 0; /*< No longer only digits */
+      if (!isdigit(*(port + i)) && (*(port + i) != ':'))
+	all_nums = 0; /*< No longer only digits or : */
     if (!all_nums) {
       debug(LOG_ERR, "Invalid port %s", port);
       return -3; /*< Fail */
     }
   }
 
-  /* Now, further stuff is optional */
+  /* Now, look for optional IP address/mask */
   if (!finished) {
     /* should be exactly "to" */
     other_kw = leftover;
@@ -388,17 +401,17 @@ _parse_firewall_rule(char *ruleset, char *leftover) {
       return -4; /*< Fail */
     }
 
-    /* Get port now */
+    /* Get IP address/range now */
     mask = leftover;
     TO_NEXT_WORD(leftover, finished);
     all_nums = 1;
     for (i = 0; *(mask + i) != '\0'; i++)
       if (!isdigit(*(mask + i)) && (*(mask + i) != '.')
 	  && (*(mask + i) != '/'))
-	all_nums = 0; /*< No longer only digits */
+	all_nums = 0; /*< No longer only digits or . or / */
     if (!all_nums) {
       debug(LOG_ERR, "Invalid mask %s", mask);
-      return -3; /*< Fail */
+      return -5; /*< Fail */
     }
   }
 
@@ -430,7 +443,7 @@ _parse_firewall_rule(char *ruleset, char *leftover) {
       tmpr = tmpr->next;
     }
     if (tmpr == NULL) {
-      /* Rule did not exist */
+      /* Ruleset did not exist */
       tmpr = safe_malloc(sizeof(t_firewall_ruleset));
       memset(tmpr, 0, sizeof(t_firewall_ruleset));
       tmpr->name = safe_strdup(ruleset);
@@ -438,7 +451,7 @@ _parse_firewall_rule(char *ruleset, char *leftover) {
     }
   }
 
-  /* At this point, tmpr == current ruleset */
+  /* At this point, tmpr == the ruleset */
   if (tmpr->rules == NULL) {
     /* No rules... */
     tmpr->rules = tmp;
@@ -558,6 +571,12 @@ config_read(char *filename) {
     case oGatewayPort:
       sscanf(p1, "%d", &config.gw_port);
       break;
+    case oAuthenticatorAddress:
+      config.authenticator_address = safe_strdup(p1);
+      break;
+    case oAuthenticatorPort:
+      sscanf(p1, "%d", &config.authenticator_port);
+      break;
     case oFirewallRuleSet:
       parse_firewall_ruleset(p1, fd, filename, &linenum);
       break;
@@ -576,6 +595,9 @@ config_read(char *filename) {
     case oImagesDir:
       config.imagesdir = safe_strdup(p1);
       break;
+    case oPagesDir:
+      config.pagesdir = safe_strdup(p1);
+      break;
     case oRedirectURL:
       config.redirectURL = safe_strdup(p1);
       break;
@@ -592,6 +614,15 @@ config_read(char *filename) {
       break;
     case oClientForceTimeout:
       if(sscanf(p1, "%d", &config.clientforceout) < 1) {
+	debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
+	debug(LOG_ERR, "Exiting...");
+	exit(-1);
+      }
+      break;
+    case oAuthenticateImmediately:
+      if ((value = parse_boolean_value(p1)) != -1) {
+	config.authenticate_immediately = value;
+      } else {
 	debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 	debug(LOG_ERR, "Exiting...");
 	exit(-1);

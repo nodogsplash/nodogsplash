@@ -43,17 +43,22 @@ need, though.
 
 * Have a router working with OpenWRT. Nodogsplash has been compiled against a
   OpenWRT White Russian 0.9 buildroot; it may or may not work on other versions
-  of OpenWRT or on other kinds of Linux-based router firmware.
+  of OpenWRT or on other kinds of Linux-based router firmware. For notes on
+  using Nodogsplash with OpenWRT Kamikaze, see_below.
 * Make sure your router is basically working before you try to install
   nodogsplash. In particular, make sure your DHCP daemon is serving addresses
   on the interface that nodogsplash will manage (typically br0 or eth1), and
   for the following use ssh or telnet access to your router over a different
   interface.
-* To install nodogsplash, obtain the latest nodogsplash*.ipk package file from
-  the project website, copy it to /tmp/ on your OpenWRT router, and, in as root
-  on the router, run:
+* To install nodogsplash, obtain the nodogsplash*.ipk package you want to
+  install from the project website, copy it to /tmp/ on your OpenWRT router,
+  and, in as root on the router, run:
 
     ipkg install /tmp/nodogsplash*.ipk
+
+  Or, to install the latest version, you can just run:
+
+    ipkg install http://kokoro.ucsd.edu/nodogsplash/latest.ipk
 
 * If the interface that you want nodogsplash to manage is not br0, edit /etc/
   nodogsplash/nodogsplash.conf and set GatewayInterface.
@@ -66,15 +71,15 @@ need, though.
   wireless lan) and in a browser on that machine, attempt to visit any website.
   You should see the nodogsplash splash page instead. Click on the icon; the
   browser should redirect to the initially requested website.
-* To see the current status of your nodogsplash process, run:
+* To see the current status of your nodogsplash process:
 
-    /usr/bin/ndctl status
+    /usr/bin/ndsctl status
 
-* To stop nodogsplash, run:
+* To stop nodogsplash:
 
     /etc/init.d/S65nodogsplash stop
 
-* To uninstall nodogsplash, run:
+* To uninstall nodogsplash:
 
     ipkg remove nodogsplash
 
@@ -84,8 +89,8 @@ need, though.
 
 A wireless router running OpenWRT has two or more interfaces; nodogsplash
 manages one of them. This will typically be br0, the bridge to both the
-wireless and wired LAN; or the wireless lan interface is often named eth1 if
-the br0 bridge has been broken.
+wireless and wired LAN; or the wireless lan interface is typically named eth1
+if you have broken the br0 bridge to separate the wired and wireless LAN's.
 
 3.1 Packet filtering
 
@@ -103,19 +108,20 @@ managed interface:
   3. Authenticated, if the packet's IP and MAC source address has gone through
      the nodogsplash authentication process and has not yet expired. These
      packets are accepted and routed to a limited set of addresses and ports
-     (see FirewallRuleSet authenticated-users in the nodogsplash.conf
-     configuration file).
-  4. Preauthenticated. Any other packet. These packets are accepted only to
-     DHCP and DNS ports on the router, and to the DNS port at other addresses.
-     Any other packet is dropped, except that a packet for destination port 80
-     at any address is redirected to port 2050 on the router, where
-     nodogsplash's builtin libhttpd-based web server is listening. This begins
-     the 'authentication' process. The server will serve a splash page back to
-     the source IP address of the packet. The user clicking the appropriate
-     link on the splash page will complete the process, causing future packets
-     from this IP/MAC address to be marked as Authenticated until the inactive
-     or forced timeout is reached, and its packets revert to being
-     Preauthenticated.
+     (see FirewallRuleSet authenticated-users and FirewallRuleSet users-to-
+     router in the nodogsplash.conf configuration file).
+  4. Preauthenticated. Any other packet. These packets are accepted only to the
+     DNS port on addresses forwarded through the router, and to ports and
+     protocols opened in FirewallRuleSet users-to-router in the
+     nodogsplash.conf configuration file. Any other packet is dropped, except
+     that a packet for destination port 80 at any address is redirected to port
+     2050 on the router, where nodogsplash's builtin libhttpd-based web server
+     is listening. This begins the 'authentication' process. The server will
+     serve a splash page back to the source IP address of the packet. The user
+     clicking the appropriate link on the splash page will complete the
+     process, causing future packets from this IP/MAC address to be marked as
+     Authenticated until the inactive or forced timeout is reached, and its
+     packets revert to being Preauthenticated.
 
 Nodogsplash implements these actions by inserting rules in the router's
 iptables mangle PREROUTING table to mark packets, and by inserting rules in the
@@ -123,6 +129,11 @@ nat PREROUTING, filter INPUT and filter FORWARD chains which match on those
 marks. Because it inserts its rules at the beginning of existing chains,
 nodogsplash should be insensitive to most typical existing firewall
 configurations.
+Of course, there is the usual tradeoff between security and usability. For
+example, not opening ports 25 and 80 in the FirewallRuleSet users-to-router
+helps to prevent unauthorized administrative access to your router, but (if you
+have an empty TrustedMACList) does this by blocking all ssh and http access to
+the router from the managed interface.
 
 3.2 Traffic control
 
@@ -153,10 +164,11 @@ secure as-is for basic internet sharing applications, but it is customizable.
   replaced by their values:
 
   o $gatewayname The value of GatewayName as set in nodogsplash.conf.
-  o $authtarget A URL which encodes a token and the URL of the user's original
-    web request. When nodogsplash receives a request at this URL, it redirects
-    them to their original web request, and subsequent packets from that user
-    are marked as Authenticated.
+  o $authtarget A URL which encodes a unique token and the URL of the user's
+    original web request. If nodogsplash receives a request at this URL, it
+    completes the authentication process for the client and replies to the
+    request with a "307 Temporary Redirect" to the encoded originally requested
+    URL.
   o $imagesdir The directory in nodogsplash's web hierarchy where images to be
     displayed in the splash page must be located.
 
@@ -189,5 +201,29 @@ secure as-is for basic internet sharing applications, but it is customizable.
   For extensive suggestions on debugging iptables, see for example Oskar
   Andreasson's_tutorial.
 
+
+Using Nodogsplash with Kamikaze
+
+Eventually, new releases of Nodogsplash will be compiled against some stable
+version of OpenWRT Kamikaze. Meanwhile, Nodogsplash has been tested on some
+versions of Kamikaze and found to work, if these changes are made:
+
+* The default name for the (wired and wireless) LAN interface in Kamikaze is
+  br-lan. Edit /etc/nodogsplash/nodogsplash.conf and set GatewayInterface
+  appropriately.
+* Kamikaze moves to a different (more standard) way of organizing init scripts.
+  Executable scripts reside in /etc/init.d, but appropriately named symlinks in
+  /etc/rc.d determine the sequencing of scripts at boot. After installing
+  Nodogsplash, do the following:
+
+     cd /etc/init.d
+     mv S65nodogsplash nodogsplash
+     cd /etc/rc.d
+     ln /etc/init.d/nodogsplash S65nodogsplash
+
+  And then use /etc/init.d/nodogsplash to start and stop Nodogsplash from the
+  command line.
+
+Thanks to Tobias Pal and Jeff Allen for testing on Kamikaze.
 -------------------------------------------------------------------------------
 Email contact: nodogsplash (at) kokoro.ucsd.edu

@@ -40,11 +40,18 @@ void http_nodogsplash_callback_auth(httpd *webserver, request *r);
 void http_nodogsplash_callback_deny(httpd *webserver, request *r);
 /**@brief Add client identified in request to client list. */
 t_client* http_nodogsplash_add_client(request *r);
-/**@brief Serves a 307 Temporary Redirect */
+/**@brief Serve a 307 Temporary Redirect */
 void http_nodogsplash_redirect(request *r, char *url);
 /**@brief Serve the splash page from its file */
-void http_nodogsplash_serve_splash(request *r, char *token, char *host, char *path);
-/**@brief Allocate and return a random string of 8 hex digits suitable as an authentication token */
+void http_nodogsplash_serve_splash(request *r, char *token);
+/**@brief Handle initial contact from client */
+void http_nodogsplash_first_contact(request *r);
+/**@brief Decode token and redirect URL from a request */
+void http_nodogsplash_decode_authtarget(request *r, char **token, char **redir);
+/**@brief Malloc and return a string that is the authenticating URL */
+char* http_nodogsplash_encode_authtarget(request *r, char *token);
+/**@brief Allocate and return a random string of 8 hex digits
+   suitable as an authentication token */
 char * http_make_auth_token();
 /** @brief Sends HTML header to web browser */
 void http_nodogsplash_header(request *r, char *title);

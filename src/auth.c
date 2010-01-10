@@ -120,18 +120,18 @@ auth_client_action(char *ip, char *mac, t_authaction action) {
   switch(action) {
 
   case AUTH_MAKE_AUTHENTICATED:
-    debug(LOG_INFO, "AUTHENTICATE  %s at %s ", client->ip, client->mac);
+    debug(LOG_NOTICE, "AUTHENTICATE %s %s ", client->ip, client->mac);
     if(client->fw_connection_state != FW_MARK_AUTHENTICATED) {
       client->fw_connection_state = FW_MARK_AUTHENTICATED;
       iptables_fw_access(AUTH_MAKE_AUTHENTICATED,client->ip,client->mac);
       authenticated_this_session++;
     } else {
-      debug(LOG_INFO, "Nothing to do, %s at %s already authenticated", client->ip, client->mac);
+      debug(LOG_INFO, "Nothing to do, %s %s already authenticated", client->ip, client->mac);
     }
     break;
 
   case AUTH_MAKE_DEAUTHENTICATED:
-    debug(LOG_INFO, "DEAUTHENTICATE  %s at %s ", client->ip, client->mac);
+    debug(LOG_NOTICE, "DEAUTHENTICATE %s %s ", client->ip, client->mac);
     if(client->fw_connection_state == FW_MARK_AUTHENTICATED) {
       iptables_fw_access(AUTH_MAKE_DEAUTHENTICATED, client->ip, client->mac);
     }

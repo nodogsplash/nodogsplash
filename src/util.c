@@ -334,13 +334,13 @@ char * get_status_text() {
   download_bytes = iptables_fw_total_download();
   snprintf((buffer + len), (sizeof(buffer) - len), "Total download: %llu kbytes", download_bytes/1000);
   len = strlen(buffer);
-  snprintf((buffer + len), (sizeof(buffer) - len), "; avg: %.6g kbit/s\n", ((double) download_bytes) / 1000 * 8 / uptimesecs);
+  snprintf((buffer + len), (sizeof(buffer) - len), "; avg: %.6g kbit/s\n", ((double) download_bytes) / 125 / uptimesecs);
   len = strlen(buffer);
 
   upload_bytes = iptables_fw_total_upload();
   snprintf((buffer + len), (sizeof(buffer) - len), "Total upload: %llu kbytes", upload_bytes/1000);
   len = strlen(buffer);
-  snprintf((buffer + len), (sizeof(buffer) - len), "; avg: %.6g kbit/s\n", ((double) upload_bytes) / 1000 * 8 / uptimesecs);
+  snprintf((buffer + len), (sizeof(buffer) - len), "; avg: %.6g kbit/s\n", ((double) upload_bytes) / 125 / uptimesecs);
   len = strlen(buffer);
 
 
@@ -362,6 +362,9 @@ char * get_status_text() {
 
   snprintf((buffer + len), (sizeof(buffer) - len), "Clients authenticated this session: %lu\n", authenticated_this_session);
   len = strlen(buffer);
+
+  
+  
 
   /* Update the client's counters so info is current */
   iptables_fw_counters_update();
@@ -393,6 +396,18 @@ char * get_status_text() {
     snprintf((buffer + len), (sizeof(buffer) - len), "  Active:  %s", timebuf);
     len = strlen(buffer);
 
+    uptimesecs = uptime = first->counters.last_updated - first->added_time;
+    days    = uptime / (24 * 60 * 60);
+    uptime -= days * (24 * 60 * 60);
+    hours   = uptime / (60 * 60);
+    uptime -= hours * (60 * 60);
+    minutes = uptime / 60;
+    uptime -= minutes * 60;
+    seconds = uptime;
+
+    snprintf((buffer + len), (sizeof(buffer) - len), "Active time: %ud %uh %um %us\n", days, hours, minutes, seconds);
+    len = strlen(buffer);
+
     snprintf((buffer + len), (sizeof(buffer) - len), "  Token: %s\n", first->token ? first->token : "none");
     len = strlen(buffer);
 
@@ -400,7 +415,13 @@ char * get_status_text() {
 	     fw_connection_state_as_string(first->fw_connection_state));
     len = strlen(buffer);
 
-    snprintf((buffer + len), (sizeof(buffer) - len), "  Download: %llu kbytes\n  Upload:   %llu kbytes\n\n" , first->counters.incoming/1000, first->counters.outgoing/1000);
+    download_bytes = first->counters.incoming;
+    upload_bytes = first->counters.outgoing;
+
+    snprintf((buffer + len), (sizeof(buffer) - len),
+	     "  Download: %llu kbytes; avg: %.6g kbit/s\n  Upload:   %llu kbytes; avg: %.6g kbit/s\n\n",
+	     download_bytes/1000, ((double)download_bytes)/125/uptimesecs,
+	     upload_bytes/1000, ((double)upload_bytes)/125/uptimesecs);
     len = strlen(buffer);
 
     indx++;

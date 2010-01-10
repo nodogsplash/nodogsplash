@@ -2,5 +2,6 @@ Priority: optional
 Section: net
 Maintainer: Paul Kube <nodogsplash@kokoro.ucsd.edu>
 Source: http://kokoro.ucsd.edu/nodogsplash
-Depends: iptables,iptables-mod-conntrack,iptables-mod-ipopt,iptables-mod-extra,iptables-mod-imq,ip,tc,libpthread
+Depends: iptables,iptables-mod-conntrack,iptables-mod-ipopt,iptables-mod-nat,iptables-mod-extra,iptables-mod-imq,ip,tc,libpthread,kmod-sched
 Description: Nodogsplash is a simple configurable hotspot controller.
+

@@ -209,7 +209,7 @@ void get_clients_from_parent(void) {
 	      client->counters.last_updated = (time_t) atoll(value);
 	    }
 	    else {
-	      debug(LOG_NOTICE, "I don't know how to inherit key [%s] value [%s] from parent", key, value);
+	      debug(LOG_WARNING, "I don't know how to inherit key [%s] value [%s] from parent", key, value);
 	    }
 	  }
 	}
@@ -395,9 +395,14 @@ main_loop(void) {
   debug(LOG_DEBUG, "Setting web root: %s",config->webroot);
   httpdSetFileBase(webserver,config->webroot);
 
-  /* Add images files to server: any file in config->splashimagesdir can be served */
+  /* Add images files to server: any file in config->imagesdir can be served */
   debug(LOG_DEBUG, "Setting images subdir: %s",config->imagesdir);
   httpdAddWildcardContent(webserver,config->imagesdir,NULL,config->imagesdir);
+
+  /* Add pages files to server: any file in config->pagesdir can be served */
+  debug(LOG_DEBUG, "Setting pages subdir: %s",config->pagesdir);
+  httpdAddWildcardContent(webserver,config->pagesdir,NULL,config->pagesdir);
+
 
   debug(LOG_DEBUG, "Assigning callbacks to web server");
 	
@@ -432,7 +437,7 @@ main_loop(void) {
   }
   pthread_detach(tid);
 	
-  debug(LOG_NOTICE, "Waiting for connections");
+  debug(LOG_INFO, "Waiting for connections");
   while(1) {
     r = httpdGetConnection(webserver, NULL);
 
