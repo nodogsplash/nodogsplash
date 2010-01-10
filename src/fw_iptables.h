@@ -40,6 +40,7 @@
 #define CHAIN_AUTHENTICATED     "ndsAUT"
 #define CHAIN_PREAUTHENTICATED   "ndsPRE"
 #define CHAIN_BLOCKED    "ndsBLK"
+#define CHAIN_ALLOWED    "ndsALW"
 #define CHAIN_TRUSTED    "ndsTRU"
 /*@}*/ 
 

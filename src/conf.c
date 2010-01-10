@@ -97,8 +97,10 @@ typedef enum {
 	oSyslogFacility,
 	oFirewallRule,
 	oFirewallRuleSet,
+	oMACmechanism,
 	oTrustedMACList,
-	oBlockedMACList
+	oBlockedMACList,
+	oAllowedMACList
 } OpCodes;
 
 /** @internal
@@ -143,10 +145,18 @@ static const struct {
 	{ "firewallrule",	oFirewallRule },
 	{ "trustedmaclist",	oTrustedMACList },
 	{ "blockedmaclist",	oBlockedMACList },
+	{ "allowedmaclist",	oAllowedMACList },
+	{ "MACmechanism",	oMACmechanism },
 	{ NULL,                 oBadOption },
 };
 
 static OpCodes config_parse_opcode(const char *cp, const char *filename, int linenum);
+
+/** @internal
+Strip comments and leading and trailing whitespace from a string.
+Return a pointer to the first nonspace char in the string.
+*/
+static char*_strip_whitespace(char* p1);
 
 /** Accessor for the current gateway configuration
 @return:  A pointer to the current config.  The pointer isn't opaque, but should be treated as READ-ONLY
@@ -199,6 +209,8 @@ config_init(void) {
   config.rulesets = NULL;
   config.trustedmaclist = NULL;
   config.blockedmaclist = NULL;
+  config.allowedmaclist = NULL;
+  config.macmechanism = DEFAULT_MACMECHANISM;
 }
 
 /**
@@ -256,8 +268,7 @@ parse_firewall_ruleset(char *ruleset, FILE *fd, char *filename, int *linenum) {
   char line[MAX_BUF], *p1, *p2;
   int  opcode;
 
-  /* find whitespace delimited word in ruleset string */
-  while(isblank(ruleset[0])) ruleset++;
+  /* find whitespace delimited word in ruleset string; this is its name */
   p1 = strchr(ruleset,' ');
   if(p1) *p1 = '\0';
   p1 = strchr(ruleset,'\t');
@@ -265,33 +276,10 @@ parse_firewall_ruleset(char *ruleset, FILE *fd, char *filename, int *linenum) {
 
   debug(LOG_DEBUG, "Adding Firewall Rule Set %s", ruleset);
 	
-  /* Parsing loop */
-  while (1) {
-
-    /* Read a line */
-    memset(line, 0, MAX_BUF);
-    if (fgets(line, MAX_BUF, fd) == NULL) {
-      debug(LOG_ERR, "Unclosed Firewall Rule Set at line %d in %s", *linenum, filename);
-      debug(LOG_ERR, "Exiting...");
-      exit(-1);
-    }
-    (*linenum)++; /* increment line counter. */
-
-
-    p1 = line;
-    /* get rid of returns, newlines */
-    p2 = strchr(p1,'\n');
-    if(p2) *p2 = '\0';
-    p2 = strchr(p1,'\r');
-    if(p2) *p2 = '\0';
-
-    /* strip any comment */
-    p2 = strchr(p1,'#');
-    if(p2) *p2 = '\0';
-    /* strip leading whitespace from the line */
-    while(isblank(p1[0])) p1++;
-    /* strip trailing whitespace from the line */
-    while(p1[0] != '\0' && isblank(p1[strlen(p1)-1])) p1[strlen(p1)-1] = '\0';
+  /* Parsing the ruleset */
+  while (fgets(line, MAX_BUF, fd)) {
+    (*linenum)++;
+    p1 = _strip_whitespace(line);
 
     /* if nothing left, get next line */
     if(p1[0] == '\0') continue;
@@ -498,6 +486,26 @@ get_ruleset(char *ruleset) {
   return(tmp->rules);
 }
 
+/** @internal
+Strip comments and leading and trailing whitespace from a string.
+Return a pointer to the first nonspace char in the string.
+*/
+static char*
+_strip_whitespace(char* p1) {
+  char *p2;
+  /* strip any comment */
+  p2 = strchr(p1,'#');
+  if(p2) *p2 = '\0';
+  /* strip leading whitespace */
+  while(isspace(p1[0])) p1++;
+  /* strip trailing whitespace */
+  while(p1[0] != '\0' && isspace(p1[strlen(p1)-1]))
+    p1[strlen(p1)-1] = '\0';
+
+  return p1;
+}
+
+
 /**
 @param filename Full path of the configuration file to be read 
 */
@@ -515,38 +523,22 @@ config_read(char *filename) {
     exit(1);
   }
 
-  while (1) {
-    /* Read a line */
-    memset(line, 0, MAX_BUF);
-    if (fgets(line, MAX_BUF, fd) == NULL) {
-      break;
-    }
+  while (fgets(line, MAX_BUF, fd)) {
     linenum++;
-    s = line;
+    s = _strip_whitespace(line);
 
-    /* terminate the line at returns, newlines */
-    p1 = strchr(s,'\n');
-    if(p1) *p1 = '\0';
-    p1 = strchr(s,'\r');
-    if(p1) *p1 = '\0';
-
-    /* strip any comment */
-    p1 = strchr(s,'#');
-    if(p1) *p1 = '\0';
-    /* strip leading whitespace from the line */
-    while(isblank(s[0])) s++;
-    /* strip trailing whitespace from the line */
-    while(s[0] != '\0' && isblank(s[strlen(s)-1])) s[strlen(s)-1] = '\0';
     /* if nothing left, get next line */
     if(s[0] == '\0') continue;
 
-    /* now we require the line must have form: <opcode><whitespace><arg>
-       even if <arg> is just a left brace, for example */
+    /* now we require the line must have form: <option><whitespace><arg>
+     * even if <arg> is just a left brace, for example
+     */
     
-    /* see if there is a whitespace-delimited arg following the opcode */
-    p1 = s;
+    /* check there is a whitespace-delimited arg following the option */
+
     /* find first word end boundary */
-    while ((*p1 != '\0') && (!isblank(*p1))) p1++;
+    p1 = s;
+    while ((*p1 != '\0') && (!isspace(*p1))) p1++;
     /* if this is end of line, it's a problem */
     if(p1[0] == '\0') {
       debug(LOG_ERR, "Option %s requires argument on line %d in %s", s, linenum, filename);
@@ -554,14 +546,14 @@ config_read(char *filename) {
       exit(-1);
     }
 
-    /* terminate opcode, point past it */
+    /* terminate option, point past it */
     *p1 = '\0';
     p1++;
 
     /* skip delimiting whitespace, make p1 point at arg */
     while (isblank(*p1)) p1++;
 
-    debug(LOG_DEBUG, "Parsing opcode: %s, arg: %s", s, p1);
+    debug(LOG_DEBUG, "Parsing option: %s, arg: %s", s, p1);
     opcode = config_parse_opcode(s, filename, linenum);
 
     switch(opcode) {
@@ -603,6 +595,18 @@ config_read(char *filename) {
     case oBlockedMACList:
       parse_blocked_mac_list(p1);
       break;
+    case oAllowedMACList:
+      parse_allowed_mac_list(p1);
+      break;
+    case oMACmechanism:
+     if(!strcasecmp("allow",p1)) config.macmechanism = MAC_ALLOW;
+     else if(!strcasecmp("block",p1)) config.macmechanism = MAC_BLOCK;
+     else {
+      debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
+      debug(LOG_ERR, "Exiting...");
+      exit(-1);
+     }
+     break;
     case oWebRoot:
       config.webroot = safe_strdup(p1);
       break;
@@ -738,23 +742,17 @@ Parses a boolean value from the config file
 */
 static int
 parse_boolean_value(char *line) {
-  if (strcasecmp(line, "yes") == 0) {
-    return 1;
-  }
-  if (strcasecmp(line, "no") == 0) {
+  if (strcasecmp(line, "no") == 0 ||
+      strcasecmp(line, "false") == 0 ||
+      strcmp(line, "0") == 0
+      ) {
     return 0;
   }
-  if (strcasecmp(line, "true") == 0) {
+  if (strcasecmp(line, "yes") == 0 ||
+      strcasecmp(line, "true") == 0 ||
+      strcmp(line, "1") == 0
+      ) {
     return 1;
-  }
-  if (strcasecmp(line, "false") == 0) {
-    return 0;
-  }
-  if (strcmp(line, "1") == 0) {
-    return 1;
-  }
-  if (strcmp(line, "0") == 0) {
-    return 0;
   }
 
   return -1;
@@ -786,13 +784,13 @@ int add_to_trusted_mac_list(char *possiblemac) {
   t_MAC *p = NULL;
   int found = 0;
  
-  mac = safe_malloc(18);
-
   /* check for valid format */
   if (!check_mac_format(possiblemac)) {
     debug(LOG_NOTICE, "[%s] not a valid MAC address to trust", possiblemac);
     return -1;
   }
+
+  mac = safe_malloc(18);
 
   sscanf(possiblemac, "%17[A-Fa-f0-9:]", mac);
 
@@ -839,13 +837,13 @@ int remove_from_trusted_mac_list(char *possiblemac) {
   t_MAC *del = NULL;
   int found = 0;
 
-  mac = safe_malloc(18);
-
   /* check for valid format */
   if (!check_mac_format(possiblemac)) {
     debug(LOG_NOTICE, "[%s] not a valid MAC address", possiblemac);
     return -1;
   }
+
+  mac = safe_malloc(18);
 
   sscanf(possiblemac, "%17[A-Fa-f0-9:]", mac);
 
@@ -908,13 +906,19 @@ int add_to_blocked_mac_list(char *possiblemac) {
   t_MAC *p = NULL;
   int found = 0;
 
-  mac = safe_malloc(18);
-
   /* check for valid format */
   if (!check_mac_format(possiblemac)) {
     debug(LOG_NOTICE, "[%s] not a valid MAC address to block", possiblemac);
     return -1;
   }
+
+  /* abort if not using BLOCK mechanism */
+  if (MAC_BLOCK != config.macmechanism) {
+    debug(LOG_NOTICE, "Attempt to access blocked MAC list but control mechanism != block");
+    return -1;
+  }
+
+  mac = safe_malloc(18);
 
   sscanf(possiblemac, "%17[A-Fa-f0-9:]", mac);
 
@@ -949,13 +953,19 @@ int remove_from_blocked_mac_list(char *possiblemac) {
   t_MAC *del = NULL;
   int found = 0;
 
-  mac = safe_malloc(18);
-
   /* check for valid format */
   if (!check_mac_format(possiblemac)) {
     debug(LOG_NOTICE, "[%s] not a valid MAC address", possiblemac);
     return -1;
   }
+
+  /* abort if not using BLOCK mechanism */
+  if (MAC_BLOCK != config.macmechanism) {
+    debug(LOG_NOTICE, "Attempt to access blocked MAC list but control mechanism != block");
+    return -1;
+  }
+
+  mac = safe_malloc(18);
 
   sscanf(possiblemac, "%17[A-Fa-f0-9:]", mac);
 
@@ -1005,6 +1015,128 @@ void parse_blocked_mac_list(char *ptr) {
   
   free(ptrcopyptr);
 }
+
+/* Add given MAC address to the config's allowed mac list.
+ * Return 0 on success, nonzero on failure
+ */
+int add_to_allowed_mac_list(char *possiblemac) {
+  
+  char *mac = NULL;
+  t_MAC *p = NULL;
+  int found = 0;
+
+  /* check for valid format */
+  if (!check_mac_format(possiblemac)) {
+    debug(LOG_NOTICE, "[%s] not a valid MAC address to allow", possiblemac);
+    return -1;
+  }
+
+  /* abort if not using ALLOW mechanism */
+  if (MAC_ALLOW != config.macmechanism) {
+    debug(LOG_NOTICE, "Attempt to access allowed MAC list but control mechanism != allow");
+    return -1;
+  }
+
+  mac = safe_malloc(18);
+
+  sscanf(possiblemac, "%17[A-Fa-f0-9:]", mac);
+
+  /* See if MAC is already on the list; don't add duplicates */
+  for (p = config.allowedmaclist; p != NULL; p = p->next) {
+    if (!strcasecmp(p->mac,mac)) { 
+      debug(LOG_INFO, "MAC address [%s] already on allowed list", mac);
+      free(mac);
+      return 1;
+    }
+  }
+
+  /* Add MAC to head of list */
+  p = safe_malloc(sizeof(t_MAC));
+  p->mac = safe_strdup(mac);
+  p->next = config.allowedmaclist;
+  config.allowedmaclist = p;
+  debug(LOG_INFO, "Added MAC address [%s] to allowed list", mac);
+  free(mac);
+  return 0;
+
+}
+
+
+/* Remove given MAC address from the config's allowed mac list.
+ * Return 0 on success, nonzero on failure
+ */
+int remove_from_allowed_mac_list(char *possiblemac) {
+
+  char *mac = NULL;
+  t_MAC **p = NULL;
+  t_MAC *del = NULL;
+  int found = 0;
+
+  /* check for valid format */
+  if (!check_mac_format(possiblemac)) {
+    debug(LOG_NOTICE, "[%s] not a valid MAC address", possiblemac);
+    return -1;
+  }
+
+  /* abort if not using ALLOW mechanism */
+  if (MAC_ALLOW != config.macmechanism) {
+    debug(LOG_NOTICE, "Attempt to access allowed MAC list but control mechanism != allow");
+    return -1;
+  }
+
+  mac = safe_malloc(18);
+
+  sscanf(possiblemac, "%17[A-Fa-f0-9:]", mac);
+
+  /* If empty list, nothing to do */
+  if (config.allowedmaclist == NULL) {
+    debug(LOG_INFO, "MAC address [%s] not on empty allowed list", mac);
+    free(mac);
+    return -1;
+  }
+
+  /* Find MAC on the list, remove it */
+  for (p = &(config.allowedmaclist); *p != NULL; p = &((*p)->next)) {
+    if (!strcasecmp((*p)->mac,mac)) {
+      /* found it */
+      del = *p;
+      *p = del->next;
+      debug(LOG_INFO, "Removed MAC address [%s] from allowed list", mac);
+      free(del);
+      free(mac);
+      return 0;
+    }
+  }
+
+  /* MAC was not on list */
+  debug(LOG_INFO, "MAC address [%s] not on  allowed list", mac);
+  free(mac);
+  return -1;
+
+}
+
+
+
+/* Given a pointer to a comma or whitespace delimited sequence of
+ * MAC addresses, add each MAC address to config.allowedmaclist
+ */
+void parse_allowed_mac_list(char *ptr) {
+  char *ptrcopy = NULL, *ptrcopyptr;
+  char *possiblemac = NULL;
+
+  debug(LOG_DEBUG, "Parsing string [%s] for MAC addresses to allow", ptr);
+
+  /* strsep modifies original, so let's make a copy */
+  ptrcopyptr = ptrcopy = safe_strdup(ptr);
+  
+  while ((possiblemac = strsep(&ptrcopy, ", \t"))) {
+    if(strlen(possiblemac)>0) add_to_allowed_mac_list(possiblemac);
+  }
+  
+  free(ptrcopyptr);
+}
+
+
 
 /** Set the debug log level.  See syslog.h
  *  Return 0 on success.

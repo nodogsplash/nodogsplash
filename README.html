@@ -84,7 +84,8 @@ nodogsplash. In particular, make sure your DHCP daemon
 is serving addresses on the interface
 that nodogsplash will manage (typically <code>br0</code> or
 <code>eth1</code>), and for the
-following use ssh or telnet access to your router over a different interface.
+following use ssh or telnet access to your router over a <em>different</em>
+interface.
 </li>
 <li>
 To install nodogsplash, obtain the <code>nodogsplash*.ipk</code> package you
@@ -146,13 +147,16 @@ kinds of packets coming into the router
 over the managed interface.  Each packet is of exactly one of these kinds:
 <ol>
 <li>
-<em>Blocked</em>, if the source MAC address of the packet matches one 
-listed in the BlockedMACList in the configuration file.
+<em>Blocked</em>, if the MAC mechanism is <code>block</code>, and
+the source MAC address of the packet matches one 
+listed in the BlockedMACList; if if the MAC mechanism is <code>allow</code>, 
+and source MAC address of the packet does not match one
+listed in the AllowedMACList or the TrustedMACList.
 These packets are dropped.
 </li>
 <li>
 <em>Trusted</em>, if the source MAC address of the packet matches one
-listed in the TrustedMACList in the configuration file.
+listed in the TrustedMACList.
 These packets are accepted and routed to any destination address and port.
 </li>
 <li>
@@ -312,12 +316,41 @@ is a summary of the information or kind of error; <code>$content</code> is
 the content of the information or error message.
 </ul>
 
-<h3>5. Using ndsctl</h3>
+<h3>5. Site-wide username and password</h3>
+Nodogsplash can be configured to require a username and/or password to
+be entered on the splash page as part of the authentication process.
+Since the username and password are site-wide
+(not per user), and they are sent in the clear using HTTP GET, this is not
+a secure mechanism.
+<p>
+To enable this, edit <code>nodogsplash.conf</code> to set parameters 
+<code>PasswordAuthentication></code>,
+<code>UsernameAuthentication</code>,
+<code>Password</code>,
+<code>Username</code>, and <code>PasswordAttempts</code> as desired.  
+Then
+the splash page must use a GET-method HTML form
+to send user-entered username and/or password as
+values of variables <code>nodoguser</code> and <code>nodogpass</code>
+respectively, along with others as required, to the server.
+For example:
+<pre>
+&lt;form method='GET' action='$authaction'&gt;
+&lt;input type='hidden' name='tok' value='$tok'&gt;
+&lt;input type='hidden' name='redir' value='$redir'&gt;
+username: &lt;input type='text' name='nodoguser' value='' size=12 maxlength=12&gt; &lt;br&gt;
+password: &lt;input type='password' name='nodogpass' value='' size=12 maxlength=10&gt; &lt;br&gt;
+&lt;input type='submit' value='Enter'&gt;
+&lt;/form&gt;
+</pre>
+
+<h3>6. Using ndsctl</h3>
 A nodogsplash install
 includes <code>ndsctl</code>, 
-a separate application which
-communicates with the running 
-nodogsplash process over a unix socket.  Some command line options:
+a separate application which provides some control over a 
+running 
+nodogsplash process by communicating with it over a unix socket.
+Some command line options:
 <ul>
 <li>
 To print to stdout
@@ -327,17 +360,35 @@ some information about your nodogsplash process:
 </pre>
 </li>
 <li>
-To block a MAC address (but if you want this to persist across nodogsplash
+To block a MAC address, when the MAC mechanism is <code>block</code> 
+(but if you want this to persist across nodogsplash
 restarts, you have to edit the configuration file):
 <pre>
 /usr/bin/ndsctl block <em>MAC</em>
 </pre>
 </li>
 <li>
-To unblock a MAC address (but if you want this to persist across nodogsplash
+To unblock a MAC address, when the MAC mechanism is <code>block</code> 
+(but if you want this to persist across nodogsplash
 restarts, you have to edit the configuration file):
 <pre>
 /usr/bin/ndsctl unblock <em>MAC</em>
+</pre>
+</li>
+<li>
+To allow a MAC address, when the MAC mechanism is <code>allow</code> 
+(but if you want this to persist across nodogsplash
+restarts, you have to edit the configuration file):
+<pre>
+/usr/bin/ndsctl allow <em>MAC</em>
+</pre>
+</li>
+<li>
+To unallow a MAC address, when the MAC mechanism is <code>allow</code> 
+(but if you want this to persist across nodogsplash
+restarts, you have to edit the configuration file):
+<pre>
+/usr/bin/ndsctl unallow <em>MAC</em>
 </pre>
 </li>
 <li>
@@ -356,7 +407,7 @@ To set the verbosity of logged messages to <em>n</em>:
 </ul>
 For more options, run <code>ndsctl -h</code>.
 
-<h3>6. Debugging nodogsplash</h3>
+<h3>7. Debugging nodogsplash</h3>
 <ul>
 <li>
 To see maximally verbose debugging output from nodogsplash, 
@@ -399,7 +450,7 @@ For extensive suggestions on debugging iptables, see for example
 Oskar Andreasson's tutorial</a>.
 </li>
 </ul>
-<h3 id="kamikaze">7. Using Nodogsplash with Kamikaze</h3>
+<h3 id="kamikaze">8. Using Nodogsplash with Kamikaze</h3>
 Eventually, new releases of Nodogsplash will be compiled against
 some stable version of OpenWRT Kamikaze.  Meanwhile, 
 Nodogsplash has been tested on some versions of Kamikaze and found

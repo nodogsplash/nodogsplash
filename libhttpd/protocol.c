@@ -155,15 +155,12 @@ int _httpd_readBuf(request *r, char *destBuf, int len)
 
 void _httpd_writeAccessLog(httpd *server, request *r)
 {
-  /*
+	/*  In preference of using nodogsplash's log utility. --P. Kube
 	char	dateBuf[30];
 	struct 	tm *timePtr;
 	time_t	clock;
-  */
 	int	responseCode;
 
-
-	/*  In preference of using nodogsplash's log utility. P. Kube
 	if (server->accessLog == NULL)
 		return;
 	clock = time(NULL);
@@ -176,6 +173,8 @@ void _httpd_writeAccessLog(httpd *server, request *r)
 		r->response.responseLength);
 	*/
 
+	int	responseCode;
+
 	responseCode = atoi(r->response.response);
 	debug(LOG_INFO,  "[libhttpd] %s - - %s \"%s\" %d %d\n", 
 	      r->clientAddr, httpdRequestMethodName(r), 
@@ -186,13 +185,12 @@ void _httpd_writeAccessLog(httpd *server, request *r)
 
 void _httpd_writeErrorLog(httpd *server, request *r, char *level, char *message)
 {
-  /*
+	/*  In preference of using nodogsplash's log utility. --P. Kube
+
 	char	dateBuf[30];
 	struct 	tm *timePtr;
 	time_t	clock;
-  */
 
-	/*  In preference of using nodogsplash's log utility. P. Kube
 	if (server->errorLog == NULL)
 		return;
 	clock = time(NULL);

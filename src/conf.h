@@ -36,6 +36,8 @@
 /** How long we should wait per try
  *  to detect the interface with the default route if it isn't up yet */
 #define EXT_INTERFACE_DETECT_RETRY_INTERVAL 1
+#define MAC_ALLOW 0 /** macmechanism to block MAC's unless allowed */
+#define MAC_BLOCK 1 /** macmechanism to allow MAC's unless blocked */
 
 /** Defaults configuration values */
 #ifndef SYSCONFDIR
@@ -59,6 +61,7 @@
 #define DEFAULT_PAGESDIR "pages"
 #define DEFAULT_AUTHDIR "nodogsplash_auth"
 #define DEFAULT_DENYDIR "nodogsplash_deny"
+#define DEFAULT_MACMECHANISM MAC_BLOCK
 #define DEFAULT_PASSWORD_AUTH 0
 #define DEFAULT_USERNAME_AUTH 0
 #define DEFAULT_PASSWORD_ATTEMPTS 5
@@ -147,9 +150,11 @@ typedef struct {
   int log_syslog;		/**< @brief boolean, whether to log to syslog */
   int syslog_facility;		/**< @brief facility to use when using syslog for
 			   	logging */
+  int macmechanism; 		/**< @brief mechanism wrt MAC addrs */
   t_firewall_ruleset *rulesets;	/**< @brief firewall rules */
   t_MAC *trustedmaclist; 	/**< @brief list of trusted macs */
   t_MAC *blockedmaclist; 	/**< @brief list of blocked macs */
+  t_MAC *allowedmaclist; 	/**< @brief list of allowed macs */
 } s_config;
 
 /** @brief Get the current gateway configuration */
@@ -176,6 +181,7 @@ static int _parse_firewall_rule(char *ruleset, char *leftover);
 static void parse_firewall_ruleset(char *, FILE *, char *, int *);
 void parse_trusted_mac_list(char *);
 void parse_blocked_mac_list(char *);
+void parse_allowed_mac_list(char *);
 int check_ip_format(char *);
 int check_mac_format(char *);
 int set_log_level(int);

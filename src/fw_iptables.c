@@ -174,6 +174,16 @@ iptables_unblock_mac(char *mac) {
 }
 
 int
+iptables_allow_mac(char *mac) {
+    return iptables_do_command("-t mangle -I " CHAIN_BLOCKED " -m mac --mac-source %s -j RETURN", mac);
+}
+
+int
+iptables_unallow_mac(char *mac) {
+    return iptables_do_command("-t mangle -D " CHAIN_BLOCKED " -m mac --mac-source %s -j RETURN", mac);
+}
+
+int
 iptables_trust_mac(char *mac) {
     return iptables_do_command("-t mangle -A " CHAIN_TRUSTED " -m mac --mac-source %s -j MARK --set-mark 0x%x", mac, FW_MARK_TRUSTED);
 }
@@ -198,7 +208,8 @@ iptables_fw_init(void) {
   char *cmd;
   t_MAC *pt;
   t_MAC *pb;
-  int rc=0, ret;
+  t_MAC *pa;
+  int rc=0, macmechanism, ret;
    
   fw_quiet = 0;
 
@@ -209,6 +220,8 @@ iptables_fw_init(void) {
   gw_port = config->gw_port;
   pt = config->trustedmaclist;
   pb = config->blockedmaclist;
+  pa = config->allowedmaclist;
+  macmechanism = config->macmechanism;
   traffic_control = config->traffic_control;
   download_limit = config->download_limit;
   upload_limit = config->upload_limit;
@@ -233,8 +246,8 @@ iptables_fw_init(void) {
 
   /* Assign links and rules to these new chains */
   rc |= iptables_do_command("-t mangle -I PREROUTING 1 -i %s -j " CHAIN_OUTGOING, gw_interface);
-  rc |= iptables_do_command("-t mangle -I PREROUTING 2 -i %s -j " CHAIN_TRUSTED, gw_interface);
-  rc |= iptables_do_command("-t mangle -I PREROUTING 3 -i %s -j " CHAIN_BLOCKED, gw_interface);
+  rc |= iptables_do_command("-t mangle -I PREROUTING 2 -i %s -j " CHAIN_BLOCKED, gw_interface);
+  rc |= iptables_do_command("-t mangle -I PREROUTING 3 -i %s -j " CHAIN_TRUSTED, gw_interface);
   rc |= iptables_do_command("-t mangle -I POSTROUTING 1 -o %s -j " CHAIN_INCOMING, gw_interface);
 
   /* Rules to mark trusted MAC address packets in mangle PREROUTING */
@@ -242,9 +255,28 @@ iptables_fw_init(void) {
     rc |= iptables_trust_mac(pt->mac);
   }
 
-  /* Rules to mark blocked MAC address packets in mangle PREROUTING */
-  for (; pb != NULL; pb = pb->next) {
-    rc |= iptables_block_mac(pb->mac);
+  /* Rules to mark as blocked MAC address packets in mangle PREROUTING */
+  if(MAC_BLOCK == macmechanism) {
+    /* with the MAC_BLOCK mechanism,
+     * MAC's on the block list are marked as blocked;
+     * everything else passes */
+    for (; pb != NULL; pb = pb->next) {
+      rc |= iptables_block_mac(pb->mac);
+    }
+  } else if(MAC_ALLOW == macmechanism) {
+    /* with the MAC_ALLOW mechanism,
+     * MAC's on the allow list pass;
+     * everything else is marked as blocked */
+    /* So, append at end of chain a rule to mark everything blocked */
+    rc |= iptables_do_command("-t mangle -A " CHAIN_BLOCKED " -j MARK --set-mark 0x%x", FW_MARK_BLOCKED);
+    /* Insert at beginning of chain rules to pass allowed MAC's */
+    for (; pa != NULL; pa = pa->next) {
+      rc |= iptables_allow_mac(pa->mac);
+    }
+  } else {
+    debug(LOG_ERR, "Unknown MAC mechanism: %d",
+	  macmechanism);
+    rc = -1;
   }
 
   /* Set up for traffic control */
@@ -300,7 +332,7 @@ iptables_fw_init(void) {
   rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -m mark --mark 0x%x -j ACCEPT", FW_MARK_AUTHENTICATED);
   /* CHAIN_OUTGOING, packets for tcp port 80, redirect to gw_port on primary address for the iface */
   rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p tcp --dport 80 -j DNAT --to-destination %s:%d", gw_address, gw_port);
-  /* DNAT may be more 'portable' than REDIRECT, so use DNAT
+  /* DNAT may be more 'portable' than REDIRECT, so we use DNAT
     rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p tcp --dport 80 -j REDIRECT --to-ports %d", gw_port); */
   /* CHAIN_OUTGOING, other packets  ACCEPT */
   rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -j ACCEPT");
@@ -336,6 +368,7 @@ iptables_fw_init(void) {
   rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -p tcp --dport %d -j ACCEPT", gw_port);
   /* CHAIN_TO_ROUTER, load the "users-to-router" ruleset */
   rc |= iptables_load_ruleset("filter", "users-to-router", CHAIN_TO_ROUTER);
+  /* everything else, REJECT */
   rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -j REJECT --reject-with icmp-port-unreachable");
 
 
@@ -407,14 +440,17 @@ iptables_fw_destroy(void) {
   debug(LOG_DEBUG, "Destroying chains in the MANGLE table");
   iptables_fw_destroy_mention("mangle", "PREROUTING", CHAIN_TRUSTED);
   iptables_fw_destroy_mention("mangle", "PREROUTING", CHAIN_BLOCKED);
+  iptables_fw_destroy_mention("mangle", "PREROUTING", CHAIN_ALLOWED);
   iptables_fw_destroy_mention("mangle", "PREROUTING", CHAIN_OUTGOING);
   iptables_fw_destroy_mention("mangle", "POSTROUTING", CHAIN_INCOMING);
   iptables_do_command("-t mangle -F " CHAIN_TRUSTED);
   iptables_do_command("-t mangle -F " CHAIN_BLOCKED);
+  iptables_do_command("-t mangle -F " CHAIN_ALLOWED);
   iptables_do_command("-t mangle -F " CHAIN_OUTGOING);
   iptables_do_command("-t mangle -F " CHAIN_INCOMING);
   iptables_do_command("-t mangle -X " CHAIN_TRUSTED);
   iptables_do_command("-t mangle -X " CHAIN_BLOCKED);
+  iptables_do_command("-t mangle -X " CHAIN_ALLOWED);
   iptables_do_command("-t mangle -X " CHAIN_OUTGOING);
   iptables_do_command("-t mangle -X " CHAIN_INCOMING);
 

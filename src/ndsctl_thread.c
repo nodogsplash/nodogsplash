@@ -64,6 +64,8 @@ static void ndsctl_status(int);
 static void ndsctl_stop(int);
 static void ndsctl_block(int, char *);
 static void ndsctl_unblock(int, char *);
+static void ndsctl_allow(int, char *);
+static void ndsctl_unallow(int, char *);
 static void ndsctl_trust(int, char *);
 static void ndsctl_untrust(int, char *);
 static void ndsctl_auth(int, char *);
@@ -195,6 +197,10 @@ thread_ndsctl_handler(void *arg) {
     ndsctl_block(fd, (request + 6));
   } else if (strncmp(request, "unblock", 7) == 0) {
     ndsctl_unblock(fd, (request + 8));
+  } else if (strncmp(request, "allow", 5) == 0) {
+    ndsctl_allow(fd, (request + 6));
+  } else if (strncmp(request, "unallow", 7) == 0) {
+    ndsctl_unallow(fd, (request + 8));
   } else if (strncmp(request, "trust", 5) == 0) {
     ndsctl_trust(fd, (request + 6));
   } else if (strncmp(request, "untrust", 7) == 0) {
@@ -394,6 +400,7 @@ ndsctl_auth(int fd, char *arg) {
   debug(LOG_DEBUG, "Entering ndsctl_auth...");
 	
   LOCK_CLIENT_LIST();
+  /* arg should be IP address of client */
   debug(LOG_DEBUG, "Argument: %s (@%x)", arg, arg);
 	
   /* Add client to client list... */
@@ -425,6 +432,7 @@ ndsctl_deauth(int fd, char *arg) {
   debug(LOG_DEBUG, "Entering ndsctl_deauth...");
 	
   LOCK_CLIENT_LIST();
+  /* arg can be IP or MAC address of client */
   debug(LOG_DEBUG, "Argument: %s (@%x)", arg, arg);
 	
   /* We get the client or return... */
@@ -486,6 +494,44 @@ ndsctl_unblock(int fd, char *arg) {
   UNLOCK_CONFIG();
 	
   debug(LOG_DEBUG, "Exiting ndsctl_unblock.");
+}
+
+static void
+ndsctl_allow(int fd, char *arg) {
+
+  debug(LOG_DEBUG, "Entering ndsctl_allow...");
+	
+  LOCK_CONFIG();
+  debug(LOG_DEBUG, "Argument: [%s]", arg);
+	
+  if (!add_to_allowed_mac_list(arg) && !iptables_allow_mac(arg)) {
+    write(fd, "Yes", 3);
+  } else {
+    write(fd, "No", 2);
+  }
+
+  UNLOCK_CONFIG();
+	
+  debug(LOG_DEBUG, "Exiting ndsctl_allow.");
+}
+
+static void
+ndsctl_unallow(int fd, char *arg) {
+
+  debug(LOG_DEBUG, "Entering ndsctl_unallow...");
+	
+  LOCK_CONFIG();
+  debug(LOG_DEBUG, "Argument: [%s]", arg);
+	
+  if (!remove_from_allowed_mac_list(arg) && !iptables_unallow_mac(arg)) {
+    write(fd, "Yes", 3);
+  } else {
+    write(fd, "No", 2);
+  }
+
+  UNLOCK_CONFIG();
+	
+  debug(LOG_DEBUG, "Exiting ndsctl_unallow.");
 }
 
 static void

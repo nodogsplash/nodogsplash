@@ -37,13 +37,15 @@
 #define NDSCTL_RESTART		4
 #define NDSCTL_BLOCK		5
 #define NDSCTL_UNBLOCK		6
-#define NDSCTL_TRUST		7
-#define NDSCTL_UNTRUST		8
-#define NDSCTL_AUTH		9
-#define NDSCTL_DEAUTH		10
-#define NDSCTL_LOGLEVEL		11
-#define NDSCTL_PASSWORD		12
-#define NDSCTL_USERNAME		13
+#define NDSCTL_ALLOW		7
+#define NDSCTL_UNALLOW		8
+#define NDSCTL_TRUST		9
+#define NDSCTL_UNTRUST		10
+#define NDSCTL_AUTH		11
+#define NDSCTL_DEAUTH		12
+#define NDSCTL_LOGLEVEL		13
+#define NDSCTL_PASSWORD		14
+#define NDSCTL_USERNAME		15
 
 typedef struct {
 	char	*socket;

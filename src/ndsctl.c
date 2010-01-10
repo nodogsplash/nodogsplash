@@ -54,6 +54,8 @@ static void ndsctl_stop(void);
 static void ndsctl_restart(void);
 static void ndsctl_block(void);
 static void ndsctl_unblock(void);
+static void ndsctl_allow(void);
+static void ndsctl_unallow(void);
 static void ndsctl_trust(void);
 static void ndsctl_untrust(void);
 static void ndsctl_auth(void);
@@ -76,17 +78,19 @@ usage(void) {
   printf("  -h                Print usage\n");
   printf("\n");
   printf("commands:\n");
-  printf("  status            Obtain the status of nodogsplash\n");
+  printf("  status            View the status of nodogsplash\n");
   printf("  stop              Stop the running nodogsplash\n");
   printf("  auth ip           Authenticate user with specified ip\n");
   printf("  deauth mac|ip     Deauthenticate user with specified mac or ip\n");
   printf("  block mac         Block the given MAC address\n");
   printf("  unblock mac       Unblock the given MAC address\n");
+  printf("  allow mac         Allow the given MAC address\n");
+  printf("  unallow mac       Unallow the given MAC address\n");
   printf("  trust mac         Trust the given MAC address\n");
   printf("  untrust mac       Untrust the given MAC address\n");
   printf("  loglevel n        Set logging level to n\n");
   printf("  password pass     Set gateway password\n");
-  printf("  username pass     Set gateway username\n");
+  printf("  username name     Set gateway username\n");
   printf("\n");
 }
 
@@ -157,6 +161,26 @@ parse_commandline(int argc, char **argv) {
     if ((argc - (optind + 1)) <= 0) {
       fprintf(stderr, "ndsctl: Error: You must specify a "
 	      "MAC address to unblock\n");
+      usage();
+      exit(1);
+    }
+    config.param = strdup(*(argv + optind + 1));
+  }
+  else if (strcmp(*(argv + optind), "allow") == 0) {
+    config.command = NDSCTL_ALLOW;
+    if ((argc - (optind + 1)) <= 0) {
+      fprintf(stderr, "ndsctl: Error: You must specify a "
+	      "MAC address to allow\n");
+      usage();
+      exit(1);
+    }
+    config.param = strdup(*(argv + optind + 1));
+  }
+  else if (strcmp(*(argv + optind), "unallow") == 0) {
+    config.command = NDSCTL_UNALLOW;
+    if ((argc - (optind + 1)) <= 0) {
+      fprintf(stderr, "ndsctl: Error: You must specify a "
+	      "MAC address to unallow\n");
       usage();
       exit(1);
     }
@@ -574,6 +598,78 @@ ndsctl_unblock(void) {
   close(sock);
 }
 
+void
+ndsctl_allow(void) {
+  int	sock;
+  char	buffer[4096];
+  char	request[64];
+  int	len,
+    rlen;
+
+  sock = connect_to_server(config.socket);
+		
+  strncpy(request, "allow ", 64);
+  strncat(request, config.param, (64 - strlen(request)));
+  strncat(request, "\r\n\r\n", (64 - strlen(request)));
+
+  len = send_request(sock, request);
+	
+  len = 0;
+  memset(buffer, 0, sizeof(buffer));
+  while ((len < sizeof(buffer)) && ((rlen = read(sock, (buffer + len),
+						 (sizeof(buffer) - len))) > 0)){
+    len += rlen;
+  }
+
+  if (strcmp(buffer, "Yes") == 0) {
+    printf("MAC %s allowed.\n", config.param);
+  } else if (strcmp(buffer, "No") == 0) {
+    printf("Failed to allow MAC %s.\n", config.param);
+  } else {
+    fprintf(stderr, "ndsctl: Error: nodogsplash sent an abnormal "
+	    "reply.\n");
+  }
+
+  shutdown(sock, 2);
+  close(sock);
+}
+
+void
+ndsctl_unallow(void) {
+  int	sock;
+  char	buffer[4096];
+  char	request[64];
+  int	len,
+    rlen;
+
+  sock = connect_to_server(config.socket);
+		
+  strncpy(request, "unallow ", 64);
+  strncat(request, config.param, (64 - strlen(request)));
+  strncat(request, "\r\n\r\n", (64 - strlen(request)));
+
+  len = send_request(sock, request);
+	
+  len = 0;
+  memset(buffer, 0, sizeof(buffer));
+  while ((len < sizeof(buffer)) && ((rlen = read(sock, (buffer + len),
+						 (sizeof(buffer) - len))) > 0)){
+    len += rlen;
+  }
+
+  if (strcmp(buffer, "Yes") == 0) {
+    printf("MAC %s unallowed.\n", config.param);
+  } else if (strcmp(buffer, "No") == 0) {
+    printf("Failed to unallow MAC %s.\n", config.param);
+  } else {
+    fprintf(stderr, "ndsctl: Error: nodogsplash sent an abnormal "
+	    "reply.\n");
+  }
+
+  shutdown(sock, 2);
+  close(sock);
+}
+
 
 void
 ndsctl_trust(void) {
@@ -696,6 +792,14 @@ main(int argc, char **argv) {
 
   case NDSCTL_UNBLOCK:
     ndsctl_unblock();
+    break;
+
+  case NDSCTL_ALLOW:
+    ndsctl_allow();
+    break;
+
+  case NDSCTL_UNALLOW:
+    ndsctl_unallow();
     break;
 
   case NDSCTL_TRUST:

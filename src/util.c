@@ -273,6 +273,7 @@ char * get_status_text() {
   unsigned int days = 0, hours = 0, minutes = 0, seconds = 0;
   unsigned long long int download_bytes, upload_bytes;
   t_MAC *trust_mac;
+  t_MAC *allow_mac;
   t_MAC *block_mac;
 	
   config = config_get_config();
@@ -470,29 +471,54 @@ char * get_status_text() {
   snprintf((buffer + len), (sizeof(buffer) - len), "====\n");
   len = strlen(buffer);
   
-  snprintf((buffer + len), (sizeof(buffer) - len), "Blocked MAC addresses:\n");
+  snprintf((buffer + len), (sizeof(buffer) - len), "Blocked MAC addresses:");
   len = strlen(buffer);
 
-  if (config->blockedmaclist != NULL) {
+  if(config->macmechanism == MAC_ALLOW) {
+    snprintf((buffer + len), (sizeof(buffer) - len), " N/A\n");
+    len = strlen(buffer);
+  } else  if (config->blockedmaclist != NULL) {
+    snprintf((buffer + len), (sizeof(buffer) - len), "\n");
+    len = strlen(buffer);
     for (block_mac = config->blockedmaclist; block_mac != NULL; block_mac = block_mac->next) {
       snprintf((buffer + len), (sizeof(buffer) - len), "  %s\n", block_mac->mac);
       len = strlen(buffer);
     }
   } else {
-      snprintf((buffer + len), (sizeof(buffer) - len), "  none\n");
+      snprintf((buffer + len), (sizeof(buffer) - len), " none\n");
       len = strlen(buffer);
   }
 
-  snprintf((buffer + len), (sizeof(buffer) - len), "Trusted MAC addresses:\n");
+  snprintf((buffer + len), (sizeof(buffer) - len), "Allowed MAC addresses:");
+  len = strlen(buffer);
+
+  if(config->macmechanism == MAC_BLOCK) {
+    snprintf((buffer + len), (sizeof(buffer) - len), " N/A\n");
+    len = strlen(buffer);
+  } else  if (config->allowedmaclist != NULL) {
+    snprintf((buffer + len), (sizeof(buffer) - len), "\n");
+    len = strlen(buffer);
+    for (allow_mac = config->allowedmaclist; allow_mac != NULL; allow_mac = allow_mac->next) {
+      snprintf((buffer + len), (sizeof(buffer) - len), "  %s\n", allow_mac->mac);
+      len = strlen(buffer);
+    }
+  } else {
+      snprintf((buffer + len), (sizeof(buffer) - len), " none\n");
+      len = strlen(buffer);
+  }
+
+  snprintf((buffer + len), (sizeof(buffer) - len), "Trusted MAC addresses:");
   len = strlen(buffer);
 
   if (config->trustedmaclist != NULL) {
+    snprintf((buffer + len), (sizeof(buffer) - len), "\n");
+    len = strlen(buffer);
     for (trust_mac = config->trustedmaclist; trust_mac != NULL; trust_mac = trust_mac->next) {
       snprintf((buffer + len), (sizeof(buffer) - len), "  %s\n", trust_mac->mac);
       len = strlen(buffer);
     }
   } else {
-      snprintf((buffer + len), (sizeof(buffer) - len), "  none\n");
+      snprintf((buffer + len), (sizeof(buffer) - len), " none\n");
       len = strlen(buffer);
   }
   
