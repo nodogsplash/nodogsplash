@@ -221,9 +221,7 @@ http_nodogsplash_first_contact(request *r) {
   if(config->authenticate_immediately) {
     http_nodogsplash_callback_action(r,authtarget,AUTH_MAKE_AUTHENTICATED);
   } else {
-    /* TODO: If RemoteAuthenticator is set,
-     * use http_nodogsplash_encode_remote_auth() to construct a URL
-     * and redirect to it instead of serving splash page
+    /* TODO: RemoteAuthenticator functionality?
      */
     http_nodogsplash_serve_splash(r,authtarget);
   }
@@ -343,7 +341,7 @@ void
 http_nodogsplash_callback_auth(httpd *webserver, request *r) {
   t_auth_target *authtarget;
 
-  /* Get info we need from request */
+  /* Get info we need from request, and do action */
   authtarget = http_nodogsplash_decode_authtarget(r);
   http_nodogsplash_callback_action (r,authtarget,AUTH_MAKE_AUTHENTICATED );
   http_nodogsplash_free_authtarget(authtarget);
@@ -354,7 +352,7 @@ void
 http_nodogsplash_callback_deny(httpd *webserver, request *r) {
   t_auth_target *authtarget;
 
-  /* Get info we need from request */
+  /* Get info we need from request, and do action */
   authtarget = http_nodogsplash_decode_authtarget(r);
   http_nodogsplash_callback_action (r,authtarget,AUTH_MAKE_DEAUTHENTICATED );
   http_nodogsplash_free_authtarget(authtarget);
@@ -399,185 +397,38 @@ http_nodogsplash_add_client(request *r) {
   return client;
 }
  
-/**
- */
-t_auth_target *
-http_nodogsplash_decode_authtarget(request *r) {
-  char *enccopy, *p1, *p2;
-  httpVar *var;
-  t_auth_target *authtarget;
-  
-  /* Make a copy of encoded path because we will modify it */
-  enccopy = safe_strdup(r->request.path);
-  /* enccopy should have the form: /<directory>/<rest>,
-   * where <directory> has had its effect already in determining which
-   * callback is procesing the request, so we ignore it here,
-   * and where <rest> is a string encoding variables and values in the
-   * usual way.
-   * (See http_nodogsplash_encode_authtarget() for details.)
-   * So, here we find <rest> and store variable/value pairs in the request,
-   * to find values of token and redir.
-   */
-  p1 = strchr(enccopy,'/');        /* initial slash */
-  if(!p1) { _report_warning(r,"Malformed action request: first"); free(enccopy); return; }
-  p1++;
-  p1 = strchr(p1,'/');              /* second slash */
-  if(!p1) { _report_warning(r,"Malformed action request: second"); free(enccopy); return; }
-  p1++;
-  httpd_storeData(r,p1);
-  
-  authtarget = http_nodogsplash_make_authtarget_from_request(r);
-  free(enccopy);
-  return authtarget;
-
-}
-
-/**
- * Allocate and return a pointer to a t_auth_target struct encoding information
- * needed to eventually authenticate a client.
- * The struct should be freed by http_nodogsplash_free_authtarget().
- */
-t_auth_target*
-http_nodogsplash_make_authtarget(char* token, char* redirhost, char* redirpath) {
-
-  t_auth_target* authtarget;
-  s_config *config;
-
-  config = config_get_config();
-
-  authtarget = safe_malloc(sizeof(t_auth_target));
-  memset(authtarget, 0, sizeof(t_auth_target));
-  authtarget->ip = safe_strdup(config->gw_address);
-  authtarget->port = config->gw_port;
-  authtarget->authdir = safe_strdup(config->authdir);
-  authtarget->denydir = safe_strdup(config->denydir);
-  authtarget->token = safe_strdup(token);
-  if(config->redirectURL) {
-    debug(LOG_DEBUG,"Client requested http://%s%s, substituting %s",
-	  redirhost,redirpath,config->redirectURL);
-    authtarget->redir = safe_strdup(config->redirectURL);
-  } else {
-    safe_asprintf(&(authtarget->redir),"http://%s%s",redirhost,redirpath);
-  }
-
-  return authtarget;
-}
-
-/**
- * Allocate and return a pointer to a t_auth_target struct encoding information
- * needed to eventually authenticate a client.
- * The struct should be freed by http_nodogsplash_free_authtarget().
- */
-t_auth_target*
-http_nodogsplash_make_authtarget_from_request(request *r) {
-
-  t_auth_target* authtarget;
-  httpVar* var;
-
-  authtarget = safe_malloc(sizeof(t_auth_target));
-  memset(authtarget, 0, sizeof(t_auth_target));
-
-  var = httpdGetVariableByName(r,"tok");
-  authtarget->token = safe_strdup(var->value);
-  var = httpdGetVariableByName(r,"redir");
-  authtarget->redir = safe_strdup(var->value);
-
-  return authtarget;
-}
-
-
-
-void
-http_nodogsplash_free_authtarget(t_auth_target* authtarget) {
-
-  if(authtarget->ip) free(authtarget->ip);
-  if(authtarget->authdir) free(authtarget->authdir);
-  if(authtarget->denydir) free(authtarget->denydir);
-  if(authtarget->token) free(authtarget->token);
-  if(authtarget->redir) free(authtarget->redir);
-  free(authtarget);
-
-}
-
-/**
- * Return a pointer to a URL string
- * which when served will authenticate a client.
- * Caller must free.
- */
-char *
-http_nodogsplash_encode_authtarget(t_auth_target *authtarget) {
-  char *encodedredir, *encodedtoken, *encodedauthtarget;
-  
-  /* URL encode the redirect URL and the token */
-  encodedredir = httpdUrlEncode(authtarget->redir);  /* malloc's */
-  encodedtoken = httpdUrlEncode(authtarget->token);  /* malloc's */
-
-  safe_asprintf(&encodedauthtarget, "http://%s:%d/%s/tok=%s&redir=%s",
-		authtarget->ip,
-		authtarget->port,
-		authtarget->authdir,
-		encodedtoken,
-		encodedredir);
-
-  free(encodedredir);
-  free(encodedtoken);
-  return encodedauthtarget;
-}
-
-/**
- * Return a pointer to a URL string for a remote authenticator.
- * Information passed to the remote cgi variable-value arguments.
- * Caller must free.
- */
-char *
-http_nodogsplash_encode_remote_auth(t_auth_target *authtarget) {
-  char *encodedredir, *url;
-  s_config	*config;
-
-  config = config_get_config();
-  encodedredir = httpdUrlEncode(authtarget->redir);  /* malloc's */  
-  safe_asprintf(&url,"http://%s:d/%s?ip=%s&pt=%d&auth=%s&deny=%s&tok=%s&redir=%s",
-		config->remote_auth_address,
-		config->remote_auth_port,
-		config->remote_auth_path,
-		authtarget->ip,
-		authtarget->port,
-		authtarget->authdir,
-		authtarget->denydir,
-		authtarget->token,
-		encodedredir);
-  free(encodedredir);
-  return url;
-}
 
 
 /* Given a client request, pipe the splash page from the splash page file. */
 void
 http_nodogsplash_serve_splash(request *r, t_auth_target *authtarget) {
-  char *redirectURL;
+  char *abspath;
   char line [MAX_BUF];
-  char *splashfilename, *authtargetstr,  *imagesdir;
-  char *encodedthp, *tokenhostpath;
+  char *splashfilename;
   FILE *fd;
-  
   s_config	*config;
 
   
   config = config_get_config();
+
   /* Set variables; these can be interpolated in the splash page text. */
-
   httpdAddVariable(r,"gatewayname",config->gw_name);
-
-  /* Get auth target as a string */
-  authtargetstr = http_nodogsplash_encode_authtarget(authtarget);
-  httpdAddVariable(r,"authtarget",authtargetstr);
-  free(authtargetstr);
+  httpdAddVariable(r,"tok",authtarget->token);
+  httpdAddVariable(r,"redir",authtarget->redir);
+  httpdAddVariable(r,"authaction",authtarget->authaction);
+  httpdAddVariable(r,"denyaction",authtarget->denyaction);
+  httpdAddVariable(r,"authtarget",authtarget->authtarget);
+  /* We need to have imagesdir and pagesdir appear in the page
+     as absolute paths, so they work no matter what the
+     initial user request URL was  */
+  safe_asprintf(&abspath, "/%s", config->imagesdir);
+  httpdAddVariable(r,"imagesdir",abspath);
+  free(abspath);
+  safe_asprintf(&abspath, "/%s", config->pagesdir);
+  httpdAddVariable(r,"pagesdir",abspath);
+  free(abspath);
   
-  safe_asprintf(&imagesdir, "/%s", config->imagesdir);
-  httpdAddVariable(r,"imagesdir",imagesdir);
-  free(imagesdir);
-
-  /* Pipe splash page from file */
+  /* Pipe the splash page from its file */
   safe_asprintf(&splashfilename, "%s/%s", config->webroot, config->splashpage );
   if (!(fd = fopen(splashfilename, "r"))) {
     debug(LOG_ERR, "Could not open splash page file '%s'", splashfilename);
@@ -609,7 +460,134 @@ http_nodogsplash_redirect(request *r, char *url) {
 
 }
 
-/** Allocate and return a random string of 8 hex digits suitable as an authentication token.
+/**
+ * Allocate and return a pointer to a t_auth_target struct encoding information
+ * needed to eventually authenticate a client.
+ * See http_nodogsplash_make_authtarget().
+ * Fields token and redir will be set;
+ * all other fields in the struct are zeroed.
+ * The struct should be freed by http_nodogsplash_free_authtarget().
+ */
+t_auth_target *
+http_nodogsplash_decode_authtarget(request *r) {
+  char *p1;
+  httpVar *var;
+  request *r2;
+  t_auth_target *authtarget;
+  
+  /* r->request.path should have the form: /<directory>/<rest>,
+   * where <directory> has had its effect already in determining which
+   * callback is procesing the request, so we ignore it here,
+   * and where <rest> is a string encoding variables and values in the
+   * usual way.
+   * So, here we find <rest>, and store variable/value pairs in the request,
+   * to find values of token and redir.
+   */
+  p1 =   strchr(r->request.path,'/');        /* initial slash */
+  if(!p1) {
+    _report_warning(r,"Malformed action request: first");
+    return NULL;
+  }
+  p1++;
+  p1 = strchr(p1,'/');              /* second slash */
+  if(!p1) {
+    _report_warning(r,"Malformed action request: second");
+    return NULL;
+  }
+  p1++;
+  if(*p1 == '?') p1++;
+  
+  /* Create another request struct r2 to avoid polluting r */
+  r2 = safe_malloc(sizeof(request));
+  memset(r2, 0, sizeof(request));
+
+  /* Parse <rest>, store variables in r2
+   * N.B.: httpd_storeData() httpd_unescape's variable values
+   */
+  httpd_storeData(r2,p1);
+  /* now get variable values from r2 */
+  authtarget = safe_malloc(sizeof(t_auth_target));
+  memset(authtarget, 0, sizeof(t_auth_target));
+  var = httpdGetVariableByName(r2,"tok");
+  if(var) {
+    authtarget->token = safe_strdup(var->value);
+  }
+  var = httpdGetVariableByName(r2,"redir");
+  if(var) {
+    authtarget->redir = safe_strdup(var->value);
+  }
+  httpdFreeVariables(r2);
+  free(r2);
+
+  return authtarget;
+
+}
+
+/**
+ * Allocate and return a pointer to a t_auth_target struct encoding information
+ * needed to eventually authenticate a client.
+ * The struct should be freed by http_nodogsplash_free_authtarget().
+ */
+t_auth_target*
+http_nodogsplash_make_authtarget(char* token, char* redirhost, char* redirpath) {
+  char *encodedredir;
+  t_auth_target* authtarget;
+  s_config *config;
+
+  config = config_get_config();
+
+  authtarget = safe_malloc(sizeof(t_auth_target));
+  memset(authtarget, 0, sizeof(t_auth_target));
+
+  authtarget->ip = safe_strdup(config->gw_address);
+  authtarget->port = config->gw_port;
+  authtarget->authdir = safe_strdup(config->authdir);
+  authtarget->denydir = safe_strdup(config->denydir);
+  safe_asprintf(&(authtarget->authaction),"http://%s:%d/%s/",authtarget->ip,authtarget->port,authtarget->authdir);
+  safe_asprintf(&(authtarget->denyaction),"http://%s:%d/%s/",authtarget->ip,authtarget->port,authtarget->denydir);
+  authtarget->token = safe_strdup(token);
+  if(config->redirectURL) {
+    debug(LOG_DEBUG,"Client requested http://%s%s, substituting %s",
+	  redirhost,redirpath,config->redirectURL);
+    authtarget->redir = safe_strdup(config->redirectURL);
+  } else {
+    safe_asprintf(&(authtarget->redir),"http://%s%s",redirhost,redirpath);
+  }
+  /* URL encode the redirect URL for authtarget */
+  encodedredir = httpdUrlEncode(authtarget->redir);  /* malloc's */
+  safe_asprintf(&(authtarget->authtarget), "%s?redir=%s&tok=%s",
+		authtarget->authaction,
+		encodedredir,
+		authtarget->token);
+  free(encodedredir);
+
+  return authtarget;
+}
+
+
+
+
+void
+http_nodogsplash_free_authtarget(t_auth_target* authtarget) {
+
+  if(authtarget->ip) free(authtarget->ip);
+  if(authtarget->authdir) free(authtarget->authdir);
+  if(authtarget->denydir) free(authtarget->denydir);
+  if(authtarget->authaction) free(authtarget->authaction);
+  if(authtarget->denyaction) free(authtarget->denyaction);
+  if(authtarget->authtarget) free(authtarget->authtarget);
+  if(authtarget->token) free(authtarget->token);
+  if(authtarget->redir) free(authtarget->redir);
+  if(authtarget->user) free(authtarget->user);
+  if(authtarget->passwd) free(authtarget->passwd);
+  free(authtarget);
+
+}
+
+
+
+/** Allocate and return a random string of 8 hex digits
+ *  suitable as an authentication token.
  *  Caller must free.
  */
 char *

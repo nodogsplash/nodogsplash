@@ -202,7 +202,7 @@ secure as-is for basic internet sharing applications, but it is customizable.
   Andreasson's_tutorial.
 
 
-Using Nodogsplash with Kamikaze
+6. Using Nodogsplash with Kamikaze
 
 Eventually, new releases of Nodogsplash will be compiled against some stable
 version of OpenWRT Kamikaze. Meanwhile, Nodogsplash has been tested on some

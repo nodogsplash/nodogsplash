@@ -331,9 +331,6 @@ iptables_fw_init(void) {
    * However OpenWRT standard S35firewall does it in filter FORWARD, and since
    * we are pre-empting that chain here, we put it in */
   rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu");
-  /* CHAIN_TO_INTERNET, related and established packets  ACCEPT */
-  rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m state --state RELATED,ESTABLISHED -j ACCEPT");
-
   /* CHAIN_TO_INTERNET, packets marked TRUSTED  ACCEPT */
   rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m mark --mark 0x%x -j ACCEPT", FW_MARK_TRUSTED);
   /* CHAIN_TO_INTERNET, all packets tcp/udp to DNS (port 53) ACCEPT */
@@ -341,6 +338,8 @@ iptables_fw_init(void) {
   rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -p udp --dport 53 -j ACCEPT");
   /* CHAIN_TO_INTERNET, packets marked AUTHENTICATED jump to CHAIN_AUTHENTICATED */
   rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m mark --mark 0x%x -j " CHAIN_AUTHENTICATED, FW_MARK_AUTHENTICATED);
+  /* CHAIN_AUTHENTICATED, related and established packets  ACCEPT */
+  rc |= iptables_do_command("-t filter -A " CHAIN_AUTHENTICATED " -m state --state RELATED,ESTABLISHED -j ACCEPT");
   /* CHAIN_AUTHENTICATED, load the "authenticated-users" ruleset */
   rc |= iptables_load_ruleset("filter", "authenticated-users", CHAIN_AUTHENTICATED);
   /* CHAIN_AUTHENTICATED, any packets not matching that ruleset  REJECT */

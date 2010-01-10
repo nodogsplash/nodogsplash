@@ -269,7 +269,7 @@ char * get_status_text() {
   s_config *config;
   t_client	*first;
   int		indx;
-  unsigned long int uptime = 0, uptimesecs = 0;
+  unsigned long int now, uptime = 0, uptimesecs = 0;
   unsigned int days = 0, hours = 0, minutes = 0, seconds = 0;
   unsigned long long int download_bytes, upload_bytes;
   t_MAC *trust_mac;
@@ -281,7 +281,9 @@ char * get_status_text() {
   snprintf(buffer, (sizeof(buffer) - len), "==================\nNoDogSplash Status\n====\n");
   len = strlen(buffer);
 
-  uptimesecs = uptime = time(NULL) - started_time;
+  now = time(NULL);
+
+  uptimesecs = uptime = now - started_time;
   days    = uptime / (24 * 60 * 60);
   uptime -= days * (24 * 60 * 60);
   hours   = uptime / (60 * 60);
@@ -416,7 +418,19 @@ char * get_status_text() {
     uptime -= minutes * 60;
     seconds = uptime;
 
-    snprintf((buffer + len), (sizeof(buffer) - len), "  Active time: %ud %uh %um %us\n", days, hours, minutes, seconds);
+    snprintf((buffer + len), (sizeof(buffer) - len), "  Active duration: %ud %uh %um %us\n", days, hours, minutes, seconds);
+    len = strlen(buffer);
+
+    uptimesecs = uptime = now - first->added_time;
+    days    = uptime / (24 * 60 * 60);
+    uptime -= days * (24 * 60 * 60);
+    hours   = uptime / (60 * 60);
+    uptime -= hours * (60 * 60);
+    minutes = uptime / 60;
+    uptime -= minutes * 60;
+    seconds = uptime;
+
+    snprintf((buffer + len), (sizeof(buffer) - len), "  Added duration: %ud %uh %um %us\n", days, hours, minutes, seconds);
     len = strlen(buffer);
 
     snprintf((buffer + len), (sizeof(buffer) - len), "  Token: %s\n", first->token ? first->token : "none");
