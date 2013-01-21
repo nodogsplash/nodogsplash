@@ -216,8 +216,8 @@ tc_destroy_tc() {
   debug(LOG_DEBUG, "Executing command: %s", cmd);
   rc |= execute(cmd,tc_quiet);
   free(cmd);
-  debug(LOG_DEBUG, "Executing command: %s", cmd);
   safe_asprintf(&cmd,"ip link set %s down", upload_imqname);
+  debug(LOG_DEBUG, "Executing command: %s", cmd);
   rc |= execute(cmd,tc_quiet);
   free(cmd);
 
