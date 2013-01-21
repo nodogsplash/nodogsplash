@@ -39,7 +39,7 @@ DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/config.h.in \
 	$(srcdir)/nodogsplash.spec.in $(top_srcdir)/configure \
 	$(top_srcdir)/doc/Makefile.in AUTHORS COPYING ChangeLog \
-	INSTALL NEWS config/config.guess config/config.sub \
+	INSTALL config/config.guess config/config.sub \
 	config/depcomp config/install-sh config/ltmain.sh \
 	config/missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -205,7 +205,6 @@ doc_DATA = \
   AUTHORS \
   COPYING \
   INSTALL \
-  NEWS \
   README \
   ChangeLog
 

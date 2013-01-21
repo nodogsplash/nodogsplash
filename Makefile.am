@@ -8,7 +8,6 @@ doc_DATA = \
   AUTHORS \
   COPYING \
   INSTALL \
-  NEWS \
   README \
   ChangeLog
 
