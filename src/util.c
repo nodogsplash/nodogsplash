@@ -41,8 +41,18 @@
 #include <sys/unistd.h>
 #include <netinet/in.h>
 #include <sys/ioctl.h>
+#include <arpa/inet.h> 
+
+#if defined(__NetBSD__)
+#include <sys/socket.h>
+#include <ifaddrs.h>
+#include <net/if.h>
+#include <net/if_dl.h>
+#include <util.h>
+#endif
 
 #ifdef __linux__
+#include <netinet/in.h>
 #include <net/if.h>
 #endif
 
@@ -108,10 +118,12 @@ execute(char *cmd_line, int quiet) {
   if (pid == 0) {    /* for the child process:         */
     
     if (quiet) close(2); /* Close stderr if quiet flag is on */
-    if (execvp("/bin/sh", (char *const *)new_argv) < 0) {    /* execute the command  */
+    if (execvp("/bin/sh", (char *const *)new_argv) == -1) {    /* execute the command  */
       debug(LOG_ERR, "execvp(): %s", strerror(errno));
-      exit(1);
+    } else {
+      debug(LOG_ERR, "execvp() failed");
     }
+    exit(1);
 
   } else {        /* for the parent:      */
 
@@ -176,96 +188,154 @@ wd_gethostbyname(const char *name) {
   return h_addr;
 }
 
-char *get_iface_ip(char *ifname) {
-#ifdef __linux__
-  struct ifreq if_data;
-#endif
-  struct in_addr in;
-  char *ip_str;
-  int sockd;
-  u_int32_t ip;
+char *
+get_iface_ip(const char *ifname)
+{
+#if defined(__linux__)
+	struct ifreq if_data;
+	struct in_addr in;
+	char *ip_str;
+	int sockd;
+	u_int32_t ip;
 
-#ifdef __linux__
-    
-  /* Create a socket.  SOCK_PACKET is obsolete */
-  if ((sockd = socket (PF_INET, SOCK_RAW, htons(0x8086))) < 0) {
-    debug(LOG_ERR, "socket(): %s", strerror(errno));
-    return NULL;
-  }
+	/* Create a socket */
+	if ((sockd = socket (AF_INET, SOCK_PACKET, htons(0x8086))) < 0) {
+		debug(LOG_ERR, "socket(): %s", strerror(errno));
+		return NULL;
+	}
 
-  /* Get IP of internal interface */
-  strcpy (if_data.ifr_name, ifname);
+	/* Get IP of internal interface */
+	strcpy (if_data.ifr_name, ifname);
 
-  /* Get the IP address */
-  if (ioctl (sockd, SIOCGIFADDR, &if_data) < 0) {
-    debug(LOG_ERR, "Finding IP for %s: ioctl(): SIOCGIFADDR %s", ifname,strerror(errno));
-    return NULL;
-  }
-  memcpy ((void *) &ip, (void *) &if_data.ifr_addr.sa_data + 2, 4);
-  in.s_addr = ip;
+	/* Get the IP address */
+	if (ioctl (sockd, SIOCGIFADDR, &if_data) < 0) {
+		debug(LOG_ERR, "ioctl(): SIOCGIFADDR %s", strerror(errno));
+		return NULL;
+	}
+	memcpy ((void *) &ip, (void *) &if_data.ifr_addr.sa_data + 2, 4);
+	in.s_addr = ip;
 
-  ip_str = (char *)inet_ntoa(in);
-  return safe_strdup(ip_str);
+	ip_str = inet_ntoa(in);
+	close(sockd);
+	return safe_strdup(ip_str);
+#elif defined(__NetBSD__)
+	struct ifaddrs *ifa, *ifap;
+	char *str = NULL;
+
+	if (getifaddrs(&ifap) == -1) {
+		debug(LOG_ERR, "getifaddrs(): %s", strerror(errno));
+		return NULL;
+	}
+	/* XXX arbitrarily pick the first IPv4 address */
+	for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
+		if (strcmp(ifa->ifa_name, ifname) == 0 &&
+				ifa->ifa_addr->sa_family == AF_INET)
+			break;
+	}
+	if (ifa == NULL) {
+		debug(LOG_ERR, "%s: no IPv4 address assigned");
+		goto out;
+	}
+	str = safe_strdup(inet_ntoa(
+				((struct sockaddr_in *)ifa->ifa_addr)->sin_addr));
+out:
+	freeifaddrs(ifap);
+	return str;
 #else
-  return safe_strdup("0.0.0.0");
+	return safe_strdup("0.0.0.0");
 #endif
 }
 
-char *get_iface_mac (char *ifname) {
-#ifdef __linux__
-  int r, s;
-  struct ifreq ifr;
-  char *hwaddr, mac[13];
-    
-  strcpy(ifr.ifr_name, ifname);
+char *
+get_iface_mac(const char *ifname)
+{
+#if defined(__linux__)
+	int r, s;
+	struct ifreq ifr;
+	char *hwaddr, mac[13];
 
-  s = socket(PF_INET, SOCK_RAW, htons(0x8086));
-  if (-1 == s) {
-    debug(LOG_ERR, "get_iface_mac socket: %s", strerror(errno));
-    return NULL;
-  }
+	strcpy(ifr.ifr_name, ifname);
 
-  r = ioctl(s, SIOCGIFHWADDR, &ifr);
-  if (r == -1) {
-    debug(LOG_ERR, "get_iface_mac ioctl(SIOCGIFHWADDR): %s", strerror(errno));
-    close(s);
-    return NULL;
-  }
+	s = socket(PF_INET, SOCK_DGRAM, 0);
+	if (-1 == s) {
+		debug(LOG_ERR, "get_iface_mac socket: %s", strerror(errno));
+		return NULL;
+	}
 
-  hwaddr = ifr.ifr_hwaddr.sa_data;
-  snprintf(mac, 13, "%02X%02X%02X%02X%02X%02X", 
-	   hwaddr[0] & 0xFF,
-	   hwaddr[1] & 0xFF,
-	   hwaddr[2] & 0xFF,
-	   hwaddr[3] & 0xFF,
-	   hwaddr[4] & 0xFF,
-	   hwaddr[5] & 0xFF
-	   );
-       
-  close(s);
-  return safe_strdup(mac);
+	r = ioctl(s, SIOCGIFHWADDR, &ifr);
+	if (r == -1) {
+		debug(LOG_ERR, "get_iface_mac ioctl(SIOCGIFHWADDR): %s", strerror(errno));
+		close(s);
+		return NULL;
+	}
+
+	hwaddr = ifr.ifr_hwaddr.sa_data;
+	close(s);
+	snprintf(mac, sizeof(mac), "%02X%02X%02X%02X%02X%02X",
+			hwaddr[0] & 0xFF,
+			hwaddr[1] & 0xFF,
+			hwaddr[2] & 0xFF,
+			hwaddr[3] & 0xFF,
+			hwaddr[4] & 0xFF,
+			hwaddr[5] & 0xFF
+		);
+
+	return safe_strdup(mac);
+#elif defined(__NetBSD__)
+	struct ifaddrs *ifa, *ifap;
+	const char *hwaddr;
+	char mac[13], *str = NULL;
+	struct sockaddr_dl *sdl;
+
+	if (getifaddrs(&ifap) == -1) {
+		debug(LOG_ERR, "getifaddrs(): %s", strerror(errno));
+		return NULL;
+	}
+	for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
+		if (strcmp(ifa->ifa_name, ifname) == 0 &&
+				ifa->ifa_addr->sa_family == AF_LINK)
+			break;
+	}
+	if (ifa == NULL) {
+		debug(LOG_ERR, "%s: no link-layer address assigned");
+		goto out;
+	}
+	sdl = (struct sockaddr_dl *)ifa->ifa_addr;
+	hwaddr = LLADDR(sdl);
+	snprintf(mac, sizeof(mac), "%02X%02X%02X%02X%02X%02X",
+			hwaddr[0] & 0xFF, hwaddr[1] & 0xFF,
+			hwaddr[2] & 0xFF, hwaddr[3] & 0xFF,
+			hwaddr[4] & 0xFF, hwaddr[5] & 0xFF);
+
+	str = safe_strdup(mac);
+out:
+	freeifaddrs(ifap);
+	return str;
 #else
-  return NULL;
+	return NULL;
 #endif
 }
 
 /** Get name of external interface (the one with default route to the net).
  *  Caller must free.
  */
-char *get_ext_iface (void) {
+char *
+get_ext_iface (void) {
 #ifdef __linux__
   FILE *input;
   char *device, *gw;
-  int i;
+  int i = 1;
+  int keep_detecting = 1;
   pthread_cond_t		cond = PTHREAD_COND_INITIALIZER;
   pthread_mutex_t		cond_mutex = PTHREAD_MUTEX_INITIALIZER;
   struct	timespec	timeout;
   device = (char *)malloc(16);
   gw = (char *)malloc(16);
   debug(LOG_DEBUG, "get_ext_iface(): Autodectecting the external interface from routing table");
-  for (i=1; i<=NUM_EXT_INTERFACE_DETECT_RETRY; i++) {
+  while(keep_detecting) { 
     input = fopen("/proc/net/route", "r");
     while (!feof(input)) {
+	  /* XXX scanf(3) is unsafe, risks overrun */
       fscanf(input, "%s %s %*s %*s %*s %*s %*s %*s %*s %*s %*s\n", device, gw);
       if (strcmp(gw, "00000000") == 0) {
 	free(gw);
@@ -274,7 +344,7 @@ char *get_ext_iface (void) {
       }
     }
     fclose(input);
-    debug(LOG_ERR, "get_ext_iface(): Failed to detect the external interface after try %d of %d (maybe the interface is not up yet?)", i, NUM_EXT_INTERFACE_DETECT_RETRY);
+	debug(LOG_ERR, "get_ext_iface(): Failed to detect the external interface after try %d (maybe the interface is not up yet?).  Retry limit: %d", i, NUM_EXT_INTERFACE_DETECT_RETRY); 
     /* Sleep for EXT_INTERFACE_DETECT_RETRY_INTERVAL seconds */
     timeout.tv_sec = time(NULL) + EXT_INTERFACE_DETECT_RETRY_INTERVAL;
     timeout.tv_nsec = 0;
@@ -284,8 +354,13 @@ char *get_ext_iface (void) {
     pthread_cond_timedwait(&cond, &cond_mutex, &timeout);
     /* No longer needs to be locked */
     pthread_mutex_unlock(&cond_mutex);
+	//for (i=1; i<=NUM_EXT_INTERFACE_DETECT_RETRY; i++) {
+      if (NUM_EXT_INTERFACE_DETECT_RETRY != 0 && i>NUM_EXT_INTERFACE_DETECT_RETRY) { 
+        keep_detecting = 0;
+    }
+    i++;
   }
-  debug(LOG_ERR, "get_ext_iface(): Failed to detect the external interface after %d tries, aborting", NUM_EXT_INTERFACE_DETECT_RETRY);
+  debug(LOG_ERR, "get_ext_iface(): Failed to detect the external interface after %d tries, aborting", i); 
   exit(1);
   free(device);
   free(gw);

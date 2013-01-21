@@ -35,10 +35,10 @@ int execute(char *cmd_line, int quiet);
 struct in_addr *wd_gethostbyname(const char *name);
 
 /* @brief Get IP address of an interface */
-char *get_iface_ip(char *ifname);
+char *get_iface_ip(const char *ifname);
 
 /* @brief Get MAC address of an interface */
-char *get_iface_mac(char *ifname);
+char *get_iface_mac(const char *ifname);
 
 /* @brief Get interface name of default gateway */
 char *get_ext_iface (void);

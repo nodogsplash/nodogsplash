@@ -14,7 +14,7 @@
 ** connection with the use or performance of this software.
 **
 **
-** $Id: protocol.c 935 2006-02-01 03:22:04Z benoitg $
+** $Id: protocol.c 1429 2009-11-04 14:21:07Z gbastien $
 **
 */
 
@@ -25,7 +25,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <time.h>
-#include <syslog.h> /* for debug P. Kube */
 
 #if defined(_WIN32) 
 #else
@@ -36,7 +35,6 @@
 #include "config.h"
 #include "httpd.h"
 #include "httpd_priv.h"
-#include "../src/debug.h" /* for debug P. Kube */
 
 int _httpd_net_read(sock, buf, len)
 	int	sock;
@@ -155,11 +153,11 @@ int _httpd_readBuf(request *r, char *destBuf, int len)
 
 void _httpd_writeAccessLog(httpd *server, request *r)
 {
-	/*  In preference of using nodogsplash's log utility. --P. Kube
 	char	dateBuf[30];
 	struct 	tm *timePtr;
 	time_t	clock;
 	int	responseCode;
+
 
 	if (server->accessLog == NULL)
 		return;
@@ -171,25 +169,14 @@ void _httpd_writeAccessLog(httpd *server, request *r)
 		r->clientAddr, dateBuf, httpdRequestMethodName(r), 
 		httpdRequestPath(r), responseCode, 
 		r->response.responseLength);
-	*/
-
-	int	responseCode;
-
-	responseCode = atoi(r->response.response);
-	debug(LOG_INFO,  "[libhttpd] %s - - %s \"%s\" %d %d", 
-	      r->clientAddr, httpdRequestMethodName(r), 
-	      httpdRequestPath(r), responseCode, 
-	      r->response.responseLength);
-
 }
 
 void _httpd_writeErrorLog(httpd *server, request *r, char *level, char *message)
 {
-	/*  In preference of using nodogsplash's log utility. --P. Kube
-
 	char	dateBuf[30];
 	struct 	tm *timePtr;
 	time_t	clock;
+
 
 	if (server->errorLog == NULL)
 		return;
@@ -206,19 +193,6 @@ void _httpd_writeErrorLog(httpd *server, request *r, char *level, char *message)
 		fprintf(server->errorLog, "[%s] [%s] %s\n",
 			dateBuf, level, message);
 	}
-	*/
-
-	if (r != NULL && *r->clientAddr != 0)
-	{
-		debug(LOG_INFO, "[libhttpd] [%s] [client %s] %s\n",
-			level, r->clientAddr, message);
-	}
-	else
-	{
-		debug(LOG_ERR, "[libhttpd] [%s] %s\n",
-			level, message);
-	}
-
 }
 
 
@@ -433,10 +407,10 @@ void _httpd_storeData(request *r, char *query)
 void _httpd_formatTimeString(char *ptr, int clock)
 {
 	struct 	tm *timePtr;
+	time_t t;
 
-	if (clock == 0)
-		clock = time(NULL);
-	timePtr = gmtime((time_t*)&clock);
+	t = (clock == 0) ? time(NULL) : clock;
+	timePtr = gmtime(&t);
 	strftime(ptr, HTTP_TIME_STRING_LEN,"%a, %d %b %Y %T GMT",timePtr);
 }
 
@@ -493,6 +467,7 @@ httpDir *_httpd_findContentDir(server, dir, createFlag)
 		*curChild;
 
 	strncpy(buffer, dir, HTTP_MAX_URL);
+        buffer[HTTP_MAX_URL-1]=0;
 	curItem = server->content;
 	curDir = strtok(buffer,"/");
 	while(curDir)
@@ -621,7 +596,7 @@ void _httpd_sendStatic(httpd *server, request *r, char *data)
 	{
 		_httpd_send304(r);
 	}
-	_httpd_sendHeaders(r, strlen(data), server->startTime);
+	_httpd_sendHeaders(r, server->startTime, strlen(data));
 	httpdOutput(r, data);
 }
 
@@ -632,7 +607,7 @@ void _httpd_sendFile(httpd *server, request *r, char *path)
 	char	*suffix;
 	struct 	stat sbuf;
 
-	suffix = rindex(path, '.');
+	suffix = strrchr(path, '.');
 	if (suffix != NULL)
 	{
 		if (strcasecmp(suffix,".gif") == 0) 
@@ -643,9 +618,6 @@ void _httpd_sendFile(httpd *server, request *r, char *path)
 			strcpy(r->response.contentType,"image/xbm");
 		if (strcasecmp(suffix,".png") == 0) 
 			strcpy(r->response.contentType,"image/png");
-		/* To handle css files --P. Kube */
-		if (strcasecmp(suffix,".css") == 0) 
-			strcpy(r->response.contentType,"text/css");
 	}
 	if (stat(path, &sbuf) < 0)
 	{
@@ -668,10 +640,7 @@ int _httpd_sendDirectoryEntry(httpd *server, request *r, httpContent *entry,
 		char *entryName)
 {
 	char		path[HTTP_MAX_URL];
-	/* We do not want to serve directory entry directly.  (Mitar) */ 
-	if (entryName[0] == '\0') { 
-	  return(-1); 
-	} 
+
 	snprintf(path, HTTP_MAX_URL, "%s/%s", entry->path, entryName);
 	_httpd_sendFile(server, r, path);
 	return(0);
@@ -707,7 +676,7 @@ static unsigned char isAcceptable[96] =
 **      Bit 2 ...       path            -- as xpalpha but with /
 */
     /*   0 1 2 3 4 5 6 7 8 9 A B C D E F */
-    {    7,0,0,0,0,0,0,0,0,0,7,0,0,7,7,0,       /* 2x   !"#$%&'()*+,-./ */
+    {    7,0,0,0,0,0,0,0,0,0,7,0,0,7,7,7,       /* 2x   !"#$%&'()*+,-./ */
          7,7,7,7,7,7,7,7,7,7,0,0,0,0,0,0,       /* 3x  0123456789:;<=>?  */
          7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,       /* 4x  @ABCDEFGHIJKLMNO */
          7,7,7,7,7,7,7,7,7,7,7,0,0,0,0,7,       /* 5X  PQRSTUVWXYZ[\]^_ */
@@ -720,18 +689,16 @@ static char *hex = "0123456789ABCDEF";
 
 
 char *_httpd_escape(str)
-        char *str;
+        const char *str;
 {
     unsigned char mask = URL_XPALPHAS;
-    char * p;
+    const char * p;
     char * q;
     char * result;
     int unacceptable = 0;
-    for(p=str; *p; p++) {
-      if (!ACCEPTABLE((unsigned char)*p)) {
+    for(p=str; *p; p++)
+        if (!ACCEPTABLE((unsigned char)*p))
                 unacceptable +=2;
-      }
-    }
     result = (char *) malloc(p-str + unacceptable + 1);
     bzero(result,(p-str + unacceptable + 1));
 
@@ -742,18 +709,16 @@ char *_httpd_escape(str)
     for(q=result, p=str; *p; p++) {
         unsigned char a = *p;
         if (!ACCEPTABLE(a)) {
-            *q++ = '%';  /* Means hex coming */
+            *q++ = '%';  /* Means hex commming */
             *q++ = hex[a >> 4];
             *q++ = hex[a & 15];
-        } else if (a == ' ') {
-	  *q++ = '+';  /* space becomes + */
-	} else {
-	  *q++ = *p;
-	}
+        }
+        else *q++ = *p;
     }
     *q++ = 0;                   /* Terminate */
     return result;
 }
+
 
 
 void _httpd_sanitiseUrl(url)

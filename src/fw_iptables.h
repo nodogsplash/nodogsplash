@@ -52,10 +52,10 @@ int iptables_fw_init(void);
 int iptables_fw_destroy(void);
 
 /** @brief Helper function for iptables_fw_destroy */
-int iptables_fw_destroy_mention( char * table, char * chain, char * mention);
+int iptables_fw_destroy_mention( const char * table, const char * chain, const char * mention);
 
 /** @brief Define the access of a specific client */
-int iptables_fw_access(t_authaction action, char *ip, char *mac);
+int iptables_fw_access(t_authaction action, const char *ip, const char *mac);
 
 /** @brief Return the total download usage in bytes */
 unsigned long long int iptables_fw_total_download();
@@ -67,6 +67,6 @@ unsigned long long int iptables_fw_total_upload();
 int iptables_fw_counters_update(void);
 
 /** @brief Fork an iptables command */
-int iptables_do_command(char *format, ...);
+int iptables_do_command(const char *format, ...);
 
 #endif /* _IPTABLES_H_ */

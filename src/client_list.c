@@ -98,7 +98,7 @@ client_list_init(void) {
  * @return Pointer to the client we just created
  */
 t_client         *
-_client_list_append(char *ip, char *mac, char *token) {
+_client_list_append(const char *ip, const char *mac, const char *token) {
   t_client         *client, *prevclient;
   s_config *config;
   int maxclients;
@@ -152,7 +152,7 @@ _client_list_append(char *ip, char *mac, char *token) {
  *  independent of ip and mac.
  */
 char *
-_client_list_make_auth_token(char* ip, char* mac) {
+_client_list_make_auth_token(const char* ip, const char* mac) {
   char * token;
 
   safe_asprintf(&token,"%04hx%04hx", rand16(), rand16());
@@ -167,7 +167,7 @@ _client_list_make_auth_token(char* ip, char* mac) {
  *  Return NULL if no new client entry can be created.
  */
 t_client *
-client_list_add_client(char *ip) {
+client_list_add_client(const char *ip) {
   
   t_client	*client;
   char	*mac, *token;
@@ -204,7 +204,7 @@ client_list_add_client(char *ip) {
  * @return Pointer to the client, or NULL if not found
  */
 t_client         *
-client_list_find(char *ip, char *mac) {
+client_list_find(const char *ip, const char *mac) {
   t_client         *ptr;
 
   ptr = firstclient;
@@ -225,7 +225,7 @@ client_list_find(char *ip, char *mac) {
  * @return Pointer to the client, or NULL if not found
  */
 t_client         *
-client_list_find_by_ip(char *ip) {
+client_list_find_by_ip(const char *ip) {
   t_client         *ptr;
 
   ptr = firstclient;
@@ -245,7 +245,7 @@ client_list_find_by_ip(char *ip) {
  * @return Pointer to the client, or NULL if not found
  */
 t_client         *
-client_list_find_by_mac(char *mac) {
+client_list_find_by_mac(const char *mac) {
   t_client         *ptr;
 
   ptr = firstclient;
@@ -263,7 +263,7 @@ client_list_find_by_mac(char *mac) {
  * @return Pointer to the client, or NULL if not found
  */
 t_client *
-client_list_find_by_token(char *token) {
+client_list_find_by_token(const char *token) {
   t_client         *ptr;
 
   ptr = firstclient;

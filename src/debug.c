@@ -29,43 +29,47 @@
 #include <syslog.h>
 #include <stdarg.h>
 #include <time.h>
+#include <unistd.h>
 
 #include "conf.h"
 
 /** @internal
 Do not use directly, use the debug macro */
 void
-_debug(char *filename, int line, int level, char *format, ...) {
-  char buf[28];
-  va_list vlist;
-  s_config *config = config_get_config();
-  time_t ts;
+_debug(char *filename, int line, int level, char *format, ...)
+{
+    char buf[28];
+    va_list vlist;
+    s_config *config = config_get_config();
+    time_t ts;
 
-  time(&ts);
+    time(&ts);
 
-  if (config->debuglevel >= level) {
-    va_start(vlist, format);
+    if (config->debuglevel >= level) {
 
-    if (level <= LOG_WARNING) {
-      fprintf(stderr, "[%d][%.24s][%u](%s:%d) ", level, ctime_r(&ts, buf), getpid(),
-	      filename, line);
-      vfprintf(stderr, format, vlist);
-      fputc('\n', stderr);
-    } else if (!config->daemon) {
-      fprintf(stdout, "[%d][%.24s][%u](%s:%d) ", level, ctime_r(&ts, buf), getpid(),
-	      filename, line);
-      vfprintf(stdout, format, vlist);
-      fputc('\n', stdout);
-      fflush(stdout);
+        if (level <= LOG_WARNING) {
+            fprintf(stderr, "[%d][%.24s][%u](%s:%d) ", level, ctime_r(&ts, buf), getpid(),
+			    filename, line);
+            va_start(vlist, format);
+            vfprintf(stderr, format, vlist);
+            va_end(vlist);
+            fputc('\n', stderr);
+        } else if (!config->daemon) {
+            fprintf(stdout, "[%d][%.24s][%u](%s:%d) ", level, ctime_r(&ts, buf), getpid(),
+			    filename, line);
+            va_start(vlist, format);
+            vfprintf(stdout, format, vlist);
+            va_end(vlist);
+            fputc('\n', stdout);
+            fflush(stdout);
+        }
+
+        if (config->log_syslog) {
+            openlog("wifidog", LOG_PID, config->syslog_facility);
+            va_start(vlist, format);
+            vsyslog(level, format, vlist);
+            va_end(vlist);
+            closelog();
+        }
     }
-
-    if (config->log_syslog) {
-      openlog("nodogsplash", LOG_PID, config->syslog_facility);
-      vsyslog(level, format, vlist);
-      closelog();
-    }
-
-    va_end(vlist);
-  }
 }
-

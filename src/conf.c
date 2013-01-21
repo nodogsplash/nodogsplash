@@ -170,6 +170,11 @@ static const struct {
 	{ NULL,                 oBadOption },
 };
 
+static void config_notnull(const void *parm, const char *parmname);
+static int parse_boolean_value(char *);
+static int _parse_firewall_rule(t_firewall_ruleset *ruleset, char *leftover);
+static void parse_firewall_ruleset(const char *, FILE *, const char *, int *);
+
 static OpCodes config_parse_opcode(const char *cp, const char *filename, int linenum);
 
 /** @internal
@@ -336,7 +341,7 @@ add_ruleset(char * rulesetname) {
 Parses an empty ruleset policy directive
 */
 static void
-parse_empty_ruleset_policy(char *ptr, char *filename, int lineno) {
+parse_empty_ruleset_policy(char *ptr, const char *filename, int lineno) {
   char *rulesetname, *policy;
   t_firewall_ruleset *ruleset;
 
@@ -391,7 +396,7 @@ parse_empty_ruleset_policy(char *ptr, char *filename, int lineno) {
 Parses firewall rule set information
 */
 static void
-parse_firewall_ruleset(char *rulesetname, FILE *fd, char *filename, int *linenum) {
+parse_firewall_ruleset(const char *rulesetname, FILE *fd, const char *filename, int *linenum) {
   char line[MAX_BUF], *p1, *p2;
   int  opcode;
   t_firewall_ruleset *ruleset;
@@ -482,8 +487,7 @@ _parse_firewall_rule(t_firewall_ruleset *ruleset, char *leftover) {
 
   /* lowercase everything */
   for (i = 0; *(leftover + i) != '\0'
-	 && (*(leftover + i) = tolower(*(leftover + i))); i++);
-	
+    && (*(leftover + i) = tolower((unsigned char)*(leftover + i))); i++);
   token = leftover;
   TO_NEXT_WORD(leftover, finished);
 	
@@ -521,7 +525,7 @@ _parse_firewall_rule(t_firewall_ruleset *ruleset, char *leftover) {
     port = leftover;
     TO_NEXT_WORD(leftover, finished);
     for (i = 0; *(port + i) != '\0'; i++)
-      if (!isdigit(*(port + i)) && (*(port + i) != ':'))
+      if (!isdigit((unsigned char)*(port + i)) && ((unsigned char)*(port + i) != ':'))
 	all_nums = 0; /*< No longer only digits or : */
     if (!all_nums) {
       debug(LOG_ERR, "Invalid port %s", port);
@@ -545,7 +549,7 @@ _parse_firewall_rule(t_firewall_ruleset *ruleset, char *leftover) {
     TO_NEXT_WORD(leftover, finished);
     all_nums = 1;
     for (i = 0; *(mask + i) != '\0'; i++)
-      if (!isdigit(*(mask + i)) && (*(mask + i) != '.')
+      if (!isdigit((unsigned char)*(mask + i)) && (*(mask + i) != '.')
 	  && (*(mask + i) != '/'))
 	all_nums = 0; /*< No longer only digits or . or / */
     if (!all_nums) {
@@ -584,12 +588,12 @@ _parse_firewall_rule(t_firewall_ruleset *ruleset, char *leftover) {
 }
 
 int
-is_empty_ruleset(char *rulesetname) {
+is_empty_ruleset (const char *rulesetname) {
   return get_ruleset_list(rulesetname) == NULL;
 }
 
 char *
-get_empty_ruleset_policy(char *rulesetname) {
+get_empty_ruleset_policy(const char *rulesetname) {
   t_firewall_ruleset *rs;
   rs = get_ruleset(rulesetname);
   if(rs == NULL) return NULL;
@@ -598,7 +602,7 @@ get_empty_ruleset_policy(char *rulesetname) {
 
 
 t_firewall_ruleset *
-get_ruleset(char *ruleset) {
+get_ruleset(const char *ruleset) {
   t_firewall_ruleset	*tmp;
 
   for (tmp = config.rulesets; tmp != NULL
@@ -608,7 +612,7 @@ get_ruleset(char *ruleset) {
 }
 
 t_firewall_rule *
-get_ruleset_list(char *ruleset) {
+get_ruleset_list(const char *ruleset) {
   t_firewall_ruleset	*tmp = get_ruleset(ruleset);
 
   if (tmp == NULL) return NULL;
@@ -649,7 +653,7 @@ _strip_whitespace(char* p1) {
 @param filename Full path of the configuration file to be read 
 */
 void
-config_read(char *filename) {
+config_read(const char *filename) {
   FILE *fd;
   char line[MAX_BUF], *s, *p1, *p2;
   int linenum = 0, opcode, value;
@@ -974,7 +978,7 @@ parse_boolean_value(char *line) {
 }
 
 /* Parse a string to see if it is valid decimal dotted quad IP V4 format */
-int check_ip_format(char *possibleip) {
+int check_ip_format(const char *possibleip) {
   unsigned int a1,a2,a3,a4;
   
   return (sscanf(possibleip,"%u.%u.%u.%u",&a1,&a2,&a3,&a4) == 4
@@ -1388,7 +1392,7 @@ config_validate(void)
     Verifies that a required parameter is not a null pointer
 */
 static void
-config_notnull(void *parm, char *parmname) {
+config_notnull(const void *parm, const char *parmname) {
   if (parm == NULL) {
     debug(LOG_ERR, "%s is not set", parmname);
     missing_parms = 1;

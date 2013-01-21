@@ -124,7 +124,6 @@ sigchld_handler(int s) {
 void
 termination_handler(int s) {
   static	pthread_mutex_t	sigterm_mutex = PTHREAD_MUTEX_INITIALIZER;
-  s_config *config = config_get_config();
 
   debug(LOG_NOTICE, "Handler for termination caught signal %d", s);
 
@@ -221,7 +220,6 @@ main_loop(void) {
   int msec;
   request *r;
   void **params;
-  FILE *fh;
   int* thread_serial_num_p;
 
   /* Set the time when nodogsplash started */

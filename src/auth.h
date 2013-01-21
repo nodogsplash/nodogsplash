@@ -40,6 +40,6 @@ typedef enum {
 void auth_client_action(char *ip, char *mac, t_authaction action);
 
 /** @brief Periodically check if connections expired */
-void thread_client_timeout_check(void *arg);
+void thread_client_timeout_check(const void *arg);
 
 #endif

@@ -51,7 +51,7 @@
 #include "client_list.h"
 #include "tc.h"
 
-static char * _iptables_compile(char *, char *, t_firewall_rule *);
+static char * _iptables_compile(const char *, char *, t_firewall_rule *);
 static int _iptables_append_ruleset(char *, char *, char *);
 static int _iptables_init_marks(void);
 
@@ -149,7 +149,7 @@ _iptables_check_mark_masking() {
 
 /** @internal */
 int
-iptables_do_command(char *format, ...) {
+iptables_do_command(const char *format, ...) {
   va_list vlist;
   char *fmt_cmd,
     *cmd;
@@ -172,7 +172,12 @@ iptables_do_command(char *format, ...) {
       /* iptables error code 4 indicates a resource problem that might 
        * be temporary. So we retry to insert the rule a few times. (Mitar) */ 
       sleep(1); 
-    } else { 
+    } else {
+		// If quiet, do not display the error
+        if (fw_quiet == 0)
+	      debug(LOG_ERR, "iptables command failed(%d): %s", rc, cmd);
+        else if (fw_quiet == 1)
+          debug(LOG_DEBUG, "iptables command failed(%d): %s", rc, cmd);
       break; 
     } 
   } 
@@ -194,7 +199,7 @@ iptables_do_command(char *format, ...) {
  * @arg rule Definition of a rule into a struct, from conf.c.
  */
 static char *
-_iptables_compile(char * table, char *chain, t_firewall_rule *rule) {
+_iptables_compile(const char * table, char *chain, t_firewall_rule *rule) {
   char	command[MAX_BUF],
     *mode;
     
@@ -658,9 +663,9 @@ iptables_fw_destroy(void) {
  */
 int
 iptables_fw_destroy_mention(
-		char * table,
-		char * chain,
-		char * mention
+		const char * table,
+		const char * chain,
+		const char * mention
 ) {
   FILE *p = NULL;
   char *command = NULL;
@@ -710,7 +715,7 @@ iptables_fw_destroy_mention(
 /** Insert or delete firewall mangle rules marking a client's packets.
  */
 int
-iptables_fw_access(t_authaction action, char *ip, char *mac) {
+iptables_fw_access(t_authaction action, const char *ip, const char *mac) {
   int rc;
 
   fw_quiet = 0;
@@ -848,13 +853,13 @@ iptables_fw_counters_update(void) {
 	debug(LOG_WARNING, "I was supposed to read an IP address but instead got [%s] - ignoring it", ip);
 	continue;
       }
-      debug(LOG_DEBUG, "Outgoing %s Bytes=%llu", ip, counter);
+	  debug(LOG_DEBUG, "Read outgoing traffic for %s: Bytes=%llu", ip, counter); 
       LOCK_CLIENT_LIST();
       if ((p1 = client_list_find_by_ip(ip))) {
 	if ((p1->counters.outgoing - p1->counters.outgoing_history) < counter) {
 	  p1->counters.outgoing = p1->counters.outgoing_history + counter;
 	  p1->counters.last_updated = time(NULL);
-	  debug(LOG_DEBUG, "%s - Updated counter.outgoing to %llu bytes", ip, counter);
+	  debug(LOG_DEBUG, "%s - Updated counter.outgoing to %llu bytes.  Updated last_updated to %d", ip, counter, p1->counters.last_updated);
 	}
       } else {
 	debug(LOG_WARNING, "Could not find %s in client list", ip);
@@ -887,7 +892,7 @@ iptables_fw_counters_update(void) {
 	debug(LOG_WARNING, "I was supposed to read an IP address but instead got [%s] - ignoring it", ip);
 	continue;
       }
-      debug(LOG_DEBUG, "Incoming %s Bytes=%llu", ip, counter);
+	  debug(LOG_DEBUG, "Read incoming traffic for %s: Bytes=%llu", ip, counter); 
       LOCK_CLIENT_LIST();
       if ((p1 = client_list_find_by_ip(ip))) {
 	if ((p1->counters.incoming - p1->counters.incoming_history) < counter) {

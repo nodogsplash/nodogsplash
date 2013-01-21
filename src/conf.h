@@ -30,11 +30,11 @@
 
 /*@{*/ 
 /** Defines */
-/** How many times we should try detecting the interface
- *  with the default route if it isn't up yet */
-#define NUM_EXT_INTERFACE_DETECT_RETRY 120
+/** How many times should we try detecting the interface with the default route
+ * (in seconds).  If set to 0, it will keep retrying forever */
+#define NUM_EXT_INTERFACE_DETECT_RETRY 0
 /** How long we should wait per try
- *  to detect the interface with the default route if it isn't up yet */
+ *  to detect the interface with the default route if it isn't up yet (interval in seconds) */
 #define EXT_INTERFACE_DETECT_RETRY_INTERVAL 1
 #define MAC_ALLOW 0 /** macmechanism to block MAC's unless allowed */
 #define MAC_BLOCK 1 /** macmechanism to allow MAC's unless blocked */
@@ -194,35 +194,30 @@ void config_init(void);
 void config_init_override(void);
 
 /** @brief Reads the configuration file */
-void config_read(char *filename);
+void config_read(const char *filename);
 
 /** @brief Check that the configuration is valid */
 void config_validate(void);
 
 /** @brief Fetch a firewall rule list, given name of the ruleset. */
-t_firewall_rule *get_ruleset_list(char *);
+t_firewall_rule *get_ruleset_list(const char *);
 
 /** @brief Fetch a firewall ruleset, given its name. */
-t_firewall_ruleset *get_ruleset(char *);
+t_firewall_ruleset *get_ruleset(const char *);
 
 /** @brief Add a firewall ruleset with the given name, and return it. */
 static t_firewall_ruleset *add_ruleset(char *);
 
 /** @brief Say if a named firewall ruleset is empty. */
-int is_empty_ruleset(char *);
+int is_empty_ruleset(const char *);
 
 /** @brief Get a named empty firewall ruleset policy, given ruleset name. */
-char * get_empty_ruleset_policy(char *);
+char * get_empty_ruleset_policy(const char *);
 
-static void config_notnull(void *parm, char *parmname);
-static int parse_boolean_value(char *);
-static int _parse_firewall_rule(t_firewall_ruleset *ruleset, char *leftover);
-static void parse_firewall_ruleset(char *, FILE *, char *, int *);
-static void parse_empty_ruleset_policy(char *, char *, int);
 void parse_trusted_mac_list(char *);
 void parse_blocked_mac_list(char *);
 void parse_allowed_mac_list(char *);
-int check_ip_format(char *);
+int check_ip_format(const char *);
 int check_mac_format(char *);
 
 /** config API, used in commandline.c */

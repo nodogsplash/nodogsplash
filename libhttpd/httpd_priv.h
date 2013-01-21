@@ -14,7 +14,7 @@
 ** connection with the use or performance of this software.
 **
 **
-** $Id: httpd_priv.h 274 2004-11-17 23:54:25Z alexcv $
+** $Id: httpd_priv.h 1345 2008-04-21 15:09:50Z acv $
 **
 */
 
@@ -49,7 +49,7 @@ extern "C" {
 #define LEVEL_ERROR	"error"
 
 char * _httpd_unescape __ANSI_PROTO((char*));
-char *_httpd_escape __ANSI_PROTO((char*));
+char *_httpd_escape __ANSI_PROTO((const char*));
 char _httpd_from_hex  __ANSI_PROTO((char));
 
 

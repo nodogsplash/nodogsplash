@@ -14,7 +14,7 @@
 ** connection with the use or performance of this software.
 **
 **
-** $Id: httpd.h 274 2004-11-17 23:54:25Z alexcv $
+** $Id: httpd.h 1368 2008-09-30 09:15:19Z wichert $
 **
 */
 
@@ -32,12 +32,18 @@
 
 #define LIB_HTTPD_H 1
 
+#include <sys/time.h>
+
 #if !defined(__ANSI_PROTO)
 #if defined(_WIN32) || defined(__STDC__) || defined(__cplusplus)
 #  define __ANSI_PROTO(x)       x
 #else
 #  define __ANSI_PROTO(x)       ()
 #endif
+#endif
+
+#ifndef u_int
+#include <sys/types.h>
 #endif
 
 #ifdef __cplusplus
@@ -94,18 +100,21 @@ extern char 	LIBHTTPD_VERSION[],
 */
 
 typedef	struct {
-  int	method,
-    contentLength,
-    authLength;
-    char	path[HTTP_MAX_URL],
-    host[HTTP_MAX_URL], /* acv@acv.ca/wifidog: Added decoding
-			   of host: header if present. */
-    userAgent[HTTP_MAX_URL],
-    referer[HTTP_MAX_URL],
-    ifModified[HTTP_MAX_URL],
-    contentType[HTTP_MAX_URL],
-    authUser[HTTP_MAX_AUTH],
-    authPassword[HTTP_MAX_AUTH];
+	int	method,
+		contentLength,
+		authLength;
+	char	path[HTTP_MAX_URL],
+		query[HTTP_MAX_URL],
+	        host[HTTP_MAX_URL], /* acv@acv.ca/wifidog: Added decoding
+				       of host: header if present. */
+	        ifModified[HTTP_MAX_URL];
+#if(0)
+		userAgent[HTTP_MAX_URL],
+		referer[HTTP_MAX_URL],
+		contentType[HTTP_MAX_URL],
+#endif
+	char	authUser[HTTP_MAX_AUTH];
+	char	authPassword[HTTP_MAX_AUTH];
 } httpReq;
 
 
@@ -191,43 +200,43 @@ int httpdAddFileContent __ANSI_PROTO((httpd*,char*,char*,int,int(*)(),char*));
 int httpdAddStaticContent __ANSI_PROTO((httpd*,char*,char*,int,int(*)(),char*));
 int httpdAddWildcardContent __ANSI_PROTO((httpd*,char*,int(*)(),char*));
 int httpdAddCWildcardContent __ANSI_PROTO((httpd*,char*,int(*)(),void(*)()));
-int httpdAddVariable __ANSI_PROTO((request*, char*, char*));
-
+int httpdAddVariable __ANSI_PROTO((request*, const char*, const char*));
 request *httpdGetConnection __ANSI_PROTO((httpd*, struct timeval*));
 int httpdReadRequest __ANSI_PROTO((httpd*, request*));
 int httpdCheckAcl __ANSI_PROTO((httpd*, request *, httpAcl*));
 int httpdAddC404Content __ANSI_PROTO((httpd*,void(*)()));
 
 char *httpdRequestMethodName __ANSI_PROTO((request*));
-char *httpdUrlEncode __ANSI_PROTO((char *));
-char *httpdUrlDecode __ANSI_PROTO((char *));
+char *httpdUrlEncode __ANSI_PROTO((const char *));
 
-void httpdAddHeader __ANSI_PROTO((request*, char*));
-void httpdSetContentType __ANSI_PROTO((request*, char*));
-void httpdSetResponse __ANSI_PROTO((request*, char*));
+void httpdAddHeader __ANSI_PROTO((request*, const char*));
+void httpdSetContentType __ANSI_PROTO((request*, const char*));
+void httpdSetResponse __ANSI_PROTO((request*, const char*));
 void httpdEndRequest __ANSI_PROTO((request*));
 
 httpd *httpdCreate __ANSI_PROTO(());
 void httpdFreeVariables __ANSI_PROTO((request*));
 void httpdDumpVariables __ANSI_PROTO((request*));
-void httpdOutput __ANSI_PROTO((request*, char*));
-void httpdPrintf __ANSI_PROTO((request*, char*, ...));
+void httpdOutput __ANSI_PROTO((request*, const char*));
+void httpdPrintf __ANSI_PROTO((request*, const char*, ...));
 void httpdProcessRequest __ANSI_PROTO((httpd*, request *));
 void httpdSendHeaders __ANSI_PROTO((request*));
-void httpdSetFileBase __ANSI_PROTO((httpd*, char*));
-void httpdSetCookie __ANSI_PROTO((request*, char*, char*));
+void httpdSetFileBase __ANSI_PROTO((httpd*, const char*));
+void httpdSetCookie __ANSI_PROTO((request*, const char*, const char*));
 
 void httpdSetErrorLog __ANSI_PROTO((httpd*, FILE*));
 void httpdSetAccessLog __ANSI_PROTO((httpd*, FILE*));
 void httpdSetDefaultAcl __ANSI_PROTO((httpd*, httpAcl*));
 
-httpVar	*httpdGetVariableByName __ANSI_PROTO((request*, char*));
-httpVar	*httpdGetVariableByPrefix __ANSI_PROTO((request*, char*));
-httpVar	*httpdGetVariableByPrefixedName __ANSI_PROTO((request*, char*, char*));
-httpVar *httpdGetNextVariableByPrefix __ANSI_PROTO((httpVar*, char*));
+httpVar	*httpdGetVariableByName __ANSI_PROTO((request*, const char*));
+httpVar	*httpdGetVariableByPrefix __ANSI_PROTO((request*, const char*));
+httpVar	*httpdGetVariableByPrefixedName __ANSI_PROTO((request*, const char*, const char*));
+httpVar *httpdGetNextVariableByPrefix __ANSI_PROTO((httpVar*, const char*));
 
 httpAcl *httpdAddAcl __ANSI_PROTO((httpd*, httpAcl*, char*, int));
 
+void httpdAuthenticate __ANSI_PROTO((request*, const char*));
+void httpdForceAuthenticate __ANSI_PROTO((request*, const char*));
 
 /***********************************************************************
 ** Standard header file footer.  
