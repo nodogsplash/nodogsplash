@@ -18,6 +18,6 @@
 **
 */
 
-char    LIBHTTPD_VERSION[] =  "1.3",
+char    LIBHTTPD_VERSION[] =  "1.4",
         LIBHTTPD_VENDOR[] =   "Hughes Technologies Pty Ltd";
 
