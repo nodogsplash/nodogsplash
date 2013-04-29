@@ -53,6 +53,13 @@
 extern pthread_mutex_t	client_list_mutex;
 
 
+/* response handler for HTTP 405 Method Not Allowed */
+void
+http_nodogsplash_405(request *r) {
+  httpdSetResponse(r, "405 Method Not Allowed");
+  httpdPrintf(r, "405 Method Not Allowed");
+}
+
 void 
 http_callback_about(httpd *webserver, request *r) {
   http_nodogsplash_serve_info(r, "Nodogsplash Info",
@@ -104,6 +111,11 @@ http_nodogsplash_first_contact(request *r) {
   s_config *config;
   char *redir;
 
+  /* only allow GET requests */
+  if (r->request.method != HTTP_GET) {
+    http_nodogsplash_405(r);
+    return;
+  }
   config = config_get_config();
 
   client = http_nodogsplash_add_client(r);

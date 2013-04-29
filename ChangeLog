@@ -1,3 +1,6 @@
+
+	* Return a 405 for pre-authenticated non GET requests [fred@slwifi.com]
+
 2007-05-01
 	* Development of nodogsplash starts,  based on WifiDog 1.1.3_beta6
 	
