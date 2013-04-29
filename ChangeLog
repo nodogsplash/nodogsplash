@@ -1,4 +1,6 @@
 
+	* merge updates from Wifidog (1.1.3_beta6 @1162) up to @1464
+		* excluding commit [1375] containing feature from ticket #466
 	* Return a 405 for pre-authenticated non GET requests [fred@slwifi.com]
 
 2007-05-01
