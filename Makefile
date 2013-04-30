@@ -1,6 +1,6 @@
 
 CC=gcc
-CFLAGS=-O2 -Isrc -Ilibhttpd -fhonour-copts
+CFLAGS=-O2 -Isrc -Ilibhttpd
 #CFLAGS+=-Wall -Wwrite-strings -pedantic -std=gnu99
 LDFLAGS=-lpthread
 
@@ -11,8 +11,6 @@ NDS_OBJS=src/auth.o src/client_list.o src/commandline.o src/conf.o \
 LIBHTTPD_OBJS=libhttpd/api.o libhttpd/ip_acl.o \
 	libhttpd/protocol.o libhttpd/version.o
 
-OBJS=$(NDS_OBJS) $(LIBHTTPD_OBJS)
-
 .PHONY: all clean install
 
 all: nodogsplash ndsctl
@@ -20,7 +18,7 @@ all: nodogsplash ndsctl
 %.o : %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-nodogsplash: $(OBJS)
+nodogsplash: $(NDS_OBJS) $(LIBHTTPD_OBJS)
 	$(CC) $(LDFLAGS) -o nodogsplash $+
 
 ndsctl: src/ndsctl.o
