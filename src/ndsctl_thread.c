@@ -306,7 +306,6 @@ ndsctl_auth(int fd, char *arg)
 	debug(LOG_DEBUG, "Exiting ndsctl_auth...");
 }
 
-
 static void
 ndsctl_deauth(int fd, char *arg)
 {
@@ -345,7 +344,6 @@ ndsctl_deauth(int fd, char *arg)
 static void
 ndsctl_block(int fd, char *arg)
 {
-
 	debug(LOG_DEBUG, "Entering ndsctl_block...");
 
 	LOCK_CONFIG();
@@ -365,7 +363,6 @@ ndsctl_block(int fd, char *arg)
 static void
 ndsctl_unblock(int fd, char *arg)
 {
-
 	debug(LOG_DEBUG, "Entering ndsctl_unblock...");
 
 	LOCK_CONFIG();
@@ -385,7 +382,6 @@ ndsctl_unblock(int fd, char *arg)
 static void
 ndsctl_allow(int fd, char *arg)
 {
-
 	debug(LOG_DEBUG, "Entering ndsctl_allow...");
 
 	LOCK_CONFIG();
@@ -405,7 +401,6 @@ ndsctl_allow(int fd, char *arg)
 static void
 ndsctl_unallow(int fd, char *arg)
 {
-
 	debug(LOG_DEBUG, "Entering ndsctl_unallow...");
 
 	LOCK_CONFIG();
@@ -425,7 +420,6 @@ ndsctl_unallow(int fd, char *arg)
 static void
 ndsctl_trust(int fd, char *arg)
 {
-
 	debug(LOG_DEBUG, "Entering ndsctl_trust...");
 
 	LOCK_CONFIG();
@@ -445,7 +439,6 @@ ndsctl_trust(int fd, char *arg)
 static void
 ndsctl_untrust(int fd, char *arg)
 {
-
 	debug(LOG_DEBUG, "Entering ndsctl_untrust...");
 
 	LOCK_CONFIG();
@@ -465,7 +458,6 @@ ndsctl_untrust(int fd, char *arg)
 static void
 ndsctl_loglevel(int fd, char *arg)
 {
-
 	int level = atoi(arg);
 
 	debug(LOG_DEBUG, "Entering ndsctl_loglevel...");
@@ -489,7 +481,6 @@ ndsctl_loglevel(int fd, char *arg)
 static void
 ndsctl_password(int fd, char *arg)
 {
-
 	debug(LOG_DEBUG, "Entering ndsctl_password...");
 
 	LOCK_CONFIG();
@@ -511,7 +502,6 @@ ndsctl_password(int fd, char *arg)
 static void
 ndsctl_username(int fd, char *arg)
 {
-
 	debug(LOG_DEBUG, "Entering ndsctl_username...");
 
 	LOCK_CONFIG();
@@ -529,5 +519,3 @@ ndsctl_username(int fd, char *arg)
 
 	debug(LOG_DEBUG, "Exiting ndsctl_username.");
 }
-
-

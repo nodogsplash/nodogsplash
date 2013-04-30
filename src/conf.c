@@ -121,54 +121,54 @@ static const struct {
 	OpCodes opcode;
 	int required;
 } keywords[] = {
-	{ "daemon",             oDaemon },
-	{ "debuglevel",         oDebugLevel },
-	{ "maxclients",         oMaxClients },
-	{ "externalinterface",  oExternalInterface },
-	{ "gatewayname",        oGatewayName },
-	{ "gatewayinterface",   oGatewayInterface },
-	{ "gatewayiprange",     oGatewayIPRange },
-	{ "gatewayaddress",     oGatewayAddress },
-	{ "gatewayport",        oGatewayPort },
-	{ "remoteauthenticatoraction",     oRemoteAuthenticatorAction },
-	{ "passwordauthentication",         oPasswordAuthentication },
-	{ "usernameauthentication",         oUsernameAuthentication },
-	{ "passwordattempts",         oPasswordAttempts },
-	{ "username",           oUsername },
-	{ "password",           oPassword },
-	{ "webroot",      	oWebRoot },
-	{ "splashpage",      	oSplashPage },
-	{ "imagesdir",   	oImagesDir },
-	{ "pagesdir",   	oPagesDir },
-	{ "redirectURL",      	oRedirectURL },
-	{ "clientidletimeout",  oClientIdleTimeout },
+	{ "daemon", oDaemon },
+	{ "debuglevel", oDebugLevel },
+	{ "maxclients", oMaxClients },
+	{ "externalinterface", oExternalInterface },
+	{ "gatewayname", oGatewayName },
+	{ "gatewayinterface", oGatewayInterface },
+	{ "gatewayiprange", oGatewayIPRange },
+	{ "gatewayaddress", oGatewayAddress },
+	{ "gatewayport", oGatewayPort },
+	{ "remoteauthenticatoraction", oRemoteAuthenticatorAction },
+	{ "passwordauthentication", oPasswordAuthentication },
+	{ "usernameauthentication", oUsernameAuthentication },
+	{ "passwordattempts", oPasswordAttempts },
+	{ "username", oUsername },
+	{ "password", oPassword },
+	{ "webroot", oWebRoot },
+	{ "splashpage", oSplashPage },
+	{ "imagesdir", oImagesDir },
+	{ "pagesdir", oPagesDir },
+	{ "redirectURL", oRedirectURL },
+	{ "clientidletimeout", oClientIdleTimeout },
 	{ "clientforcetimeout", oClientForceTimeout },
-	{ "checkinterval",      oCheckInterval },
+	{ "checkinterval", oCheckInterval },
 	{ "authenticateimmediately",	oAuthenticateImmediately },
-	{ "setmss",		oSetMSS },
-	{ "mssvalue",		oMSSValue },
+	{ "setmss", oSetMSS },
+	{ "mssvalue", oMSSValue },
 	{ "trafficcontrol",	oTrafficControl },
-	{ "downloadlimit",	oDownloadLimit },
-	{ "uploadlimit",	oUploadLimit },
-	{ "downloadimq",	oDownloadIMQ },
-	{ "uploadimq",		oUploadIMQ },
-	{ "syslogfacility", 	oSyslogFacility },
-	{ "syslogfacility", 	oSyslogFacility },
-	{ "ndsctlsocket", 	oNdsctlSocket },
-	{ "decongesthttpdthreads",	oDecongestHttpdThreads },
-	{ "httpdthreadthreshold",	oHttpdThreadThreshold },
-	{ "httpdthreaddelayms",		oHttpdThreadDelayMS },
-	{ "firewallruleset",	oFirewallRuleSet },
-	{ "firewallrule",	oFirewallRule },
-	{ "emptyrulesetpolicy",	oEmptyRuleSetPolicy },
-	{ "trustedmaclist",	oTrustedMACList },
-	{ "blockedmaclist",	oBlockedMACList },
-	{ "allowedmaclist",	oAllowedMACList },
-	{ "MACmechanism",	oMACmechanism },
-	{ "FW_MARK_AUTHENTICATED",	oFWMarkAuthenticated },
-	{ "FW_MARK_TRUSTED",	oFWMarkTrusted },
-	{ "FW_MARK_BLOCKED",	oFWMarkBlocked },
-	{ NULL,                 oBadOption },
+	{ "downloadlimit", oDownloadLimit },
+	{ "uploadlimit", oUploadLimit },
+	{ "downloadimq", oDownloadIMQ },
+	{ "uploadimq", oUploadIMQ },
+	{ "syslogfacility", oSyslogFacility },
+	{ "syslogfacility", oSyslogFacility },
+	{ "ndsctlsocket", oNdsctlSocket },
+	{ "decongesthttpdthreads", oDecongestHttpdThreads },
+	{ "httpdthreadthreshold", oHttpdThreadThreshold },
+	{ "httpdthreaddelayms", oHttpdThreadDelayMS },
+	{ "firewallruleset", oFirewallRuleSet },
+	{ "firewallrule", oFirewallRule },
+	{ "emptyrulesetpolicy", oEmptyRuleSetPolicy },
+	{ "trustedmaclist", oTrustedMACList },
+	{ "blockedmaclist", oBlockedMACList },
+	{ "allowedmaclist", oAllowedMACList },
+	{ "MACmechanism", oMACmechanism },
+	{ "FW_MARK_AUTHENTICATED", oFWMarkAuthenticated },
+	{ "FW_MARK_TRUSTED", oFWMarkTrusted },
+	{ "FW_MARK_BLOCKED", oFWMarkBlocked },
+	{ NULL, oBadOption },
 };
 
 static void config_notnull(const void *parm, const char *parmname);
@@ -262,7 +262,6 @@ config_init(void)
 	rs->emptyrulesetpolicy = safe_strdup(DEFAULT_EMPTY_AUTHENTICATED_USERS_POLICY);
 	rs = add_ruleset("preauthenticated-users");
 	rs->emptyrulesetpolicy = safe_strdup(DEFAULT_EMPTY_PREAUTHENTICATED_USERS_POLICY);
-
 }
 
 /**
@@ -319,7 +318,6 @@ Advance to the next word
 static t_firewall_ruleset *
 add_ruleset(char * rulesetname)
 {
-
 	t_firewall_ruleset * ruleset;
 
 	ruleset = get_ruleset(rulesetname);
@@ -339,7 +337,6 @@ add_ruleset(char * rulesetname)
 	config.rulesets = ruleset;
 
 	return ruleset;
-
 }
 
 
@@ -394,7 +391,6 @@ parse_empty_ruleset_policy(char *ptr, const char *filename, int lineno)
 	}
 
 	debug(LOG_DEBUG, "Set EmptyRuleSetPolicy for %s to %s", rulesetname, policy);
-
 }
 
 
@@ -469,7 +465,6 @@ parse_firewall_ruleset(const char *rulesetname, FILE *fd, const char *filename, 
 			exit(-1);
 			break;
 		}
-
 	}
 	debug(LOG_DEBUG, "FirewallRuleSet %s parsed.", rulesetname);
 }
@@ -661,7 +656,6 @@ _strip_whitespace(char* p1)
 
 	return p1;
 }
-
 
 /**
 @param filename Full path of the configuration file to be read
@@ -967,8 +961,6 @@ config_read(const char *filename)
 	fclose(fd);
 
 	debug(LOG_INFO, "Done reading configuration file '%s'", filename);
-
-
 }
 
 /** @internal
@@ -1000,7 +992,6 @@ int check_ip_format(const char *possibleip)
 
 	return (sscanf(possibleip,"%u.%u.%u.%u",&a1,&a2,&a3,&a4) == 4
 			&& a1 < 256 && a2 < 256 && a3 < 256 && a4 < 256);
-
 }
 
 
@@ -1012,12 +1003,10 @@ int check_mac_format(char *possiblemac)
 		sscanf(possiblemac,
 			   "%2[A-Fa-f0-9]:%2[A-Fa-f0-9]:%2[A-Fa-f0-9]:%2[A-Fa-f0-9]:%2[A-Fa-f0-9]:%2[A-Fa-f0-9]",
 			   hex2,hex2,hex2,hex2,hex2,hex2) == 6;
-
 }
 
 int add_to_trusted_mac_list(char *possiblemac)
 {
-
 	char *mac = NULL;
 	t_MAC *p = NULL;
 
@@ -1048,7 +1037,6 @@ int add_to_trusted_mac_list(char *possiblemac)
 	debug(LOG_INFO, "Added MAC address [%s] to trusted list", mac);
 	free(mac);
 	return 0;
-
 }
 
 
@@ -1057,7 +1045,6 @@ int add_to_trusted_mac_list(char *possiblemac)
  */
 int remove_from_trusted_mac_list(char *possiblemac)
 {
-
 	char *mac = NULL;
 	t_MAC **p = NULL;
 	t_MAC *del = NULL;
@@ -1097,7 +1084,6 @@ int remove_from_trusted_mac_list(char *possiblemac)
 	debug(LOG_INFO, "MAC address [%s] not on  trusted list", mac);
 	free(mac);
 	return -1;
-
 }
 
 
@@ -1129,7 +1115,6 @@ void parse_trusted_mac_list(char *ptr)
  */
 int add_to_blocked_mac_list(char *possiblemac)
 {
-
 	char *mac = NULL;
 	t_MAC *p = NULL;
 
@@ -1166,7 +1151,6 @@ int add_to_blocked_mac_list(char *possiblemac)
 	debug(LOG_INFO, "Added MAC address [%s] to blocked list", mac);
 	free(mac);
 	return 0;
-
 }
 
 
@@ -1175,7 +1159,6 @@ int add_to_blocked_mac_list(char *possiblemac)
  */
 int remove_from_blocked_mac_list(char *possiblemac)
 {
-
 	char *mac = NULL;
 	t_MAC **p = NULL;
 	t_MAC *del = NULL;
@@ -1221,7 +1204,6 @@ int remove_from_blocked_mac_list(char *possiblemac)
 	debug(LOG_INFO, "MAC address [%s] not on  blocked list", mac);
 	free(mac);
 	return -1;
-
 }
 
 
@@ -1250,7 +1232,6 @@ void parse_blocked_mac_list(char *ptr)
  */
 int add_to_allowed_mac_list(char *possiblemac)
 {
-
 	char *mac = NULL;
 	t_MAC *p = NULL;
 
@@ -1287,7 +1268,6 @@ int add_to_allowed_mac_list(char *possiblemac)
 	debug(LOG_INFO, "Added MAC address [%s] to allowed list", mac);
 	free(mac);
 	return 0;
-
 }
 
 
@@ -1296,7 +1276,6 @@ int add_to_allowed_mac_list(char *possiblemac)
  */
 int remove_from_allowed_mac_list(char *possiblemac)
 {
-
 	char *mac = NULL;
 	t_MAC **p = NULL;
 	t_MAC *del = NULL;
@@ -1342,10 +1321,7 @@ int remove_from_allowed_mac_list(char *possiblemac)
 	debug(LOG_INFO, "MAC address [%s] not on  allowed list", mac);
 	free(mac);
 	return -1;
-
 }
-
-
 
 /* Given a pointer to a comma or whitespace delimited sequence of
  * MAC addresses, add each MAC address to config.allowedmaclist

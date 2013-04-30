@@ -53,9 +53,9 @@ extern int current_httpd_threads;
 void
 thread_httpd(void *args)
 {
-	void	**params;
-	httpd	*webserver;
-	request	*r;
+	void **params;
+	httpd *webserver;
+	request *r;
 	int serialnum;
 
 	current_httpd_threads++;

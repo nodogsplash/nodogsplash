@@ -156,9 +156,7 @@ execute(char *cmd_line, int quiet)
 		}
 
 		return retval;
-
 	}
-
 }
 
 struct in_addr *
@@ -385,7 +383,6 @@ char * format_time(unsigned long int secs)
 
 	safe_asprintf(&str,"%ud %uh %um %us", days, hours, minutes, seconds);
 	return str;
-
 }
 
 /* Caller must free. */
@@ -660,7 +657,6 @@ char * get_clients_text()
 
 	/* Update the client's counters so info is current */
 	iptables_fw_counters_update();
-
 
 	LOCK_CLIENT_LIST();
 

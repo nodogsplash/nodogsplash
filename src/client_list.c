@@ -59,7 +59,7 @@ pthread_mutex_t client_list_mutex = PTHREAD_MUTEX_INITIALIZER;
 /** @internal
  * Holds a pointer to the first element of the list
  */
-t_client         *firstclient = NULL;
+t_client *firstclient = NULL;
 
 /** Return current length of the client list
  */
@@ -87,7 +87,6 @@ client_list_init(void)
 	client_count = 0;
 }
 
-
 /** @internal
  * Given IP, MAC, and client token, appends a new entry
  * to the end of the client list and returns a pointer to the new entry.
@@ -102,7 +101,7 @@ client_list_init(void)
 t_client         *
 _client_list_append(const char *ip, const char *mac, const char *token)
 {
-	t_client         *client, *prevclient;
+	t_client *client, *prevclient;
 	s_config *config;
 	int maxclients;
 
@@ -173,10 +172,9 @@ _client_list_make_auth_token(const char* ip, const char* mac)
 t_client *
 client_list_add_client(const char *ip)
 {
-
-	t_client	*client;
-	char	*mac, *token;
-	s_config	*config;
+	t_client *client;
+	char *mac, *token;
+	s_config *config;
 
 	if(!check_ip_format(ip)) {
 		/* Inappropriate format in IP address */
@@ -208,10 +206,10 @@ client_list_add_client(const char *ip)
  * @param mac MAC we are looking for in the linked list
  * @return Pointer to the client, or NULL if not found
  */
-t_client         *
+t_client *
 client_list_find(const char *ip, const char *mac)
 {
-	t_client         *ptr;
+	t_client *ptr;
 
 	ptr = firstclient;
 	while (NULL != ptr) {
@@ -230,10 +228,10 @@ client_list_find(const char *ip, const char *mac)
  * @param ip IP we are looking for in the linked list
  * @return Pointer to the client, or NULL if not found
  */
-t_client         *
+t_client *
 client_list_find_by_ip(const char *ip)
 {
-	t_client         *ptr;
+	t_client *ptr;
 
 	ptr = firstclient;
 	while (NULL != ptr) {
@@ -251,10 +249,10 @@ client_list_find_by_ip(const char *ip)
  * @param mac Mac we are looking for in the linked list
  * @return Pointer to the client, or NULL if not found
  */
-t_client         *
+t_client *
 client_list_find_by_mac(const char *mac)
 {
-	t_client         *ptr;
+	t_client *ptr;
 
 	ptr = firstclient;
 	while (NULL != ptr) {
@@ -273,7 +271,7 @@ client_list_find_by_mac(const char *mac)
 t_client *
 client_list_find_by_token(const char *token)
 {
-	t_client         *ptr;
+	t_client *ptr;
 
 	ptr = firstclient;
 	while (NULL != ptr) {
@@ -294,7 +292,6 @@ client_list_find_by_token(const char *token)
 void
 _client_list_free_node(t_client * client)
 {
-
 	if (client->mac != NULL)
 		free(client->mac);
 
@@ -317,7 +314,7 @@ _client_list_free_node(t_client * client)
 void
 client_list_delete(t_client * client)
 {
-	t_client         *ptr;
+	t_client *ptr;
 
 	ptr = firstclient;
 
@@ -342,9 +339,6 @@ client_list_delete(t_client * client)
 			ptr->next = client->next;
 			_client_list_free_node(client);
 			client_count--;
-
-
 		}
 	}
 }
-

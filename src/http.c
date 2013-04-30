@@ -49,7 +49,7 @@
 #include "util.h"
 
 
-extern pthread_mutex_t	client_list_mutex;
+extern pthread_mutex_t client_list_mutex;
 
 
 /* response handler for HTTP 405 Method Not Allowed */
@@ -79,26 +79,22 @@ http_callback_status(httpd *webserver, request *r)
 	free(prestatus);
 }
 
-
 /** The 404 handler is one way a client can first hit nodogsplash.
  */
 void
 http_nodogsplash_callback_404(httpd *webserver, request *r)
 {
-
 	debug(LOG_INFO, "Capturing as 404 request from %s for [%s%s]",
 		  r->clientAddr, r->request.host, r->request.path);
 
 	http_nodogsplash_first_contact(r);
 }
 
-
 /** The index handler is one way a client can first hit nodogsplash.
  */
 void
 http_nodogsplash_callback_index(httpd *webserver, request *r)
 {
-
 	debug(LOG_INFO, "Capturing index request from %s for [%s%s]",
 		  r->clientAddr, r->request.host, r->request.path);
 
@@ -142,10 +138,7 @@ http_nodogsplash_first_contact(request *r)
 	}
 
 	http_nodogsplash_free_authtarget(authtarget);
-
 }
-
-
 
 /** The multipurpose authentication action handler
  */
@@ -231,7 +224,6 @@ http_nodogsplash_callback_action(request *r,
 			  ip, mac, authtarget->info);
 	}
 
-
 	/* take action */
 	switch(action) {
 	case AUTH_MAKE_AUTHENTICATED:
@@ -250,7 +242,6 @@ http_nodogsplash_callback_action(request *r,
 	free(mac);
 	free(clienttoken);
 	return;
-
 }
 
 /** The auth callback responds to a request to serve from the authdir */
@@ -272,7 +263,6 @@ http_nodogsplash_callback_auth(httpd *webserver, request *r)
 	http_nodogsplash_free_authtarget(authtarget);
 }
 
-
 /** The deny callback responds to a request to serve from the denydir */
 void
 http_nodogsplash_callback_deny(httpd *webserver, request *r)
@@ -284,8 +274,6 @@ http_nodogsplash_callback_deny(httpd *webserver, request *r)
 	http_nodogsplash_callback_action (r,authtarget,AUTH_MAKE_DEAUTHENTICATED );
 	http_nodogsplash_free_authtarget(authtarget);
 }
-
-
 
 /**
  *  Add client making a request to client list.
@@ -303,8 +291,6 @@ http_nodogsplash_add_client(request *r)
 	UNLOCK_CLIENT_LIST();
 	return client;
 }
-
-
 
 void
 http_nodogsplash_redirect_remote_auth(request *r, t_auth_target *authtarget)
@@ -345,7 +331,6 @@ http_nodogsplash_serve_splash(request *r, t_auth_target *authtarget)
 	char *splashfilename;
 	FILE *fd;
 	s_config	*config;
-
 
 	config = config_get_config();
 
@@ -399,7 +384,6 @@ http_nodogsplash_serve_splash(request *r, t_auth_target *authtarget)
 	}
 
 	free(splashfilename);
-
 }
 
 /* Pipe the info page from the info skeleton page file.
@@ -447,8 +431,6 @@ http_nodogsplash_serve_info(request *r, char *title, char *content)
 	free(infoskelfilename);
 }
 
-
-
 void
 http_nodogsplash_redirect(request *r, char *url)
 {
@@ -461,7 +443,6 @@ http_nodogsplash_redirect(request *r, char *url)
 	httpdPrintf(r, "<html><head></head><body><a href='%s'>Click here to continue to<br>%s</a></body></html>",url,url);
 
 	free(header);
-
 }
 
 /**
@@ -476,7 +457,6 @@ http_nodogsplash_decode_authtarget(request *r)
 	httpVar *var;
 	t_auth_target *authtarget;
 	char *token=NULL, *redir=NULL;
-
 
 	var = httpdGetVariableByName(r,"tok");
 	if(var && var->value) {
@@ -507,11 +487,8 @@ http_nodogsplash_decode_authtarget(request *r)
 		authtarget->info = safe_strdup(var->value);
 	}
 
-
 	return authtarget;
-
 }
-
 
 /* Allocate and return a pointer to a string that is the redirect URL.
  * Caller must free.
@@ -574,11 +551,9 @@ http_nodogsplash_make_authtarget(char* token, char* redir)
 	return authtarget;
 }
 
-
 void
 http_nodogsplash_free_authtarget(t_auth_target* authtarget)
 {
-
 	if(authtarget->ip) free(authtarget->ip);
 	if(authtarget->authdir) free(authtarget->authdir);
 	if(authtarget->denydir) free(authtarget->denydir);
@@ -591,7 +566,6 @@ http_nodogsplash_free_authtarget(t_auth_target* authtarget)
 	if(authtarget->password) free(authtarget->password);
 	if(authtarget->info) free(authtarget->info);
 	free(authtarget);
-
 }
 
 /** Perform username/password check if configured to use it.
@@ -663,6 +637,4 @@ http_nodogsplash_check_userpass(request *r, t_auth_target *authtarget)
 		  authtarget->password);
 	free(mac);
 	return 0;
-
 }
-

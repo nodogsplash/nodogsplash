@@ -78,7 +78,6 @@ static char* markmask = "";
 int
 _iptables_init_marks()
 {
-
 	/* Check FW_MARK values are distinct.  */
 	if (FW_MARK_BLOCKED == FW_MARK_TRUSTED ||
 			FW_MARK_TRUSTED == FW_MARK_AUTHENTICATED ||
@@ -146,7 +145,6 @@ _iptables_check_mark_masking()
 	fw_quiet = 0; /* restore verbosity */
 
 	return 0;
-
 }
 
 /** @internal */
@@ -154,8 +152,7 @@ int
 iptables_do_command(const char *format, ...)
 {
 	va_list vlist;
-	char *fmt_cmd,
-		 *cmd;
+	char *fmt_cmd, *cmd;
 	int rc;
 	int i;
 
@@ -199,8 +196,8 @@ iptables_do_command(const char *format, ...)
 static char *
 _iptables_compile(const char * table, char *chain, t_firewall_rule *rule)
 {
-	char	command[MAX_BUF],
-			*mode;
+	char command[MAX_BUF];
+	char *mode;
 
 	memset(command, 0, MAX_BUF);
 
@@ -247,9 +244,9 @@ _iptables_compile(const char * table, char *chain, t_firewall_rule *rule)
 static int
 _iptables_append_ruleset(char *table, char *ruleset, char *chain)
 {
-	t_firewall_rule   *rule;
-	char		    *cmd;
-	int               ret=0;
+	t_firewall_rule *rule;
+	char *cmd;
+	int ret = 0;
 
 	debug(LOG_DEBUG, "Loading ruleset %s into table %s, chain %s", ruleset, table, chain);
 
@@ -262,7 +259,6 @@ _iptables_append_ruleset(char *table, char *ruleset, char *chain)
 
 	debug(LOG_DEBUG, "Ruleset %s loaded into table %s, chain %s", ruleset, table, chain);
 	return ret;
-
 }
 
 int
@@ -316,7 +312,7 @@ iptables_fw_init(void)
 	t_MAC *pt;
 	t_MAC *pb;
 	t_MAC *pa;
-	int rc=0, mmask=0, macmechanism;
+	int rc = 0, mmask = 0, macmechanism;
 
 	LOCK_CONFIG();
 	config = config_get_config();
@@ -399,7 +395,6 @@ iptables_fw_init(void)
 	 **************************************
 	 */
 
-
 	/*
 	 *
 	 **************************************
@@ -427,7 +422,6 @@ iptables_fw_init(void)
 	rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p tcp --dport 80 -j DNAT --to-destination %s:%d", gw_address, gw_port);
 	/* CHAIN_OUTGOING, other packets  ACCEPT */
 	rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -j ACCEPT");
-
 
 	/*
 	 * End of nat table chains and rules
@@ -501,7 +495,6 @@ iptables_fw_init(void)
 		rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -j REJECT --reject-with icmp-port-unreachable");
 
 	}
-
 
 	/*
 	 * filter FORWARD chain
@@ -589,7 +582,6 @@ iptables_fw_init(void)
 	free(gw_address);
 
 	return rc;
-
 }
 
 /** Remove the firewall rules
@@ -788,7 +780,6 @@ iptables_fw_total_upload()
 	pclose(output);
 	debug(LOG_ERR, "Can't find target %s in mangle table",CHAIN_OUTGOING);
 	return 0;
-
 }
 
 /** Return the total download usage in bytes */
@@ -827,7 +818,6 @@ iptables_fw_total_download()
 	pclose(output);
 	debug(LOG_ERR, "Can't find target %s in mangle table",CHAIN_INCOMING);
 	return 0;
-
 }
 
 /** Update the counters of all the clients in the client list */

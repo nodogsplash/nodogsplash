@@ -112,17 +112,17 @@ typedef struct _firewall_rule_t {
  * Firewall rulesets
  */
 typedef struct _firewall_ruleset_t {
-	char			*name;
-	char			*emptyrulesetpolicy;
-	t_firewall_rule		*rules;
-	struct _firewall_ruleset_t	*next;
+	char *name;
+	char *emptyrulesetpolicy;
+	t_firewall_rule *rules;
+	struct _firewall_ruleset_t *next;
 } t_firewall_ruleset;
 
 /**
  * MAC Addresses
  */
 typedef struct _MAC_t {
-	char   *mac;
+	char *mac;
 	struct _MAC_t *next;
 } t_MAC;
 

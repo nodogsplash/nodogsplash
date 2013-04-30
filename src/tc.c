@@ -101,9 +101,7 @@ tc_attach_upload_qdisc(char *dev, int upload_limit)
 	rc |= tc_do_command("class add dev %s parent 1: classid 1:1 htb rate %dkbit ceil %dkbit burst %d cburst %d mtu %d prio 1",
 						dev, upload_limit, upload_limit, burst*2, burst, mtu);
 
-
 	return rc;
-
 }
 
 /* Use HTB as a download qdisc.
@@ -131,7 +129,6 @@ tc_attach_download_qdisc(char *dev, int download_limit)
 	rc |= tc_do_command("class add dev %s parent 1: classid 1:1 htb rate %dkbit ceil %dkbit burst %d cburst %d mtu %d prio 1",
 						dev, download_limit, download_limit, burst*2, burst, mtu);
 	return rc;
-
 }
 
 /**
@@ -191,7 +188,6 @@ tc_init_tc()
 
 	free(download_imqname);
 	free(upload_imqname);
-
 }
 
 
@@ -212,7 +208,6 @@ tc_destroy_tc()
 	safe_asprintf(&download_imqname,"imq%d",config->download_imq); /* must free */
 	safe_asprintf(&upload_imqname,"imq%d",config->upload_imq);  /* must free */
 
-
 	/* remove qdiscs from imq's */
 	rc |= tc_do_command("qdisc del dev %s root",download_imqname);
 	rc |= tc_do_command("qdisc del dev %s root",upload_imqname);
@@ -232,5 +227,4 @@ tc_destroy_tc()
 	tc_quiet = old_tc_quiet;
 
 	return rc;
-
 }
