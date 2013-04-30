@@ -43,76 +43,78 @@ static void usage(void);
  * Prints usage, called when nodogsplash is run with -h or with an unknown option
  */
 static void
-usage(void) {
-  printf("Usage: nodogsplash [options]\n");
-  printf("\n");
-  printf("  -c [filename] Use this config file\n");
-  printf("  -f            Run in foreground\n");
-  printf("  -d <level>    Debug level\n");
-  printf("  -s            Log to syslog\n");
-  printf("  -w <path>     Ndsctl socket path\n");
-  printf("  -h            Print usage\n");
-  printf("  -v            Print version information\n");
-  printf("\n");
+usage(void)
+{
+	printf("Usage: nodogsplash [options]\n");
+	printf("\n");
+	printf("  -c [filename] Use this config file\n");
+	printf("  -f            Run in foreground\n");
+	printf("  -d <level>    Debug level\n");
+	printf("  -s            Log to syslog\n");
+	printf("  -w <path>     Ndsctl socket path\n");
+	printf("  -h            Print usage\n");
+	printf("  -v            Print version information\n");
+	printf("\n");
 }
 
 /** Uses getopt() to parse the command line and set configuration values
  */
-void parse_commandline(int argc, char **argv) {
-  int c;
-  int i;
+void parse_commandline(int argc, char **argv)
+{
+	int c;
+	int i;
 
-  s_config *config = config_get_config();
+	s_config *config = config_get_config();
 
-  while (-1 != (c = getopt(argc, argv, "c:hfd:sw:vi:"))) {
+	while (-1 != (c = getopt(argc, argv, "c:hfd:sw:vi:"))) {
 
-    switch(c) {
+		switch(c) {
 
-    case 'h':
-      usage();
-      exit(1);
-      break;
+		case 'h':
+			usage();
+			exit(1);
+			break;
 
-    case 'c':
-      if (optarg) {
-	strncpy(config->configfile, optarg, sizeof(config->configfile));
-      }
-      break;
+		case 'c':
+			if (optarg) {
+				strncpy(config->configfile, optarg, sizeof(config->configfile));
+			}
+			break;
 
-    case 'w':
-      if (optarg) {
-	free(config->ndsctl_sock);
-	config->ndsctl_sock = safe_strdup(optarg);
-      }
-      break;
+		case 'w':
+			if (optarg) {
+				free(config->ndsctl_sock);
+				config->ndsctl_sock = safe_strdup(optarg);
+			}
+			break;
 
-    case 'f':
-      config->daemon = 0;
-      break;
+		case 'f':
+			config->daemon = 0;
+			break;
 
-    case 'd':
-      if (optarg) {
-	set_log_level(atoi(optarg));
-      }
-      break;
+		case 'd':
+			if (optarg) {
+				set_log_level(atoi(optarg));
+			}
+			break;
 
-    case 's':
-      config->log_syslog = 1;
-      break;
+		case 's':
+			config->log_syslog = 1;
+			break;
 
-    case 'v':
-      printf("This is nodogsplash version " VERSION "\n");
-      exit(1);
-      break;
+		case 'v':
+			printf("This is nodogsplash version " VERSION "\n");
+			exit(1);
+			break;
 
-    default:
-      usage();
-      exit(1);
-      break;
+		default:
+			usage();
+			exit(1);
+			break;
 
-    }
+		}
 
-  }
+	}
 
 }
 

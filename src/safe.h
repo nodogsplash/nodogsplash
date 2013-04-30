@@ -27,9 +27,11 @@
 #ifndef _SAFE_H_
 #define _SAFE_H_
 
+
 #include <stdarg.h> /* For va_list */
 #include <sys/types.h> /* For fork */
 #include <unistd.h> /* For fork */
+
 
 /** @brief Safe version of malloc
  */
@@ -52,5 +54,5 @@ int safe_vasprintf(char **strp, const char *fmt, va_list ap);
 
 pid_t safe_fork(void);
 
-#endif /* _SAFE_H_ */
 
+#endif /* _SAFE_H_ */

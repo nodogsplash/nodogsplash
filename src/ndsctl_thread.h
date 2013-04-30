@@ -28,9 +28,11 @@
 #ifndef _NDSCTL_THREAD_H_
 #define _NDSCTL_THREAD_H_
 
+
 #define DEFAULT_NDSCTL_SOCK	"/tmp/ndsctl.sock"
 
 /** @brief Listen for nodogsplash control messages on a unix domain socket */
 void thread_ndsctl(void *arg);
+
 
 #endif

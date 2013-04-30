@@ -31,25 +31,25 @@
 /** Counters struct for a client's bandwidth usage (in bytes)
  */
 typedef struct _t_counters {
-    unsigned long long	incoming;	/**< @brief Incoming data total*/
-    unsigned long long	outgoing;	/**< @brief Outgoing data total*/
-    unsigned long long	incoming_history;	/**< @brief Incoming data before nodogsplash restarted*/
-    unsigned long long	outgoing_history;	/**< @brief Outgoing data before nodogsplash restarted*/
-    time_t	last_updated;	/**< @brief Last update of the counters */
+	unsigned long long	incoming;	/**< @brief Incoming data total*/
+	unsigned long long	outgoing;	/**< @brief Outgoing data total*/
+	unsigned long long	incoming_history;	/**< @brief Incoming data before nodogsplash restarted*/
+	unsigned long long	outgoing_history;	/**< @brief Outgoing data before nodogsplash restarted*/
+	time_t	last_updated;	/**< @brief Last update of the counters */
 } t_counters;
 
 /** Client node for the connected client linked list.
  */
 typedef struct	_t_client {
-  struct	_t_client *next;        /**< @brief Pointer to the next client */
-  char	*ip;			/**< @brief Client Ip address */
-  char	*mac;			/**< @brief Client Mac address */
-  char	*token;			/**< @brief Client token */
-  unsigned int fw_connection_state; /**< @brief Connection state in the firewall */
-  time_t added_time;		/**< @brief Time client added to list */
-  t_counters	counters;	/**< @brief Counters for input/output of
+	struct	_t_client *next;        /**< @brief Pointer to the next client */
+	char	*ip;			/**< @brief Client Ip address */
+	char	*mac;			/**< @brief Client Mac address */
+	char	*token;			/**< @brief Client token */
+	unsigned int fw_connection_state; /**< @brief Connection state in the firewall */
+	time_t added_time;		/**< @brief Time client added to list */
+	t_counters	counters;	/**< @brief Counters for input/output of
 				   the client. */
-  int attempts;                 /**< @brief Number of authentication attempts */
+	int attempts;                 /**< @brief Number of authentication attempts */
 } t_client;
 
 /** @brief Get the first element of the list of connected clients
@@ -69,7 +69,7 @@ t_client *client_list_add_client(const char *ip);
 t_client *client_list_find(const char *ip, const char *mac);
 
 /** @brief Finds a client only by its IP */
-t_client *client_list_find_by_ip(const char *ip); /* needed by fw_iptables.c, auth.c 
+t_client *client_list_find_by_ip(const char *ip); /* needed by fw_iptables.c, auth.c
 					     * and ndsctl_thread.c */
 
 /** @brief Finds a client only by its Mac */

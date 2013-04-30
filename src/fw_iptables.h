@@ -31,7 +31,7 @@
 #include "firewall.h"
 #include "auth.h"
 
-/*@{*/ 
+/*@{*/
 /**Iptable chain names used by nodogsplash */
 #define CHAIN_TO_INTERNET "ndsNET"
 #define CHAIN_TO_ROUTER "ndsRTR"
@@ -43,7 +43,7 @@
 #define CHAIN_BLOCKED    "ndsBLK"
 #define CHAIN_ALLOWED    "ndsALW"
 #define CHAIN_TRUSTED    "ndsTRU"
-/*@}*/ 
+/*@}*/
 
 /** @brief Initialize the firewall */
 int iptables_fw_init(void);

@@ -30,7 +30,7 @@
 
 #define VERSION "0.9_beta9.9.8"
 
-/*@{*/ 
+/*@{*/
 /** Defines */
 /** How many times should we try detecting the interface with the default route
  * (in seconds).  If set to 0, it will keep retrying forever */
@@ -43,9 +43,9 @@
 
 /** Defaults configuration values */
 #ifndef SYSCONFDIR
-	#define DEFAULT_CONFIGFILE "/etc/nodogsplash/nodogsplash.conf"
+#define DEFAULT_CONFIGFILE "/etc/nodogsplash/nodogsplash.conf"
 #else
-	#define DEFAULT_CONFIGFILE SYSCONFDIR"/nodogsplash/nodogsplash.conf"
+#define DEFAULT_CONFIGFILE SYSCONFDIR"/nodogsplash/nodogsplash.conf"
 #endif
 #define DEFAULT_DAEMON 1
 #define DEFAULT_DEBUGLEVEL LOG_NOTICE
@@ -94,36 +94,36 @@
 #define DEFAULT_EMPTY_USERS_TO_ROUTER_POLICY "REJECT"
 #define DEFAULT_EMPTY_AUTHENTICATED_USERS_POLICY "RETURN"
 #define DEFAULT_EMPTY_PREAUTHENTICATED_USERS_POLICY "REJECT"
+/*@}*/
 
-/*@}*/ 
 
 /**
  * Firewall rules
  */
 typedef struct _firewall_rule_t {
-  int block_allow;		/**< @brief 1 = Allow rule, 0 = Block rule */
-  char *protocol;		/**< @brief tcp, udp, etc ... */
-  char *port;			/**< @brief Port to block/allow */
-  char *mask;			/**< @brief Mask for the rule *destination* */
-  struct _firewall_rule_t *next;
+	int block_allow;		/**< @brief 1 = Allow rule, 0 = Block rule */
+	char *protocol;		/**< @brief tcp, udp, etc ... */
+	char *port;			/**< @brief Port to block/allow */
+	char *mask;			/**< @brief Mask for the rule *destination* */
+	struct _firewall_rule_t *next;
 } t_firewall_rule;
 
 /**
  * Firewall rulesets
  */
 typedef struct _firewall_ruleset_t {
-  char			*name;
-  char			*emptyrulesetpolicy;
-  t_firewall_rule		*rules;
-  struct _firewall_ruleset_t	*next;
+	char			*name;
+	char			*emptyrulesetpolicy;
+	t_firewall_rule		*rules;
+	struct _firewall_ruleset_t	*next;
 } t_firewall_ruleset;
 
 /**
  * MAC Addresses
  */
 typedef struct _MAC_t {
-  char   *mac;
-  struct _MAC_t *next;
+	char   *mac;
+	struct _MAC_t *next;
 } t_MAC;
 
 
@@ -131,59 +131,59 @@ typedef struct _MAC_t {
  * Configuration structure
  */
 typedef struct {
-  char configfile[255];		/**< @brief name of the config file */
-  char *ndsctl_sock;		/**< @brief ndsctl path to socket */
-  char *internal_sock;		/**< @brief internal path to socket */
-  int daemon;			/**< @brief if daemon > 0, use daemon mode */
-  int debuglevel;		/**< @brief Debug information verbosity */
-  int maxclients;		/**< @brief Maximum number of clients allowed */
-  char *ext_interface;		/**< @brief Interface to external network */
-  char *gw_name;		/**< @brief Name of the gateway; e.g. its SSID */
-  char *gw_interface;		/**< @brief Interface we will manage */
-  char *gw_iprange;		/**< @brief IP range on gw_interface we will manage */
-  char *gw_address;		/**< @brief Internal IP address for our web server */
-  unsigned int gw_port;		/**< @brief Port the webserver will run on */
-  char *remote_auth_action;	/**< @brief Path for remote auth */
-  char *webroot;		/**< @brief Directory containing splash pages, etc. */
-  char *splashpage;		/**< @brief Name of main splash page */
-  char *infoskelpage;		/**< @brief Name of info skeleton page */
-  char *imagesdir;		/**< @brief Subdir of webroot containing .png .gif files etc */
-  char *pagesdir;		/**< @brief Subdir of webroot containing other .html files */
-  char *redirectURL;		/**< @brief URL to direct client to after authentication */
-  char *authdir;		/**< @brief Notional relative dir for authentication URL */
-  char *denydir;		/**< @brief Notional relative dir for denial URL */
-  int passwordauth;		/**< @brief boolean, whether to use password authentication */
-  int usernameauth;		/**< @brief boolean, whether to use username authentication */
-  char *username;		/**< @brief Username for username authentication */
-  char *password;		/**< @brief Password for password authentication */
-  int passwordattempts;		/**< @brief Number of attempted password authentications allowed */
-  int clienttimeout;		/**< @brief How many CheckIntervals before an inactive client
+	char configfile[255];		/**< @brief name of the config file */
+	char *ndsctl_sock;		/**< @brief ndsctl path to socket */
+	char *internal_sock;		/**< @brief internal path to socket */
+	int daemon;			/**< @brief if daemon > 0, use daemon mode */
+	int debuglevel;		/**< @brief Debug information verbosity */
+	int maxclients;		/**< @brief Maximum number of clients allowed */
+	char *ext_interface;		/**< @brief Interface to external network */
+	char *gw_name;		/**< @brief Name of the gateway; e.g. its SSID */
+	char *gw_interface;		/**< @brief Interface we will manage */
+	char *gw_iprange;		/**< @brief IP range on gw_interface we will manage */
+	char *gw_address;		/**< @brief Internal IP address for our web server */
+	unsigned int gw_port;		/**< @brief Port the webserver will run on */
+	char *remote_auth_action;	/**< @brief Path for remote auth */
+	char *webroot;		/**< @brief Directory containing splash pages, etc. */
+	char *splashpage;		/**< @brief Name of main splash page */
+	char *infoskelpage;		/**< @brief Name of info skeleton page */
+	char *imagesdir;		/**< @brief Subdir of webroot containing .png .gif files etc */
+	char *pagesdir;		/**< @brief Subdir of webroot containing other .html files */
+	char *redirectURL;		/**< @brief URL to direct client to after authentication */
+	char *authdir;		/**< @brief Notional relative dir for authentication URL */
+	char *denydir;		/**< @brief Notional relative dir for denial URL */
+	int passwordauth;		/**< @brief boolean, whether to use password authentication */
+	int usernameauth;		/**< @brief boolean, whether to use username authentication */
+	char *username;		/**< @brief Username for username authentication */
+	char *password;		/**< @brief Password for password authentication */
+	int passwordattempts;		/**< @brief Number of attempted password authentications allowed */
+	int clienttimeout;		/**< @brief How many CheckIntervals before an inactive client
 				   must be re-authenticated */
-  int clientforceout;		/**< @brief How many CheckIntervals before a client
+	int clientforceout;		/**< @brief How many CheckIntervals before a client
 				   must be re-authenticated */
-  int checkinterval;		/**< @brief Period the the client timeout check
+	int checkinterval;		/**< @brief Period the the client timeout check
 				   thread will run, in seconds */
-  int authenticate_immediately;	/**< @brief boolean, whether to auth noninteractively */
-  int set_mss;			/**< @brief boolean, whether to set mss */
-  int mss_value;		/**< @brief int, mss value; <= 0 clamp to pmtu */
-  int traffic_control;		/**< @brief boolean, whether to do tc */
-  int download_limit;		/**< @brief Download limit, kb/s */
-  int upload_limit;		/**< @brief Upload limit, kb/s */
-  int download_imq;		/**< @brief Number of IMQ handling download */
-  int upload_imq;		/**< @brief Number of IMQ handling upload */
-  int log_syslog;		/**< @brief boolean, whether to log to syslog */
-  int syslog_facility;		/**< @brief facility to use when using syslog for logging */
-  int decongest_httpd_threads;	/**< @brief boolean, whether to avoid httpd thread congestion */
-  int httpd_thread_threshold; 	/**< @brief number of concurrent httpd threads before trying decongestion */
-  int httpd_thread_delay_ms; /**< @brief ms delay before starting a httpd thread after threshold */
-  int macmechanism; 		/**< @brief mechanism wrt MAC addrs */
-  t_firewall_ruleset *rulesets;	/**< @brief firewall rules */
-  t_MAC *trustedmaclist; 	/**< @brief list of trusted macs */
-  t_MAC *blockedmaclist; 	/**< @brief list of blocked macs */
-  t_MAC *allowedmaclist; 	/**< @brief list of allowed macs */
-  unsigned int  FW_MARK_AUTHENTICATED;    /**< @brief iptables mark for authenticated packets */ 
-  unsigned int  FW_MARK_BLOCKED;          /**< @brief iptables mark for blocked packets */ 
-  unsigned int  FW_MARK_TRUSTED;          /**< @brief iptables mark for trusted packets */ 
+	int authenticate_immediately;	/**< @brief boolean, whether to auth noninteractively */
+	int set_mss;			/**< @brief boolean, whether to set mss */
+	int mss_value;		/**< @brief int, mss value; <= 0 clamp to pmtu */
+	int traffic_control;		/**< @brief boolean, whether to do tc */
+	int download_limit;		/**< @brief Download limit, kb/s */
+	int upload_limit;		/**< @brief Upload limit, kb/s */
+	int download_imq;		/**< @brief Number of IMQ handling download */
+	int upload_imq;		/**< @brief Number of IMQ handling upload */
+	int log_syslog;		/**< @brief boolean, whether to log to syslog */
+	int syslog_facility;		/**< @brief facility to use when using syslog for logging */
+	int decongest_httpd_threads;	/**< @brief boolean, whether to avoid httpd thread congestion */
+	int httpd_thread_threshold; 	/**< @brief number of concurrent httpd threads before trying decongestion */
+	int httpd_thread_delay_ms; /**< @brief ms delay before starting a httpd thread after threshold */
+	int macmechanism; 		/**< @brief mechanism wrt MAC addrs */
+	t_firewall_ruleset *rulesets;	/**< @brief firewall rules */
+	t_MAC *trustedmaclist; 	/**< @brief list of trusted macs */
+	t_MAC *blockedmaclist; 	/**< @brief list of blocked macs */
+	t_MAC *allowedmaclist; 	/**< @brief list of allowed macs */
+	unsigned int  FW_MARK_AUTHENTICATED;    /**< @brief iptables mark for authenticated packets */
+	unsigned int  FW_MARK_BLOCKED;          /**< @brief iptables mark for blocked packets */
+	unsigned int  FW_MARK_TRUSTED;          /**< @brief iptables mark for trusted packets */
 } s_config;
 
 /** @brief Get the current gateway configuration */

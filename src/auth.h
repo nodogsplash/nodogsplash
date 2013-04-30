@@ -31,8 +31,8 @@
  * @brief Actions to take on clients.
  */
 typedef enum {
-    AUTH_MAKE_DEAUTHENTICATED = 1, /**< To make client 'deauthenticated' */
-    AUTH_MAKE_AUTHENTICATED = 2 /**< To make client 'authenticated' */
+	AUTH_MAKE_DEAUTHENTICATED = 1, /**< To make client 'deauthenticated' */
+	AUTH_MAKE_AUTHENTICATED = 2 /**< To make client 'authenticated' */
 } t_authaction;
 
 

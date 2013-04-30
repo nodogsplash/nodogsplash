@@ -27,9 +27,10 @@
 #ifndef _FIREWALL_H_
 #define _FIREWALL_H_
 
+
 /** Used to mark packets, and characterize client state.  Unmarked packets are considered 'preauthenticated' */
-extern unsigned int  FW_MARK_PREAUTHENTICATED; /**< @brief 0: Actually not used as a packet mark */ 
-extern unsigned int  FW_MARK_AUTHENTICATED;    /**< @brief The client is authenticated */ 
+extern unsigned int  FW_MARK_PREAUTHENTICATED; /**< @brief 0: Actually not used as a packet mark */
+extern unsigned int  FW_MARK_AUTHENTICATED;    /**< @brief The client is authenticated */
 extern unsigned int  FW_MARK_BLOCKED;          /**< @brief The client is blocked */
 extern unsigned int  FW_MARK_TRUSTED;          /**< @brief The client is trusted */
 extern unsigned int  FW_MARK_MASK;             /**< @brief Iptables mask: bitwise or of the others */
@@ -50,7 +51,7 @@ char *arp_get(const char *req_ip);
 /** @brief Return a string representing a connection state */
 char *fw_connection_state_as_string(int mark);
 
-/** @brief ICMP Ping an IP 
+/** @brief ICMP Ping an IP
 void icmp_ping(char *host);
 */
 

@@ -29,7 +29,7 @@
 
 
 /** @brief Used to output messages.
- *The messages will include the finlname and line number, and will be sent to syslog if so configured in the config file 
+ *The messages will include the finlname and line number, and will be sent to syslog if so configured in the config file
  */
 #define debug(level, format...) _debug(__BASE_FILE__, __LINE__, level, format)
 

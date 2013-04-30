@@ -42,6 +42,7 @@
 #include "debug.h"
 #include "httpd_thread.h"
 
+
 /* Defined in gateway.c */
 extern int created_httpd_threads;
 extern int current_httpd_threads;
@@ -50,34 +51,34 @@ extern int current_httpd_threads;
 @param args Two item array of void-cast pointers to the httpd and request struct
 */
 void
-thread_httpd(void *args) {
-  void	**params;
-  httpd	*webserver;
-  request	*r;
-  int serialnum;
-	
-  current_httpd_threads++;
+thread_httpd(void *args)
+{
+	void	**params;
+	httpd	*webserver;
+	request	*r;
+	int serialnum;
 
-  params = (void **)args;
-  webserver = *params;
-  r = *(params + 1);
-  serialnum = *(params + 2);
-  free(*(params + 2)); /* XXX We must release this here. */
-  free(params); /* XXX We must release this here. */
-	
-  if (httpdReadRequest(webserver, r) == 0) {
-    /*
-     * We read the request fine
-     */
-    debug(LOG_DEBUG, "Thread %d calling httpdProcessRequest() for %s", serialnum, r->clientAddr);
-    httpdProcessRequest(webserver, r);
-    debug(LOG_DEBUG, "Thread %d returned from httpdProcessRequest() for %s", serialnum, r->clientAddr);
-  }
-  else {
-    debug(LOG_DEBUG, "Thread %d: No valid request received from %s", serialnum, r->clientAddr);
-  }
-  httpdEndRequest(r);
-  debug(LOG_DEBUG, "Thread %d ended request from %s", serialnum, r->clientAddr);
+	current_httpd_threads++;
 
-  current_httpd_threads--;
+	params = (void **)args;
+	webserver = *params;
+	r = *(params + 1);
+	serialnum = *(params + 2);
+	free(*(params + 2)); /* XXX We must release this here. */
+	free(params); /* XXX We must release this here. */
+
+	if (httpdReadRequest(webserver, r) == 0) {
+		/*
+		 * We read the request fine
+		 */
+		debug(LOG_DEBUG, "Thread %d calling httpdProcessRequest() for %s", serialnum, r->clientAddr);
+		httpdProcessRequest(webserver, r);
+		debug(LOG_DEBUG, "Thread %d returned from httpdProcessRequest() for %s", serialnum, r->clientAddr);
+	} else {
+		debug(LOG_DEBUG, "Thread %d: No valid request received from %s", serialnum, r->clientAddr);
+	}
+	httpdEndRequest(r);
+	debug(LOG_DEBUG, "Thread %d ended request from %s", serialnum, r->clientAddr);
+
+	current_httpd_threads--;
 }

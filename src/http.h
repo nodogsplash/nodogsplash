@@ -32,22 +32,23 @@
 #include "httpd.h"
 #include "client_list.h"
 
+
 /**
  * Define parts of an authentication target.
  */
 typedef struct _auth_target_t {
-  char *ip;			/**< @brief IP of auth server */
-  int port;			/**< @brief Port of auth server */
-  char *authdir;		/**< @brief Auth dir */
-  char *denydir;		/**< @brief Deny dir */
-  char *authaction;		/**< @brief Auth action */
-  char *denyaction;		/**< @brief Deny action */
-  char *authtarget;		/**< @brief Deny action */
-  char *token;			/**< @brief Client token */
-  char *redir;			/**< @brief Client redirect target */
-  char *username;		/**< @brief User name */
-  char *password;		/**< @brief User password */
-  char *info;			/**< @brief Auxilliary info */
+	char *ip;			/**< @brief IP of auth server */
+	int port;			/**< @brief Port of auth server */
+	char *authdir;		/**< @brief Auth dir */
+	char *denydir;		/**< @brief Deny dir */
+	char *authaction;		/**< @brief Auth action */
+	char *denyaction;		/**< @brief Deny action */
+	char *authtarget;		/**< @brief Deny action */
+	char *token;			/**< @brief Client token */
+	char *redir;			/**< @brief Client redirect target */
+	char *username;		/**< @brief User name */
+	char *password;		/**< @brief User password */
+	char *info;			/**< @brief Auxilliary info */
 } t_auth_target;
 
 /**@brief Callback for libhttpd, serves nodogsplash splash page */
@@ -89,7 +90,6 @@ char * http_make_auth_token();
 void http_nodogsplash_header(request *r, char *title);
 /** @brief Sends HTML footer to web browser */
 void http_nodogsplash_footer(request *r);
-
 
 
 #endif /* _HTTP_H_ */

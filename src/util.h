@@ -58,7 +58,7 @@ void mark_auth_offline();
 int is_auth_online();
 
 /*
- * @brief Mallocs and returns nodogsplash uptime string 
+ * @brief Mallocs and returns nodogsplash uptime string
  */
 char * get_uptime_string();
 /*
@@ -85,5 +85,5 @@ unsigned short rand16(void);
 	debug(LOG_DEBUG, "wd_gethostbyname() unlocked"); \
 } while (0)
 
-#endif /* _UTIL_H_ */
 
+#endif /* _UTIL_H_ */

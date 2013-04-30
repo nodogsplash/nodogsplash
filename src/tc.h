@@ -25,7 +25,8 @@
 #define MTU 1500
 #define HZ 100
 
-int 
+
+int
 tc_init_tc(void);
 
 int
@@ -33,4 +34,3 @@ tc_destroy_tc(void);
 
 
 #endif /* _TC_H_ */
-

@@ -56,77 +56,79 @@ unsigned int authenticated_since_start = 0;
 /** Launched in its own thread.
  *  This just wakes up every config.checkinterval seconds, and calls fw_refresh_client_list()
 @todo This thread loops infinitely, need a watchdog to verify that it is still running?
-*/  
+*/
 void
-thread_client_timeout_check(const void *arg) {
-  pthread_cond_t		cond = PTHREAD_COND_INITIALIZER;
-  pthread_mutex_t		cond_mutex = PTHREAD_MUTEX_INITIALIZER;
-  struct	timespec	timeout;
-	
-  while (1) {
-    debug(LOG_DEBUG, "Running fw_refresh_client_list()");
-	
-    fw_refresh_client_list();
+thread_client_timeout_check(const void *arg)
+{
+	pthread_cond_t		cond = PTHREAD_COND_INITIALIZER;
+	pthread_mutex_t		cond_mutex = PTHREAD_MUTEX_INITIALIZER;
+	struct	timespec	timeout;
 
-    /* Sleep for config.checkinterval seconds... */
-    timeout.tv_sec = time(NULL) + config_get_config()->checkinterval;
-    timeout.tv_nsec = 0;
+	while (1) {
+		debug(LOG_DEBUG, "Running fw_refresh_client_list()");
 
-    /* Mutex must be locked for pthread_cond_timedwait... */
-    pthread_mutex_lock(&cond_mutex);
-		
-    /* Thread safe "sleep" */
-    pthread_cond_timedwait(&cond, &cond_mutex, &timeout);
+		fw_refresh_client_list();
 
-    /* No longer needs to be locked */
-    pthread_mutex_unlock(&cond_mutex);
-	
-  }
+		/* Sleep for config.checkinterval seconds... */
+		timeout.tv_sec = time(NULL) + config_get_config()->checkinterval;
+		timeout.tv_nsec = 0;
+
+		/* Mutex must be locked for pthread_cond_timedwait... */
+		pthread_mutex_lock(&cond_mutex);
+
+		/* Thread safe "sleep" */
+		pthread_cond_timedwait(&cond, &cond_mutex, &timeout);
+
+		/* No longer needs to be locked */
+		pthread_mutex_unlock(&cond_mutex);
+
+	}
 }
 
 /** Take action on a client.
  * Alter the firewall rules and client list accordingly.
 */
 void
-auth_client_action(char *ip, char *mac, t_authaction action) {
-  t_client	*client;
+auth_client_action(char *ip, char *mac, t_authaction action)
+{
+	t_client	*client;
 
-  LOCK_CLIENT_LIST();
+	LOCK_CLIENT_LIST();
 
-  client = client_list_find(ip,mac);
+	client = client_list_find(ip,mac);
 
-  /* Client should already have hit the server and be on the client list */
-  if (client == NULL) {
-    debug(LOG_ERR, "Client %s %s action %d is not on client list",
-	  ip, mac, action);
-    UNLOCK_CLIENT_LIST();
-    return;
-  }
+	/* Client should already have hit the server and be on the client list */
+	if (client == NULL) {
+		debug(LOG_ERR, "Client %s %s action %d is not on client list",
+			  ip, mac, action);
+		UNLOCK_CLIENT_LIST();
+		return;
+	}
 
-  switch(action) {
+	switch(action) {
 
-  case AUTH_MAKE_AUTHENTICATED:
-    if(client->fw_connection_state != FW_MARK_AUTHENTICATED) {
-      client->fw_connection_state = FW_MARK_AUTHENTICATED;
-      iptables_fw_access(AUTH_MAKE_AUTHENTICATED,client->ip,client->mac);
-      authenticated_since_start++;
-    } else {
-      debug(LOG_INFO, "Nothing to do, %s %s already authenticated", client->ip, client->mac);
-    }
-    break;
+	case AUTH_MAKE_AUTHENTICATED:
+		if(client->fw_connection_state != FW_MARK_AUTHENTICATED) {
+			client->fw_connection_state = FW_MARK_AUTHENTICATED;
+			iptables_fw_access(AUTH_MAKE_AUTHENTICATED,client->ip,client->mac);
+			authenticated_since_start++;
+		} else {
+			debug(LOG_INFO, "Nothing to do, %s %s already authenticated", client->ip, client->mac);
+		}
+		break;
 
-  case AUTH_MAKE_DEAUTHENTICATED:
-    if(client->fw_connection_state == FW_MARK_AUTHENTICATED) {
-      iptables_fw_access(AUTH_MAKE_DEAUTHENTICATED, client->ip, client->mac);
-    }
-    client_list_delete(client);
-    break;
-    
-  default:
-    debug(LOG_ERR, "Unknown auth action: %d",action);
-  }
-  UNLOCK_CLIENT_LIST();
-  return;
+	case AUTH_MAKE_DEAUTHENTICATED:
+		if(client->fw_connection_state == FW_MARK_AUTHENTICATED) {
+			iptables_fw_access(AUTH_MAKE_DEAUTHENTICATED, client->ip, client->mac);
+		}
+		client_list_delete(client);
+		break;
+
+	default:
+		debug(LOG_ERR, "Unknown auth action: %d",action);
+	}
+	UNLOCK_CLIENT_LIST();
+	return;
 
 }
 

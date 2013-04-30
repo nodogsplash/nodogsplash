@@ -50,9 +50,12 @@
 #define NDSCTL_USERNAME		15
 #define NDSCTL_CLIENTS 		16
 
+
 typedef struct {
 	char	*socket;
 	int	command;
 	char	*param;
 } s_config;
-#endif
+
+
+#endif /* _NDSCTL_H_ */
