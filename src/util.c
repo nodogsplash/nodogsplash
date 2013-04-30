@@ -68,7 +68,6 @@
 #include "debug.h"
 #include "firewall.h"
 
-#include "../config.h"
 
 static pthread_mutex_t ghbn_mutex = PTHREAD_MUTEX_INITIALIZER;
 

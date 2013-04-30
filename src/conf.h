@@ -25,8 +25,10 @@
     @author Copyright (C) 2007 Paul Kube <nodogsplash@kokoro.ucsd.edu>
 */
 
-#ifndef _CONFIG_H_
-#define _CONFIG_H_
+#ifndef _CONF_H_
+#define _CONF_H_
+
+#define VERSION "0.9_beta9.9.8"
 
 /*@{*/ 
 /** Defines */
@@ -44,7 +46,7 @@
 	#define DEFAULT_CONFIGFILE "/etc/nodogsplash/nodogsplash.conf"
 #else
 	#define DEFAULT_CONFIGFILE SYSCONFDIR"/nodogsplash/nodogsplash.conf"
-#endif	
+#endif
 #define DEFAULT_DAEMON 1
 #define DEFAULT_DEBUGLEVEL LOG_NOTICE
 #define DEFAULT_MAXCLIENTS 20
@@ -237,4 +239,4 @@ int set_username(char *);
 	debug(LOG_DEBUG, "Config unlocked"); \
 } while (0)
 
-#endif /* _CONFIG_H_ */
+#endif /* _CONF_H_ */

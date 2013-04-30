@@ -311,7 +311,7 @@ request *httpdGetConnection(server, timeout)
 	int	result;
 	fd_set	fds;
 	struct  sockaddr_in     addr;
-	size_t  addrLen;
+	socklen_t  addrLen;
 	char	*ipaddr;
 	request	*r;
 

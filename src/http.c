@@ -48,7 +48,6 @@
 
 #include "util.h"
 
-#include "../config.h"
 
 extern pthread_mutex_t	client_list_mutex;
 

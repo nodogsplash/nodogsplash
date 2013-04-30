@@ -173,12 +173,7 @@ iptables_do_command(const char *format, ...) {
        * be temporary. So we retry to insert the rule a few times. (Mitar) */ 
       sleep(1); 
     } else {
-		// If quiet, do not display the error
-        if (fw_quiet == 0)
-	      debug(LOG_ERR, "iptables command failed(%d): %s", rc, cmd);
-        else if (fw_quiet == 1)
-          debug(LOG_DEBUG, "iptables command failed(%d): %s", rc, cmd);
-      break; 
+	  break;
     } 
   } 
   if(!fw_quiet && rc != 0) {

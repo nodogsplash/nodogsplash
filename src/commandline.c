@@ -34,7 +34,6 @@
 #include "safe.h"
 #include "conf.h"
 
-#include "../config.h"
 
 static void usage(void);
 
