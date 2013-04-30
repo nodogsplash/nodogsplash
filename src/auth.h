@@ -35,7 +35,6 @@ typedef enum {
 	AUTH_MAKE_AUTHENTICATED = 2 /**< To make client 'authenticated' */
 } t_authaction;
 
-
 /** @brief Take action on a single client */
 void auth_client_action(char *ip, char *mac, t_authaction action);
 

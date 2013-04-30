@@ -47,11 +47,13 @@
 #include "client_list.h"
 #include "util.h"
 
+
 /* Defined in clientlist.c */
 extern	pthread_mutex_t	client_list_mutex;
 
 /* Count number of authentications */
 unsigned int authenticated_since_start = 0;
+
 
 /** Launched in its own thread.
  *  This just wakes up every config.checkinterval seconds, and calls fw_refresh_client_list()
@@ -60,8 +62,8 @@ unsigned int authenticated_since_start = 0;
 void
 thread_client_timeout_check(const void *arg)
 {
-	pthread_cond_t		cond = PTHREAD_COND_INITIALIZER;
-	pthread_mutex_t		cond_mutex = PTHREAD_MUTEX_INITIALIZER;
+	pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+	pthread_mutex_t cond_mutex = PTHREAD_MUTEX_INITIALIZER;
 	struct	timespec	timeout;
 
 	while (1) {
@@ -81,7 +83,6 @@ thread_client_timeout_check(const void *arg)
 
 		/* No longer needs to be locked */
 		pthread_mutex_unlock(&cond_mutex);
-
 	}
 }
 
@@ -91,7 +92,7 @@ thread_client_timeout_check(const void *arg)
 void
 auth_client_action(char *ip, char *mac, t_authaction action)
 {
-	t_client	*client;
+	t_client *client;
 
 	LOCK_CLIENT_LIST();
 
@@ -129,8 +130,4 @@ auth_client_action(char *ip, char *mac, t_authaction action)
 	}
 	UNLOCK_CLIENT_LIST();
 	return;
-
 }
-
-
-
