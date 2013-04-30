@@ -282,8 +282,7 @@ connect_to_server(char *sock_name)
 static int
 send_request(int sock, char *request)
 {
-	ssize_t	len,
-			written;
+	ssize_t	len, written;
 
 	len = 0;
 	while (len != strlen(request)) {
@@ -307,11 +306,10 @@ send_request(int sock, char *request)
 static void
 ndsctl_action(char * cmd, char * ifyes, char * ifno)
 {
-	int	sock;
-	char	buffer[4096];
-	char	request[128];
-	int	len,
-		rlen;
+	int sock;
+	char buffer[4096];
+	char request[128];
+	int len, rlen;
 
 	sock = connect_to_server(config.socket);
 
@@ -332,7 +330,6 @@ ndsctl_action(char * cmd, char * ifyes, char * ifno)
 		fprintf(stderr, "ndsctl: Error reading socket: %s", strerror(errno));
 	}
 
-
 	if (strcmp(buffer, "Yes") == 0) {
 		printf(ifyes, config.param);
 	} else if (strcmp(buffer, "No") == 0) {
@@ -344,7 +341,6 @@ ndsctl_action(char * cmd, char * ifyes, char * ifno)
 
 	shutdown(sock, 2);
 	close(sock);
-
 }
 
 /* Perform a ndsctl action, printing to stdout the server response.
@@ -412,7 +408,6 @@ ndsctl_password(void)
 				  "Failed to set password to %s.\n");
 }
 
-
 void
 ndsctl_username(void)
 {
@@ -420,7 +415,6 @@ ndsctl_username(void)
 				  "Username set to %s.\n",
 				  "Failed to set username to %s.\n");
 }
-
 
 void
 ndsctl_deauth(void)
@@ -437,7 +431,6 @@ ndsctl_auth(void)
 				  "Client %s authenticated.\n",
 				  "Failed to authenticate client %s.\n");
 }
-
 
 void
 ndsctl_block(void)
@@ -490,7 +483,6 @@ ndsctl_untrust(void)
 int
 main(int argc, char **argv)
 {
-
 	/* Init configuration */
 	init_config();
 	parse_commandline(argc, argv);

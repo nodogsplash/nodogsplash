@@ -111,10 +111,6 @@ void parse_commandline(int argc, char **argv)
 			usage();
 			exit(1);
 			break;
-
 		}
-
 	}
-
 }
-

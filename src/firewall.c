@@ -72,17 +72,17 @@
 #include "auth.h"
 #include "client_list.h"
 
+
 extern pthread_mutex_t client_list_mutex;
 
 int icmp_fd = 0;
 
 /** Used to mark packets, and characterize client state.  Unmarked packets are considered 'preauthenticated' */
-unsigned int  FW_MARK_PREAUTHENTICATED; /**< @brief 0: Actually not used as a packet mark */
-unsigned int  FW_MARK_AUTHENTICATED;    /**< @brief The client is authenticated */
-unsigned int  FW_MARK_BLOCKED;          /**< @brief The client is blocked */
-unsigned int  FW_MARK_TRUSTED;          /**< @brief The client is trusted */
-unsigned int  FW_MARK_MASK;             /**< @brief Iptables mask: bitwise or of the others */
-
+unsigned int FW_MARK_PREAUTHENTICATED; /**< @brief 0: Actually not used as a packet mark */
+unsigned int FW_MARK_AUTHENTICATED;    /**< @brief The client is authenticated */
+unsigned int FW_MARK_BLOCKED;          /**< @brief The client is blocked */
+unsigned int FW_MARK_TRUSTED;          /**< @brief The client is trusted */
+unsigned int FW_MARK_MASK;             /**< @brief Iptables mask: bitwise or of the others */
 
 /**
  * Get an IP's MAC address from the ARP cache.
@@ -90,13 +90,13 @@ unsigned int  FW_MARK_MASK;             /**< @brief Iptables mask: bitwise or of
  * IP address and return the MAC address bound to it.
  * @todo Make this function portable (using shell scripts?)
  */
-char           *
+char *
 arp_get(const char *req_ip)
 {
-	FILE           *proc;
+	FILE *proc;
 	char ip[16];
 	char mac[18];
-	char * reply = NULL;
+	char *reply = NULL;
 
 	if (!(proc = fopen("/proc/net/arp", "r"))) {
 		return NULL;
@@ -168,10 +168,10 @@ fw_destroy(void)
 void
 fw_refresh_client_list(void)
 {
-	char            *ip, *mac;
-	t_client        *cp1, *cp2;
+	char *ip, *mac;
+	t_client *cp1, *cp2;
 	time_t now, added_time, last_updated;
-	unsigned long long	    incoming, outgoing;
+	unsigned long long incoming, outgoing;
 	s_config *config = config_get_config();
 
 	/* Update all the counters */
@@ -240,13 +240,11 @@ fw_refresh_client_list(void)
 char *
 fw_connection_state_as_string(int mark)
 {
-
 	if(mark == FW_MARK_PREAUTHENTICATED) return "Preauthenticated";
 	if(mark == FW_MARK_AUTHENTICATED) return "Authenticated";
 	if(mark == FW_MARK_TRUSTED) return "Trusted";
 	if(mark == FW_MARK_BLOCKED) return "Blocked";
 	return "ERROR: unrecognized mark";
-
 }
 
 
@@ -299,4 +297,3 @@ icmp_ping(char *host)
   return;
 }
 ***/
-

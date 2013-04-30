@@ -94,7 +94,6 @@ sigchld_handler(int s)
 
 	debug(LOG_DEBUG, "SIGCHLD handler: Trying to reap a child");
 
-
 	rc = waitpid(-1, &status, WNOHANG | WUNTRACED);
 
 	if(rc == -1) {
@@ -118,7 +117,6 @@ sigchld_handler(int s)
 
 	debug(LOG_DEBUG, "SIGCHLD handler: Process PID %d changed state, status %d not exited, ignoring", (int)rc, status);
 	return;
-
 }
 
 /** Exits cleanly after cleaning up the firewall.
@@ -216,7 +214,6 @@ init_signals(void)
 static void
 main_loop(void)
 {
-
 	int result;
 	pthread_t	tid;
 	s_config *config = config_get_config();
@@ -369,7 +366,6 @@ main_loop(void)
  */
 int main(int argc, char **argv)
 {
-
 	s_config *config = config_get_config();
 	config_init();
 
