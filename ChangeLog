@@ -3,6 +3,16 @@
 		* excluding commit [1375] containing feature from ticket #466
 	* Return a 405 for pre-authenticated non GET requests [fred@slwifi.com]
 
+nodogsplash-0.9.9-3
+
+	* Fixed buffer overflow bug in ndsctl.
+	* Improved SIGCHLD handling in gateway.c and util.c.
+	* Added FirewallRulesets trusted-users and trusted-users-to-router. This permits customized access control for trusted users, as for authenticated users, with the same ruleset semantics, instead of always accepting all trusted packets.
+	* Added EmptyRuleSetPolicy directives for .conf file.  Permits optionally passing packets through to pre-existing firewall rules.
+	* updated debian rules (for building debian package)
+
+ -- Andraz Sraka <a@frubsd.org>  Sun, 11 Aug 2009 09:15:00 -0100
+
+
 2007-05-01
-	* Development of nodogsplash starts,  based on WifiDog 1.1.3_beta6
-	
+	* Development of nodogsplash starts, based on WifiDog 1.1.3_beta6
