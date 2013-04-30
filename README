@@ -1,12 +1,9 @@
 
 0. The Nodogsplash project
 
-Nodogsplash offers a simple way to provide restricted access to an internet
-connection. It is intended for use on wireless access points running OpenWRT
-(but may also work on other Linux-based devices).
-Its functionality is similar to Nocatsplash, but it is derived from the
-codebase of the Wifi Guard Dog project. Nodogsplash is released under the GNU
-General Public License.
+Nodogsplash offers a simple way to provide restricted access to an internet connection.
+Its functionality is similar to Nocatsplash, but it is derived from the codebase of the
+Wifi Guard Dog project. Nodogsplash is released under the GNU General Public License.
 
 * Nodogsplash: http://kokoro.ucsd.edu/nodogsplash
 * OpenWRT: http://openwrt.org/
@@ -41,31 +38,27 @@ need, though.
 
 
 * Have a router working with OpenWRT. Nodogsplash has been compiled against a
-  OpenWRT White Russian 0.9 buildroot; it may or may not work on other versions
+  OpenWRT Attitude Adjustment buildroot; it may or may not work on other versions
   of OpenWRT or on other kinds of Linux-based router firmware. For notes on
   using Nodogsplash with OpenWRT Kamikaze, see_below.
 * Make sure your router is basically working before you try to install
   nodogsplash. In particular, make sure your DHCP daemon is serving addresses
-  on the interface that nodogsplash will manage (typically br0 or eth1), and
+  on the interface that nodogsplash will manage (typically br-lan or eth1), and
   for the following use ssh or telnet access to your router over a different
   interface.
 * To install nodogsplash, obtain the nodogsplash*.ipk package you want to
   install from the project website, copy it to /tmp/ on your OpenWRT router,
   and, in as root on the router, run:
 
-    ipkg install /tmp/nodogsplash*.ipk
-
-  Or, to install the latest version, you can just run:
-
-    ipkg install http://kokoro.ucsd.edu/nodogsplash/latest.ipk
+  ipkg install /tmp/nodogsplash*.ipk
 
   (Note: to prevent installation of an older package, you may have to remove
   references to remote package repositories in your ipkg.conf file.)
-* If the interface that you want nodogsplash to manage is not br0, edit /etc/
-  nodogsplash/nodogsplash.conf and set GatewayInterface.
+* If the interface that you want nodogsplash to manage is not br-lan,
+  edit /etc/nodogsplash/nodogsplash.conf and set GatewayInterface.
 * To start nodogsplash, run the following, or just reboot the router:
 
-    /etc/init.d/S65nodogsplash start
+    /etc/init.d/nodogsplash start
 
 * To test the installation, connect a client machine to the interface on your
   router that is managed by nodogsplash (for example, connect to the router's
@@ -74,7 +67,7 @@ need, though.
   browser should redirect to the initially requested website.
 * To stop nodogsplash:
 
-    /etc/init.d/S65nodogsplash stop
+    /etc/init.d/nodogsplash stop
 
 * To uninstall nodogsplash:
 
@@ -85,9 +78,9 @@ need, though.
 3. How nodogsplash works
 
 A wireless router running OpenWRT has two or more interfaces; nodogsplash
-manages one of them. This will typically be br0, the bridge to both the
+manages one of them. This will typically be br-lan, the bridge to both the
 wireless and wired LAN; or the wireless lan interface may be named something
-else if you have broken the br0 bridge to separate the wired and wireless
+else if you have broken the br-lan bridge to separate the wired and wireless
 LAN's.
 
 3.1 Packet filtering
@@ -223,10 +216,10 @@ respectively, along with others as required, to the server. For example:
   <form method='GET' action='$authaction'>
   <input type='hidden' name='tok' value='$tok'>
   <input type='hidden' name='redir' value='$redir'>
-  username: <input type='text' name='nodoguser' value='' size=12 maxlength=12>
+  username: <input type='text' name='nodoguser' value='' size='12' maxlength='12'>
   <br>
-  password: <input type='password' name='nodogpass' value='' size=12
-  maxlength=10> <br>
+  password: <input type='password' name='nodogpass' value='' size='12' maxlength='10'>
+  <br>
   <input type='submit' value='Enter'>
   </form>
 
@@ -274,17 +267,17 @@ configuration file.)
 7. Debugging nodogsplash
 
 
-* To see maximally verbose debugging output from nodogsplash, edit the /etc/
-  init.d/S65nodogsplash file to set the OPTIONS variable to the flags "-s -
-  d 7", restart or reboot, and view messages with logread. The -s flag logs to
-  syslog; the -d 7 flag sets level 7, LOG_DEBUG, for debugging messages (see
-  syslog.h). You don't want to run with these flags routinely, as it will
+* To see maximally verbose debugging output from nodogsplash, edit the
+  /etc/init.d/nodogsplash file to set the OPTIONS variable to the flags "-s -d 7",
+  restart or reboot, and view messages with logread. The -s flag logs to
+  syslog; the -d 7 flag sets level 7, LOG_DEBUG, for debugging messages
+  (see syslog.h). You don't want to run with these flags routinely, as it will
   quickly fill the syslog circular buffer, unless you enable remote logging. A
   lower level of logging, for example level 5, LOG_NOTICE, is more appropriate
   for routine use (this is the default). Logging level can also be set using
   ndsctl as shown above.
-  Alternatively, you can set the flag -f instead of -s, and restart. This will
-  run nodogsplash in the foreground, logging to stdout.
+  Alternatively, you can set the flag -f instead of -s, and restart.
+  This will run nodogsplash in the foreground, logging to stdout.
 * When stopped, nodogsplash deletes its iptables rules, attempting to leave the
   router's firewall in its original state. If not (for example, if nodogsplash
   crashes instead of exiting cleanly) subsequently starting and stopping
@@ -301,32 +294,5 @@ configuration file.)
   For extensive suggestions on debugging iptables, see for example Oskar
   Andreasson's_tutorial.
 
-
-8. Using Nodogsplash with Kamikaze
-
-Eventually, new releases of Nodogsplash will be compiled against some stable
-version of OpenWRT Kamikaze. Meanwhile, Nodogsplash has been tested on some
-versions of Kamikaze and found to work.
-An explanation of steps that may be required to successfully install
-Nodogsplash on Kamikaze is available here: anarcat_post_on_forum.opernwrt.org
-Here is a shorter summary of what is required:
-
-* The default name for the (wired and wireless) LAN interface in Kamikaze is
-  br-lan. Edit /etc/nodogsplash/nodogsplash.conf and set GatewayInterface
-  appropriately.
-* Kamikaze moves to a different way of organizing init scripts. Executable
-  scripts reside in /etc/init.d, but appropriately named symlinks in /etc/rc.d
-  determine the sequencing of scripts at boot. After installing Nodogsplash, do
-  the following:
-
-     cd /etc/init.d
-     mv S65nodogsplash nodogsplash
-     cd /etc/rc.d
-     ln -s /etc/init.d/nodogsplash S65nodogsplash
-
-  And then use /etc/init.d/nodogsplash to start and stop Nodogsplash from the
-  command line.
-
-Thanks to Tobias Pal and Jeff Allen and anarcat for testing on Kamikaze.
 -------------------------------------------------------------------------------
-Email contact: nodogsplash (at) kokoro.ucsd.edu
+Email contact: nodogsplash (at) ml.ninux.org
