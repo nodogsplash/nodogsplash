@@ -9,72 +9,65 @@
 <meta HTTP-EQUIV='Pragma' CONTENT='no-cache'>
 <style>
 body {
-  margin: 10px 60px 0 60px; 
-  font-family : bitstream vera sans, sans-serif;
-  color: #000000;
+	margin: 10px 60px 0 60px;
+	font-family : bitstream vera sans, sans-serif;
+	color: #000000;
 }
 a {
-  color: #000000;
+	color: #000000;
 }
 a:active {
   color: #000000;
 }
 a:link {
-  color: #000000;
+	color: #000000;
 }
 a:visited {
-  color: #000000;
+	color: #000000;
 }
 #header {
-  height: 30px;
-  background-color: #DDDDDD;
-  padding: 20px;
-  font-size: 20pt;
-  text-align: center;
-  border: 2px solid #000000;
-  border-bottom: 0;
+	height: 30px;
+	background-color: #DDDDDD;
+	padding: 20px;
+	font-size: 20pt;
+	text-align: center;
+	border: 2px solid #000000;
+	border-bottom: 0;
 }
 #menu {
-  width: 200px;
-  float: right;
-  background-color: #DDDDDD;
-  border: 2px solid #000000;
-  font-size: 80%;
-  min-height: 300px;
+	width: 200px;
+	float: right;
+	background-color: #DDDDDD;
+	border: 2px solid #000000;
+	font-size: 80%;
+	min-height: 300px;
 }
 #menu h2 {
-  margin: 0;
-  background-color: #000000;
-  text-align: center;
-  color: #DDDDDD;
+	margin: 0;
+	background-color: #000000;
+	text-align: center;
+	color: #DDDDDD;
 }
-#copyright {
-}
+
 #content {
-  padding: 20px;
-  border: 2px solid #000000;
-  min-height: 300px;
+	padding: 20px;
+	border: 2px solid #000000;
+	min-height: 300px;
 }
 </style>
 </head>
-<body
-<div id="header"
-    $title
-</div>
-<div id="menu"
-    <h2>Info</h2>
-    <ul>
-    <li>Version: $version
-    <li>Node ID: $gatewayname
-    </ul>
-    <br>
+<body>
+<div id="header">$title</div>
+<div id="menu">
+	<h2>Info</h2>
+	<ul>
+	<li>Version: $version
+	<li>Node ID: $gatewayname
+	</ul>
 </div>
 <div id="content">
-<h2>$title</h2>
-$content
-</div>
-<div id="copyright"
-Copyright (C) 2004-2007.  This software is released under the GNU GPL license.
+	<h2>$title</h2>$content</div>
+	<div>Copyright (C) 2004-2013.  This software is released under the GNU GPL license.</div>
 </div>
 </body>
 </html>
