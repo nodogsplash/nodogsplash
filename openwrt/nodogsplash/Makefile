@@ -33,6 +33,7 @@ define Build/Prepare
 	git clone https://github.com/mwarning/nodogsplash.git $(PKG_BUILD_DIR)
 endef
 
+#for sources inside the package
 #define Build/Prepare
 #	mkdir -p $(PKG_BUILD_DIR)
 #	$(CP) ./src/* $(PKG_BUILD_DIR)/
@@ -51,11 +52,6 @@ define Package/nodogsplash/install
 	$(CP) $(PKG_BUILD_DIR)/resources/splash.html $(1)/etc/$(PKG_NAME)/htdocs/
 	$(CP) $(PKG_BUILD_DIR)/resources/infoskel.html $(1)/etc/$(PKG_NAME)/htdocs/
 	$(CP) $(PKG_BUILD_DIR)/resources/splash.jpg $(1)/etc/$(PKG_NAME)/htdocs/images/
-
-#comment line in init sciprt
-#	$(SED) 's,\(do_module_tests "imq"\),#\1,' $(1)/etc/init.d/$(PKG_NAME)
-#	$(SED) 's,\(do_module_tests "ipt_IMQ"\),#\1,' $(1)/etc/init.d/$(PKG_NAME)
-#	$(SED) 's,\(do_module_tests "sch_htb"\),#\1,' $(1)/etc/init.d/$(PKG_NAME)
 endef
 
 
