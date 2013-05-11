@@ -1,8 +1,8 @@
 
-CC=gcc
-CFLAGS=-O2 -Isrc -Ilibhttpd
+CC?=gcc
+CFLAGS?=-O2 -Isrc -Ilibhttpd
 #CFLAGS+=-Wall -Wwrite-strings -pedantic -std=gnu99
-LDFLAGS=-lpthread
+LDFLAGS?=-lpthread
 
 NDS_OBJS=src/auth.o src/client_list.o src/commandline.o src/conf.o \
 	src/debug.o src/firewall.o src/fw_iptables.o src/gateway.o src/http.o \
