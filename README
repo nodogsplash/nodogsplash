@@ -1,14 +1,13 @@
 
 0. The Nodogsplash project
 
-Nodogsplash offers a simple way to provide restricted access to an internet connection.
-Its functionality is similar to Nocatsplash, but it is derived from the codebase of the
-Wifi Guard Dog project. Nodogsplash is released under the GNU General Public License.
+Nodogsplash offers a simple way to provide restricted access to an internet
+connection. It is derived from the codebase of the Wifi Guard Dog project.
+Nodogsplash is released under the GNU General Public License.
 
 * Nodogsplash: http://kokoro.ucsd.edu/nodogsplash
 * OpenWRT: http://openwrt.org/
 * Wifidog: http://dev.wifidog.org/
-* Nocatsplash: http://nocat.net/
 * GNU GPL: http://www.gnu.org/copyleft/gpl.html
 
 The following describes what Nodogsplash does, how to get it and run it, and
