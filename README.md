@@ -1,5 +1,5 @@
 
-0. The Nodogsplash project
+##0. The Nodogsplash project
 
 Nodogsplash offers a simple way to provide restricted access to an internet
 connection. It is derived from the codebase of the Wifi Guard Dog project.
@@ -13,7 +13,7 @@ Nodogsplash is released under the GNU General Public License.
 The following describes what Nodogsplash does, how to get it and run it, and
 how to customize its behavior for your application.
 
-1. Overview
+##1. Overview
 
 Nodogsplash offers a solution to this problem: You want to provide controlled
 and reasonably secure public access to an internet connection; and while you
@@ -33,7 +33,7 @@ Specific features of Nodogsplash are configurable, by editing the configuration
 file and the splash page. The default installed configuration may be all you
 need, though.
 
-2. Installing and running nodogsplash
+##2. Installing and running nodogsplash
 
 
 * Have a router working with OpenWRT. Nodogsplash has been compiled against a
@@ -49,7 +49,7 @@ need, though.
   install from the project website, copy it to /tmp/ on your OpenWRT router,
   and, in as root on the router, run:
 
-  ipkg install /tmp/nodogsplash*.ipk
+  ```ipkg install /tmp/nodogsplash*.ipk```
 
   (Note: to prevent installation of an older package, you may have to remove
   references to remote package repositories in your ipkg.conf file.)
@@ -57,7 +57,7 @@ need, though.
   edit /etc/nodogsplash/nodogsplash.conf and set GatewayInterface.
 * To start nodogsplash, run the following, or just reboot the router:
 
-    /etc/init.d/nodogsplash start
+    ```/etc/init.d/nodogsplash start```
 
 * To test the installation, connect a client machine to the interface on your
   router that is managed by nodogsplash (for example, connect to the router's
@@ -66,15 +66,14 @@ need, though.
   browser should redirect to the initially requested website.
 * To stop nodogsplash:
 
-    /etc/init.d/nodogsplash stop
+    ```/etc/init.d/nodogsplash stop```
 
 * To uninstall nodogsplash:
 
-    ipkg remove nodogsplash
+    ```ipkg remove nodogsplash```
 
 
-
-3. How nodogsplash works
+##3. How nodogsplash works
 
 A wireless router running OpenWRT has two or more interfaces; nodogsplash
 manages one of them. This will typically be br-lan, the bridge to both the
@@ -82,7 +81,7 @@ wireless and wired LAN; or the wireless lan interface may be named something
 else if you have broken the br-lan bridge to separate the wired and wireless
 LAN's.
 
-3.1 Packet filtering
+###3.1 Packet filtering
 
 Nodogsplash considers four kinds of packets coming into the router over the
 managed interface. Each packet is one of these kinds:
@@ -123,7 +122,7 @@ marks. Because it inserts its rules at the beginning of existing chains,
 nodogsplash should be insensitive to most typical existing firewall
 configurations.
 
-3.2 Traffic control
+###3.2 Traffic control
 
 Nodogsplash also optionally implements basic traffic control on its managed
 interface. This feature lets you specify the maximum aggregate upload and
@@ -135,72 +134,74 @@ mangle PREROUTING and POSTROUTING tables to jump to these IMQ's. The result is
 simple but effective tail-drop rate limiting (no packet classification or
 fairness queueing is done).
 
-4. Customizing nodogsplash
+##4. Customizing nodogsplash
 
 The default shipped configuration is intended to be usable and reasonably
 secure as-is for basic internet sharing applications, but it is customizable.
 
 * To change basic nodogsplash settings, edit the configuration file:
 
-    /etc/nodogsplash/nodogsplash.conf
+    ```/etc/nodogsplash/nodogsplash.conf```
 
   In the configuration file, a FirewallRule has the form:
 
-    FirewallRule permission [protocol [port portrange]] [to ip]
+    ```FirewallRule permission [protocol [port portrange]] [to ip]```
 
   where
 
-  o permission is required and must be either allow or block.
-  o protocol is optional. If present must be tcp, udp, icmp, or all. Defaults
+  * permission is required and must be either allow or block.
+  * protocol is optional. If present must be tcp, udp, icmp, or all. Defaults
     to all.
-  o port portrange is optional. If present, protocol must be tcp or udp.
+  * port portrange is optional. If present, protocol must be tcp or udp.
     portrange can be a single integer port number, or a colon-separated port
     range, e.g. 1024:1028. Defaults to all ports.
-  o to ip is optional. If present, ip must be a decimal dotted-quad IP address
+  * to ip is optional. If present, ip must be a decimal dotted-quad IP address
     with optional mask. Defaults to 0.0.0.0/0, i.e. all addresses.
 
 * To change the contents of the splash page, edit the splash page file:
 
-    /etc/nodogsplash/htdocs/splash.html
+    ```/etc/nodogsplash/htdocs/splash.html```
 
   When the splash page is served, the following variables in the page are
   replaced by their values:
 
-  o $gatewayname The value of GatewayName as set in nodogsplash.conf.
-  o $authtarget A URL which encodes a unique token and the URL of the user's
+  * $gatewayname The value of GatewayName as set in nodogsplash.conf.
+  * $authtarget A URL which encodes a unique token and the URL of the user's
     original web request. If nodogsplash receives a request at this URL, it
     completes the authentication process for the client and replies to the
     request with a "307 Temporary Redirect" to the encoded originally requested
     URL. (Alternatively, you can use a GET-method HTML form to send this
     information to the nodogsplash server; see below.) As a simple example:
 
-      <a href="$authtarget">Enter</a>
+	```<a href="$authtarget">Enter</a>```
 
-  o $imagesdir The directory in nodogsplash's web hierarchy where images to be
+  * $imagesdir The directory in nodogsplash's web hierarchy where images to be
     displayed in the splash page must be located.
-  o $tok,$redir,$authaction, and $denyaction are also available and can be
+  * $tok,$redir,$authaction, and $denyaction are also available and can be
     useful if you want to write the splash page to use a GET-method HTML form
     instead of using $authtarget as the value of an href attribute to
     communicate with the nodogsplash server. As a simple example:
 
-      <form method='GET' action='$authaction'>
+```
+<form method='GET' action='$authaction'>
+
       <input type='hidden' name='tok' value='$tok'>
       <input type='hidden' name='redir' value='$redir'>
       <input type='submit' value='Click Here to Enter'>
       </form>
-
+```
 
 * To change the appearance of informational and error pages which may
   occasionally be served by nodogsplash, edit the infoskel file:
 
-    /etc/nodogsplash/htdocs/infoskel.html
+    ```/etc/nodogsplash/htdocs/infoskel.html```
 
   In this file, variables $gatewayname,$version,$title, and $content will be
   replaced by their values. $title is a summary of the information or kind of
   error; $content is the content of the information or error message.
 
 
-5. Site-wide username and password
+##5. Site-wide username and password
 
 Nodogsplash can be configured to require a username and/or password to be
 entered on the splash page as part of the authentication process. Since the
@@ -212,6 +213,7 @@ Then the splash page must use a GET-method HTML form to send user-entered
 username and/or password as values of variables nodoguser and nodogpass
 respectively, along with others as required, to the server. For example:
 
+```
   <form method='GET' action='$authaction'>
   <input type='hidden' name='tok' value='$tok'>
   <input type='hidden' name='redir' value='$redir'>
@@ -221,9 +223,9 @@ respectively, along with others as required, to the server. For example:
   <br>
   <input type='submit' value='Enter'>
   </form>
+```
 
-
-6. Using ndsctl
+##6. Using ndsctl
 
 A nodogsplash install includes ndsctl, a separate application which provides
 some control over a running nodogsplash process by communicating with it over a
@@ -231,39 +233,39 @@ unix socket. Some command line options:
 
 * To print to stdout some information about your nodogsplash process:
 
-    /usr/bin/ndsctl status
+    ```/usr/bin/ndsctl status```
 
 * To block a MAC address, when the MAC mechanism is block:
 
-    /usr/bin/ndsctl block MAC
+    ```/usr/bin/ndsctl block MAC```
 
 * To unblock a MAC address, when the MAC mechanism is block:
 
-    /usr/bin/ndsctl unblock MAC
+    ```/usr/bin/ndsctl unblock MAC```
 
 * To allow a MAC address, when the MAC mechanism is allow:
 
-    /usr/bin/ndsctl allow MAC
+    ```/usr/bin/ndsctl allow MAC```
 
 * To unallow a MAC address, when the MAC mechanism is allow:
 
-    /usr/bin/ndsctl unallow MAC
+    ```/usr/bin/ndsctl unallow MAC```
 
 * To deauthenticate a currently authenticated user given their IP or MAC
   address:
 
-    /usr/bin/ndsctl deauth IP|MAC
+    ```/usr/bin/ndsctl deauth IP|MAC```
 
 * To set the verbosity of logged messages to n:
 
-    /usr/bin/ndsctl loglevel n
+    ```/usr/bin/ndsctl loglevel n```
 
 
 For more options, run ndsctl -h. (Note that if you want the effect of ndsctl
 commands to to persist across nodogsplash restarts, you have to edit the
 configuration file.)
 
-7. Debugging nodogsplash
+##7. Debugging nodogsplash
 
 
 * To see maximally verbose debugging output from nodogsplash, edit the
@@ -288,10 +290,11 @@ configuration file.)
   investigated by looking at your overall iptables setup. To check to see all
   the rules in, for example, the mangle table chains, run
 
-    iptables -t mangle -v -n -L
+    ```iptables -t mangle -v -n -L```
 
   For extensive suggestions on debugging iptables, see for example Oskar
   Andreasson's_tutorial.
 
--------------------------------------------------------------------------------
+---
+
 Email contact: nodogsplash (at) ml.ninux.org
