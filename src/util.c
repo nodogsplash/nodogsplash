@@ -254,7 +254,7 @@ get_iface_mac(const char *ifname)
 
 	strcpy(ifr.ifr_name, ifname);
 
-	s = socket(PF_INET, SOCK_DGRAM, 0);
+	s = socket(AF_INET, SOCK_DGRAM, 0);
 	if (-1 == s) {
 		debug(LOG_ERR, "get_iface_mac socket: %s", strerror(errno));
 		return NULL;
