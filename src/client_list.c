@@ -321,6 +321,8 @@ client_list_delete(t_client * client)
 	if (ptr == NULL) {
 		debug(LOG_ERR, "Node list empty!");
 	} else if (ptr == client) {
+		debug(LOG_NOTICE, "Deleting %s %s token %s from client list",
+			  client->ip, client->mac, client->token ? client->token : "none");
 		firstclient = ptr->next;
 		_client_list_free_node(client);
 		client_count--;
