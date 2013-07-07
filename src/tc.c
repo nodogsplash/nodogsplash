@@ -35,12 +35,13 @@
 
 #include "safe.h"
 #include "conf.h"
+#include "client_list.h"
 #include "auth.h"
 #include "fw_iptables.h"
 #include "firewall.h"
 #include "debug.h"
 #include "util.h"
-#include "client_list.h"
+
 #include "tc.h"
 
 
@@ -76,6 +77,46 @@ tc_do_command(char *format, ...)
 	return rc;
 }
 
+int
+tc_attach_client(char *down_dev, int download_limit, char *up_dev, int upload_limit, int idx, int fw_mark) {
+  int burst;
+  int mtu = MTU + 40;
+  int rc = 0;
+  int r2q = 10;
+
+  if(download_limit < 120) r2q = 1;
+
+  burst = download_limit * 1000 / 8 / HZ; /* burst (buffer size) in bytes */
+  burst = burst < mtu ? mtu : burst; /* but burst should be at least mtu */
+
+  rc |= tc_do_command("class add dev %s parent 1:1 classid 1:%i htb rate %dkbit ceil %dkbit burst %d cburst %d mtu %d prio 1",
+          down_dev, idx + 10, download_limit, download_limit, burst*10, burst, mtu);
+  rc |= tc_do_command("filter add dev %s protocol ip parent 1: handle 0x%x%x fw flowid 1:%i",
+          down_dev, idx + 10, fw_mark, idx + 10);
+
+  /* to avoid some kernel warnings with small rates */
+  if(upload_limit < 120) r2q = 1;
+
+  burst = upload_limit * 1000 / 8 / HZ; /* burst (buffer size) in bytes */
+  burst = burst < mtu ? mtu : burst; /* but burst should be at least mtu */
+
+  rc |= tc_do_command("class add dev %s parent 1:1 classid 1:%i htb rate %dkbit ceil %dkbit burst %d cburst %d mtu %d prio 1",
+          up_dev, idx + 10, upload_limit, upload_limit, burst*10, burst, mtu);
+  rc |= tc_do_command("filter add dev %s protocol ip parent 1: handle 0x%x%x fw flowid 1:%i",
+          up_dev, idx + 10, fw_mark, idx + 10);
+  return rc;
+
+}
+
+int
+tc_detach_client(char *down_dev, char *up_dev, int idx) {
+  int rc = 0;
+
+  rc |= tc_do_command("class del dev %s parent 1: classid 1:%i", down_dev, idx + 10);
+  rc |= tc_do_command("class del dev %s parent 1: classid 1:%i", up_dev, idx + 10);
+
+  return rc;
+}
 
 /* Use HTB as a upload qdisc.
  * dev is name of device to attach qdisc to (typically an IMQ)
@@ -86,20 +127,18 @@ tc_do_command(char *format, ...)
 static int
 tc_attach_upload_qdisc(char *dev, int upload_limit)
 {
+	int rc = 0;
 	int burst;
 	int mtu = MTU + 40;
-	int rc = 0;
-	int r2q = 10;
-
-	/* to avoid some kernel warnings with small rates */
-	if(upload_limit < 120) r2q = 1;
 
 	burst = upload_limit * 1000 / 8 / HZ; /* burst (buffer size) in bytes */
 	burst = burst < mtu ? mtu : burst; /* but burst should be at least mtu */
 
-	rc |= tc_do_command("qdisc add dev %s root handle 1: htb default 1 r2q %d", dev,r2q);
-	rc |= tc_do_command("class add dev %s parent 1: classid 1:1 htb rate %dkbit ceil %dkbit burst %d cburst %d mtu %d prio 1",
-						dev, upload_limit, upload_limit, burst*2, burst, mtu);
+	rc |= tc_do_command("qdisc add dev %s root handle 1: htb default 2 r2q %d", dev, 1700);
+	rc |= tc_do_command("class add dev %s parent 1: classid 1:1 htb rate 100Mbps ceil 100Mbps burst %d cburst %d mtu %d",
+		dev, burst*10, burst, mtu);
+	rc |= tc_do_command("class add dev %s parent 1:1 classid 1:2 htb rate %dkbit ceil %dkbit burst %d cburst %d mtu %d prio 1",
+		dev, upload_limit, upload_limit, burst*10, burst, mtu);
 
 	return rc;
 }
@@ -113,21 +152,19 @@ tc_attach_upload_qdisc(char *dev, int upload_limit)
 static int
 tc_attach_download_qdisc(char *dev, int download_limit)
 {
+	int rc = 0;
 	int burst;
 	int mtu = MTU + 40;
-	int rc = 0;
-	int r2q = 10;
-
-	/* to avoid some kernel warnings with small rates */
-	if(download_limit < 120) r2q = 1;
 
 	burst = download_limit * 1000 / 8 / HZ; /* burst (buffer size) in bytes */
 	burst = burst < mtu ? mtu : burst; /* but burst should be at least mtu */
 
+	rc |= tc_do_command("qdisc add dev %s root handle 1: htb default 2 r2q %d", dev, 1700);
+	rc |= tc_do_command("class add dev %s parent 1: classid 1:1 htb rate 100Mbps ceil 100Mbps burst %d cburst %d mtu %d",
+		dev, burst*10, burst, mtu);
+	rc |= tc_do_command("class add dev %s parent 1:1 classid 1:2 htb rate %dkbit ceil %dkbit burst %d cburst %d mtu %d prio 1",
+		dev, download_limit, download_limit, burst*10, burst, mtu);
 
-	rc |= tc_do_command("qdisc add dev %s root handle 1: htb default 1 r2q %d", dev, r2q);
-	rc |= tc_do_command("class add dev %s parent 1: classid 1:1 htb rate %dkbit ceil %dkbit burst %d cburst %d mtu %d prio 1",
-						dev, download_limit, download_limit, burst*2, burst, mtu);
 	return rc;
 }
 

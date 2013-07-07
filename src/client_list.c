@@ -49,6 +49,7 @@
 
 /** Client counter */
 static int client_count = 0;
+static t_client **client_arr;
 
 /** Time last client added */
 static unsigned long int last_client_time = 0;
@@ -83,8 +84,17 @@ client_get_first_client(void)
 void
 client_list_init(void)
 {
+	s_config *config;
+	int i;
+
 	firstclient = NULL;
 	client_count = 0;
+
+	config = config_get_config();
+	client_arr = safe_malloc(config->maxclients * sizeof(t_client *));
+
+	for (i = 0; i < config->maxclients; i++)
+		client_arr[i] = NULL;
 }
 
 /** @internal
@@ -103,7 +113,7 @@ _client_list_append(const char *ip, const char *mac, const char *token)
 {
 	t_client *client, *prevclient;
 	s_config *config;
-	int maxclients;
+	int maxclients, i;
 
 	config = config_get_config();
 	maxclients = config->maxclients;
@@ -132,6 +142,15 @@ _client_list_append(const char *ip, const char *mac, const char *token)
 	last_client_time = time(NULL);
 	client->counters.last_updated = last_client_time;
 	client->added_time = last_client_time;
+
+	for (i = 0; i < maxclients; i++) {
+		if (client_arr[i])
+			continue;
+		break;
+	}
+
+	client_arr[i] = client;
+	client->idx = i;
 
 	debug(LOG_NOTICE, "Adding %s %s token %s to client list",
 		  client->ip, client->mac, client->token ? client->token : "none");
@@ -300,6 +319,9 @@ _client_list_free_node(t_client * client)
 
 	if (client->token != NULL)
 		free(client->token);
+
+	if (client_arr[client->idx] == client)
+		client_arr[client->idx] = NULL;
 
 	free(client);
 }

@@ -67,10 +67,10 @@
 #include "safe.h"
 #include "debug.h"
 #include "conf.h"
+#include "client_list.h"
 #include "firewall.h"
 #include "fw_iptables.h"
 #include "auth.h"
-#include "client_list.h"
 
 
 extern pthread_mutex_t client_list_mutex;
@@ -215,7 +215,7 @@ fw_refresh_client_list(void)
 					  cp1->ip, cp1->mac, config->checkinterval * config->clienttimeout,
 					  cp1->counters.incoming/1000, cp1->counters.outgoing/1000);
 				if(cp1->fw_connection_state == FW_MARK_AUTHENTICATED) {
-					iptables_fw_access(AUTH_MAKE_DEAUTHENTICATED, cp1->ip, cp1->mac);
+					iptables_fw_access(AUTH_MAKE_DEAUTHENTICATED, cp1);
 				}
 				client_list_delete(cp1);
 			} else if (added_time +  (config->checkinterval * config->clientforceout) <= now) {
@@ -224,7 +224,7 @@ fw_refresh_client_list(void)
 					  cp1->ip, cp1->mac, config->checkinterval * config->clientforceout,
 					  cp1->counters.incoming/1000, cp1->counters.outgoing/1000);
 				if(cp1->fw_connection_state == FW_MARK_AUTHENTICATED) {
-					iptables_fw_access(AUTH_MAKE_DEAUTHENTICATED, cp1->ip, cp1->mac);
+					iptables_fw_access(AUTH_MAKE_DEAUTHENTICATED, cp1);
 				}
 				client_list_delete(cp1);
 			}
