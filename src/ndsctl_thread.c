@@ -47,9 +47,10 @@
 #include "debug.h"
 #include "auth.h"
 #include "safe.h"
+#include "client_list.h"
 #include "fw_iptables.h"
 #include "firewall.h"
-#include "client_list.h"
+
 #include "ndsctl_thread.h"
 
 /* Defined in clientlist.c */

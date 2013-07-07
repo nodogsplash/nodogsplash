@@ -51,6 +51,76 @@
 
 extern pthread_mutex_t client_list_mutex;
 
+static int data_extract_bw(char *buff, t_client *client)
+{
+	char *download_ptr, *upload_ptr;
+	int download, upload;
+
+	download_ptr = strchr(buff, ' ');
+	if (!download_ptr)
+		goto err;
+
+	*download_ptr = '\0';
+	download_ptr++;
+
+	upload_ptr = strchr(download_ptr, ' ');
+	if (!upload_ptr)
+		goto err;
+
+	*upload_ptr = '\0';
+	upload_ptr++;
+
+	download = strtol(download_ptr, NULL, 10);
+	if (download < 1)
+		goto err;
+
+	upload = strtol(upload_ptr, NULL, 10);
+	if (upload < 1)
+		goto err;
+
+	client->download_limit = download;
+	client->upload_limit = upload;
+	return 0;
+
+err:
+	client->download_limit = 0;
+	client->upload_limit = 0;
+	return -1;
+}
+
+char *system_exec(char *cmd)
+{
+	char *data = NULL;
+	int error, pipes[2], stderr_fd = -1;
+	int data_len = 100, read_len;
+
+	data = malloc(data_len);
+	if (!data)
+		goto out;
+
+	memset(data, 0, data_len);
+
+	error = pipe(pipes);
+	if (error < 0)
+		goto out;
+
+	stderr_fd = dup(STDOUT_FILENO);
+
+	dup2(pipes[1], STDOUT_FILENO);
+	close(pipes[1]);
+
+	error = system(cmd);
+
+	dup2(stderr_fd, STDOUT_FILENO);
+	close(stderr_fd);
+
+	read_len = read(pipes[0], data, data_len - 1);
+	data[read_len] = '\0';
+
+	close(pipes[0]);
+out:
+	return data;
+}
 
 /* response handler for HTTP 405 Method Not Allowed */
 void
@@ -110,7 +180,8 @@ http_nodogsplash_first_contact(request *r)
 	t_client *client;
 	t_auth_target *authtarget;
 	s_config *config;
-	char *redir;
+	char *redir, cmd_buff[50], *data = NULL;
+	int ret, seconds;
 
 	/* only allow GET requests */
 	if (r->request.method != HTTP_GET) {
@@ -132,9 +203,31 @@ http_nodogsplash_first_contact(request *r)
 	if(config->authenticate_immediately) {
 		/* Don't serve splash, just authenticate */
 		http_nodogsplash_callback_action(r,authtarget,AUTH_MAKE_AUTHENTICATED);
+	} else if (config->enable_preauth) {
+		snprintf(cmd_buff, sizeof(cmd_buff) - 1, "captive_portal auth_status %s", client->mac);
+		data = system_exec(cmd_buff);
+
+		if(!data)
+			goto serve_splash;
+
+		seconds = strtol(data, NULL, 10);
+		if(seconds < 1)
+			goto serve_splash;
+
+		ret = data_extract_bw(data, client);
+		if(ret < 0)
+			goto serve_splash;
+
+		debug(LOG_NOTICE, "Remote auth data: client [%s, %s] authenticated %d seconds",
+		client->mac, client->ip, seconds);
+		http_nodogsplash_callback_action(r,authtarget,AUTH_MAKE_AUTHENTICATED);
+		client->added_time = time(NULL) - (config->checkinterval * config->clientforceout) + seconds;
+		free(data);
 	} else {
 		/* Serve the splash page (or redirect to remote authenticator) */
-		http_nodogsplash_serve_splash(r,authtarget);
+serve_splash:
+		free(data);
+		http_nodogsplash_serve_splash(r,authtarget, NULL);
 	}
 
 	http_nodogsplash_free_authtarget(authtarget);
@@ -248,16 +341,64 @@ http_nodogsplash_callback_action(request *r,
 void
 http_nodogsplash_callback_auth(httpd *webserver, request *r)
 {
+	s_config *config;
+	t_client  *client;
 	t_auth_target *authtarget;
+	char *ip, *mac, *msg = NULL, cmd_buff[50], *data = NULL;
+	int ret, seconds;
 
 	/* Get info we need from request, and do action */
 	authtarget = http_nodogsplash_decode_authtarget(r);
+	config = config_get_config();
 
-	if(http_nodogsplash_check_userpass(r,authtarget)) {
+	if (config->enable_voucher && ((authtarget->voucher) || (config->force_voucher))) {
+		ip = r->clientAddr;
+		mac = arp_get(ip);
+
+		if (!mac)
+			goto serve_splash;
+
+		LOCK_CLIENT_LIST();
+		client = client_list_find(ip, mac);
+		UNLOCK_CLIENT_LIST();
+
+		if (!client)
+			goto serve_splash;
+
+		snprintf(cmd_buff, sizeof(cmd_buff) - 1, "captive_portal auth_voucher %s %s",
+		client->mac, authtarget->voucher);
+		data = system_exec(cmd_buff);
+
+		if (!data)
+			goto serve_splash;
+
+		seconds = strtol(data, NULL, 10);
+		if (seconds < 1)
+			goto serve_splash;
+
+		ret = data_extract_bw(data, client);
+		if (ret < 0)
+			goto serve_splash;
+
+		debug(LOG_NOTICE, "Remote voucher: client [%s, %s] authenticated %d seconds",
+		client->mac, client->ip, seconds);
+		free(mac);
+		free(data);
+		http_nodogsplash_callback_action(r,authtarget,AUTH_MAKE_AUTHENTICATED);
+		client->added_time = time(NULL) - (config->checkinterval * config->clientforceout) + seconds;
+  } else if(http_nodogsplash_check_userpass(r,authtarget)) {
 		http_nodogsplash_callback_action (r,authtarget,AUTH_MAKE_AUTHENTICATED);
 	} else {
 		/* Password check failed; just serve them the splash page again */
-		http_nodogsplash_serve_splash(r,authtarget);
+serve_splash:
+		if (data) {
+			msg = strchr(data, ' ');
+			if (msg)
+				msg++;
+		}
+		http_nodogsplash_serve_splash(r,authtarget,msg);
+		free(mac);
+		free(data);
 	}
 
 	http_nodogsplash_free_authtarget(authtarget);
@@ -324,7 +465,7 @@ http_nodogsplash_redirect_remote_auth(request *r, t_auth_target *authtarget)
  * or redirect to remote authenticator as required.
  */
 void
-http_nodogsplash_serve_splash(request *r, t_auth_target *authtarget)
+http_nodogsplash_serve_splash(request *r, t_auth_target *authtarget, char *error_msg)
 {
 	char *tmpstr;
 	char line [MAX_BUF];
@@ -341,6 +482,10 @@ http_nodogsplash_serve_splash(request *r, t_auth_target *authtarget)
 	}
 
 	/* Set variables; these can be interpolated in the splash page text. */
+	if (error_msg)
+	  httpdAddVariable(r,"error_msg", error_msg);
+	else
+	  httpdAddVariable(r,"error_msg", "");
 	httpdAddVariable(r,"gatewayname",config->gw_name);
 	httpdAddVariable(r,"tok",authtarget->token);
 	httpdAddVariable(r,"redir",authtarget->redir);
@@ -486,6 +631,10 @@ http_nodogsplash_decode_authtarget(request *r)
 	if(var && var->value) {
 		authtarget->info = safe_strdup(var->value);
 	}
+
+	var = httpdGetVariableByName(r,"voucher");
+	if(var && var->value)
+		authtarget->voucher = var->value;
 
 	return authtarget;
 }

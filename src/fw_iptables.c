@@ -44,11 +44,11 @@
 #include "safe.h"
 #include "conf.h"
 #include "auth.h"
+#include "client_list.h"
 #include "fw_iptables.h"
 #include "firewall.h"
 #include "debug.h"
 #include "util.h"
-#include "client_list.h"
 #include "tc.h"
 
 static char * _iptables_compile(const char *, char *, t_firewall_rule *);
@@ -410,7 +410,7 @@ iptables_fw_init(void)
 	 */
 
 	/* packets coming in on gw_interface jump to CHAIN_OUTGOING */
-	rc |= iptables_do_command("-t nat -I PREROUTING -i %s -s %s -j " CHAIN_OUTGOING, gw_interface, gw_iprange);
+	rc |= iptables_do_command("-t nat -A PREROUTING -i %s -s %s -j " CHAIN_OUTGOING, gw_interface, gw_iprange);
 	/* CHAIN_OUTGOING, packets marked TRUSTED  ACCEPT */
 	rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -m mark --mark 0x%x%s -j ACCEPT", FW_MARK_TRUSTED, markmask);
 	/* CHAIN_OUTGOING, packets marked AUTHENTICATED  ACCEPT */
@@ -501,7 +501,7 @@ iptables_fw_init(void)
 	 */
 
 	/* packets coming in on gw_interface jump to CHAIN_TO_INTERNET */
-	rc |= iptables_do_command("-t filter -I FORWARD -i %s -s %s -j " CHAIN_TO_INTERNET, gw_interface, gw_iprange);
+	rc |= iptables_do_command("-t filter -A FORWARD -i %s -s %s -j " CHAIN_TO_INTERNET, gw_interface, gw_iprange);
 	/* CHAIN_TO_INTERNET packets marked BLOCKED  DROP */
 	rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m mark --mark 0x%x%s -j DROP", FW_MARK_BLOCKED, markmask);
 	/* CHAIN_TO_INTERNET, invalid packets  DROP */
@@ -716,31 +716,49 @@ iptables_fw_destroy_mention(
 /** Insert or delete firewall mangle rules marking a client's packets.
  */
 int
-iptables_fw_access(t_authaction action, const char *ip, const char *mac)
-{
-	int rc;
+iptables_fw_access(t_authaction action, t_client *client) {
+	int rc = 0, download_limit, upload_limit;
+	s_config *config;
+	char *download_imqname, *upload_imqname;
 
 	fw_quiet = 0;
 
+	config = config_get_config();
+	safe_asprintf(&download_imqname,"imq%d",config->download_imq); /* must free */
+	safe_asprintf(&upload_imqname,"imq%d",config->upload_imq);  /* must free */
+
+	download_limit = config->download_limit;
+	upload_limit = config->upload_limit;
+
+	if ((client->download_limit > 0) && (client->upload_limit > 0)) {
+		download_limit = client->download_limit;
+		upload_limit = client->upload_limit;
+	}
+
 	switch(action) {
 	case AUTH_MAKE_AUTHENTICATED:
-		debug(LOG_NOTICE, "Authenticating %s %s", ip, mac);
+		debug(LOG_NOTICE, "Authenticating %s %s", client->ip, client->mac);
 		/* This rule is for marking upload (outgoing) packets, and for upload byte counting */
-		rc = iptables_do_command("-t mangle -A " CHAIN_OUTGOING " -s %s -m mac --mac-source %s -j MARK %s 0x%x", ip, mac, markop, FW_MARK_AUTHENTICATED);
+		rc |= iptables_do_command("-t mangle -I " CHAIN_OUTGOING " -s %s -m mac --mac-source %s -j MARK %s 0x%x%x", client->ip, client->mac, markop, client->idx + 10, FW_MARK_AUTHENTICATED);
+		rc |= iptables_do_command("-t mangle -I " CHAIN_INCOMING " -d %s -j MARK %s 0x%x%x", client->ip, markop, client->idx + 10, FW_MARK_AUTHENTICATED);
 		/* This rule is just for download (incoming) byte counting, see iptables_fw_counters_update() */
-		rc = iptables_do_command("-t mangle -A " CHAIN_INCOMING " -d %s -j ACCEPT", ip);
+		rc |= iptables_do_command("-t mangle -A " CHAIN_INCOMING " -d %s -j ACCEPT", client->ip);
+		rc |= tc_attach_client(download_imqname, download_limit, upload_imqname, upload_limit, client->idx, FW_MARK_AUTHENTICATED);
 		break;
 	case AUTH_MAKE_DEAUTHENTICATED:
 		/* Remove the authentication rules. */
-		debug(LOG_NOTICE, "Deauthenticating %s %s", ip, mac);
-		rc = iptables_do_command("-t mangle -D " CHAIN_OUTGOING " -s %s -m mac --mac-source %s -j MARK %s 0x%x", ip, mac, markop, FW_MARK_AUTHENTICATED);
-		rc = iptables_do_command("-t mangle -D " CHAIN_INCOMING " -d %s -j ACCEPT", ip);
+		debug(LOG_NOTICE, "Deauthenticating %s %s", client->ip, client->mac);
+		rc |= iptables_do_command("-t mangle -D " CHAIN_OUTGOING " -s %s -m mac --mac-source %s -j MARK %s 0x%x%x", client->ip, client->mac, markop, client->idx + 10, FW_MARK_AUTHENTICATED);
+		rc |= iptables_do_command("-t mangle -D " CHAIN_INCOMING " -d %s -j ACCEPT", client->ip);
+		rc |= tc_detach_client(download_imqname, upload_imqname, client->idx);
 		break;
 	default:
 		rc = -1;
 		break;
 	}
 
+	free(upload_imqname);
+	free(download_imqname);
 	return rc;
 }
 
