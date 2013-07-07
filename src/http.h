@@ -46,6 +46,7 @@ typedef struct _auth_target_t {
 	char *authtarget;		/**< @brief Deny action */
 	char *token;			/**< @brief Client token */
 	char *redir;			/**< @brief Client redirect target */
+	char *voucher;    /**< @brief voucher token */
 	char *username;		/**< @brief User name */
 	char *password;		/**< @brief User password */
 	char *info;			/**< @brief Auxilliary info */
@@ -68,7 +69,7 @@ void http_nodogsplash_redirect(request *r, char *url);
 /**@brief Redirect to remote auth server */
 void http_nodogsplash_redirect_remote_auth(request *r, t_auth_target *authtarget);
 /**@brief Serve the splash page from its file */
-void http_nodogsplash_serve_splash(request *r, t_auth_target *authtarget);
+void http_nodogsplash_serve_splash(request *r, t_auth_target *authtarget, char *error_msg);
 /**@brief Serve the info page from its file */
 void http_nodogsplash_serve_info(request *r, char *title, char *content);
 /**@brief Handle initial contact from client */

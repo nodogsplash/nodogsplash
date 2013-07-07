@@ -50,6 +50,9 @@ typedef struct	_t_client {
 	t_counters	counters;	/**< @brief Counters for input/output of
 				   the client. */
 	int attempts;                 /**< @brief Number of authentication attempts */
+	int download_limit;           /**< @brief Download limit, kb/s */
+	int upload_limit;             /**< @brief Upload limit, kb/s */
+	int idx;
 } t_client;
 
 /** @brief Get the first element of the list of connected clients
