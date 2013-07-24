@@ -110,7 +110,7 @@ http_nodogsplash_first_contact(request *r)
 	t_client *client;
 	t_auth_target *authtarget;
 	s_config *config;
-	char *redir;
+	char *redir, *origurl;
 
 	/* only allow GET requests */
 	if (r->request.method != HTTP_GET) {
@@ -123,11 +123,20 @@ http_nodogsplash_first_contact(request *r)
 	/* http_nodogsplash_add_client() should log and return null on error */
 	if(!client) return;
 
+	/* We just assume protocol http; after all we caught the client by
+	   redirecting port 80 tcp packets
+	*/
+	safe_asprintf(&origurl,"http://%s%s%s%s",
+			r->request.host,r->request.path,
+			r->request.query[0]?"?":"",r->request.query);
+
 	/* Create redirect URL for this contact as appropriate */
-	redir = http_nodogsplash_make_redir(r->request.host,r->request.path);
+	redir = http_nodogsplash_make_redir(origurl);
+
 	/* Create authtarget with all needed info */
 	authtarget = http_nodogsplash_make_authtarget(client->token,redir);
-	free(redir);
+
+	free(origurl);
 
 	if(config->authenticate_immediately) {
 		/* Don't serve splash, just authenticate */
@@ -494,23 +503,16 @@ http_nodogsplash_decode_authtarget(request *r)
  * Caller must free.
  */
 char*
-http_nodogsplash_make_redir(char* redirhost, char* redirpath)
+http_nodogsplash_make_redir(char* origurl)
 {
 	s_config *config;
-	char* redir;
 	config = config_get_config();
 
 	if(config->redirectURL) {
-		debug(LOG_DEBUG,"Redirect request http://%s%s, substituting %s",
-			  redirhost,redirpath,config->redirectURL);
-		redir = safe_strdup(config->redirectURL);
-	} else {
-		/* We just assume protocol http; after all we caught the client by
-		   redirecting port 80 tcp packets
-		*/
-		safe_asprintf(&redir,"http://%s%s",redirhost,redirpath);
+		debug(LOG_DEBUG,"Redirect request , substituting %s", origurl);
+		return config->redirectURL;
 	}
-	return redir;
+	return origurl;
 }
 
 /**

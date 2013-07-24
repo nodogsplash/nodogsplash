@@ -80,7 +80,7 @@ t_auth_target* http_nodogsplash_make_authtarget(char* token, char* redir);
 /**@brief Free a t_auth_target struct */
 void http_nodogsplash_free_authtarget(t_auth_target* authtarget);
 /**@brief Malloc and return a redirect URL */
-char* http_nodogsplash_make_redir(char* redirhost, char* redirpath);
+char* http_nodogsplash_make_redir(char* origurl);
 /**@brief Do password check if configured */
 int http_nodogsplash_check_password(request *r, t_auth_target *authtarget);
 /**@brief Allocate and return a random string of 8 hex digits
