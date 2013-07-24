@@ -3,7 +3,8 @@ CC?=gcc
 CFLAGS?=-O2
 CFLAGS+=-Isrc -Ilibhttpd
 #CFLAGS+=-Wall -Wwrite-strings -pedantic -std=gnu99
-LDFLAGS+=-lpthread
+LDFLAGS+=-pthread
+LDLIBS=
 
 NDS_OBJS=src/auth.o src/client_list.o src/commandline.o src/conf.o \
 	src/debug.o src/firewall.o src/fw_iptables.o src/gateway.o src/http.o \
@@ -20,10 +21,10 @@ all: nodogsplash ndsctl
 	$(CC) $(CFLAGS) -c $< -o $@
 
 nodogsplash: $(NDS_OBJS) $(LIBHTTPD_OBJS)
-	$(CC) $(LDFLAGS) -o nodogsplash $+
+	$(CC) $(LDFLAGS) -o nodogsplash $+ $(LDLIBS)
 
 ndsctl: src/ndsctl.o
-	$(CC) $(LDFLAGS) -o ndsctl $+
+	$(CC) $(LDFLAGS) -o ndsctl $+ $(LDLIBS)
 
 clean:
 	rm -f nodogsplash ndsctl src/*.o libhttpd/*.o
