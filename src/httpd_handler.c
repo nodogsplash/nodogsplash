@@ -18,9 +18,9 @@
  *                                                                  *
 \********************************************************************/
 
-/* $Id: httpd_thread.c 901 2006-01-17 18:58:13Z mina $ */
+/* $Id: httpd_handler.c 901 2006-01-17 18:58:13Z mina $ */
 
-/** @file httpd_thread.c
+/** @file httpd_handler.c
     @brief Handles one web request.
     @author Copyright (C) 2004 Alexandre Carmel-Veilleux <acv@acv.ca>
 */
@@ -29,7 +29,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <pthread.h>
 #include <string.h>
 #include <unistd.h>
 #include <syslog.h>
@@ -40,45 +39,25 @@
 
 #include "common.h"
 #include "debug.h"
-#include "httpd_thread.h"
+#include "httpd_handler.h"
 
 
-/* Defined in gateway.c */
-extern int created_httpd_threads;
-extern int current_httpd_threads;
-
-/** Entry point for httpd request handling thread.
+/** Entry point for httpd request handler.
 @param args Two item array of void-cast pointers to the httpd and request struct
 */
 void
-thread_httpd(void *args)
+handle_http_request(httpd *webserver, request *r)
 {
-	void **params;
-	httpd *webserver;
-	request *r;
-	int serialnum;
-
-	current_httpd_threads++;
-
-	params = (void **)args;
-	webserver = *params;
-	r = *(params + 1);
-	serialnum = *(params + 2);
-	free(*(params + 2)); /* XXX We must release this here. */
-	free(params); /* XXX We must release this here. */
-
 	if (httpdReadRequest(webserver, r) == 0) {
 		/*
 		 * We read the request fine
 		 */
-		debug(LOG_DEBUG, "Thread %d calling httpdProcessRequest() for %s", serialnum, r->clientAddr);
+		debug(LOG_DEBUG, "Calling httpdProcessRequest() for %s", r->clientAddr);
 		httpdProcessRequest(webserver, r);
-		debug(LOG_DEBUG, "Thread %d returned from httpdProcessRequest() for %s", serialnum, r->clientAddr);
+		debug(LOG_DEBUG, "Returned from httpdProcessRequest() for %s", r->clientAddr);
 	} else {
-		debug(LOG_DEBUG, "Thread %d: No valid request received from %s", serialnum, r->clientAddr);
+		debug(LOG_DEBUG, "No valid request received from %s", r->clientAddr);
 	}
 	httpdEndRequest(r);
-	debug(LOG_DEBUG, "Thread %d ended request from %s", serialnum, r->clientAddr);
-
-	current_httpd_threads--;
+	debug(LOG_DEBUG, "Ended request from %s", r->clientAddr);
 }
