@@ -64,7 +64,7 @@ void http_nodogsplash_callback_deny(httpd *webserver, request *r);
 void http_nodogsplash_callback_action(request *r, t_auth_target *authtarget, t_authaction action);
 /**@brief Add client identified in request to client list. */
 t_client* http_nodogsplash_add_client(request *r);
-/**@brief Serve a 307 Temporary Redirect */
+/**@brief Serve a 302 Found */
 void http_nodogsplash_redirect(request *r, char *url);
 /**@brief Redirect to remote auth server */
 void http_nodogsplash_redirect_remote_auth(request *r, t_auth_target *authtarget);

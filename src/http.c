@@ -590,7 +590,7 @@ http_nodogsplash_redirect(request *r, char *url)
 {
 	char *header;
 
-	httpdSetResponse(r, "307 Temporary Redirect");
+	httpdSetResponse(r, "302 Found");
 	safe_asprintf(&header, "Location: %s",url);
 	httpdAddHeader(r, header);
 
