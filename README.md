@@ -169,7 +169,7 @@ replaced by their values:
 * $authtarget A URL which encodes a unique token and the URL of the user's
   original web request. If nodogsplash receives a request at this URL, it
   completes the authentication process for the client and replies to the
-  request with a "307 Temporary Redirect" to the encoded originally requested
+  request with a "302 Found" to the encoded originally requested
   URL. (Alternatively, you can use a GET-method HTML form to send this
   information to the nodogsplash server; see below.) As a simple example:
 
