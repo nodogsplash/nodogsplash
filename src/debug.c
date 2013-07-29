@@ -65,7 +65,7 @@ _debug(char *filename, int line, int level, char *format, ...)
 		}
 
 		if (config->log_syslog) {
-			openlog("wifidog", LOG_PID, config->syslog_facility);
+			openlog("nodogsplash", LOG_PID, config->syslog_facility);
 			va_start(vlist, format);
 			vsyslog(level, format, vlist);
 			va_end(vlist);
