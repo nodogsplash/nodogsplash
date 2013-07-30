@@ -83,9 +83,6 @@
 #define DEFAULT_FW_MARK_AUTHENTICATED 0x400
 #define DEFAULT_FW_MARK_TRUSTED 0x200
 #define DEFAULT_FW_MARK_BLOCKED 0x100
-#define DEFAULT_DECONGEST_HTTPD_THREADS 0
-#define DEFAULT_HTTPD_THREAD_THRESHOLD 3
-#define DEFAULT_HTTPD_THREAD_DELAY_MS 200
 /* N.B.: default policies here must be ACCEPT, REJECT, or RETURN
  * In the .conf file, they must be allow, block, or passthrough
  * Mapping between these enforced by parse_empty_ruleset_policy() */
@@ -176,9 +173,6 @@ typedef struct {
 	int upload_imq;		/**< @brief Number of IMQ handling upload */
 	int log_syslog;		/**< @brief boolean, whether to log to syslog */
 	int syslog_facility;		/**< @brief facility to use when using syslog for logging */
-	int decongest_httpd_threads;	/**< @brief boolean, whether to avoid httpd thread congestion */
-	int httpd_thread_threshold; 	/**< @brief number of concurrent httpd threads before trying decongestion */
-	int httpd_thread_delay_ms; /**< @brief ms delay before starting a httpd thread after threshold */
 	int macmechanism; 		/**< @brief mechanism wrt MAC addrs */
 	t_firewall_ruleset *rulesets;	/**< @brief firewall rules */
 	t_MAC *trustedmaclist; 	/**< @brief list of trusted macs */
