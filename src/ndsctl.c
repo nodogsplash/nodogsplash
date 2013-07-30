@@ -238,7 +238,7 @@ parse_commandline(int argc, char **argv)
 	} else if (strcmp(*(argv + optind), "password") == 0) {
 		config.command = NDSCTL_PASSWORD;
 		if ((argc - (optind + 1)) <= 0) {
-			fprintf(stderr, "ndsctl: Error: You must specify a password");
+			fprintf(stderr, "ndsctl: Error: You must specify a password\n");
 			usage();
 			exit(1);
 		}
@@ -246,7 +246,7 @@ parse_commandline(int argc, char **argv)
 	} else if (strcmp(*(argv + optind), "username") == 0) {
 		config.command = NDSCTL_USERNAME;
 		if ((argc - (optind + 1)) <= 0) {
-			fprintf(stderr, "ndsctl: Error: You must specify a username");
+			fprintf(stderr, "ndsctl: Error: You must specify a username\n");
 			usage();
 			exit(1);
 		}
@@ -327,7 +327,7 @@ ndsctl_action(char * cmd, char * ifyes, char * ifno)
 	}
 
 	if(rlen<0) {
-		fprintf(stderr, "ndsctl: Error reading socket: %s", strerror(errno));
+		fprintf(stderr, "ndsctl: Error reading socket: %s\n", strerror(errno));
 	}
 
 	if (strcmp(buffer, "Yes") == 0) {
@@ -367,7 +367,7 @@ ndsctl_print(char * cmd)
 	}
 
 	if(len<0) {
-		fprintf(stderr, "ndsctl: Error reading socket: %s", strerror(errno));
+		fprintf(stderr, "ndsctl: Error reading socket: %s\n", strerror(errno));
 	}
 
 	shutdown(sock, 2);
