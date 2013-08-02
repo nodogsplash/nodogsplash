@@ -1,4 +1,3 @@
-
 ##0. The Nodogsplash project
 
 Nodogsplash offers a simple way to provide restricted access to an internet
@@ -72,7 +71,6 @@ need, though.
 
     ```ipkg remove nodogsplash```
 
-
 ##3. How nodogsplash works
 
 A wireless router running OpenWRT has two or more interfaces; nodogsplash
@@ -141,43 +139,43 @@ secure as-is for basic internet sharing applications, but it is customizable.
 
 * To change basic nodogsplash settings, edit the configuration file:
 
-```/etc/nodogsplash/nodogsplash.conf```
+  ```/etc/nodogsplash/nodogsplash.conf ```
 
 In the configuration file, a FirewallRule has the form:
 
-```FirewallRule permission [protocol [port portrange]] [to ip]```
+  ```FirewallRule permission [protocol [port portrange]] [to ip]```
 
 where
 
-* permission is required and must be either allow or block.
-* protocol is optional. If present must be tcp, udp, icmp, or all.
+* *permission* is required and must be either allow or block.
+* *protocol* is optional. If present must be tcp, udp, icmp, or all.
   Defaults to all.
-* port portrange is optional. If present, protocol must be tcp or udp.
+* port *portrange* is optional. If present, protocol must be tcp or udp.
   portrange can be a single integer port number, or a colon-separated port
   range, e.g. 1024:1028. Defaults to all ports.
-* to ip is optional. If present, ip must be a decimal dotted-quad IP address
+* to *ip* is optional. If present, ip must be a decimal dotted-quad IP address
   with optional mask. Defaults to 0.0.0.0/0, i.e. all addresses.
 
 * To change the contents of the splash page, edit the splash page file:
 
-```/etc/nodogsplash/htdocs/splash.html```
+  ```/etc/nodogsplash/htdocs/splash.html ```
 
 When the splash page is served, the following variables in the page are
 replaced by their values:
 
-* $gatewayname The value of GatewayName as set in nodogsplash.conf.
-* $authtarget A URL which encodes a unique token and the URL of the user's
+* *$gatewayname* The value of GatewayName as set in nodogsplash.conf.
+* *$authtarget* A URL which encodes a unique token and the URL of the user's
   original web request. If nodogsplash receives a request at this URL, it
   completes the authentication process for the client and replies to the
   request with a "302 Found" to the encoded originally requested
   URL. (Alternatively, you can use a GET-method HTML form to send this
   information to the nodogsplash server; see below.) As a simple example:
 
-```<a href="$authtarget">Enter</a>```
+  ```<a href="$authtarget">Enter</a> ```
 
-* $imagesdir The directory in nodogsplash's web hierarchy where images to be
+* *$imagesdir* The directory in nodogsplash's web hierarchy where images to be
   displayed in the splash page must be located.
-* $tok,$redir,$authaction, and $denyaction are also available and can be
+* *$tok*,*$redir*,*$authaction*, and *$denyaction* are also available and can be
   useful if you want to write the splash page to use a GET-method HTML form
   instead of using $authtarget as the value of an href attribute to
   communicate with the nodogsplash server. As a simple example:
@@ -194,11 +192,11 @@ replaced by their values:
 * To change the appearance of informational and error pages which may
   occasionally be served by nodogsplash, edit the infoskel file:
 
-```/etc/nodogsplash/htdocs/infoskel.html```
+  ```/etc/nodogsplash/htdocs/infoskel.html ```
 
-In this file, variables $gatewayname,$version,$title, and $content will be
+In this file, variables *$gatewayname*,*$version*,*$title*, and *$content* will be
 replaced by their values. $title is a summary of the information or kind of
-error; $content is the content of the information or error message.
+error; *$content* is the content of the information or error message.
 
 
 ##5. Site-wide username and password
@@ -207,10 +205,10 @@ Nodogsplash can be configured to require a username and/or password to be
 entered on the splash page as part of the authentication process. Since the
 username and password are site-wide (not per user), and they are sent in the
 clear using HTTP GET, this is not a secure mechanism.
-To enable this, edit nodogsplash.conf to set parameters PasswordAuthentication,
-UsernameAuthentication, Password, Username, and PasswordAttempts as desired.
+To enable this, edit *nodogsplash.conf* to set parameters *PasswordAuthentication*,
+*UsernameAuthentication*, *Password*, *Username*, and *PasswordAttempts* as desired.
 Then the splash page must use a GET-method HTML form to send user-entered
-username and/or password as values of variables nodoguser and nodogpass
+username and/or password as values of variables *nodoguser* and *nodogpass*
 respectively, along with others as required, to the server. For example:
 
 ```
@@ -285,7 +283,7 @@ configuration file.)
   nodogsplash should remove its rules.
 * Nodogsplash operates by marking packets (and, if traffic control is enabled,
   passing packets through intermediate queueing devices). Most QOS packages
-  will also mark packets and use IMQ's. Therefore one or both of Nodgsplash and
+  will also mark packets and use IMQ's. Therefore one or both of Nodogsplash and
   a QOS package may malfunction if used together. Potential conflicts may be
   investigated by looking at your overall iptables setup. To check to see all
   the rules in, for example, the mangle table chains, run
