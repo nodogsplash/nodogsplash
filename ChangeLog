@@ -1,7 +1,15 @@
 
-	* merge updates from Wifidog (1.1.3_beta6 @1162) up to @1464
-		* excluding commit [1375] containing feature from ticket #466
-	* Return a 405 for pre-authenticated non GET requests [fred@slwifi.com]
+nodogsplash-0.9_beta9.9.8
+
+	* send HTTP 302 instead of 307 [champtar]
+	* remove multi-threading as libhttpd does not support it [sayuan]
+	* support for per user bandwidth limitation [lindnermarek]
+	* merge updates from Wifidog (1.1.3_beta6 @1162) up to @1464 [mwarning]
+		* excluding commit [1375] containing feature from wifidog ticket #466
+	* rewrite build system to use a simple Makefile [mwarning]
+	* unify code style: astyle --style=k&r --indent=tab [mwarning]
+	* Return a 405 for pre-authenticated non GET requests [redhotpenguin]
+	* fix crash when token/redir is not set [mwarning]
 
 nodogsplash-0.9.9-3
 
