@@ -213,7 +213,8 @@ http_nodogsplash_first_contact(request *r)
 		/* Don't serve splash, just authenticate */
 		http_nodogsplash_callback_action(r,authtarget,AUTH_MAKE_AUTHENTICATED);
 	} else if (config->enable_preauth) {
-		snprintf(cmd_buff, sizeof(cmd_buff) - 1, "captive_portal auth_status %s", client->mac);
+		snprintf(cmd_buff, sizeof(cmd_buff) - 1, "%s auth_status %s",
+			config->bin_voucher, client->mac);
 		data = system_exec(cmd_buff);
 
 		if(!data)
@@ -372,7 +373,7 @@ http_nodogsplash_callback_auth(httpd *webserver, request *r)
 	authtarget = http_nodogsplash_decode_authtarget(r);
 	config = config_get_config();
 
-	if (config->enable_voucher && ((authtarget->voucher) || (config->force_voucher))) {
+	if (config->bin_voucher && ((authtarget->voucher) || (config->force_voucher))) {
 		ip = r->clientAddr;
 		mac = arp_get(ip);
 
@@ -389,8 +390,8 @@ http_nodogsplash_callback_auth(httpd *webserver, request *r)
 		if (!authtarget->voucher || !http_isAlphaNum(authtarget->voucher))
 			goto serve_splash;
 
-		snprintf(cmd_buff, sizeof(cmd_buff) - 1, "captive_portal auth_voucher %s %s",
-		client->mac, authtarget->voucher);
+		snprintf(cmd_buff, sizeof(cmd_buff) - 1, "%s auth_voucher %s %s",
+			config->bin_voucher, client->mac, authtarget->voucher);
 		data = system_exec(cmd_buff);
 
 		if (!data)

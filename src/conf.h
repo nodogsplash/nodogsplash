@@ -142,7 +142,7 @@ typedef struct {
 	unsigned int gw_port;		/**< @brief Port the webserver will run on */
 	char *remote_auth_action;	/**< @brief Path for remote auth */
 	char enable_preauth;    /**< @brief enable pre-authentication support */
-	char enable_voucher;    /**< @brief enable voucher support */
+	char *bin_voucher;    /**< @brief enable voucher support */
 	char force_voucher;    /**< @brief force voucher */
 	char *webroot;		/**< @brief Directory containing splash pages, etc. */
 	char *splashpage;		/**< @brief Name of main splash page */

@@ -76,7 +76,7 @@ typedef enum {
 	oGatewayPort,
 	oRemoteAuthenticatorAction,
 	oEnablePreAuth,
-	oEnableVoucher,
+	oBinVoucher,
 	oForceVoucher,
 	oPasswordAuthentication,
 	oUsernameAuthentication,
@@ -132,7 +132,7 @@ static const struct {
 	{ "gatewayport", oGatewayPort },
 	{ "remoteauthenticatoraction", oRemoteAuthenticatorAction },
 	{ "enablepreauth", oEnablePreAuth },
-	{ "enablevoucher", oEnableVoucher },
+	{ "binvoucher", oBinVoucher },
 	{ "forcevoucher", oForceVoucher },
 	{ "passwordauthentication", oPasswordAuthentication },
 	{ "usernameauthentication", oUsernameAuthentication },
@@ -745,10 +745,8 @@ config_read(const char *filename)
 			if (value != - 1)
 				config.enable_preauth = value;
 			break;
-		case oEnableVoucher:
-			value = parse_boolean_value(p1);
-			if (value != - 1)
-				config.enable_voucher = value;
+		case oBinVoucher:
+			config.bin_voucher = safe_strdup(p1);
 			break;
 		case oForceVoucher:
 			value = parse_boolean_value(p1);
