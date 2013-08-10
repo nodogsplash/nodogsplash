@@ -346,6 +346,18 @@ http_nodogsplash_callback_action(request *r,
 	return;
 }
 
+int http_isAlphaNum(const char *str)
+{
+	int i;
+
+	for (i = 0; i < strlen(str); ++i) {
+		const char c = str[i];
+		if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')))
+			return 0;
+	}
+	return 1;
+}
+
 /** The auth callback responds to a request to serve from the authdir */
 void
 http_nodogsplash_callback_auth(httpd *webserver, request *r)
@@ -372,6 +384,9 @@ http_nodogsplash_callback_auth(httpd *webserver, request *r)
 		UNLOCK_CLIENT_LIST();
 
 		if (!client)
+			goto serve_splash;
+
+		if (!authtarget->voucher || !http_isAlphaNum(authtarget->voucher))
 			goto serve_splash;
 
 		snprintf(cmd_buff, sizeof(cmd_buff) - 1, "captive_portal auth_voucher %s %s",
