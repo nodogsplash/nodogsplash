@@ -728,6 +728,7 @@ http_nodogsplash_free_authtarget(t_auth_target* authtarget)
 	if(authtarget->authtarget) free(authtarget->authtarget);
 	if(authtarget->token) free(authtarget->token);
 	if(authtarget->redir) free(authtarget->redir);
+	if(authtarget->voucher) free(authtarget->voucher);
 	if(authtarget->username) free(authtarget->username);
 	if(authtarget->password) free(authtarget->password);
 	if(authtarget->info) free(authtarget->info);
