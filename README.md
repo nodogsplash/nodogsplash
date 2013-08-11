@@ -199,7 +199,9 @@ replaced by their values. $title is a summary of the information or kind of
 error; *$content* is the content of the information or error message.
 
 
-##5. Site-wide username and password
+##5. Authentication
+
+###5.1 Site-wide username and password
 
 Nodogsplash can be configured to require a username and/or password to be
 entered on the splash page as part of the authentication process. Since the
@@ -222,6 +224,15 @@ respectively, along with others as required, to the server. For example:
   <input type='submit' value='Enter'>
   </form>
 ```
+
+###5.2 Forwarding authentification
+
+Nodogsplash allows to call an external program for authentification using
+the options BinVoucher/EnablePreAuth/ForceVoucher in nodogsplash.conf.
+The given program for BinVoucher will be called with the clients MAC address and is expected
+to output the number of seconds the client is to be authenticated (<= 0 seconds for no authentication).
+The output is also allowed to contain the download and upload speed limit
+for the clients traffic in KBits/s.
 
 ##6. Using ndsctl
 
