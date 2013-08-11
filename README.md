@@ -5,7 +5,7 @@ connection. It is derived from the codebase of the Wifi Guard Dog project.
 Nodogsplash is released under the GNU General Public License.
 
 * Nodogsplash: http://kokoro.ucsd.edu/nodogsplash
-* OpenWRT: http://openwrt.org/
+* OpenWrt: http://openwrt.org/
 * Wifidog: http://dev.wifidog.org/
 * GNU GPL: http://www.gnu.org/copyleft/gpl.html
 
@@ -35,23 +35,23 @@ need, though.
 ##2. Installing and running nodogsplash
 
 
-* Have a router working with OpenWRT. Nodogsplash has been compiled against a
-  OpenWRT Attitude Adjustment buildroot; it may or may not work on other versions
-  of OpenWRT or on other kinds of Linux-based router firmware. For notes on
-  using Nodogsplash with OpenWRT Kamikaze, see_below.
+* Have a router working with OpenWrt. Nodogsplash has been compiled against a
+  OpenWrt Attitude Adjustment buildroot; it may or may not work on other versions
+  of OpenWrt or on other kinds of Linux-based router firmware. For notes on
+  using Nodogsplash with OpenWrt Kamikaze, see below.
 * Make sure your router is basically working before you try to install
   nodogsplash. In particular, make sure your DHCP daemon is serving addresses
   on the interface that nodogsplash will manage (typically br-lan or eth1), and
   for the following use ssh or telnet access to your router over a different
   interface.
 * To install nodogsplash, obtain the nodogsplash*.ipk package you want to
-  install from the project website, copy it to /tmp/ on your OpenWRT router,
+  install from the project website, copy it to /tmp/ on your OpenWrt router,
   and, in as root on the router, run:
 
   ```ipkg install /tmp/nodogsplash*.ipk```
 
   (Note: to prevent installation of an older package, you may have to remove
-  references to remote package repositories in your ipkg.conf file.)
+  references to remote package repositories in your ipkg.conf file)
 * If the interface that you want nodogsplash to manage is not br-lan,
   edit /etc/nodogsplash/nodogsplash.conf and set GatewayInterface.
 * To start nodogsplash, run the following, or just reboot the router:
@@ -73,7 +73,7 @@ need, though.
 
 ##3. How nodogsplash works
 
-A wireless router running OpenWRT has two or more interfaces; nodogsplash
+A wireless router running OpenWrt has two or more interfaces; nodogsplash
 manages one of them. This will typically be br-lan, the bridge to both the
 wireless and wired LAN; or the wireless lan interface may be named something
 else if you have broken the br-lan bridge to separate the wired and wireless
@@ -143,7 +143,7 @@ secure as-is for basic internet sharing applications, but it is customizable.
 
 In the configuration file, a FirewallRule has the form:
 
-  ```FirewallRule permission [protocol [port portrange]] [to ip]```
+  ```FirewallRule permission [protocol [port portrange] [to ip]```
 
 where
 
@@ -153,7 +153,7 @@ where
 * port *portrange* is optional. If present, protocol must be tcp or udp.
   portrange can be a single integer port number, or a colon-separated port
   range, e.g. 1024:1028. Defaults to all ports.
-* to *ip* is optional. If present, ip must be a decimal dotted-quad IP address
+* *to ip* is optional. If present, ip must be a decimal dotted-quad IP address
   with optional mask. Defaults to 0.0.0.0/0, i.e. all addresses.
 
 * To change the contents of the splash page, edit the splash page file:
@@ -194,7 +194,7 @@ replaced by their values:
 
   ```/etc/nodogsplash/htdocs/infoskel.html ```
 
-In this file, variables *$gatewayname*,*$version*,*$title*, and *$content* will be
+In this file, variables *$gatewayname*, *$version*, *$title*, and *$content* will be
 replaced by their values. $title is a summary of the information or kind of
 error; *$content* is the content of the information or error message.
 
