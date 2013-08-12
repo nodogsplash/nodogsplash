@@ -658,8 +658,9 @@ http_nodogsplash_decode_authtarget(request *r)
 	}
 
 	var = httpdGetVariableByName(r,"voucher");
-	if(var && var->value)
-		authtarget->voucher = var->value;
+	if(var && var->value) {
+		authtarget->voucher = safe_strdup(var->value);
+	}
 
 	return authtarget;
 }
