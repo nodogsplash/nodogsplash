@@ -93,12 +93,22 @@
 #define DEFAULT_EMPTY_PREAUTHENTICATED_USERS_POLICY "REJECT"
 /*@}*/
 
+/**
+* Firewall targets
+*/
+typedef enum {
+	TARGET_DROP,
+	TARGET_REJECT,
+	TARGET_ACCEPT,
+	TARGET_LOG,
+	TARGET_ULOG
+} t_firewall_target;
 
 /**
  * Firewall rules
  */
 typedef struct _firewall_rule_t {
-	int block_allow;		/**< @brief 1 = Allow rule, 0 = Block rule */
+	t_firewall_target target;	/**< @brief t_firewall_target */
 	char *protocol;		/**< @brief tcp, udp, etc ... */
 	char *port;			/**< @brief Port to block/allow */
 	char *mask;			/**< @brief Mask for the rule *destination* */

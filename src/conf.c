@@ -473,7 +473,7 @@ static int
 _parse_firewall_rule(t_firewall_ruleset *ruleset, char *leftover)
 {
 	int i;
-	int block_allow = 0; /**< 0 == block, 1 == allow */
+	t_firewall_target target = TARGET_REJECT; /**< firewall target */
 	int all_nums = 1; /**< If 0, word contained illegal chars */
 	int finished = 0; /**< reached end of line */
 	char *token = NULL; /**< First word */
@@ -494,12 +494,18 @@ _parse_firewall_rule(t_firewall_ruleset *ruleset, char *leftover)
 
 	/* Parse token */
 	if (!strcasecmp(token, "block")) {
-		block_allow = 0;
+		target = TARGET_REJECT;
+	} else if (!strcasecmp(token, "drop")) {
+		target = TARGET_DROP;
 	} else if (!strcasecmp(token, "allow")) {
-		block_allow = 1;
+		target = TARGET_ACCEPT;
+	} else if (!strcasecmp(token, "log")) {
+		target = TARGET_LOG;
+	} else if (!strcasecmp(token, "ulog")) {
+		target = TARGET_ULOG;
 	} else {
 		debug(LOG_ERR, "Invalid rule type %s, expecting "
-			  "\"block\" or \"allow\"", token);
+			"\"block\",\"drop\",\"allow\",\"log\" or \"ulog\"", token);
 		return -1;
 	}
 
@@ -562,7 +568,7 @@ _parse_firewall_rule(t_firewall_ruleset *ruleset, char *leftover)
 	/* Generate rule record */
 	tmp = safe_malloc(sizeof(t_firewall_rule));
 	memset((void *)tmp, 0, sizeof(t_firewall_rule));
-	tmp->block_allow = block_allow;
+	tmp->target = target;
 	if (protocol != NULL)
 		tmp->protocol = safe_strdup(protocol);
 	if (port != NULL)

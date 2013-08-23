@@ -201,10 +201,22 @@ _iptables_compile(const char * table, char *chain, t_firewall_rule *rule)
 
 	memset(command, 0, MAX_BUF);
 
-	if (rule->block_allow == 1) {
-		mode = safe_strdup("ACCEPT");
-	} else {
+	switch (rule->target){
+	case TARGET_DROP:
+		mode = safe_strdup("DROP");
+		break;
+	case TARGET_REJECT:
 		mode = safe_strdup("REJECT");
+		break;
+	case TARGET_ACCEPT:
+		mode = safe_strdup("ACCEPT");
+		break;
+	case TARGET_LOG:
+		mode = safe_strdup("LOG");
+		break;
+	case TARGET_ULOG:
+		mode = safe_strdup("ULOG");
+		break;
 	}
 
 	snprintf(command, sizeof(command),  "-t %s -A %s ",table, chain);
