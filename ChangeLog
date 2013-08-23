@@ -1,7 +1,8 @@
 
 nodogsplash-0.9_beta9.9.8
 
-	* send HTTP 302 instead of 307 [champtar]
+	* send HTTP 302 instead of 307 because we use HTTP 1.0 [champtar]
+	* add support for DROP, LOG, ULOG target for firewall rules [champtar]
 	* remove multi-threading as libhttpd does not support it [sayuan]
 	* add new parameters BinVoucher, ForceVoucher and EnablePreAuth
 	  in combination with per user bandwidth limitation [lindnermarek]
@@ -9,7 +10,7 @@ nodogsplash-0.9_beta9.9.8
 		* excluding commit [1375] containing feature from wifidog ticket #466
 	* rewrite build system to use a simple Makefile [mwarning]
 	* unify code style: astyle --style=k&r --indent=tab [mwarning]
-	* Return a 405 for pre-authenticated non GET requests [redhotpenguin]
+	* send HTTP 405 for pre-authenticated non GET requests [redhotpenguin]
 	* fix crash when token/redir is not set [mwarning]
 
 nodogsplash-0.9.9-3
