@@ -32,11 +32,11 @@ clean:
 install:
 	strip nodogsplash
 	strip ndsctl
-	mkdir -p /usr/bin/
-	cp ndsctl /usr/bin/
-	cp nodogsplash /usr/bin/
-	mkdir -p /etc/nodogsplash/htdocs/images
-	cp resources/nodogsplash.conf /etc/nodogsplash/
-	cp resources/splash.html /etc/nodogsplash/htdocs/
-	cp resources/infoskel.html /etc/nodogsplash/htdocs/
-	cp resources/splash.jpg /etc/nodogsplash/htdocs/images/
+	mkdir -p $(DESTDIR)/usr/bin/
+	cp ndsctl $(DESTDIR)/usr/bin/
+	cp nodogsplash $(DESTDIR)/usr/bin/
+	mkdir -p $(DESTDIR)/etc/nodogsplash/htdocs/images
+	cp resources/nodogsplash.conf $(DESTDIR)/etc/nodogsplash/
+	cp resources/splash.html $(DESTDIR)/etc/nodogsplash/htdocs/
+	cp resources/infoskel.html $(DESTDIR)/etc/nodogsplash/htdocs/
+	cp resources/splash.jpg $(DESTDIR)/etc/nodogsplash/htdocs/images/
