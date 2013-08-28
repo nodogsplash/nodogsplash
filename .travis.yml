@@ -1,0 +1,9 @@
+language: c
+
+before_install:
+ - sudo apt-get update -qq
+ - sudo apt-get install -qq astyle
+
+script:
+ - make
+ - output=$(astyle --lineend=linux --suffix=none --style=kr --indent=force-tab --formatted --recursive "src/*.c" "src/*.h" | grep formatted); if [[ $output ]]; then while read -r line; do echo -e "\e[00;31m$line\e[00m"; done <<< "$output"; echo -e '\e[00;31mPlease check files formatting using :\e[00m'; echo -e '\e[00;31mastyle --lineend=linux --suffix=none --style=kr --indent=force-tab --formatted --recursive "src/*.c" "src/*.h"\e[00m'; false; fi;
