@@ -198,8 +198,8 @@ http_nodogsplash_first_contact(request *r)
 	   redirecting port 80 tcp packets
 	*/
 	safe_asprintf(&origurl,"http://%s%s%s%s",
-			r->request.host,r->request.path,
-			r->request.query[0]?"?":"",r->request.query);
+				  r->request.host,r->request.path,
+				  r->request.query[0]?"?":"",r->request.query);
 
 	/* Create redirect URL for this contact as appropriate */
 	redir = http_nodogsplash_make_redir(origurl);
@@ -214,7 +214,7 @@ http_nodogsplash_first_contact(request *r)
 		http_nodogsplash_callback_action(r,authtarget,AUTH_MAKE_AUTHENTICATED);
 	} else if (config->enable_preauth) {
 		snprintf(cmd_buff, sizeof(cmd_buff) - 1, "%s auth_status %s",
-			config->bin_voucher, client->mac);
+				 config->bin_voucher, client->mac);
 		data = system_exec(cmd_buff);
 
 		if(!data)
@@ -229,7 +229,7 @@ http_nodogsplash_first_contact(request *r)
 			goto serve_splash;
 
 		debug(LOG_NOTICE, "Remote auth data: client [%s, %s] authenticated %d seconds",
-		client->mac, client->ip, seconds);
+			  client->mac, client->ip, seconds);
 		http_nodogsplash_callback_action(r,authtarget,AUTH_MAKE_AUTHENTICATED);
 		client->added_time = time(NULL) - (config->checkinterval * config->clientforceout) + seconds;
 		free(data);
@@ -391,7 +391,7 @@ http_nodogsplash_callback_auth(httpd *webserver, request *r)
 			goto serve_splash;
 
 		snprintf(cmd_buff, sizeof(cmd_buff) - 1, "%s auth_voucher %s %s",
-			config->bin_voucher, client->mac, authtarget->voucher);
+				 config->bin_voucher, client->mac, authtarget->voucher);
 		data = system_exec(cmd_buff);
 
 		if (!data)
@@ -406,12 +406,12 @@ http_nodogsplash_callback_auth(httpd *webserver, request *r)
 			goto serve_splash;
 
 		debug(LOG_NOTICE, "Remote voucher: client [%s, %s] authenticated %d seconds",
-		client->mac, client->ip, seconds);
+			  client->mac, client->ip, seconds);
 		free(mac);
 		free(data);
 		http_nodogsplash_callback_action(r,authtarget,AUTH_MAKE_AUTHENTICATED);
 		client->added_time = time(NULL) - (config->checkinterval * config->clientforceout) + seconds;
-  } else if(http_nodogsplash_check_userpass(r,authtarget)) {
+	} else if(http_nodogsplash_check_userpass(r,authtarget)) {
 		http_nodogsplash_callback_action (r,authtarget,AUTH_MAKE_AUTHENTICATED);
 	} else {
 		/* Password check failed; just serve them the splash page again */
@@ -508,9 +508,9 @@ http_nodogsplash_serve_splash(request *r, t_auth_target *authtarget, char *error
 
 	/* Set variables; these can be interpolated in the splash page text. */
 	if (error_msg)
-	  httpdAddVariable(r,"error_msg", error_msg);
+		httpdAddVariable(r,"error_msg", error_msg);
 	else
-	  httpdAddVariable(r,"error_msg", "");
+		httpdAddVariable(r,"error_msg", "");
 	httpdAddVariable(r,"gatewayname",config->gw_name);
 	httpdAddVariable(r,"tok",authtarget->token);
 	httpdAddVariable(r,"redir",authtarget->redir);

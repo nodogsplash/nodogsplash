@@ -505,7 +505,7 @@ _parse_firewall_rule(t_firewall_ruleset *ruleset, char *leftover)
 		target = TARGET_ULOG;
 	} else {
 		debug(LOG_ERR, "Invalid rule type %s, expecting "
-			"\"block\",\"drop\",\"allow\",\"log\" or \"ulog\"", token);
+			  "\"block\",\"drop\",\"allow\",\"log\" or \"ulog\"", token);
 		return -1;
 	}
 

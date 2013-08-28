@@ -201,7 +201,7 @@ _iptables_compile(const char * table, char *chain, t_firewall_rule *rule)
 
 	memset(command, 0, MAX_BUF);
 
-	switch (rule->target){
+	switch (rule->target) {
 	case TARGET_DROP:
 		mode = safe_strdup("DROP");
 		break;
@@ -728,7 +728,8 @@ iptables_fw_destroy_mention(
 /** Insert or delete firewall mangle rules marking a client's packets.
  */
 int
-iptables_fw_access(t_authaction action, t_client *client) {
+iptables_fw_access(t_authaction action, t_client *client)
+{
 	int rc = 0, download_limit, upload_limit;
 	s_config *config;
 	char *download_imqname, *upload_imqname;
