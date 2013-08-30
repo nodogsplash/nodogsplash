@@ -13,7 +13,7 @@ NDS_OBJS=src/auth.o src/client_list.o src/commandline.o src/conf.o \
 LIBHTTPD_OBJS=libhttpd/api.o libhttpd/ip_acl.o \
 	libhttpd/protocol.o libhttpd/version.o
 
-.PHONY: all clean install
+.PHONY: all clean install checkastyle fixstyle
 
 all: nodogsplash ndsctl
 
@@ -40,3 +40,14 @@ install:
 	cp resources/splash.html $(DESTDIR)/etc/nodogsplash/htdocs/
 	cp resources/infoskel.html $(DESTDIR)/etc/nodogsplash/htdocs/
 	cp resources/splash.jpg $(DESTDIR)/etc/nodogsplash/htdocs/images/
+
+checkastyle:
+	@command -v astyle >/dev/null 2>&1 || \
+	{ echo >&2 "We need 'astyle' but it's not installed. Aborting."; exit 1; }
+
+fixstyle: checkastyle
+	@echo "\033[1;34mChecking style ...\033[00m"
+	@astyle --lineend=linux --suffix=none --style=kr --indent=force-tab \
+	--formatted --recursive "src/*.c" "src/*.h"|grep formatted \
+	&& echo "\033[1;33mPrevious files have been corrected\033[00m" \
+	|| echo "\033[0;32mAll files are ok\033[00m"
