@@ -28,6 +28,7 @@ ndsctl: src/ndsctl.o
 
 clean:
 	rm -f nodogsplash ndsctl src/*.o libhttpd/*.o
+	rm -rf dist
 
 install:
 	strip nodogsplash
@@ -51,3 +52,14 @@ fixstyle: checkastyle
 	--formatted --recursive "src/*.c" "src/*.h"|grep formatted \
 	&& echo "\033[1;33mPrevious files have been corrected\033[00m" \
 	|| echo "\033[0;32mAll files are ok\033[00m"
+
+deb:
+	mkdir -p dist/nodogsplash/
+	cd dist/nodogsplash/; \
+		cp -rp ../../debian/ .; \
+		ln -s ../../Makefile;\
+		ln -s ../../src;\
+		ln -s ../../libhttpd;\
+		ln -s ../../resources;\
+		dpkg-buildpackage -b -us -uc
+	rm -rf dist/nodogsplash
