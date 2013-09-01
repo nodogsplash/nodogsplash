@@ -1,0 +1,19 @@
+Source: nodogsplash
+Section: net
+Priority: optional
+Maintainer: Shiao-An Yuan <shiao.an.yuan@gmail.com>
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.9.2
+Homepage: http://kokoro.ucsd.edu/nodogsplash/
+Vcs-Git: git://github.com/nodogsplash/nodogsplash.git
+Vcs-Browser: http://github.com/nodogsplash/nodogsplash
+
+Package: nodogsplash
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Provide restricted access to an internet connection
+ Nodogsplash offers a solution to this problem: You want to provide controlled
+ and reasonably secure public access to an internet connection; and while you
+ want to require users to give some acknowledgment of the service you are
+ providing, you don't need or want the complexity of user account names and
+ passwords and maintaining a separate database-backed authentication server.
