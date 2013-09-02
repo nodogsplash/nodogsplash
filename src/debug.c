@@ -30,6 +30,7 @@
 #include <stdarg.h>
 #include <time.h>
 #include <unistd.h>
+#include <signal.h>
 
 #include "conf.h"
 
@@ -42,10 +43,14 @@ _debug(char *filename, int line, int level, char *format, ...)
 	va_list vlist;
 	s_config *config = config_get_config();
 	time_t ts;
+	sigset_t block_chld;
 
 	time(&ts);
 
 	if (config->debuglevel >= level) {
+		sigemptyset(&block_chld);
+		sigaddset(&block_chld, SIGCHLD);
+		sigprocmask(SIG_BLOCK, &block_chld, NULL);
 
 		if (level <= LOG_WARNING) {
 			fprintf(stderr, "[%d][%.24s][%u](%s:%d) ", level, ctime_r(&ts, buf), getpid(),
@@ -71,5 +76,7 @@ _debug(char *filename, int line, int level, char *format, ...)
 			va_end(vlist);
 			closelog();
 		}
+
+		sigprocmask(SIG_UNBLOCK, &block_chld, NULL);
 	}
 }
