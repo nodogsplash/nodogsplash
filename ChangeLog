@@ -12,6 +12,9 @@ nodogsplash-0.9_beta9.9.8
 	* unify code style: astyle --style=k&r --indent=tab [mwarning]
 	* send HTTP 405 for pre-authenticated non GET requests [redhotpenguin]
 	* fix crash when token/redir is not set [mwarning]
+	* avoid deadlocks for debug output [sayuan]
+	* Debian package [sayuan]
+	* OpenWrt package [mwarning]
 
 nodogsplash-0.9.9-3
 
