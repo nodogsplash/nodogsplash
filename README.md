@@ -147,7 +147,7 @@ In the configuration file, a FirewallRule has the form:
 
 where
 
-* *permission* is required and must be either allow or block.
+* *permission* is required and must be allow, block, drop, log, or ulog.
 * *protocol* is optional. If present must be tcp, udp, icmp, or all.
   Defaults to all.
 * port *portrange* is optional. If present, protocol must be tcp or udp.
