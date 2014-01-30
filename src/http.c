@@ -180,7 +180,7 @@ http_nodogsplash_first_contact(request *r)
 	t_client *client;
 	t_auth_target *authtarget;
 	s_config *config;
-	char *redir, *origurl, cmd_buff[50], *data = NULL;
+	char *redir, *origurl, cmd_buff[255], *data = NULL;
 	int ret, seconds;
 
 	/* only allow GET requests */
@@ -366,7 +366,7 @@ http_nodogsplash_callback_auth(httpd *webserver, request *r)
 	s_config *config;
 	t_client  *client;
 	t_auth_target *authtarget;
-	char *ip, *mac, *msg = NULL, cmd_buff[50], *data = NULL;
+	char *ip, *mac, *msg = NULL, cmd_buff[255], *data = NULL;
 	int ret, seconds;
 
 	/* Get info we need from request, and do action */
