@@ -42,7 +42,7 @@ You might want to use your own source location and not the remote respository.
 To do this you need to checkout the repository yourself and commit your changes locally:
 
 <pre>
-git://github.com/nodogsplash/nodogsplash.git
+git clone git://github.com/nodogsplash/nodogsplash.git
 cd nodogsplash
 ... apply your changes
 git commit -am "my change"
