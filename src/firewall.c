@@ -75,8 +75,6 @@
 
 extern pthread_mutex_t client_list_mutex;
 
-int icmp_fd = 0;
-
 /** Used to mark packets, and characterize client state.  Unmarked packets are considered 'preauthenticated' */
 unsigned int FW_MARK_PREAUTHENTICATED; /**< @brief 0: Actually not used as a packet mark */
 unsigned int FW_MARK_AUTHENTICATED;    /**< @brief The client is authenticated */
@@ -128,16 +126,6 @@ fw_init(void)
 	int result = 0;
 	t_client * client = NULL;
 
-	debug(LOG_INFO, "Creating ICMP socket");
-	if ((icmp_fd = socket (AF_INET, SOCK_RAW, IPPROTO_ICMP)) == -1 ||
-			(flags = fcntl(icmp_fd, F_GETFL, 0)) == -1 ||
-			fcntl(icmp_fd, F_SETFL, flags | O_NONBLOCK) == -1 ||
-			setsockopt(icmp_fd, SOL_SOCKET, SO_RCVBUF, &oneopt, sizeof(oneopt)) ||
-			setsockopt(icmp_fd, SOL_SOCKET, SO_DONTROUTE, &zeroopt, sizeof(zeroopt)) == -1) {
-		debug(LOG_ERR, "Cannot create ICMP raw socket.");
-		return 0;
-	}
-
 	debug(LOG_INFO, "Initializing Firewall");
 	result = iptables_fw_init();
 
@@ -152,11 +140,6 @@ fw_init(void)
 int
 fw_destroy(void)
 {
-	if (icmp_fd != 0) {
-		debug(LOG_INFO, "Closing ICMP socket");
-		close(icmp_fd);
-	}
-
 	debug(LOG_INFO, "Removing Firewall rules");
 	return iptables_fw_destroy();
 }
@@ -189,19 +172,6 @@ fw_refresh_client_list(void)
 		mac = safe_strdup(cp1->mac);
 		outgoing = cp1->counters.outgoing;
 		incoming = cp1->counters.incoming;
-
-		/* If the client is authenticated, ping him.
-		 * If he responds it'll keep activity on the link.
-		 * However, if the firewall blocks it, it will not help.  The suggested
-		 * way to deal with this is to keep the DHCP lease time extremely
-		 * short:  Shorter than config->checkinterval * config->clienttimeout */
-		/*** removed as useless for nodogsplash ***
-		UNLOCK_CLIENT_LIST();
-		if(FW_MARK_AUTHENTICATED == cp1->fw_connection_state) {
-		  icmp_ping(ip);
-		}
-		LOCK_CLIENT_LIST();
-		***/
 
 		if (!(cp1 = client_list_find(ip, mac))) {
 			debug(LOG_ERR, "Node %s was freed while being re-validated!", ip);
@@ -247,53 +217,3 @@ fw_connection_state_as_string(int mark)
 	return "ERROR: unrecognized mark";
 }
 
-
-/*** removed as useless for nodogsplash. ***
-void
-icmp_ping(char *host)
-{
-  struct sockaddr_in saddr;
-#if defined(__linux__) || defined(__NetBSD__)
-  struct {
-    struct ip ip;
-    struct icmp icmp;
-  } packet;
-#endif
-  unsigned int i, j;
-  int opt = 2000;
-  unsigned short id = rand16();
-
-  memset(&saddr, 0, sizeof(saddr));
-  saddr.sin_family = AF_INET;
-  inet_aton(host, &saddr.sin_addr);
-#if defined(HAVE_SOCKADDR_SA_LEN) || defined(__NetBSD__)
-  saddr.sin_len = sizeof(struct sockaddr_in);
-#endif
-#if defined(__linux__) || defined(__NetBSD__)
-  memset(&packet.icmp, 0, sizeof(packet.icmp));
-  packet.icmp.icmp_type = ICMP_ECHO;
-  packet.icmp.icmp_id = id;
-
-  for (j = 0, i = 0; i < sizeof(struct icmp) / 2; i++)
-    j += ((unsigned short *)&packet.icmp)[i];
-
-  while (j >> 16)
-    j = (j & 0xffff) + (j >> 16);
-
-  packet.icmp.icmp_cksum = (j == 0xffff) ? j : ~j;
-
-  if (setsockopt(icmp_fd, SOL_SOCKET, SO_RCVBUF, &opt, sizeof(opt)) == -1)
-    debug(LOG_ERR, "setsockopt(): %s", strerror(errno));
-
-  if (sendto(icmp_fd, (char *)&packet.icmp, sizeof(struct icmp), 0,
-      (const struct sockaddr *)&saddr, sizeof(saddr)) == -1)
-    debug(LOG_ERR, "sendto(): %s", strerror(errno));
-
-  opt = 1;
-  if (setsockopt(icmp_fd, SOL_SOCKET, SO_RCVBUF, &opt, sizeof(opt)) == -1)
-    debug(LOG_ERR, "setsockopt(): %s", strerror(errno));
-#endif
-
-  return;
-}
-***/
