@@ -139,7 +139,7 @@ thread_ndsctl(void *arg)
 				  strerror(errno));
 		} else {
 			debug(LOG_DEBUG, "Accepted connection on ndsctl socket %d (%s)", fd, sa_un.sun_path);
-			result = pthread_create(&tid, NULL, &thread_ndsctl_handler, (void *)fd);
+			result = pthread_create(&tid, NULL, &thread_ndsctl_handler, (void *) (size_t) fd);
 			if (result != 0) {
 				debug(LOG_ERR, "FATAL: Failed to create a new thread (ndsctl handler) - exiting");
 				termination_handler(0);
@@ -162,7 +162,7 @@ thread_ndsctl_handler(void *arg)
 
 	debug(LOG_DEBUG, "Entering thread_ndsctl_handler....");
 
-	fd = (int)arg;
+	fd = (int) (size_t) arg;
 
 	debug(LOG_DEBUG, "Read bytes and stuff from %d", fd);
 
