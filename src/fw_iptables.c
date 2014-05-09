@@ -604,10 +604,18 @@ int
 iptables_fw_destroy(void)
 {
 	fw_quiet = 1;
+	s_config *config;
+	int traffic_control;
 
-	debug(LOG_DEBUG, "Destroying our tc hooks");
+	LOCK_CONFIG();
+	config = config_get_config();
+	traffic_control = config->traffic_control;
+	UNLOCK_CONFIG();
 
-	tc_destroy_tc();
+	if(traffic_control) {
+		debug(LOG_DEBUG, "Destroying our tc hooks");
+		tc_destroy_tc();
+	}
 
 	debug(LOG_DEBUG, "Destroying our iptables entries");
 
@@ -730,7 +738,7 @@ iptables_fw_destroy_mention(
 int
 iptables_fw_access(t_authaction action, t_client *client)
 {
-	int rc = 0, download_limit, upload_limit;
+	int rc = 0, download_limit, upload_limit, traffic_control;
 	s_config *config;
 	char *download_imqname, *upload_imqname;
 
@@ -740,8 +748,11 @@ iptables_fw_access(t_authaction action, t_client *client)
 	safe_asprintf(&download_imqname,"imq%d",config->download_imq); /* must free */
 	safe_asprintf(&upload_imqname,"imq%d",config->upload_imq);  /* must free */
 
+	LOCK_CONFIG();
+	traffic_control = config->traffic_control;
 	download_limit = config->download_limit;
 	upload_limit = config->upload_limit;
+	UNLOCK_CONFIG();
 
 	if ((client->download_limit > 0) && (client->upload_limit > 0)) {
 		download_limit = client->download_limit;
@@ -756,14 +767,18 @@ iptables_fw_access(t_authaction action, t_client *client)
 		rc |= iptables_do_command("-t mangle -I " CHAIN_INCOMING " -d %s -j MARK %s 0x%x%x", client->ip, markop, client->idx + 10, FW_MARK_AUTHENTICATED);
 		/* This rule is just for download (incoming) byte counting, see iptables_fw_counters_update() */
 		rc |= iptables_do_command("-t mangle -A " CHAIN_INCOMING " -d %s -j ACCEPT", client->ip);
-		rc |= tc_attach_client(download_imqname, download_limit, upload_imqname, upload_limit, client->idx, FW_MARK_AUTHENTICATED);
+		if(traffic_control) {
+			rc |= tc_attach_client(download_imqname, download_limit, upload_imqname, upload_limit, client->idx, FW_MARK_AUTHENTICATED);
+		}
 		break;
 	case AUTH_MAKE_DEAUTHENTICATED:
 		/* Remove the authentication rules. */
 		debug(LOG_NOTICE, "Deauthenticating %s %s", client->ip, client->mac);
 		rc |= iptables_do_command("-t mangle -D " CHAIN_OUTGOING " -s %s -m mac --mac-source %s -j MARK %s 0x%x%x", client->ip, client->mac, markop, client->idx + 10, FW_MARK_AUTHENTICATED);
 		rc |= iptables_do_command("-t mangle -D " CHAIN_INCOMING " -d %s -j ACCEPT", client->ip);
-		rc |= tc_detach_client(download_imqname, upload_imqname, client->idx);
+		if(traffic_control) {
+			rc |= tc_detach_client(download_imqname, upload_imqname, client->idx);
+		}
 		break;
 	default:
 		rc = -1;
