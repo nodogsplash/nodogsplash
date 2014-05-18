@@ -30,7 +30,8 @@ make
 </pre>
 
 The images and all *.ipk packages are now inside the bin/ folder.
-You can install the NoDogSplash .ipk using "opkg install &lt;ipkg-file&gt;" on the router.
+You can install the NoDogSplash .ipk using "opkg install &lt;ipkg-file&gt;"
+on the router or just use the whole image.
 
 For details please check the OpenWRT documentation.
 
