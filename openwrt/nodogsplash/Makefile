@@ -51,6 +51,9 @@ define Package/nodogsplash/install
 	$(CP) $(PKG_BUILD_DIR)/resources/splash.jpg $(1)/etc/$(PKG_NAME)/htdocs/images/
 endef
 
+define Package/nodogsplash/conffiles
+/etc/nodogsplash/nodogsplash.conf
+endef
 
 $(eval $(call BuildPackage,nodogsplash))
 
