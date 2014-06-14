@@ -422,7 +422,7 @@ iptables_fw_init(void)
 	 */
 
 	/* packets coming in on gw_interface jump to CHAIN_OUTGOING */
-	rc |= iptables_do_command("-t nat -A PREROUTING -i %s -s %s -j " CHAIN_OUTGOING, gw_interface, gw_iprange);
+	rc |= iptables_do_command("-t nat -I PREROUTING -i %s -s %s -j " CHAIN_OUTGOING, gw_interface, gw_iprange);
 	/* CHAIN_OUTGOING, packets marked TRUSTED  ACCEPT */
 	rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -m mark --mark 0x%x%s -j ACCEPT", FW_MARK_TRUSTED, markmask);
 	/* CHAIN_OUTGOING, packets marked AUTHENTICATED  ACCEPT */
@@ -513,7 +513,7 @@ iptables_fw_init(void)
 	 */
 
 	/* packets coming in on gw_interface jump to CHAIN_TO_INTERNET */
-	rc |= iptables_do_command("-t filter -A FORWARD -i %s -s %s -j " CHAIN_TO_INTERNET, gw_interface, gw_iprange);
+	rc |= iptables_do_command("-t filter -I FORWARD -i %s -s %s -j " CHAIN_TO_INTERNET, gw_interface, gw_iprange);
 	/* CHAIN_TO_INTERNET packets marked BLOCKED  DROP */
 	rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m mark --mark 0x%x%s -j DROP", FW_MARK_BLOCKED, markmask);
 	/* CHAIN_TO_INTERNET, invalid packets  DROP */
@@ -763,8 +763,8 @@ iptables_fw_access(t_authaction action, t_client *client)
 	case AUTH_MAKE_AUTHENTICATED:
 		debug(LOG_NOTICE, "Authenticating %s %s", client->ip, client->mac);
 		/* This rule is for marking upload (outgoing) packets, and for upload byte counting */
-		rc |= iptables_do_command("-t mangle -I " CHAIN_OUTGOING " -s %s -m mac --mac-source %s -j MARK %s 0x%x%x", client->ip, client->mac, markop, client->idx + 10, FW_MARK_AUTHENTICATED);
-		rc |= iptables_do_command("-t mangle -I " CHAIN_INCOMING " -d %s -j MARK %s 0x%x%x", client->ip, markop, client->idx + 10, FW_MARK_AUTHENTICATED);
+		rc |= iptables_do_command("-t mangle -A " CHAIN_OUTGOING " -s %s -m mac --mac-source %s -j MARK %s 0x%x%x", client->ip, client->mac, markop, client->idx + 10, FW_MARK_AUTHENTICATED);
+		rc |= iptables_do_command("-t mangle -A " CHAIN_INCOMING " -d %s -j MARK %s 0x%x%x", client->ip, markop, client->idx + 10, FW_MARK_AUTHENTICATED);
 		/* This rule is just for download (incoming) byte counting, see iptables_fw_counters_update() */
 		rc |= iptables_do_command("-t mangle -A " CHAIN_INCOMING " -d %s -j ACCEPT", client->ip);
 		if(traffic_control) {
