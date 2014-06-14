@@ -51,41 +51,27 @@
 
 extern pthread_mutex_t client_list_mutex;
 
-static int data_extract_bw(char *buff, t_client *client)
+static int data_extract_bw(const char *buff, t_client *client)
 {
-	char *download_ptr, *upload_ptr;
-	int download, upload;
+	int seconds = 0;
+	int upload = 0;
+	int download = 0;
 
-	download_ptr = strchr(buff, ' ');
-	if (!download_ptr)
+	/* We require at least one value */
+	if (sscanf(buff, "%d %d %d", &seconds, &upload, &download) < 1)
 		goto err;
 
-	*download_ptr = '\0';
-	download_ptr++;
-
-	upload_ptr = strchr(download_ptr, ' ');
-	if (!upload_ptr)
-		goto err;
-
-	*upload_ptr = '\0';
-	upload_ptr++;
-
-	download = strtol(download_ptr, NULL, 10);
-	if (download < 1)
-		goto err;
-
-	upload = strtol(upload_ptr, NULL, 10);
-	if (upload < 1)
+	if (seconds < 1 || upload < 0 || download < 0)
 		goto err;
 
 	client->download_limit = download;
 	client->upload_limit = upload;
-	return 0;
+	return seconds;
 
 err:
 	client->download_limit = 0;
 	client->upload_limit = 0;
-	return -1;
+	return 0;
 }
 
 char *system_exec(char *cmd)
@@ -181,7 +167,7 @@ http_nodogsplash_first_contact(request *r)
 	t_auth_target *authtarget;
 	s_config *config;
 	char *redir, *origurl, cmd_buff[255], *data = NULL;
-	int ret, seconds;
+	int seconds;
 
 	/* only allow GET requests */
 	if (r->request.method != HTTP_GET) {
@@ -220,12 +206,8 @@ http_nodogsplash_first_contact(request *r)
 		if(!data)
 			goto serve_splash;
 
-		seconds = strtol(data, NULL, 10);
+		seconds = data_extract_bw(data, client);
 		if(seconds < 1)
-			goto serve_splash;
-
-		ret = data_extract_bw(data, client);
-		if(ret < 0)
 			goto serve_splash;
 
 		debug(LOG_NOTICE, "Remote auth data: client [%s, %s] authenticated %d seconds",
@@ -367,7 +349,7 @@ http_nodogsplash_callback_auth(httpd *webserver, request *r)
 	t_client  *client;
 	t_auth_target *authtarget;
 	char *ip, *mac, *msg = NULL, cmd_buff[255], *data = NULL;
-	int ret, seconds;
+	int seconds;
 
 	/* Get info we need from request, and do action */
 	authtarget = http_nodogsplash_decode_authtarget(r);
@@ -397,12 +379,8 @@ http_nodogsplash_callback_auth(httpd *webserver, request *r)
 		if (!data)
 			goto serve_splash;
 
-		seconds = strtol(data, NULL, 10);
-		if (seconds < 1)
-			goto serve_splash;
-
-		ret = data_extract_bw(data, client);
-		if (ret < 0)
+		seconds = data_extract_bw(data, client);
+		if(seconds < 1)
 			goto serve_splash;
 
 		debug(LOG_NOTICE, "Remote voucher: client [%s, %s] authenticated %d seconds",
