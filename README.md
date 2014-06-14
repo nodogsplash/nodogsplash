@@ -225,14 +225,14 @@ respectively, along with others as required, to the server. For example:
   </form>
 ```
 
-###5.2 Forwarding authentification
+###5.2 Forwarding authentication
 
-Nodogsplash allows to call an external program for authentification using
+Nodogsplash allows to call an external program for authentication using
 the options BinVoucher/EnablePreAuth/ForceVoucher in nodogsplash.conf.
-The given program for BinVoucher will be called with the clients MAC address and is expected
-to output the number of seconds the client is to be authenticated (<= 0 seconds for no authentication).
-The output is also allowed to contain the download and upload speed limit
-for the clients traffic in KBits/s.
+The given program for BinVoucher will be called using the clients MAC address as argument.
+The output is expected to be the number of seconds the client is to be authenticated.
+It may also contain the clients download and upload speed limit in KBits/s.
+See the example configuration file for further details.
 
 ##6. Using ndsctl
 
