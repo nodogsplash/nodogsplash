@@ -21,6 +21,7 @@ make menuconfig
 
 At this point select the appropiate "Target System" and "Target Profile"
 depending on what target chipset/router you want to build for.
+Now select the NoDogSplash package in "Network ---> Captive Portals".
 To get an *.ipk file you also need to select "Build the OpenWrt SDK"
 
 Now compile/build everything:
