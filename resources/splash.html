@@ -11,12 +11,34 @@
 </tr>
 <tr>
 	<td align="center" height="120">
-	<!--
-		A client is authenticated by requesting the page $authtarget.
-		So, href to it here, with an img or link text the user can click on.
-		Also, note that any images you reference must reside in the
-		subdirectory that is the value of $imagesdir (default: "images").
-	-->
+<!--
+	A client is authenticated by requesting the page $authtarget.
+	So, href to it here, with an img or link text the user can click on.
+	Also, note that any images you reference must reside in the
+	subdirectory that is the value of $imagesdir (default: "images").
+
+	Available variables:
+	$error_msg
+	$gatewayname
+	$tok
+	$redir
+	$authaction
+	$denyaction
+	$authtarget
+	$clientip
+	$nclients
+	$maxclients
+	$uptime
+	$imagesdir
+	$pagesdir
+
+	Variables that can be passed back via HTTP GET.
+	Just append them to the authentication link:
+	nodoguser
+	nodogpass
+	info
+	voucher
+-->
 	<a href="$authtarget">
 	<img src="$imagesdir/splash.jpg" width="71" height="49" border="0"
 		alt="Click to enter" title="Click to enter">
