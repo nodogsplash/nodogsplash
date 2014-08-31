@@ -1,10 +1,10 @@
 To inlcude NoDogSplash into your OpenWRT image or to create
-an .ipk package (equivalent to Debians .deb files),
+an .ipk package (similar to Debians .deb files),
 you have to build an OpenWRT image.
-These steps were tested using OpenWRT-"Attitude Adjustment":
+These steps were tested using OpenWRT "Barrier Breaker":
 
 <pre>
-git clone git://git.openwrt.org/12.09/openwrt.git
+git clone git://git.openwrt.org/14.07/openwrt.git
 cd openwrt
 
 ./scripts/feeds update -a
@@ -22,7 +22,6 @@ make menuconfig
 At this point select the appropiate "Target System" and "Target Profile"
 depending on what target chipset/router you want to build for.
 Now select the NoDogSplash package in "Network ---> Captive Portals".
-To get an *.ipk file you also need to select "Build the OpenWrt SDK"
 
 Now compile/build everything:
 
