@@ -69,7 +69,7 @@ void http_nodogsplash_redirect(request *r, char *url);
 /**@brief Redirect to remote auth server */
 void http_nodogsplash_redirect_remote_auth(request *r, t_auth_target *authtarget);
 /**@brief Serve the splash page from its file */
-void http_nodogsplash_serve_splash(request *r, t_auth_target *authtarget, char *error_msg);
+void http_nodogsplash_serve_splash(request *r, t_auth_target *authtarget, t_client *client, char *error_msg);
 /**@brief Serve the info page from its file */
 void http_nodogsplash_serve_info(request *r, char *title, char *content);
 /**@brief Handle initial contact from client */

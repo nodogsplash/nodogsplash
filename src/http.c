@@ -219,7 +219,7 @@ http_nodogsplash_first_contact(request *r)
 		/* Serve the splash page (or redirect to remote authenticator) */
 serve_splash:
 		free(data);
-		http_nodogsplash_serve_splash(r,authtarget, NULL);
+		http_nodogsplash_serve_splash(r,authtarget, client, NULL);
 	}
 
 	http_nodogsplash_free_authtarget(authtarget);
@@ -348,23 +348,18 @@ http_nodogsplash_callback_auth(httpd *webserver, request *r)
 	s_config *config;
 	t_client  *client;
 	t_auth_target *authtarget;
-	char *ip, *mac, *msg = NULL, cmd_buff[255], *data = NULL;
+	char /**ip, *mac,*/ *msg = NULL, cmd_buff[255], *data = NULL;
 	int seconds;
+
+	client = http_nodogsplash_add_client(r);
+	/* http_nodogsplash_add_client() should log and return null on error */
+	if(!client) return;
 
 	/* Get info we need from request, and do action */
 	authtarget = http_nodogsplash_decode_authtarget(r);
 	config = config_get_config();
 
 	if (config->bin_voucher && ((authtarget->voucher) || (config->force_voucher))) {
-		ip = r->clientAddr;
-		mac = arp_get(ip);
-
-		if (!mac)
-			goto serve_splash;
-
-		LOCK_CLIENT_LIST();
-		client = client_list_find(ip, mac);
-		UNLOCK_CLIENT_LIST();
 
 		if (!client)
 			goto serve_splash;
@@ -385,7 +380,7 @@ http_nodogsplash_callback_auth(httpd *webserver, request *r)
 
 		debug(LOG_NOTICE, "Remote voucher: client [%s, %s] authenticated %d seconds",
 			  client->mac, client->ip, seconds);
-		free(mac);
+
 		free(data);
 		http_nodogsplash_callback_action(r,authtarget,AUTH_MAKE_AUTHENTICATED);
 		client->added_time = time(NULL) - (config->checkinterval * config->clientforceout) + seconds;
@@ -399,8 +394,7 @@ serve_splash:
 			if (msg)
 				msg++;
 		}
-		http_nodogsplash_serve_splash(r,authtarget,msg);
-		free(mac);
+		http_nodogsplash_serve_splash(r,authtarget,client,msg);
 		free(data);
 	}
 
@@ -468,7 +462,7 @@ http_nodogsplash_redirect_remote_auth(request *r, t_auth_target *authtarget)
  * or redirect to remote authenticator as required.
  */
 void
-http_nodogsplash_serve_splash(request *r, t_auth_target *authtarget, char *error_msg)
+http_nodogsplash_serve_splash(request *r, t_auth_target *authtarget, t_client *client, char *error_msg)
 {
 	char *tmpstr;
 	char line [MAX_BUF];
@@ -495,7 +489,8 @@ http_nodogsplash_serve_splash(request *r, t_auth_target *authtarget, char *error
 	httpdAddVariable(r,"authaction",authtarget->authaction);
 	httpdAddVariable(r,"denyaction",authtarget->denyaction);
 	httpdAddVariable(r,"authtarget",authtarget->authtarget);
-	httpdAddVariable(r,"clientip",r->clientAddr);
+	httpdAddVariable(r,"clientip",client->ip);
+	httpdAddVariable(r,"clientmac",client->mac);
 	safe_asprintf(&tmpstr, "%d", get_client_list_length());
 	httpdAddVariable(r,"nclients",tmpstr);
 	free(tmpstr);
