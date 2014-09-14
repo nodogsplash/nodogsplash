@@ -491,6 +491,7 @@ http_nodogsplash_serve_splash(request *r, t_auth_target *authtarget, t_client *c
 	httpdAddVariable(r,"authtarget",authtarget->authtarget);
 	httpdAddVariable(r,"clientip",client->ip);
 	httpdAddVariable(r,"clientmac",client->mac);
+	httpdAddVariable(r,"routermac",get_router_mac());
 	safe_asprintf(&tmpstr, "%d", get_client_list_length());
 	httpdAddVariable(r,"nclients",tmpstr);
 	free(tmpstr);
