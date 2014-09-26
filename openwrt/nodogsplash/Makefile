@@ -14,7 +14,7 @@ PKG_RELEASE:=2
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=git://github.com/nodogsplash/nodogsplash.git
+PKG_SOURCE_URL:=git://github.com/fabiomig/nodogsplash.git
 PKG_SOURCE_VERSION:=master
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
 PKG_BUILD_PARALLEL:=1
@@ -28,7 +28,7 @@ define Package/nodogsplash
 	CATEGORY:=Network
 	DEPENDS:=+libpthread +iptables-mod-ipopt
 	TITLE:=Open public network gateway daemon
-	URL:=https://github.com/nodogsplash/nodogsplash
+	URL:=https://github.com/fabiomig/nodogsplash
 endef
 
 define Package/nodogsplash/description
