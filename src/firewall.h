@@ -48,9 +48,6 @@ void fw_refresh_client_list(void);
 /** @brief Get an IP's MAC address from the ARP cache.*/
 char *arp_get(const char *req_ip);
 
-/** @brief Get MAC address from the router*/
-char *get_router_mac(void);
-
 /** @brief Return a string representing a connection state */
 char *fw_connection_state_as_string(int mark);
 

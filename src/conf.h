@@ -149,6 +149,7 @@ typedef struct {
 	char *gw_interface;		/**< @brief Interface we will manage */
 	char *gw_iprange;		/**< @brief IP range on gw_interface we will manage */
 	char *gw_address;		/**< @brief Internal IP address for our web server */
+	char *gw_mac;		/**< @brief MAC address of the interface we manage */
 	unsigned int gw_port;		/**< @brief Port the webserver will run on */
 	char *remote_auth_action;	/**< @brief Path for remote auth */
 	char enable_preauth;    /**< @brief enable pre-authentication support */

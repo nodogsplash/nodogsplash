@@ -117,28 +117,6 @@ arp_get(const char *req_ip)
 	return reply;
 }
 
-
-char *
-get_router_mac(void)
-{
-        FILE *proc;
-        char *reply = NULL;
-        char mac[18];
-        proc = popen("ifconfig wlan0", "r");
-
-
-        /*eth0      Link encap:Ethernet  HWaddr 00:1f:e2:61:0a:f2  */
-        reply = NULL;
-        while (!feof(proc) && (fscanf(proc, "%*s      %*s %*s  %*s %17[A-Fa-f0-9:]", mac) == 1)) {
-
-                reply = mac;
-                break;
-        }
-
-        pclose(proc);
-        return reply;
-}
-
 /** Initialize the firewall rules
  */
 int
