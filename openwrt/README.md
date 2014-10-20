@@ -1,8 +1,13 @@
-To inlcude NoDogSplash into your OpenWRT image or to create
-an .ipk package (similar to Debians .deb files),
-you have to build an OpenWRT image.
-These steps were tested using OpenWRT "Barrier Breaker":
+To inlcude NoDogSplash into your OpenWRT image or to create an .ipk
+package (similar to Debians .deb files), you have to build an OpenWRT image.
+To build the firmware you need a Unix console to enter commands into.
 
+Install the dependencies of the build environment (Debian/Ubuntu):
+<pre>
+sudo apt-get install git subversion g++ libncurses5-dev gawk zlib1g-dev build-essential
+</pre>
+
+Build Commands:
 <pre>
 git clone git://git.openwrt.org/14.07/openwrt.git
 cd openwrt
