@@ -8,7 +8,7 @@ LDLIBS=
 
 NDS_OBJS=src/auth.o src/client_list.o src/commandline.o src/conf.o \
 	src/debug.o src/firewall.o src/fw_iptables.o src/gateway.o src/http.o \
-	src/httpd_handler.o src/ndsctl_thread.o src/safe.o src/tc.o src/util.o
+	src/httpd_thread.o src/ndsctl_thread.o src/safe.o src/tc.o src/util.o
 
 LIBHTTPD_OBJS=libhttpd/api.o libhttpd/ip_acl.o \
 	libhttpd/protocol.o libhttpd/version.o
