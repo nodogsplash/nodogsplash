@@ -44,6 +44,7 @@
 
 
 /* Defined in gateway.c */
+extern pthread_mutex_t httpd_mutex;
 extern int created_httpd_threads;
 extern int current_httpd_threads;
 
@@ -58,7 +59,9 @@ thread_httpd(void *args)
 	request *r;
 	int serialnum;
 
+	pthread_mutex_lock(&httpd_mutex);
 	current_httpd_threads++;
+	pthread_mutex_unlock(&httpd_mutex);
 
 	params = (void **)args;
 	webserver = *params;
@@ -80,5 +83,7 @@ thread_httpd(void *args)
 	httpdEndRequest(r);
 	debug(LOG_DEBUG, "Thread %d ended request from %s", serialnum, r->clientAddr);
 
+	pthread_mutex_lock(&httpd_mutex);
 	current_httpd_threads--;
+	pthread_mutex_unlock(&httpd_mutex);
 }

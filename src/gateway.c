@@ -73,6 +73,9 @@ httpd * webserver = NULL;
 /* Time when nodogsplash started  */
 time_t started_time = 0;
 
+
+/* Avoid race condition of folloing variables */
+pthread_mutex_t httpd_mutex = PTHREAD_MUTEX_INITIALIZER;
 /* Total number of httpd request handling threads started */
 int created_httpd_threads;
 /* Number of current httpd request handling threads */
@@ -336,7 +339,10 @@ main_loop(void)
 				nanosleep(&wait_time,NULL);
 			}
 			thread_serial_num_p = (int*) malloc(sizeof(int)); /* thread_httpd() must free */
+			pthread_mutex_lock(&httpd_mutex);
 			*thread_serial_num_p = created_httpd_threads;
+			created_httpd_threads++;
+			pthread_mutex_unlock(&httpd_mutex);
 			debug(LOG_INFO, "Creating httpd request thread %d for %s", *thread_serial_num_p, r->clientAddr);
 			/* The void**'s are a simulation of the normal C
 			 * function calling sequence. */
@@ -344,7 +350,7 @@ main_loop(void)
 			*params = webserver;
 			*(params + 1) = r;
 			*(params + 2) = thread_serial_num_p;
-			created_httpd_threads++;
+
 			result = pthread_create(&tid, NULL, (void *)thread_httpd, (void *)params);
 			if (result != 0) {
 				debug(LOG_ERR, "FATAL: pthread_create failed to create httpd request thread - exiting...");
