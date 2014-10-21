@@ -74,16 +74,12 @@ char *httpdUrlEncode(str)
 
 char *httpdRequestMethodName(request *r)
 {
-	static	char	tmpBuf[255];
-
 	switch(r->request.method)
 	{
 		case HTTP_GET: return("GET");
 		case HTTP_POST: return("POST");
 		default:
-			snprintf(tmpBuf,255,"Invalid method '%d'",
-				r->request.method);
-			return(tmpBuf);
+			return("INVALID");
 	}
 }
 
@@ -377,7 +373,7 @@ request *httpdGetConnection(server, timeout)
 
 int httpdReadRequest(httpd *server, request *r)
 {
-	static	char	buf[HTTP_MAX_LEN];
+	char	buf[HTTP_MAX_LEN];
 	int	count,
 		inHeaders;
 	char	*cp, *cp2;
