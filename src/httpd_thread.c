@@ -66,7 +66,7 @@ thread_httpd(void *args)
 	params = (void **)args;
 	webserver = *params;
 	r = *(params + 1);
-	serialnum = *(params + 2);
+	serialnum = *((int *)*(params + 2));
 	free(*(params + 2)); /* XXX We must release this here. */
 	free(params); /* XXX We must release this here. */
 
