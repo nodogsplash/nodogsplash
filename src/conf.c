@@ -912,24 +912,30 @@ config_read(const char *filename)
 			}
 			break;
 		case oFWMarkAuthenticated:
-			if(sscanf(p1, "%i", &config.FW_MARK_AUTHENTICATED) < 1 ||
-					config.FW_MARK_AUTHENTICATED == 0) {
+			if(sscanf(p1, "%x", &config.FW_MARK_AUTHENTICATED) < 1 ||
+					config.FW_MARK_AUTHENTICATED == 0 ||
+					config.FW_MARK_AUTHENTICATED == config.FW_MARK_BLOCKED ||
+					config.FW_MARK_AUTHENTICATED == config.FW_MARK_TRUSTED) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);
 			}
 			break;
 		case oFWMarkBlocked:
-			if(sscanf(p1, "%i", &config.FW_MARK_BLOCKED) < 1 ||
-					config.FW_MARK_BLOCKED == 0) {
+			if(sscanf(p1, "%x", &config.FW_MARK_BLOCKED) < 1 ||
+					config.FW_MARK_BLOCKED == 0 ||
+					config.FW_MARK_BLOCKED == config.FW_MARK_AUTHENTICATED ||
+					config.FW_MARK_BLOCKED == config.FW_MARK_TRUSTED) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);
 			}
 			break;
 		case oFWMarkTrusted:
-			if(sscanf(p1, "%i", &config.FW_MARK_TRUSTED) < 1 ||
-					config.FW_MARK_TRUSTED == 0) {
+			if(sscanf(p1, "%x", &config.FW_MARK_TRUSTED) < 1 ||
+					config.FW_MARK_TRUSTED == 0 ||
+					config.FW_MARK_TRUSTED == config.FW_MARK_AUTHENTICATED ||
+					config.FW_MARK_TRUSTED == config.FW_MARK_BLOCKED) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);
