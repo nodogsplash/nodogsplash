@@ -189,6 +189,15 @@ replaced by their values:
       </form>
 ```
 
+* *$clientip*, *$clientmac* and *$gatewaymac* The respective addresses
+  of the client or gateway. This might be usefull in cases where the data
+  needs to be forwarded to some other place by the plash page itself.
+
+* *$nclients* and *$maxclients* User stats. Usefull when you need to
+  display something like "n of m users online" on the splash site.
+
+* *$uptime* The time Nodogsplash is running.
+
 * To change the appearance of informational and error pages which may
   occasionally be served by nodogsplash, edit the infoskel file:
 
