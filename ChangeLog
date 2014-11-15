@@ -4,6 +4,8 @@ nodogsplash (0.9-beta9.9.9)
     traffic was not blocked except on port 80 [mwarning]
   * make returned upload/download value by BinVoucher script
     optional, as stated in the documentation [mwarning]
+  * make variables clientmac and gatewaymac
+    available in the splash page [mwarning]
 
  -- Moritz Warning <moritzwarning@web.de>  Sun, 15 Jun 2014 22:55:12 +0200
 
@@ -30,8 +32,12 @@ nodogsplash (0.9.9)
 
   * Fixed buffer overflow bug in ndsctl.
   * Improved SIGCHLD handling in gateway.c and util.c.
-  * Added FirewallRulesets trusted-users and trusted-users-to-router. This permits customized access control for trusted users, as for authenticated users, with the same ruleset semantics, instead of always accepting all trusted packets.
-  * Added EmptyRuleSetPolicy directives for .conf file.  Permits optionally passing packets through to pre-existing firewall rules.
+  * Added FirewallRulesets trusted-users and trusted-users-to-router.
+    This permits customized access control for trusted users, as for
+    authenticated users, with the same ruleset semantics, instead of
+    always accepting all trusted packets.
+  * Added EmptyRuleSetPolicy directives for .conf file. Permits optionally
+    passing packets through to pre-existing firewall rules.
   * updated debian rules (for building debian package)
 
  -- Andraz Sraka <a@frubsd.org>  Sun, 11 Aug 2009 09:15:00 -0100
