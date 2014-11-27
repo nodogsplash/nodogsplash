@@ -234,12 +234,13 @@ main_loop(void)
 			debug(LOG_ERR, "Could not get IP address information of %s, exiting...", config->gw_interface);
 			exit(1);
 		}
-		if ((config->gw_mac = get_iface_mac(config->gw_interface)) == NULL) {
-			debug(LOG_ERR, "Could not get MAC address information of %s, exiting...", config->gw_interface);
-			exit(1);
-		}
-		debug(LOG_NOTICE, "Detected gateway %s at %s (%s)", config->gw_interface, config->gw_address, config->gw_mac);
 	}
+	if ((config->gw_mac = get_iface_mac(config->gw_interface)) == NULL) {
+		debug(LOG_ERR, "Could not get MAC address information of %s, exiting...", config->gw_interface);
+		exit(1);
+	}
+	debug(LOG_NOTICE, "Detected gateway %s at %s (%s)", config->gw_interface, config->gw_address, config->gw_mac);
+
 
 	/* Initializes the web server */
 	if ((webserver = httpdCreate(config->gw_address, config->gw_port)) == NULL) {
