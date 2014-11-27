@@ -328,11 +328,12 @@ request *httpdGetConnection(server, timeout)
 		}
 		if (timeout != 0 && result == 0)
 		{
-			return(NULL);
 			server->lastError = 0;
+			return(NULL);
 		}
 		if (result > 0)
 		{
+			server->lastError = 0;
 			break;
 		}
 	}
