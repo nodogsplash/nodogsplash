@@ -775,6 +775,7 @@ iptables_fw_access(t_authaction action, t_client *client)
 		/* Remove the authentication rules. */
 		debug(LOG_NOTICE, "Deauthenticating %s %s", client->ip, client->mac);
 		rc |= iptables_do_command("-t mangle -D " CHAIN_OUTGOING " -s %s -m mac --mac-source %s -j MARK %s 0x%x%x", client->ip, client->mac, markop, client->idx + 10, FW_MARK_AUTHENTICATED);
+		rc |= iptables_do_command("-t mangle -D " CHAIN_INCOMING " -d %s -j MARK %s 0x%x%x", client->ip, markop, client->idx + 10, FW_MARK_AUTHENTICATED);
 		rc |= iptables_do_command("-t mangle -D " CHAIN_INCOMING " -d %s -j ACCEPT", client->ip);
 		if(traffic_control) {
 			rc |= tc_detach_client(download_imqname, upload_imqname, client->idx);
