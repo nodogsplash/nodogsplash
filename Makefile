@@ -6,6 +6,8 @@ CFLAGS+=-Isrc -Ilibhttpd
 LDFLAGS+=-pthread
 LDLIBS=
 
+STRIP=yes
+
 NDS_OBJS=src/auth.o src/client_list.o src/commandline.o src/conf.o \
 	src/debug.o src/firewall.o src/fw_iptables.o src/gateway.o src/http.o \
 	src/httpd_handler.o src/ndsctl_thread.o src/safe.o src/tc.o src/util.o
@@ -31,8 +33,10 @@ clean:
 	rm -rf dist
 
 install:
+#ifeq(yes,$(STRIP))
 	strip nodogsplash
 	strip ndsctl
+#endif	
 	mkdir -p $(DESTDIR)/usr/bin/
 	cp ndsctl $(DESTDIR)/usr/bin/
 	cp nodogsplash $(DESTDIR)/usr/bin/
@@ -53,13 +57,10 @@ fixstyle: checkastyle
 	&& echo "\033[1;33mPrevious files have been corrected\033[00m" \
 	|| echo "\033[0;32mAll files are ok\033[00m"
 
-deb:
-	mkdir -p dist/nodogsplash/
-	cd dist/nodogsplash/; \
-		cp -rp ../../debian/ .; \
-		ln -s ../../Makefile;\
-		ln -s ../../src;\
-		ln -s ../../libhttpd;\
-		ln -s ../../resources;\
-		dpkg-buildpackage -b -us -uc
-	rm -rf dist/nodogsplash
+DEBVERSION=$(shell dpkg-parsechangelog | grep ^Version |cut -f2 -d\  | sed -e 's/-[0-9]*$$//' )
+deb: clean
+	mkdir -p dist/nodogsplash-$(DEBVERSION)
+	tar --exclude dist --exclude ".git*" -cjvf dist/nodogsplash_$(DEBVERSION).orig.tar.bz2 .
+	cd dist/nodogsplash-$(DEBVERSION) && tar xjf ../nodogsplash_$(DEBVERSION).orig.tar.bz2
+	cd dist/nodogsplash-$(DEBVERSION) && dpkg-buildpackage -us -uc
+	rm -rf dist/nodogsplash-$(DEBVERSION)
