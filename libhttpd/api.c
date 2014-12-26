@@ -190,14 +190,15 @@ int httpdAddVariable(request *r, const char *name, const char *value)
 	return(0);
 }
 
-httpd *httpdCreate(host, port)
+httpd *httpdCreate(host, port, ip6)
 	char	*host;
 	int	port;
+	int ip6;
 {
 	httpd	*new;
 	int	sock,
 		opt;
-        struct  sockaddr_in     addr;
+	struct sockaddr_storage addr;
 
 	/*
 	** Create the handle and setup it's basic config
@@ -255,7 +256,7 @@ httpd *httpdCreate(host, port)
 	}
 #endif
 
-	sock = socket(AF_INET, SOCK_STREAM, 0);
+	sock = socket(ip6 ? AF_INET6 : AF_INET , SOCK_STREAM, 0);
 	if (sock  < 0)
 	{
 		free(new);
@@ -267,16 +268,19 @@ httpd *httpdCreate(host, port)
 #	endif
 	new->serverSock = sock;
 	bzero(&addr, sizeof(addr));
-	addr.sin_family = AF_INET;
-	if (new->host == HTTP_ANY_ADDR)
-	{
-		addr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+	if(ip6) {
+		struct sockaddr_in6 *a = (struct sockaddr_in6 *)&addr;
+		a->sin6_family = AF_INET6;
+		a->sin6_port = htons(new->port);
+		inet_pton( AF_INET6, new->host ? "::" : new->host, &a->sin6_addr );
+	} else {
+		struct sockaddr_in *a = (struct sockaddr_in *)&addr;
+		a->sin_family = AF_INET;
+		a->sin_port = htons(new->port);
+		inet_pton( AF_INET, new->host ? "::" : new->host, &a->sin_addr );
 	}
-	else
-	{
-		addr.sin_addr.s_addr = inet_addr(new->host);
-	}
-	addr.sin_port = htons((u_short)new->port);
+
 	if (bind(sock,(struct sockaddr *)&addr,sizeof(addr)) <0)
 	{
 		close(sock);

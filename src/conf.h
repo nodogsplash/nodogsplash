@@ -94,6 +94,7 @@
 #define DEFAULT_EMPTY_USERS_TO_ROUTER_POLICY "REJECT"
 #define DEFAULT_EMPTY_AUTHENTICATED_USERS_POLICY "RETURN"
 #define DEFAULT_EMPTY_PREAUTHENTICATED_USERS_POLICY "REJECT"
+#define DEFAULT_IP6 0
 /*@}*/
 
 /**
@@ -198,6 +199,7 @@ typedef struct {
 	unsigned int FW_MARK_AUTHENTICATED;    /**< @brief iptables mark for authenticated packets */
 	unsigned int FW_MARK_BLOCKED;          /**< @brief iptables mark for blocked packets */
 	unsigned int FW_MARK_TRUSTED;          /**< @brief iptables mark for trusted packets */
+	int ip6;			/**< @brief enable IPv6 */
 } s_config;
 
 /** @brief Get the current gateway configuration */

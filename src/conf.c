@@ -256,6 +256,7 @@ config_init(void)
 	config.FW_MARK_AUTHENTICATED = DEFAULT_FW_MARK_AUTHENTICATED;
 	config.FW_MARK_TRUSTED = DEFAULT_FW_MARK_TRUSTED;
 	config.FW_MARK_BLOCKED = DEFAULT_FW_MARK_BLOCKED;
+	config.ip6 = DEFAULT_IP6;
 
 	/* Set up default FirewallRuleSets, and their empty ruleset policies */
 	rs = add_ruleset("trusted-users");

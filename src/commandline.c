@@ -65,7 +65,7 @@ void parse_commandline(int argc, char **argv)
 
 	s_config *config = config_get_config();
 
-	while (-1 != (c = getopt(argc, argv, "c:hfd:sw:vi:"))) {
+	while (-1 != (c = getopt(argc, argv, "c:hfd:sw:vi:64"))) {
 
 		switch(c) {
 
@@ -104,6 +104,16 @@ void parse_commandline(int argc, char **argv)
 		case 'v':
 			printf("This is nodogsplash version " VERSION "\n");
 			exit(1);
+			break;
+
+		case '4':
+			config->ip6 = 0;
+			break;
+
+		case '6':
+			printf("IPv6 is not supported yet\n");
+			exit(1);
+			config->ip6 = 1;
 			break;
 
 		default:

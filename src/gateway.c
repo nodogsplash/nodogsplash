@@ -252,7 +252,7 @@ main_loop(void)
 	debug(LOG_NOTICE, "Detected gateway %s at %s (%s)", config->gw_interface, config->gw_address, config->gw_mac);
 
 	/* Initializes the web server */
-	if ((webserver = httpdCreate(config->gw_address, config->gw_port)) == NULL) {
+	if ((webserver = httpdCreate(config->gw_address, config->gw_port, config->ip6)) == NULL) {
 		debug(LOG_ERR, "Could not create web server: %s", strerror(errno));
 		exit(1);
 	}
