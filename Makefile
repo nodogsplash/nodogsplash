@@ -60,7 +60,7 @@ fixstyle: checkastyle
 DEBVERSION=$(shell dpkg-parsechangelog | grep ^Version |cut -f2 -d\  | sed -e 's/-[0-9]*$$//' )
 deb: clean
 	mkdir -p dist/nodogsplash-$(DEBVERSION)
-	tar --exclude dist --exclude ".git*" -cjvf dist/nodogsplash_$(DEBVERSION).orig.tar.bz2 .
-	cd dist/nodogsplash-$(DEBVERSION) && tar xjf ../nodogsplash_$(DEBVERSION).orig.tar.bz2
+	tar --exclude dist --exclude ".git*" -cf - . | (cd dist/nodogsplash-$(DEBVERSION) && tar xf -)
+	cd dist && tar cjf nodogsplash_$(DEBVERSION).orig.tar.bz2 nodogsplash-$(DEBVERSION)
 	cd dist/nodogsplash-$(DEBVERSION) && dpkg-buildpackage -us -uc
 	rm -rf dist/nodogsplash-$(DEBVERSION)
