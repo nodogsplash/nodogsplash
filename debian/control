@@ -3,7 +3,7 @@ Section: net
 Priority: optional
 Maintainer: Shiao-An Yuan <shiao.an.yuan@gmail.com>
 Uploaders: Moritz Warning <moritzwarning@web.de>, Steffen Moeller <moeller@debian.org>
-Build-Depends: debhelper (>= 8.0.0)
+Build-Depends: debhelper (>= 8.0.0), dpkg-dev (>= 1.16.1~)
 Standards-Version: 3.9.6
 Homepage: http://kokoro.ucsd.edu/nodogsplash/
 Vcs-Git: git://github.com/nodogsplash/nodogsplash.git
@@ -13,10 +13,7 @@ Package: nodogsplash
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: manage access to public internet access
- Nodogsplash controlls access to a public internet connection, as it is
- e.g. commonly demanded for WiFi a HotSpot. It provides a captive portal
- to inform users about the services and optionally have them acknowledge
- the terms and conditions of its use.
- .
- The complexity of user account names, passwords and their maintenance
- is separated into a database-backed authentication server.
+ Nodogsplash controlls access to a public Internet connection and offers
+ a simple way to open a Hotspot for wireless networks.  It provides a
+ captive portal to inform users about the services and optionally have
+ them acknowledge the terms and conditions of its use.

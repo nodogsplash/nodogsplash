@@ -4,7 +4,7 @@ nodogsplash (0.9-beta9.9.9-2) unstable; urgency=low
     - policy bump to 3.9.6
     - added hardening
     - some extra work on the description
-  * Added Markus Warning and Steffen Moeller to uploaders
+  * Added Moritz Warning and Steffen Moeller to uploaders
 
  -- Steffen Moeller <moeller@debian.org>  Fri, 26 Dec 2014 16:21:48 +0100
 
