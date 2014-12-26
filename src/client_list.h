@@ -66,20 +66,20 @@ void client_list_init(void);
 int get_client_list_length();
 
 /** @brief Adds a new client to the client list */
-t_client *client_list_add_client(const char *ip);
+t_client *client_list_add_client(const char ip[]);
 
 /** @brief Finds a client by its IP and MAC */
-t_client *client_list_find(const char *ip, const char *mac);
+t_client *client_list_find(const char ip[], const char mac[]);
 
 /** @brief Finds a client only by its IP */
-t_client *client_list_find_by_ip(const char *ip); /* needed by fw_iptables.c, auth.c
+t_client *client_list_find_by_ip(const char ip[]); /* needed by fw_iptables.c, auth.c
 					     * and ndsctl_thread.c */
 
 /** @brief Finds a client only by its Mac */
-t_client *client_list_find_by_mac(const char *mac); /* needed by ndsctl_thread.c */
+t_client *client_list_find_by_mac(const char mac[]); /* needed by ndsctl_thread.c */
 
 /** @brief Finds a client by its token */
-t_client *client_list_find_by_token(const char *token);
+t_client *client_list_find_by_token(const char token[]);
 
 /** @brief Deletes a client from the client list */
 void client_list_delete(t_client *client);

@@ -65,30 +65,32 @@ void http_nodogsplash_callback_action(request *r, t_auth_target *authtarget, t_a
 /**@brief Add client identified in request to client list. */
 t_client* http_nodogsplash_add_client(request *r);
 /**@brief Serve a 302 Found */
-void http_nodogsplash_redirect(request *r, char *url);
+void http_nodogsplash_redirect(request *r, const char url[]);
 /**@brief Redirect to remote auth server */
 void http_nodogsplash_redirect_remote_auth(request *r, t_auth_target *authtarget);
 /**@brief Serve the splash page from its file */
-void http_nodogsplash_serve_splash(request *r, t_auth_target *authtarget, t_client *client, char *error_msg);
+void http_nodogsplash_serve_splash(request *r, t_auth_target *authtarget, t_client *client, const char error_msg[]);
 /**@brief Serve the info page from its file */
-void http_nodogsplash_serve_info(request *r, char *title, char *content);
+void http_nodogsplash_serve_info(request *r, const char title[], const char content[]);
 /**@brief Handle initial contact from client */
 void http_nodogsplash_first_contact(request *r);
 /**@brief Decode token and redirect URL from a request */
 t_auth_target* http_nodogsplash_decode_authtarget(request *r);
 /**@brief Malloc and return a t_auth_target struct encoding info */
-t_auth_target* http_nodogsplash_make_authtarget(char* token, char* redir);
+t_auth_target* http_nodogsplash_make_authtarget(const char token[], const char redir[]);
 /**@brief Free a t_auth_target struct */
 void http_nodogsplash_free_authtarget(t_auth_target* authtarget);
+/**@brief Perform username/password check if configured to use it */
+int http_nodogsplash_check_userpass(request *r, t_auth_target *authtarget);
 /**@brief Malloc and return a redirect URL */
-char* http_nodogsplash_make_redir(char* origurl);
+const char * http_nodogsplash_make_redir(const char origurl[]);
 /**@brief Do password check if configured */
 int http_nodogsplash_check_password(request *r, t_auth_target *authtarget);
 /**@brief Allocate and return a random string of 8 hex digits
    suitable as an authentication token */
-char * http_make_auth_token();
+const char * http_make_auth_token();
 /** @brief Sends HTML header to web browser */
-void http_nodogsplash_header(request *r, char *title);
+void http_nodogsplash_header(request *r, const char title[]);
 /** @brief Sends HTML footer to web browser */
 void http_nodogsplash_footer(request *r);
 

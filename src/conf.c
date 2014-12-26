@@ -204,19 +204,19 @@ config_init(void)
 	config.debuglevel = DEFAULT_DEBUGLEVEL;
 	config.ext_interface = NULL;
 	config.maxclients = DEFAULT_MAXCLIENTS;
-	config.gw_name = DEFAULT_GATEWAYNAME;
+	config.gw_name = safe_strdup(DEFAULT_GATEWAYNAME);
 	config.gw_interface = NULL;
-	config.gw_iprange = DEFAULT_GATEWAY_IPRANGE;
+	config.gw_iprange = safe_strdup(DEFAULT_GATEWAY_IPRANGE);
 	config.gw_address = NULL;
 	config.gw_port = DEFAULT_GATEWAYPORT;
 	config.remote_auth_action = NULL;
-	config.webroot = DEFAULT_WEBROOT;
-	config.splashpage = DEFAULT_SPLASHPAGE;
-	config.infoskelpage = DEFAULT_INFOSKELPAGE;
-	config.imagesdir = DEFAULT_IMAGESDIR;
-	config.pagesdir = DEFAULT_PAGESDIR;
-	config.authdir = DEFAULT_AUTHDIR;
-	config.denydir = DEFAULT_DENYDIR;
+	config.webroot = safe_strdup(DEFAULT_WEBROOT);
+	config.splashpage = safe_strdup(DEFAULT_SPLASHPAGE);
+	config.infoskelpage = safe_strdup(DEFAULT_INFOSKELPAGE);
+	config.imagesdir = safe_strdup(DEFAULT_IMAGESDIR);
+	config.pagesdir = safe_strdup(DEFAULT_PAGESDIR);
+	config.authdir = safe_strdup(DEFAULT_AUTHDIR);
+	config.denydir = safe_strdup(DEFAULT_DENYDIR);
 	config.redirectURL = NULL;
 	config.clienttimeout = DEFAULT_CLIENTTIMEOUT;
 	config.clientforceout = DEFAULT_CLIENTFORCEOUT;
@@ -312,8 +312,8 @@ Advance to the next word
 
 /** Add a firewall ruleset with the given name, and return it.
  *  Do not allow duplicates. */
-static t_firewall_ruleset *
-add_ruleset(char * rulesetname)
+t_firewall_ruleset *
+add_ruleset(const char rulesetname[])
 {
 	t_firewall_ruleset * ruleset;
 
@@ -611,7 +611,7 @@ get_empty_ruleset_policy(const char *rulesetname)
 
 
 t_firewall_ruleset *
-get_ruleset(const char *ruleset)
+get_ruleset(const char ruleset[])
 {
 	t_firewall_ruleset	*tmp;
 
@@ -641,7 +641,7 @@ _strip_whitespace(char* p1)
 	char *p2, *p3;
 
 	p3 = p1;
-	while (p2 = strchr(p3,'#')) {  /* strip the comment */
+	while ((p2 = strchr(p3,'#')) != 0) {  /* strip the comment */
 		/* but allow # to be escaped by \ */
 		if (p2 > p1 && (*(p2 - 1) == '\\')) {
 			p3 = p2 + 1;
@@ -995,7 +995,7 @@ int check_ip_format(const char *possibleip)
 
 
 /* Parse a string to see if it is valid MAC address format */
-int check_mac_format(char *possiblemac)
+int check_mac_format(const char possiblemac[])
 {
 	char hex2[3];
 	return
@@ -1004,7 +1004,7 @@ int check_mac_format(char *possiblemac)
 			   hex2,hex2,hex2,hex2,hex2,hex2) == 6;
 }
 
-int add_to_trusted_mac_list(char *possiblemac)
+int add_to_trusted_mac_list(const char possiblemac[])
 {
 	char *mac = NULL;
 	t_MAC *p = NULL;
@@ -1042,12 +1042,11 @@ int add_to_trusted_mac_list(char *possiblemac)
 /* Remove given MAC address from the config's trusted mac list.
  * Return 0 on success, nonzero on failure
  */
-int remove_from_trusted_mac_list(char *possiblemac)
+int remove_from_trusted_mac_list(const char possiblemac[])
 {
 	char *mac = NULL;
 	t_MAC **p = NULL;
 	t_MAC *del = NULL;
-	int found = 0;
 
 	/* check for valid format */
 	if (!check_mac_format(possiblemac)) {
@@ -1089,12 +1088,10 @@ int remove_from_trusted_mac_list(char *possiblemac)
 /* Given a pointer to a comma or whitespace delimited sequence of
  * MAC addresses, add each MAC address to config.trustedmaclist.
  */
-void parse_trusted_mac_list(char *ptr)
+void parse_trusted_mac_list(const char ptr[])
 {
 	char *ptrcopy = NULL, *ptrcopyptr;
 	char *possiblemac = NULL;
-	char *mac = NULL;
-	t_MAC *p = NULL;
 
 	debug(LOG_DEBUG, "Parsing string [%s] for trusted MAC addresses", ptr);
 
@@ -1112,7 +1109,7 @@ void parse_trusted_mac_list(char *ptr)
 /* Add given MAC address to the config's blocked mac list.
  * Return 0 on success, nonzero on failure
  */
-int add_to_blocked_mac_list(char *possiblemac)
+int add_to_blocked_mac_list(const char possiblemac[])
 {
 	char *mac = NULL;
 	t_MAC *p = NULL;
@@ -1156,12 +1153,11 @@ int add_to_blocked_mac_list(char *possiblemac)
 /* Remove given MAC address from the config's blocked mac list.
  * Return 0 on success, nonzero on failure
  */
-int remove_from_blocked_mac_list(char *possiblemac)
+int remove_from_blocked_mac_list(const char possiblemac[])
 {
 	char *mac = NULL;
 	t_MAC **p = NULL;
 	t_MAC *del = NULL;
-	int found = 0;
 
 	/* check for valid format */
 	if (!check_mac_format(possiblemac)) {
@@ -1209,7 +1205,7 @@ int remove_from_blocked_mac_list(char *possiblemac)
 /* Given a pointer to a comma or whitespace delimited sequence of
  * MAC addresses, add each MAC address to config.blockedmaclist
  */
-void parse_blocked_mac_list(char *ptr)
+void parse_blocked_mac_list(const char ptr[])
 {
 	char *ptrcopy = NULL, *ptrcopyptr;
 	char *possiblemac = NULL;
@@ -1229,7 +1225,7 @@ void parse_blocked_mac_list(char *ptr)
 /* Add given MAC address to the config's allowed mac list.
  * Return 0 on success, nonzero on failure
  */
-int add_to_allowed_mac_list(char *possiblemac)
+int add_to_allowed_mac_list(const char possiblemac[])
 {
 	char *mac = NULL;
 	t_MAC *p = NULL;
@@ -1273,12 +1269,11 @@ int add_to_allowed_mac_list(char *possiblemac)
 /* Remove given MAC address from the config's allowed mac list.
  * Return 0 on success, nonzero on failure
  */
-int remove_from_allowed_mac_list(char *possiblemac)
+int remove_from_allowed_mac_list(const char possiblemac[])
 {
 	char *mac = NULL;
 	t_MAC **p = NULL;
 	t_MAC *del = NULL;
-	int found = 0;
 
 	/* check for valid format */
 	if (!check_mac_format(possiblemac)) {
@@ -1325,9 +1320,10 @@ int remove_from_allowed_mac_list(char *possiblemac)
 /* Given a pointer to a comma or whitespace delimited sequence of
  * MAC addresses, add each MAC address to config.allowedmaclist
  */
-void parse_allowed_mac_list(char *ptr)
+void parse_allowed_mac_list(const char ptr[])
 {
-	char *ptrcopy = NULL, *ptrcopyptr;
+	char *ptrcopy = NULL;
+	char *ptrcopyptr;
 	char *possiblemac = NULL;
 
 	debug(LOG_DEBUG, "Parsing string [%s] for MAC addresses to allow", ptr);
@@ -1336,7 +1332,9 @@ void parse_allowed_mac_list(char *ptr)
 	ptrcopyptr = ptrcopy = safe_strdup(ptr);
 
 	while ((possiblemac = strsep(&ptrcopy, ", \t"))) {
-		if(strlen(possiblemac)>0) add_to_allowed_mac_list(possiblemac);
+		if(strlen(possiblemac) > 0) {
+			add_to_allowed_mac_list(possiblemac);
+		}
 	}
 
 	free(ptrcopyptr);
@@ -1356,7 +1354,7 @@ int set_log_level(int level)
 /** Set the gateway password.
  *  Return 0 on success.
  */
-int set_password(char *s)
+int set_password(const char s[])
 {
 	char *old = config.password;
 	if(s) {
@@ -1370,7 +1368,7 @@ int set_password(char *s)
 /** Set the gateway username.
  *  Return 0 on success.
  */
-int set_username(char *s)
+int set_username(const char s[])
 {
 	char *old = config.username;
 	if(s) {
@@ -1397,7 +1395,7 @@ config_validate(void)
     Verifies that a required parameter is not a null pointer
 */
 static void
-config_notnull(const void *parm, const char *parmname)
+config_notnull(const void *parm, const char parmname[])
 {
 	if (parm == NULL) {
 		debug(LOG_ERR, "%s is not set", parmname);

@@ -62,7 +62,6 @@ usage(void)
 void parse_commandline(int argc, char **argv)
 {
 	int c;
-	int i;
 
 	s_config *config = config_get_config();
 

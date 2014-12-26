@@ -48,10 +48,10 @@ s_config config;
 static void usage(void);
 static void init_config(void);
 static void parse_commandline(int, char **);
-static int connect_to_server(char *);
-static int send_request(int, char *);
-static void ndsctl_action(char *, char *, char *);
-static void ndsctl_print(char *);
+static int connect_to_server(const char[]);
+static int send_request(int, const char[]);
+static void ndsctl_action(const char[], const char[], const char[]);
+static void ndsctl_print(const char[]);
 static void ndsctl_status(void);
 static void ndsctl_clients(void);
 static void ndsctl_stop(void);
@@ -259,7 +259,7 @@ parse_commandline(int argc, char **argv)
 }
 
 static int
-connect_to_server(char *sock_name)
+connect_to_server(const char sock_name[])
 {
 	int sock;
 	struct sockaddr_un	sa_un;
@@ -280,7 +280,7 @@ connect_to_server(char *sock_name)
 }
 
 static int
-send_request(int sock, char *request)
+send_request(int sock, const char request[])
 {
 	ssize_t	len, written;
 
@@ -304,7 +304,7 @@ send_request(int sock, char *request)
  * config.param interpolated in format with %s directive if desired.
  */
 static void
-ndsctl_action(char * cmd, char * ifyes, char * ifno)
+ndsctl_action(const char cmd[], const char ifyes[], const char ifno[])
 {
 	int sock;
 	char buffer[4096];
@@ -347,7 +347,7 @@ ndsctl_action(char * cmd, char * ifyes, char * ifno)
  *  Action given by cmd.
  */
 static void
-ndsctl_print(char * cmd)
+ndsctl_print(const char cmd[])
 {
 	int sock;
 	char buffer[4096];

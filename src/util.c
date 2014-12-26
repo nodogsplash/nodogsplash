@@ -42,6 +42,7 @@
 #include <netinet/in.h>
 #include <sys/ioctl.h>
 #include <arpa/inet.h>
+#include <sys/time.h>
 
 #if defined(__NetBSD__)
 #include <sys/socket.h>
@@ -67,6 +68,7 @@
 #include "conf.h"
 #include "debug.h"
 #include "firewall.h"
+#include "fw_iptables.h"
 
 
 static pthread_mutex_t ghbn_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -75,8 +77,8 @@ static pthread_mutex_t ghbn_mutex = PTHREAD_MUTEX_INITIALIZER;
 extern time_t started_time;
 
 /* Defined in clientlist.c */
-extern	pthread_mutex_t	client_list_mutex;
-extern	pthread_mutex_t	config_mutex;
+extern pthread_mutex_t client_list_mutex;
+extern pthread_mutex_t config_mutex;
 
 /* Defined in auth.c */
 extern unsigned int authenticated_since_start;
@@ -88,7 +90,7 @@ extern unsigned int authenticated_since_start;
  * @return Return code of the command
  */
 int
-execute(char *cmd_line, int quiet)
+execute(const char cmd_line[], int quiet)
 {
 	int status, retval;
 	pid_t pid, rc;
@@ -155,8 +157,8 @@ execute(char *cmd_line, int quiet)
 	}
 }
 
-struct in_addr *
-wd_gethostbyname(const char *name) {
+struct in_addr *wd_gethostbyname(const char name[])
+{
 	struct hostent *he;
 	struct in_addr *h_addr, *in_addr_temp;
 
@@ -183,7 +185,7 @@ wd_gethostbyname(const char *name) {
 }
 
 char *
-get_iface_ip(const char *ifname)
+get_iface_ip(const char ifname[])
 {
 #if defined(__linux__)
 	struct ifreq if_data;
@@ -206,7 +208,7 @@ get_iface_ip(const char *ifname)
 		debug(LOG_ERR, "ioctl(): SIOCGIFADDR %s", strerror(errno));
 		return NULL;
 	}
-	memcpy ((void *) &ip, (void *) &if_data.ifr_addr.sa_data + 2, 4);
+	memcpy ((void *) &ip, (unsigned char *) &if_data.ifr_addr.sa_data + 2, 4);
 	in.s_addr = ip;
 
 	ip_str = inet_ntoa(in);
@@ -241,7 +243,7 @@ out:
 }
 
 char *
-get_iface_mac(const char *ifname)
+get_iface_mac(const char ifname[])
 {
 #if defined(__linux__)
 	int r, s;
@@ -364,7 +366,8 @@ get_ext_iface (void)
 }
 
 /* Malloc's */
-char * format_time(unsigned long int secs)
+char *
+format_time(unsigned long int secs)
 {
 	unsigned int days, hours, minutes, seconds;
 	char * str;
@@ -382,7 +385,8 @@ char * format_time(unsigned long int secs)
 }
 
 /* Caller must free. */
-char * get_uptime_string()
+char *
+get_uptime_string()
 {
 	return format_time(time(NULL)-started_time);
 }
@@ -391,7 +395,8 @@ char * get_uptime_string()
  * @return A string containing human-readable status text.
  * MUST BE free()d by caller
  */
-char * get_status_text()
+char *
+get_status_text()
 {
 	char buffer[STATUS_BUF_SIZ];
 	char timebuf[32];
@@ -499,7 +504,7 @@ char * get_status_text()
 	snprintf((buffer + len), (sizeof(buffer) - len), "====\n");
 	len = strlen(buffer);
 
-	snprintf((buffer + len), (sizeof(buffer) - len), "Client authentications since start: %lu\n", authenticated_since_start);
+	snprintf((buffer + len), (sizeof(buffer) - len), "Client authentications since start: %u\n", authenticated_since_start);
 	len = strlen(buffer);
 
 	/* Update the client's counters so info is current */
@@ -629,7 +634,8 @@ char * get_status_text()
  * @return A string containing machine-readable clients list.
  * MUST BE free()d by caller
  */
-char * get_clients_text()
+char *
+get_clients_text(void)
 {
 	char buffer[STATUS_BUF_SIZ];
 	ssize_t len;
@@ -662,13 +668,13 @@ char * get_clients_text()
 		snprintf((buffer + len), (sizeof(buffer) - len), "ip=%s\nmac=%s\n", client->ip, client->mac);
 		len = strlen(buffer);
 
-		snprintf((buffer + len), (sizeof(buffer) - len), "added=%d\n", client->added_time);
+		snprintf((buffer + len), (sizeof(buffer) - len), "added=%lld\n", (long long) client->added_time);
 		len = strlen(buffer);
 
-		snprintf((buffer + len), (sizeof(buffer) - len), "active=%d\n", client->counters.last_updated);
+		snprintf((buffer + len), (sizeof(buffer) - len), "active=%lld\n", (long long) client->counters.last_updated);
 		len = strlen(buffer);
 
-		snprintf((buffer + len), (sizeof(buffer) - len), "duration=%d\n", now - client->added_time);
+		snprintf((buffer + len), (sizeof(buffer) - len), "duration=%lu\n", now - client->added_time);
 		len = strlen(buffer);
 
 		snprintf((buffer + len), (sizeof(buffer) - len), "token=%s\n", client->token ? client->token : "none");
@@ -697,15 +703,13 @@ char * get_clients_text()
 	return safe_strdup(buffer);
 }
 
-unsigned short rand16(void)
+unsigned short
+rand16(void)
 {
 	static int been_seeded = 0;
 
 	if (!been_seeded) {
-		int fd, n = 0;
-		unsigned int c = 0, seed = 0;
-		char sbuf[sizeof(seed)];
-		char *s;
+		unsigned int seed = 0;
 		struct timeval now;
 
 		/* not a very good seed but what the heck, it needs to be quickly acquired */

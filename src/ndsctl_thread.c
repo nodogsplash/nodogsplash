@@ -50,6 +50,7 @@
 #include "client_list.h"
 #include "fw_iptables.h"
 #include "firewall.h"
+#include "gateway.h"
 
 #include "ndsctl_thread.h"
 
@@ -77,7 +78,7 @@ static void ndsctl_username(int, char *);
 @param arg Must contain a pointer to a string containing the Unix domain socket to open
 @todo This thread loops infinitely, need a watchdog to verify that it is still running?
 */
-void
+void*
 thread_ndsctl(void *arg)
 {
 	int	sock,    fd;
@@ -98,7 +99,6 @@ thread_ndsctl(void *arg)
 		debug(LOG_ERR, "NDSCTL socket name too long");
 		exit(1);
 	}
-
 
 	debug(LOG_DEBUG, "Creating socket");
 	sock = socket(PF_UNIX, SOCK_STREAM, 0);
@@ -147,18 +147,17 @@ thread_ndsctl(void *arg)
 			pthread_detach(tid);
 		}
 	}
+
+	return NULL;
 }
 
 
 static void *
 thread_ndsctl_handler(void *arg)
 {
-	int	fd,
-		done,
-		i;
-	char	request[MAX_BUF];
-	ssize_t	read_bytes,
-			len;
+	int fd, done, i;
+	char request[MAX_BUF];
+	ssize_t read_bytes, len;
 
 	debug(LOG_DEBUG, "Entering thread_ndsctl_handler....");
 
@@ -173,8 +172,7 @@ thread_ndsctl_handler(void *arg)
 
 	/* Read.... */
 	while (!done && read_bytes < (sizeof(request) - 1)) {
-		len = read(fd, request + read_bytes,
-				   sizeof(request) - read_bytes);
+		len = read(fd, request + read_bytes, sizeof(request) - read_bytes);
 
 		/* Have we gotten a command yet? */
 		for (i = read_bytes; i < (read_bytes + len); i++) {
@@ -239,7 +237,7 @@ thread_ndsctl_handler(void *arg)
 static void
 ndsctl_status(int fd)
 {
-	char * status = NULL;
+	char *status = NULL;
 	int len = 0;
 
 	status = get_status_text();

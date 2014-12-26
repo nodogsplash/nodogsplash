@@ -142,31 +142,31 @@ typedef struct {
 	char *ndsctl_sock;		/**< @brief ndsctl path to socket */
 	char *internal_sock;		/**< @brief internal path to socket */
 	int daemon;			/**< @brief if daemon > 0, use daemon mode */
-	int debuglevel;		/**< @brief Debug information verbosity */
-	int maxclients;		/**< @brief Maximum number of clients allowed */
+	int debuglevel;			/**< @brief Debug information verbosity */
+	int maxclients;			/**< @brief Maximum number of clients allowed */
 	char *ext_interface;		/**< @brief Interface to external network */
-	char *gw_name;		/**< @brief Name of the gateway; e.g. its SSID */
+	char *gw_name;			/**< @brief Name of the gateway; e.g. its SSID */
 	char *gw_interface;		/**< @brief Interface we will manage */
 	char *gw_iprange;		/**< @brief IP range on gw_interface we will manage */
 	char *gw_address;		/**< @brief Internal IP address for our web server */
-	char *gw_mac;		/**< @brief MAC address of the interface we manage */
+	char *gw_mac;			/**< @brief MAC address of the interface we manage */
 	unsigned int gw_port;		/**< @brief Port the webserver will run on */
 	char *remote_auth_action;	/**< @brief Path for remote auth */
-	char enable_preauth;    /**< @brief enable pre-authentication support */
-	char *bin_voucher;    /**< @brief enable voucher support */
-	char force_voucher;    /**< @brief force voucher */
-	char *webroot;		/**< @brief Directory containing splash pages, etc. */
+	char enable_preauth;  		/**< @brief enable pre-authentication support */
+	char *bin_voucher;		/**< @brief enable voucher support */
+	char force_voucher;		/**< @brief force voucher */
+	char *webroot;			/**< @brief Directory containing splash pages, etc. */
 	char *splashpage;		/**< @brief Name of main splash page */
 	char *infoskelpage;		/**< @brief Name of info skeleton page */
 	char *imagesdir;		/**< @brief Subdir of webroot containing .png .gif files etc */
-	char *pagesdir;		/**< @brief Subdir of webroot containing other .html files */
+	char *pagesdir;			/**< @brief Subdir of webroot containing other .html files */
 	char *redirectURL;		/**< @brief URL to direct client to after authentication */
-	char *authdir;		/**< @brief Notional relative dir for authentication URL */
-	char *denydir;		/**< @brief Notional relative dir for denial URL */
+	char *authdir;			/**< @brief Notional relative dir for authentication URL */
+	char *denydir;			/**< @brief Notional relative dir for denial URL */
 	int passwordauth;		/**< @brief boolean, whether to use password authentication */
 	int usernameauth;		/**< @brief boolean, whether to use username authentication */
-	char *username;		/**< @brief Username for username authentication */
-	char *password;		/**< @brief Password for password authentication */
+	char *username;			/**< @brief Username for username authentication */
+	char *password;			/**< @brief Password for password authentication */
 	int passwordattempts;		/**< @brief Number of attempted password authentications allowed */
 	int clienttimeout;		/**< @brief How many CheckIntervals before an inactive client
 				   must be re-authenticated */
@@ -176,22 +176,22 @@ typedef struct {
 				   thread will run, in seconds */
 	int authenticate_immediately;	/**< @brief boolean, whether to auth noninteractively */
 	int set_mss;			/**< @brief boolean, whether to set mss */
-	int mss_value;		/**< @brief int, mss value; <= 0 clamp to pmtu */
+	int mss_value;			/**< @brief int, mss value; <= 0 clamp to pmtu */
 	int traffic_control;		/**< @brief boolean, whether to do tc */
 	int download_limit;		/**< @brief Download limit, kb/s */
 	int upload_limit;		/**< @brief Upload limit, kb/s */
 	int download_imq;		/**< @brief Number of IMQ handling download */
-	int upload_imq;		/**< @brief Number of IMQ handling upload */
-	int log_syslog;		/**< @brief boolean, whether to log to syslog */
+	int upload_imq;			/**< @brief Number of IMQ handling upload */
+	int log_syslog;			/**< @brief boolean, whether to log to syslog */
 	int syslog_facility;		/**< @brief facility to use when using syslog for logging */
 	int macmechanism; 		/**< @brief mechanism wrt MAC addrs */
 	t_firewall_ruleset *rulesets;	/**< @brief firewall rules */
-	t_MAC *trustedmaclist; 	/**< @brief list of trusted macs */
-	t_MAC *blockedmaclist; 	/**< @brief list of blocked macs */
-	t_MAC *allowedmaclist; 	/**< @brief list of allowed macs */
-	unsigned int  FW_MARK_AUTHENTICATED;    /**< @brief iptables mark for authenticated packets */
-	unsigned int  FW_MARK_BLOCKED;          /**< @brief iptables mark for blocked packets */
-	unsigned int  FW_MARK_TRUSTED;          /**< @brief iptables mark for trusted packets */
+	t_MAC *trustedmaclist;		/**< @brief list of trusted macs */
+	t_MAC *blockedmaclist;		/**< @brief list of blocked macs */
+	t_MAC *allowedmaclist;		/**< @brief list of allowed macs */
+	unsigned int FW_MARK_AUTHENTICATED;    /**< @brief iptables mark for authenticated packets */
+	unsigned int FW_MARK_BLOCKED;          /**< @brief iptables mark for blocked packets */
+	unsigned int FW_MARK_TRUSTED;          /**< @brief iptables mark for trusted packets */
 } s_config;
 
 /** @brief Get the current gateway configuration */
@@ -204,36 +204,46 @@ void config_init(void);
 void config_init_override(void);
 
 /** @brief Reads the configuration file */
-void config_read(const char *filename);
+void config_read(const char filename[]);
 
 /** @brief Check that the configuration is valid */
 void config_validate(void);
 
 /** @brief Fetch a firewall rule list, given name of the ruleset. */
-t_firewall_rule *get_ruleset_list(const char *);
+t_firewall_rule *get_ruleset_list(const char[]);
 
 /** @brief Fetch a firewall ruleset, given its name. */
-t_firewall_ruleset *get_ruleset(const char *);
+t_firewall_ruleset *get_ruleset(const char[]);
 
 /** @brief Add a firewall ruleset with the given name, and return it. */
-static t_firewall_ruleset *add_ruleset(char *);
+t_firewall_ruleset *add_ruleset(const char[]);
 
 /** @brief Say if a named firewall ruleset is empty. */
-int is_empty_ruleset(const char *);
+int is_empty_ruleset(const char[]);
 
 /** @brief Get a named empty firewall ruleset policy, given ruleset name. */
-char * get_empty_ruleset_policy(const char *);
+char * get_empty_ruleset_policy(const char[]);
 
-void parse_trusted_mac_list(char *);
-void parse_blocked_mac_list(char *);
-void parse_allowed_mac_list(char *);
-int check_ip_format(const char *);
-int check_mac_format(char *);
+void parse_trusted_mac_list(const char[]);
+void parse_blocked_mac_list(const char[]);
+void parse_allowed_mac_list(const char[]);
+
+int add_to_blocked_mac_list(const char possiblemac[]);
+int remove_from_blocked_mac_list(const char possiblemac[]);
+
+int add_to_allowed_mac_list(const char possiblemac[]);
+int remove_from_allowed_mac_list(const char possiblemac[]);
+
+int remove_from_trusted_mac_list(const char possiblemac[]);
+int add_to_trusted_mac_list(const char possiblemac[]);
+
+int check_ip_format(const char[]);
+int check_mac_format(const char[]);
 
 /** config API, used in commandline.c */
 int set_log_level(int);
-int set_password(char *);
-int set_username(char *);
+int set_password(const char[]);
+int set_username(const char[]);
 
 #define LOCK_CONFIG() do { \
 	debug(LOG_DEBUG, "Locking config"); \
