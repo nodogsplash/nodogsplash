@@ -53,13 +53,10 @@ fixstyle: checkastyle
 	&& echo "\033[1;33mPrevious files have been corrected\033[00m" \
 	|| echo "\033[0;32mAll files are ok\033[00m"
 
-deb:
-	mkdir -p dist/nodogsplash/
-	cd dist/nodogsplash/; \
-		cp -rp ../../debian/ .; \
-		ln -s ../../Makefile;\
-		ln -s ../../src;\
-		ln -s ../../libhttpd;\
-		ln -s ../../resources;\
-		dpkg-buildpackage -b -us -uc
-	rm -rf dist/nodogsplash
+DEBVERSION=$(shell dpkg-parsechangelog | grep ^Version |cut -f2 -d\  | sed -e 's/-[0-9]*$$//' )
+deb: clean
+	mkdir -p dist/nodogsplash-$(DEBVERSION)
+	tar --exclude dist --exclude ".git*" -cjvf dist/nodogsplash_$(DEBVERSION).orig.tar.bz2 .
+	cd dist/nodogsplash-$(DEBVERSION) && tar xjf ../nodogsplash_$(DEBVERSION).orig.tar.bz2
+	cd dist/nodogsplash-$(DEBVERSION) && dpkg-buildpackage -us -uc
+	rm -rf dist/nodogsplash-$(DEBVERSION)
