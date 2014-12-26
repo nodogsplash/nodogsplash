@@ -211,12 +211,10 @@ main_loop(void)
 {
 	int result;
 	pthread_t	tid;
-	s_config *config = config_get_config();
-	struct timespec wait_time;
-	int msec;
+	s_config *config;
 	request *r;
-	void **params;
-	int* thread_serial_num_p;
+
+	config = config_get_config();
 
 	/* Set the time when nodogsplash started */
 	if (!started_time) {
@@ -281,7 +279,7 @@ main_loop(void)
 	}
 
 	/* Start client statistics and timeout clean-up thread */
-	result = pthread_create(&tid_client_check, NULL, (void *)thread_client_timeout_check, NULL);
+	result = pthread_create(&tid_client_check, NULL, thread_client_timeout_check, NULL);
 	if (result != 0) {
 		debug(LOG_ERR, "FATAL: Failed to create thread_client_timeout_check - exiting");
 		termination_handler(0);
@@ -289,7 +287,7 @@ main_loop(void)
 	pthread_detach(tid_client_check);
 
 	/* Start control thread */
-	result = pthread_create(&tid, NULL, (void *)thread_ndsctl, (void *)safe_strdup(config->ndsctl_sock));
+	result = pthread_create(&tid, NULL, thread_ndsctl, (void *)safe_strdup(config->ndsctl_sock));
 	if (result != 0) {
 		debug(LOG_ERR, "FATAL: Failed to create thread_ndsctl - exiting");
 		termination_handler(0);

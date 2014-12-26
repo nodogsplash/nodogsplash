@@ -52,7 +52,7 @@ int iptables_fw_init(void);
 int iptables_fw_destroy(void);
 
 /** @brief Helper function for iptables_fw_destroy */
-int iptables_fw_destroy_mention( const char * table, const char * chain, const char * mention);
+int iptables_fw_destroy_mention( const char table[], const char chain[], const char mention[]);
 
 /** @brief Define the access of a specific client */
 int iptables_fw_access(t_authaction action, t_client *client);
@@ -67,6 +67,15 @@ unsigned long long int iptables_fw_total_upload();
 int iptables_fw_counters_update(void);
 
 /** @brief Fork an iptables command */
-int iptables_do_command(const char *format, ...);
+int iptables_do_command(const char format[], ...);
+
+int iptables_block_mac(const char mac[]);
+int iptables_unblock_mac(const char mac[]);
+
+int iptables_allow_mac(const char mac[]);
+int iptables_unallow_mac(const char mac[]);
+
+int iptables_trust_mac(const char mac[]);
+int iptables_untrust_mac(const char mac[]);
 
 #endif /* _IPTABLES_H_ */

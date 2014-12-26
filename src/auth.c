@@ -49,7 +49,7 @@
 
 
 /* Defined in clientlist.c */
-extern	pthread_mutex_t	client_list_mutex;
+extern pthread_mutex_t	client_list_mutex;
 
 /* Count number of authentications */
 unsigned int authenticated_since_start = 0;
@@ -59,8 +59,8 @@ unsigned int authenticated_since_start = 0;
  *  This just wakes up every config.checkinterval seconds, and calls fw_refresh_client_list()
 @todo This thread loops infinitely, need a watchdog to verify that it is still running?
 */
-void
-thread_client_timeout_check(const void *arg)
+void *
+thread_client_timeout_check(void *arg)
 {
 	pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 	pthread_mutex_t cond_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -84,13 +84,15 @@ thread_client_timeout_check(const void *arg)
 		/* No longer needs to be locked */
 		pthread_mutex_unlock(&cond_mutex);
 	}
+
+	return NULL;
 }
 
 /** Take action on a client.
  * Alter the firewall rules and client list accordingly.
 */
 void
-auth_client_action(char *ip, char *mac, t_authaction action)
+auth_client_action(const char ip[], const char mac[], t_authaction action)
 {
 	t_client *client;
 

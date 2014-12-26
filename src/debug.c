@@ -37,16 +37,17 @@
 /** @internal
 Do not use directly, use the debug macro */
 void
-_debug(char *filename, int line, int level, char *format, ...)
+_debug(const char filename[], int line, int level, const char *format, ...)
 {
 	char buf[28];
 	va_list vlist;
-	s_config *config = config_get_config();
+	s_config *config;
 	time_t ts;
 	sigset_t block_chld;
 
 	time(&ts);
 
+	config = config_get_config();
 	if (config->debuglevel >= level) {
 		sigemptyset(&block_chld);
 		sigaddset(&block_chld, SIGCHLD);

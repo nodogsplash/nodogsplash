@@ -31,14 +31,14 @@
 
 /** @brief Execute a shell command
  */
-int execute(char *cmd_line, int quiet);
-struct in_addr *wd_gethostbyname(const char *name);
+int execute(const char cmd_line[], int quiet);
+struct in_addr *wd_gethostbyname(const char name[]);
 
 /* @brief Get IP address of an interface */
-char *get_iface_ip(const char *ifname);
+char *get_iface_ip(const char ifname[]);
 
 /* @brief Get MAC address of an interface */
-char *get_iface_mac(const char *ifname);
+char *get_iface_mac(const char ifname[]);
 
 /* @brief Get interface name of default gateway */
 char *get_ext_iface (void);
@@ -60,15 +60,15 @@ int is_auth_online();
 /*
  * @brief Mallocs and returns nodogsplash uptime string
  */
-char * get_uptime_string();
+char *get_uptime_string();
 /*
  * @brief Creates a human-readable paragraph of the status of the nodogsplash process
  */
-char * get_status_text();
+char *get_status_text();
 /*
  * @brief Creates a machine-readable dump of currently connected clients
  */
-char * get_clients_text();
+char *get_clients_text();
 
 /** @brief cheap random */
 unsigned short rand16(void);

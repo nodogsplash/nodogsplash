@@ -39,7 +39,7 @@ void * safe_malloc (size_t size);
 
 /* @brief Safe version of strdup
  */
-char * safe_strdup(const char *s);
+char * safe_strdup(const char s[]);
 
 /* @brief Safe version of asprintf
  */

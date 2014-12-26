@@ -27,17 +27,18 @@
   @author Copyright (C) 2005 Mina Naguib <mina@ilesansfil.org>
  */
 
+#define _GNU_SOURCE
 
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <syslog.h>
 
 #include "httpd.h"
 #include "safe.h"
 #include "debug.h"
-#include <syslog.h>
 
 
 /* From gateway.c */
@@ -54,7 +55,7 @@ void * safe_malloc (size_t size)
 	return (retval);
 }
 
-char * safe_strdup(const char *s)
+char * safe_strdup(const char s[])
 {
 	char * retval = NULL;
 	if (!s) {
