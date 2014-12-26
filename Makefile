@@ -6,6 +6,8 @@ CFLAGS+=-Isrc -Ilibhttpd
 LDFLAGS+=-pthread
 LDLIBS=
 
+STRIP=yes
+
 NDS_OBJS=src/auth.o src/client_list.o src/commandline.o src/conf.o \
 	src/debug.o src/firewall.o src/fw_iptables.o src/gateway.o src/http.o \
 	src/httpd_handler.o src/ndsctl_thread.o src/safe.o src/tc.o src/util.o
@@ -31,8 +33,10 @@ clean:
 	rm -rf dist
 
 install:
+#ifeq(yes,$(STRIP))
 	strip nodogsplash
 	strip ndsctl
+#endif	
 	mkdir -p $(DESTDIR)/usr/bin/
 	cp ndsctl $(DESTDIR)/usr/bin/
 	cp nodogsplash $(DESTDIR)/usr/bin/
