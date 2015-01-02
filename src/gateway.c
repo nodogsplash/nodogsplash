@@ -219,8 +219,12 @@ main_loop(void)
 {
 	int result;
 	pthread_t	tid;
+	struct timespec wait_time;
+	int msec;
 	s_config *config;
 	request *r;
+	void **params;
+	int* thread_serial_num_p;
 
 	config = config_get_config();
 
