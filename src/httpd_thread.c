@@ -18,9 +18,9 @@
  *                                                                  *
 \********************************************************************/
 
-/* $Id: httpd_handler.c 901 2006-01-17 18:58:13Z mina $ */
+/* $Id: httpd_thread.c 901 2006-01-17 18:58:13Z mina $ */
 
-/** @file httpd_handler.c
+/** @file httpd_thread.c
     @brief Handles one web request.
     @author Copyright (C) 2004 Alexandre Carmel-Veilleux <acv@acv.ca>
 */
@@ -29,6 +29,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <pthread.h>
 #include <string.h>
 #include <unistd.h>
 #include <syslog.h>
@@ -39,25 +40,50 @@
 
 #include "common.h"
 #include "debug.h"
-#include "httpd_handler.h"
+#include "httpd_thread.h"
 
 
-/** Entry point for httpd request handler.
+/* Defined in gateway.c */
+extern pthread_mutex_t httpd_mutex;
+extern int created_httpd_threads;
+extern int current_httpd_threads;
+
+/** Entry point for httpd request handling thread.
 @param args Two item array of void-cast pointers to the httpd and request struct
 */
 void
-handle_http_request(httpd *webserver, request *r)
+thread_httpd(void *args)
 {
+	void **params;
+	httpd *webserver;
+	request *r;
+	int serialnum;
+
+	pthread_mutex_lock(&httpd_mutex);
+	current_httpd_threads++;
+	pthread_mutex_unlock(&httpd_mutex);
+
+	params = (void **)args;
+	webserver = *params;
+	r = *(params + 1);
+	serialnum = *((int *)*(params + 2));
+	free(*(params + 2)); /* XXX We must release this here. */
+	free(params); /* XXX We must release this here. */
+
 	if (httpdReadRequest(webserver, r) == 0) {
 		/*
 		 * We read the request fine
 		 */
-		debug(LOG_DEBUG, "Calling httpdProcessRequest() for %s", r->clientAddr);
+		debug(LOG_DEBUG, "Thread %d calling httpdProcessRequest() for %s", serialnum, r->clientAddr);
 		httpdProcessRequest(webserver, r);
-		debug(LOG_DEBUG, "Returned from httpdProcessRequest() for %s", r->clientAddr);
+		debug(LOG_DEBUG, "Thread %d returned from httpdProcessRequest() for %s", serialnum, r->clientAddr);
 	} else {
-		debug(LOG_DEBUG, "No valid request received from %s", r->clientAddr);
+		debug(LOG_DEBUG, "Thread %d: No valid request received from %s", serialnum, r->clientAddr);
 	}
 	httpdEndRequest(r);
-	debug(LOG_DEBUG, "Ended request from %s", r->clientAddr);
+	debug(LOG_DEBUG, "Thread %d ended request from %s", serialnum, r->clientAddr);
+
+	pthread_mutex_lock(&httpd_mutex);
+	current_httpd_threads--;
+	pthread_mutex_unlock(&httpd_mutex);
 }

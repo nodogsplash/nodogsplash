@@ -18,18 +18,18 @@
  *                                                                  *
 \********************************************************************/
 
-/* $Id: httpd_handler.h 901 2006-01-17 18:58:13Z mina $ */
-/** @file httpd_handler.h
-    @brief nodogsplash httpd worker handler
+/* $Id: httpd_thread.h 901 2006-01-17 18:58:13Z mina $ */
+/** @file httpd_thread.h
+    @brief nodogsplash httpd worker thread
     @author Copyright (C) 2004 Alexandre Carmel-Veilleux <acv@acv.ca>
 */
 
-#ifndef _HTTPD_HANDLER_H_
-#define _HTTPD_HANDLER_H_
+#ifndef _HTTPD_THREAD_H_
+#define _HTTPD_THREAD_H_
 
 
 /** @brief Handle a web request */
-void handle_http_request(httpd *webserver, request *r);
+void thread_httpd(void *args);
 
 
 #endif

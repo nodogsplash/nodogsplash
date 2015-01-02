@@ -83,6 +83,10 @@ extern pthread_mutex_t config_mutex;
 /* Defined in auth.c */
 extern unsigned int authenticated_since_start;
 
+/* Defined in gateway.c */
+extern int created_httpd_threads;
+extern int current_httpd_threads;
+
 
 /** Fork a child and execute a shell command.
  * The parent process waits for the child to return,
@@ -506,6 +510,16 @@ get_status_text()
 
 	snprintf((buffer + len), (sizeof(buffer) - len), "Client authentications since start: %u\n", authenticated_since_start);
 	len = strlen(buffer);
+
+	snprintf((buffer + len), (sizeof(buffer) - len), "Httpd request threads created/current: %d/%d\n", created_httpd_threads, current_httpd_threads);
+	len = strlen(buffer);
+
+	if(config->decongest_httpd_threads) {
+		snprintf((buffer + len), (sizeof(buffer) - len), "Httpd thread decongest threshold: %d threads\n", config->httpd_thread_threshold);
+		len = strlen(buffer);
+		snprintf((buffer + len), (sizeof(buffer) - len), "Httpd thread decongest delay: %d ms\n", config->httpd_thread_delay_ms);
+		len = strlen(buffer);
+	}
 
 	/* Update the client's counters so info is current */
 	iptables_fw_counters_update();
