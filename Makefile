@@ -20,7 +20,7 @@ LIBHTTPD_OBJS=libhttpd/api.o libhttpd/ip_acl.o \
 all: nodogsplash ndsctl
 
 %.o : %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 nodogsplash: $(NDS_OBJS) $(LIBHTTPD_OBJS)
 	$(CC) $(LDFLAGS) -o nodogsplash $+ $(LDLIBS)
