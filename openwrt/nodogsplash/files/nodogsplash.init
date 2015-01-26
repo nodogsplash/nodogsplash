@@ -145,14 +145,25 @@ generate_uci_config() {
   fi
 
   config_get val "$cfg" network
-  if [ ! -n "${val}" ] ; then
-    nolog error "$cfg missing network"
-    return 1
+  if [ -n "$val" ] ; then
+    if ! network_get_device ifname "$val" ; then
+      nolog error "$cfg can not find ifname for network '$val'"
+      return 1
+    fi
   fi
 
-  if ! network_get_device ifname $val ; then
-    nolog error "$cfg can not find ifname for network '${val}'"
-    return 1
+  config_get val "$cfg" gatewayinterface
+  if [ -n "$val" ] ; then
+    if [ -n "$ifname" ] ; then
+      nolog error "$cfg cannot use both option network and gatewayinterface"
+      return 1
+    fi
+    ifname="$val"
+  fi
+
+  if [ -z "$ifname" ] ; then
+      nolog error "$cfg option network or gatewayinterface missing"
+      return 1
   fi
 
   echo "GatewayInterface $ifname" >> $CONFIGFILE
