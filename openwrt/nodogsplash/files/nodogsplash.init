@@ -71,7 +71,7 @@ setup_mac_lists() {
   local val
 
   append_mac() {
-    append MAC $1 ,
+    append MAC "$1" ","
   }
 
   config_get val "$cfg" macmechanism
