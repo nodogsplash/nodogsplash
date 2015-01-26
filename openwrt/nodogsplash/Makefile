@@ -43,10 +43,9 @@ define Package/nodogsplash/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ndsctl $(1)/usr/bin/
 
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) files/nodogsplash.init $(1)/etc/init.d/$(PKG_NAME)
-
-	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	$(INSTALL_CONF) ./files/nodogsplash.migrate $(1)/etc/uci-defaults/30_nodogsplash
+	$(INSTALL_BIN) files/nodogsplash.init $(1)/etc/init.d/nodogsplash
+	$(INSTALL_DIR) $(1)/etc/config
+	$(INSTALL_CONF) files/nodogsplash.config $(1)/etc/config/nodogsplash
 
 	$(INSTALL_DIR) $(1)/etc/$(PKG_NAME)/htdocs/images
 	$(CP) $(PKG_BUILD_DIR)/resources/splash.html $(1)/etc/$(PKG_NAME)/htdocs/

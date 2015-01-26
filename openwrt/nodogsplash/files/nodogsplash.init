@@ -134,6 +134,16 @@ generate_uci_config() {
   CONFIGFILE="/tmp/etc/nodogsplash_$cfg.conf"
 
   echo "# auto-generated config file from /etc/config/nodogsplash" > $CONFIGFILE
+
+  config_get val "$cfg" config
+  if [ -n "$val" ] ; then
+    if [ -f "$val" ] ; then
+      nolog error "Configuration file '$file' doesn't exist"
+      return 0
+    fi
+    cat $val > CONFIGFILE
+  fi
+
   config_get val "$cfg" network
   if [ ! -n "${val}" ] ; then
     nolog error "$cfg missing network"
@@ -177,22 +187,11 @@ create_instance() {
   local cfg="$1"
   local manual_config
   local val
-  CONFIGFILE="/tmp/etc/nodogsplash_$cfg.conf"
 
   config_get_bool val "$cfg" disabled 0
   [ $val -gt 0 ] && return 0
 
-  config_get manual_config "$cfg" config ""
-  if [ ! -n "$manual_config" ] ; then
-    generate_uci_config "$cfg"
-  else
-    # check if configration exists
-    if [ ! -f "$manual_config" ] ; then
-      nolog error "Configuration file '$file' doesn't exists"
-      return 0
-    fi
-    CONFIGFILE="$manual_config"
-  fi
+  generate_uci_config "$cfg"
 
   if ! test_module ;  then
     logger -s -t nodogsplash -p daemon.error "nodogsplash is missing some kernel modules"
