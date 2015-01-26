@@ -53,15 +53,15 @@ setup_user_authentication() {
   [ $val -gt 0 ] && echo "AuthenticateImmediately yes" >> $CONFIGFILE
 
   config_get val "$cfg" username
-  if [ -n "${val}" ] ; then
+  if [ -n "$val" ] ; then
     echo "UsernameAuthentication" >> $CONFIGFILE
-    echo "Username ${val}" >> $CONFIGFILE
+    echo "Username $val" >> $CONFIGFILE
   fi
 
   config_get val "$cfg" password
-  if [ -n "${val}" ] ; then
+  if [ -n "$val" ] ; then
     echo "PasswordAuthentication" >> $CONFIGFILE
-    echo "Password ${val}" >> $CONFIGFILE
+    echo "Password $val" >> $CONFIGFILE
   fi
 }
 
@@ -75,22 +75,22 @@ setup_mac_lists() {
   }
 
   config_get val "$cfg" macmechanism
-  if [ -z "${val}" ] ; then
+  if [ -z "$val" ] ; then
     # check if we have AllowedMACList or BlockedMACList defined they will be ignored
     config_get val "$cfg" allowedmac
-    if [ -n "${val}" ] ; then
+    if [ -n "$val" ] ; then
       echo "Ignoring allowedmac - macmechanism not \"allow\"" >&2
     fi
 
     config_get val "$cfg" blockedmac
-    if [ -n "${val}" ] ; then
+    if [ -n "$val" ] ; then
       echo "Ignoring blockedmac - macmechanism not \"block\"" >&2
     fi
-  elif [ "${val}" == "allow" ] ; then
+  elif [ "$val" == "allow" ] ; then
     MAC=""
     config_list_foreach "$cfg" allowedmac append_mac
     echo "AllowedMACList $MAC" >> $CONFIGFILE
-  elif [ "${val}" == "block" ] ; then
+  elif [ "$val" == "block" ] ; then
     MAC=""
     config_list_foreach "$cfg" blockedmac append_mac
     echo "BlockedMACList $MAC" >> $CONFIGFILE
@@ -120,7 +120,7 @@ setup_firewall() {
     config_list_foreach "$cfg" ${uci_name} append_firewall
     echo "}" >> $CONFIGFILE
     config_get val "$cfg" policy_${uci_name}
-    [ -n "${val}" ] && echo "EmptyRuleSetPolicy $rule $val" >> $CONFIGFILE
+    [ -n "$val" ] && echo "EmptyRuleSetPolicy $rule $val" >> $CONFIGFILE
   done
 }
 
@@ -168,7 +168,7 @@ generate_uci_config() {
 
   echo "GatewayInterface $ifname" >> $CONFIGFILE
   config_get val "$cfg" externalnetwork
-  [ -n "${val}" ] && network_get_device ifname ${val} && echo "ExternalInterface $ifname" >> $CONFIGFILE
+  [ -n "$val" ] && network_get_device ifname "$val" && echo "ExternalInterface $ifname" >> $CONFIGFILE
 
   append_config_option "$CONFIGFILE" "$cfg" gatewayname GatewayName
   append_config_option "$CONFIGFILE" "$cfg" gatewayaddress GatewayAddress
