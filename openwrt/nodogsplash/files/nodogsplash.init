@@ -199,8 +199,8 @@ create_instance() {
   local manual_config
   local val
 
-  config_get_bool val "$cfg" disabled 0
-  [ $val -gt 0 ] && return 0
+  config_get_bool val "$cfg" enabled 0
+  [ $val -gt 0 ] || return 0
 
   generate_uci_config "$cfg"
 
