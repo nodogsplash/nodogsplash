@@ -148,7 +148,6 @@ typedef struct {
 	int daemon;			/**< @brief if daemon > 0, use daemon mode */
 	int debuglevel;			/**< @brief Debug information verbosity */
 	int maxclients;			/**< @brief Maximum number of clients allowed */
-	char *ext_interface;		/**< @brief Interface to external network */
 	char *gw_name;			/**< @brief Name of the gateway; e.g. its SSID */
 	char *gw_interface;		/**< @brief Interface we will manage */
 	char *gw_iprange;		/**< @brief IP range on gw_interface we will manage */

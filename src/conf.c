@@ -68,7 +68,6 @@ typedef enum {
 	oDaemon,
 	oDebugLevel,
 	oMaxClients,
-	oExternalInterface,
 	oGatewayName,
 	oGatewayInterface,
 	oGatewayIPRange,
@@ -127,7 +126,6 @@ static const struct {
 	{ "daemon", oDaemon },
 	{ "debuglevel", oDebugLevel },
 	{ "maxclients", oMaxClients },
-	{ "externalinterface", oExternalInterface },
 	{ "gatewayname", oGatewayName },
 	{ "gatewayinterface", oGatewayInterface },
 	{ "gatewayiprange", oGatewayIPRange },
@@ -208,7 +206,6 @@ config_init(void)
 	debug(LOG_DEBUG, "Setting default config parameters");
 	strncpy(config.configfile, DEFAULT_CONFIGFILE, sizeof(config.configfile));
 	config.debuglevel = DEFAULT_DEBUGLEVEL;
-	config.ext_interface = NULL;
 	config.maxclients = DEFAULT_MAXCLIENTS;
 	config.gw_name = safe_strdup(DEFAULT_GATEWAYNAME);
 	config.gw_interface = NULL;
@@ -731,9 +728,6 @@ config_read(const char *filename)
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);
 			}
-		case oExternalInterface:
-			config.ext_interface = safe_strdup(p1);
-			break;
 		case oGatewayName:
 			config.gw_name = safe_strdup(p1);
 			break;
