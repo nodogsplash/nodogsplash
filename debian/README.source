@@ -1,0 +1,8 @@
+nodogsplash
+===========
+
+Debian redistributes the source tree unmodified from the upstream
+presentation on github. This includes the redistribution of the libhttpd
+library. This is not yet available for Debian, and because of the
+maintenance work by upstream for this package, it is now offered as a
+library package on its own.
