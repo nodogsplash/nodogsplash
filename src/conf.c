@@ -728,6 +728,7 @@ config_read(const char *filename)
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);
 			}
+			break;
 		case oGatewayName:
 			config.gw_name = safe_strdup(p1);
 			break;
