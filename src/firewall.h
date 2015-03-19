@@ -51,8 +51,4 @@ char *arp_get(const char req_ip[]);
 /** @brief Return a string representing a connection state */
 const char *fw_connection_state_as_string(int mark);
 
-/** @brief ICMP Ping an IP
-void icmp_ping(char *host);
-*/
-
 #endif /* _FIREWALL_H_ */
