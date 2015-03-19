@@ -38,6 +38,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <arpa/inet.h>
 
 #include "common.h"
 
@@ -883,12 +884,17 @@ iptables_fw_counters_update(void)
 {
 	FILE *output;
 	char *script,
-		 ip[16],
+		 ip[INET6_ADDRSTRLEN],
 		 target[MAX_BUF];
 	int rc;
+	int af;
+	s_config *config;
 	unsigned long long int counter;
 	t_client *p1;
-	struct in_addr tempaddr;
+	struct sockaddr_storage tempaddr;
+
+	config = config_get_config();
+	af = config->ip6 ? AF_INET6 : AF_INET;
 
 	/* Look for outgoing traffic */
 	safe_asprintf(&script, "%s %s", "iptables", "-v -n -x -t mangle -L " CHAIN_OUTGOING);
@@ -909,7 +915,7 @@ iptables_fw_counters_update(void)
 		while (('\n' != fgetc(output)) && !feof(output)) {}
 		if (3 == rc && !strcmp(target,"MARK")) {
 			/* Sanity*/
-			if (!inet_aton(ip, &tempaddr)) {
+			if (!inet_pton(af, ip, &tempaddr)) {
 				debug(LOG_WARNING, "I was supposed to read an IP address but instead got [%s] - ignoring it", ip);
 				continue;
 			}
@@ -948,7 +954,7 @@ iptables_fw_counters_update(void)
 		while (('\n' != fgetc(output)) && !feof(output)) {}
 		if (3 == rc && !strcmp(target,"ACCEPT")) {
 			/* Sanity*/
-			if (!inet_aton(ip, &tempaddr)) {
+			if (!inet_pton(af, ip, &tempaddr)) {
 				debug(LOG_WARNING, "I was supposed to read an IP address but instead got [%s] - ignoring it", ip);
 				continue;
 			}
