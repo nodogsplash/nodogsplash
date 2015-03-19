@@ -273,12 +273,12 @@ httpd *httpdCreate(host, port, ip6)
 		struct sockaddr_in6 *a = (struct sockaddr_in6 *)&addr;
 		a->sin6_family = AF_INET6;
 		a->sin6_port = htons(new->port);
-		inet_pton( AF_INET6, new->host ? "::" : new->host, &a->sin6_addr );
+		inet_pton( AF_INET6, new->host ? new->host : "::", &a->sin6_addr );
 	} else {
 		struct sockaddr_in *a = (struct sockaddr_in *)&addr;
 		a->sin_family = AF_INET;
 		a->sin_port = htons(new->port);
-		inet_pton( AF_INET, new->host ? "::" : new->host, &a->sin_addr );
+		inet_pton( AF_INET, new->host ? new->host : "0.0.0.0", &a->sin_addr );
 	}
 
 	if (bind(sock,(struct sockaddr *)&addr,sizeof(addr)) <0)
