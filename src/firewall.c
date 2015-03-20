@@ -92,7 +92,7 @@ char *
 arp_get(const char req_ip[])
 {
 	FILE *proc;
-	char ip[16];
+	char ip[INET6_ADDRSTRLEN];
 	char mac[18];
 	char *reply = NULL;
 
