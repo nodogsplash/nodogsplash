@@ -96,4 +96,6 @@ void client_list_delete(t_client *client);
 	debug(LOG_DEBUG, "Client list unlocked"); \
 } while (0)
 
+extern pthread_mutex_t client_list_mutex;
+
 #endif /* _CLIENT_LIST_H_ */
