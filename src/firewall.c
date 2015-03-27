@@ -63,7 +63,7 @@
 #include <netinet/ip_icmp.h>
 #endif
 
-#include "httpd.h"
+#include "microhttpd.h"
 #include "safe.h"
 #include "debug.h"
 #include "conf.h"

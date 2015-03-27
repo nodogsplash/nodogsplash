@@ -41,7 +41,7 @@
 #include <errno.h>
 
 #include "common.h"
-#include "httpd.h"
+#include "microhttpd.h"
 #include "util.h"
 #include "conf.h"
 #include "debug.h"
@@ -62,7 +62,7 @@ static void *thread_ndsctl_handler(void *);
 static void ndsctl_status(int);
 static void ndsctl_clients(int);
 static void ndsctl_json(int);
-static void ndsctl_stop(int);
+static void ndsctl_stop(pthread_t);
 static void ndsctl_block(int, char *);
 static void ndsctl_unblock(int, char *);
 static void ndsctl_allow(int, char *);
@@ -74,6 +74,11 @@ static void ndsctl_deauth(int, char *);
 static void ndsctl_loglevel(int, char *);
 static void ndsctl_password(int, char *);
 static void ndsctl_username(int, char *);
+
+struct ndsctl_args {
+	int fd;
+	pthread_t ndsctl_master_id;
+};
 
 /** Launches a thread that monitors the control socket for request
 @param arg Must contain a pointer to a string containing the Unix domain socket to open
@@ -88,6 +93,7 @@ thread_ndsctl(void *arg)
 	int result;
 	pthread_t	tid;
 	socklen_t len;
+	struct ndsctl_args *child_thread_args;
 
 	debug(LOG_DEBUG, "Starting ndsctl.");
 
@@ -137,10 +143,14 @@ thread_ndsctl(void *arg)
 		len = (socklen_t) sizeof(sa_un); /* <<< ADDED BY DPLACKO */
 		if ((fd = accept(sock, (struct sockaddr *)&sa_un, &len)) == -1) {
 			debug(LOG_ERR, "Accept failed on control socket: %s",
-				  strerror(errno));
+					strerror(errno));
+			pthread_exit(NULL);
 		} else {
 			debug(LOG_DEBUG, "Accepted connection on ndsctl socket %d (%s)", fd, sa_un.sun_path);
-			result = pthread_create(&tid, NULL, &thread_ndsctl_handler, (void *) (size_t) fd);
+			child_thread_args = calloc(1, sizeof(struct ndsctl_args));
+			child_thread_args->fd = fd;
+			child_thread_args->ndsctl_master_id = pthread_self();
+			result = pthread_create(&tid, NULL, &thread_ndsctl_handler, (void *) child_thread_args);
 			if (result != 0) {
 				debug(LOG_ERR, "FATAL: Failed to create a new thread (ndsctl handler) - exiting");
 				termination_handler(0);
@@ -156,13 +166,15 @@ thread_ndsctl(void *arg)
 static void *
 thread_ndsctl_handler(void *arg)
 {
-	int fd, done, i;
+	int done, i;
 	char request[MAX_BUF];
 	ssize_t read_bytes, len;
+	struct ndsctl_args *args = arg;
+	pthread_t ndsctl_master = args->ndsctl_master_id;
+	int fd = args->fd;
+	free(args);
 
 	debug(LOG_DEBUG, "Entering thread_ndsctl_handler....");
-
-	fd = (int) (size_t) arg;
 
 	debug(LOG_DEBUG, "Read bytes and stuff from %d", fd);
 
@@ -196,7 +208,7 @@ thread_ndsctl_handler(void *arg)
 	} else if (strncmp(request, "json", 4) == 0) {
 		ndsctl_json(fd);
 	} else if (strncmp(request, "stop", 4) == 0) {
-		ndsctl_stop(fd);
+		ndsctl_stop(ndsctl_master);
 	} else if (strncmp(request, "block", 5) == 0) {
 		ndsctl_block(fd, (request + 6));
 	} else if (strncmp(request, "unblock", 7) == 0) {
@@ -281,12 +293,9 @@ ndsctl_json(int fd)
 
 /** A bit of an hack, self kills.... */
 static void
-ndsctl_stop(int fd)
+ndsctl_stop(pthread_t ndsctl_master_id)
 {
-	pid_t	pid;
-
-	pid = getpid();
-	kill(pid, SIGINT);
+	pthread_cancel(ndsctl_master_id);
 }
 
 static void
