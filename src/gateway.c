@@ -54,10 +54,8 @@
 #include "firewall.h"
 #include "commandline.h"
 #include "auth.h"
-#include "http.h"
 #include "client_list.h"
 #include "ndsctl_thread.h"
-#include "httpd_thread.h"
 #include "util.h"
 
 

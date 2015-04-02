@@ -40,7 +40,6 @@
 #include "safe.h"
 #include "debug.h"
 #include "conf.h"
-#include "http.h"
 #include "auth.h"
 #include "firewall.h"
 
