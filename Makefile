@@ -10,7 +10,7 @@ STRIP=yes
 
 NDS_OBJS=src/auth.o src/client_list.o src/commandline.o src/conf.o \
 	src/debug.o src/firewall.o src/fw_iptables.o src/gateway.o \
-	src/ndsctl_thread.o src/safe.o src/tc.o src/util.o
+	src/ndsctl_thread.o src/safe.o src/tc.o src/util.o src/template.o
 
 .PHONY: all clean install checkastyle fixstyle
 
