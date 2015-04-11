@@ -16,11 +16,3 @@ export LDFLAGS += -flto
 
 %:
 	dh $@ 
-
-libhttpd.a:
-	$(MAKE) $@
-
-override_dh_install: libhttpd.a
-	cp libhttpd/httpd.h $(CURDIR)/debian/nodogsplash-hughes-libhttpd-dev/usr/include/
-	cp libhttpd.a $(CURDIR)/debian/nodogsplash-hughes-libhttpd-dev/usr/lib/
-	dh_install
