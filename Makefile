@@ -33,7 +33,7 @@ libhttpd.a: $(LIBHTTPD_OBJS)
 	ranlib $@
 
 clean:
-	rm -f nodogsplash ndsctl src/*.o libhttpd/*.o libhttpd.a
+	rm -f nodogsplash ndsctl src/*.o libhttpd/*.o
 	rm -rf dist
 
 install:
