@@ -28,10 +28,6 @@ nodogsplash: $(NDS_OBJS) $(LIBHTTPD_OBJS)
 ndsctl: src/ndsctl.o
 	$(CC) $(LDFLAGS) -o ndsctl $+ $(LDLIBS)
 
-libhttpd.a: $(LIBHTTPD_OBJS)
-	ar -r $@ $(LIBHTTPD_OBJS)
-	ranlib $@
-
 clean:
 	rm -f nodogsplash ndsctl src/*.o libhttpd/*.o
 	rm -rf dist
