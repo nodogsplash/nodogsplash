@@ -17,20 +17,3 @@ Description: manage access to public internet access
  a simple way to open a Hotspot for wireless networks. It provides a
  captive portal to inform users about the services and optionally have
  them acknowledge the terms and conditions of its use.
-
-Package: nodogsplash-hughes-libhttpd-dev
-Provides: libhughes-httpd-dev
-Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: static library and header for web communication
- LibHTTPD can be used to add basic web server capabilities to an
- application or embedded device. The library handles both static and
- dynamically generated content, has very low overheads, and provides many
- features to simplify the creation of web based application interfaces.
- .
- The Hughes library saw last updates about a decade ago,
- but the community behind nodogsplash keeps it maintained as part
- of its source tree. Latest changes contributed e.g. IPv6 support.
- .
-  Homepage: http://www.hughes.com.au/products/libhttpd/
-
