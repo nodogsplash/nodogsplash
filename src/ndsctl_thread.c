@@ -257,8 +257,8 @@ ndsctl_clients(int fd)
 	status = get_clients_text();
 	len = strlen(status);
 
-	write(fd, status, len);
-
+	/* e.g. here? */write(fd, status, len);
+	/* and here? */
 	free(status);
 }
 
