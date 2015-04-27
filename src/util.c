@@ -238,7 +238,7 @@ get_iface_mac(const char ifname[])
 	int r, s;
 	s_config *config;
 	struct ifreq ifr;
-	char *hwaddr, mac[13];
+	char *hwaddr, mac[18];
 
 	config = config_get_config();
 	strcpy(ifr.ifr_name, ifname);
@@ -258,7 +258,7 @@ get_iface_mac(const char ifname[])
 
 	hwaddr = ifr.ifr_hwaddr.sa_data;
 	close(s);
-	snprintf(mac, sizeof(mac), "%02X%02X%02X%02X%02X%02X",
+	snprintf(mac, sizeof(mac), "%02x:%02x:%02x:%02x:%02x:%02x",
 			 hwaddr[0] & 0xFF,
 			 hwaddr[1] & 0xFF,
 			 hwaddr[2] & 0xFF,
@@ -271,7 +271,7 @@ get_iface_mac(const char ifname[])
 #elif defined(__NetBSD__)
 	struct ifaddrs *ifa, *ifap;
 	const char *hwaddr;
-	char mac[13], *str = NULL;
+	char mac[18], *str = NULL;
 	struct sockaddr_dl *sdl;
 
 	if (getifaddrs(&ifap) == -1) {
@@ -289,7 +289,7 @@ get_iface_mac(const char ifname[])
 	}
 	sdl = (struct sockaddr_dl *)ifa->ifa_addr;
 	hwaddr = LLADDR(sdl);
-	snprintf(mac, sizeof(mac), "%02X%02X%02X%02X%02X%02X",
+	snprintf(mac, sizeof(mac), "%02x:%02x:%02x:%02x:%02x:%02x",
 			 hwaddr[0] & 0xFF, hwaddr[1] & 0xFF,
 			 hwaddr[2] & 0xFF, hwaddr[3] & 0xFF,
 			 hwaddr[4] & 0xFF, hwaddr[5] & 0xFF);
