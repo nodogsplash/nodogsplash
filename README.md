@@ -182,11 +182,10 @@ replaced by their values:
 
 ```
 <form method='GET' action='$authaction'>
-
-      <input type='hidden' name='tok' value='$tok'>
-      <input type='hidden' name='redir' value='$redir'>
-      <input type='submit' value='Click Here to Enter'>
-      </form>
+  <input type='hidden' name='tok' value='$tok'>
+  <input type='hidden' name='redir' value='$redir'>
+  <input type='submit' value='Click Here to Enter'>
+</form>
 ```
 
 * *$clientip*, *$clientmac* and *$gatewaymac* The respective addresses
