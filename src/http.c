@@ -201,7 +201,7 @@ http_nodogsplash_first_contact(request *r)
 		http_nodogsplash_callback_action(r,authtarget,AUTH_MAKE_AUTHENTICATED);
 	} else if (config->enable_preauth) {
 		char cmd_buff[strlen(config->bin_voucher)+strlen(client->mac)+14];
-		snprintf(cmd_buff, sizeof(cmd_buff) - 1, "%s auth_status %s",
+		snprintf(cmd_buff, sizeof(cmd_buff), "%s auth_status %s",
 				 config->bin_voucher, client->mac);
 		data = system_exec(cmd_buff);
 
@@ -367,7 +367,7 @@ http_nodogsplash_callback_auth(httpd *webserver, request *r)
 			goto serve_splash;
 
 		char cmd_buff[strlen(config->bin_voucher)+strlen(client->mac)+strlen(authtarget->voucher)+16];
-		snprintf(cmd_buff, sizeof(cmd_buff) - 1, "%s auth_voucher %s %s",
+		snprintf(cmd_buff, sizeof(cmd_buff), "%s auth_voucher %s %s",
 				 config->bin_voucher, client->mac, authtarget->voucher);
 		data = system_exec(cmd_buff);
 
