@@ -40,10 +40,6 @@
 #include "safe.h"
 #include "debug.h"
 
-
-/* From gateway.c */
-extern httpd * webserver;
-
 void * safe_malloc (size_t size)
 {
 	void * retval = NULL;
@@ -101,14 +97,10 @@ pid_t safe_fork(void)
 	result = fork();
 
 	if (result == -1) {
-		debug(LOG_CRIT, "Failed to fork: %s.  Bailing out", strerror(errno));
-		exit (1);
+		debug(LOG_CRIT, "Failed to fork: %s. Bailing out", strerror(errno));
+		abort();
 	} else if (result == 0) {
 		/* I'm the child - do some cleanup */
-		if (webserver) {
-			close(webserver->serverSock);
-			webserver = NULL;
-		}
 	}
 
 	return result;
