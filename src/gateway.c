@@ -218,8 +218,6 @@ static void
 main_loop(void)
 {
 	int result = 0;
-	int ret_ptr = 0;
-	int ret = 0;
 	pthread_t	tid;
 	s_config *config;
 
