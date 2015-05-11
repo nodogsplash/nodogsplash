@@ -30,6 +30,7 @@
 
 #include "firewall.h"
 #include "auth.h"
+#include "client_list.h"
 
 /*@{*/
 /**Iptable chain names used by nodogsplash */
