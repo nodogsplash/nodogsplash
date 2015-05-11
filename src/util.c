@@ -196,7 +196,6 @@ get_iface_ip(const char ifname[])
 	const struct ifaddrs *cur;
 	struct ifaddrs *addrs;
 	s_config *config;
-	int sockd;
 
 	if(getifaddrs(&addrs) < 0) {
 		debug(LOG_ERR, "getifaddrs(): %s", strerror(errno));
