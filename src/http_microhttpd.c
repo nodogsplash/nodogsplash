@@ -428,7 +428,16 @@ static int preauthenticated(struct MHD_Connection *connection,
 	/* request is directed to us */
 	/* check if client wants to be authenticated */
 	if(check_authdir_match(url, config->authdir)) {
-		redirect_url = get_redirect_url(connection);
+
+		/* Only the first request will redirected to config->redirectURL.
+		 * When the client reloads a page when it's authenticated, it should be redirected
+		 * to their origin url
+		 */
+		if (config->redirectURL)
+			redirect_url = config->redirectURL;
+		else
+			redirect_url = get_redirect_url(connection);
+
 		if (try_to_authenticate(connection, client, host, url)) {
 			return authenticate_client(connection, ip_addr, mac, redirect_url, client);
 		} else {
