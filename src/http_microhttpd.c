@@ -45,8 +45,9 @@
 #define TMPLVAR_SIZE 4096
 
 static t_client *add_client(const char *ip_addr);
-static int preauthenticated(struct MHD_Connection *connection, const char *ip_addr, const char *mac, const char *url, t_client *client);
 static int authenticated(struct MHD_Connection *connection, const char *ip_addr, const char *mac, const char *url, t_client *client);
+static int preauthenticated(struct MHD_Connection *connection, const char *ip_addr, const char *mac, const char *url, t_client *client);
+static int authenticate_client(struct MHD_Connection *connection, const char *ip_addr, const char *mac, const char *url, t_client *client);
 static int get_host_value_callback(void *cls, enum MHD_ValueKind kind, const char *key, const char *value);
 static int serve_file(struct MHD_Connection *connection, t_client *client, const char *url);
 static int show_splashpage(struct MHD_Connection *connection, t_client *client);
@@ -326,14 +327,14 @@ static int try_to_authenticate(struct MHD_Connection *connection, t_client *clie
 }
 
 /**
- * @brief authenticated the client and redirect them to his url
+ * @brief authenticate the client and redirect them
  * @param connection
  * @param ip_addr - needs to be freed
  * @param mac - needs to be freed
  * @param redirect_url - redirect the client to this url
  * @return
  */
-static int authenticated(struct MHD_Connection *connection,
+static int authenticate_client(struct MHD_Connection *connection,
 			 const char *ip_addr,
 			 const char *mac,
 			 const char *redirect_url,
@@ -344,10 +345,55 @@ static int authenticated(struct MHD_Connection *connection,
 }
 
 /**
+ * @brief authenticated - called for all request from authenticated clients.
+ * @param connection
+ * @param ip_addr
+ * @param mac
+ * @param url
+ * @param client
+ * @return
+ *
+ * It's unsual to received request from clients which are already authed.
+ * Happens when the user:
+ * - clicked in multiple windows on "accept" -> redirect to origin - no checking
+ * - when the user reloaded a splashpage -> redirect to origin
+ * - when a user calls deny url -> deauth it
+ */
+static int authenticated(struct MHD_Connection *connection,
+			    const char *ip_addr,
+			    const char *mac,
+			    const char *url,
+			    t_client *client) {
+	s_config *config = config_get_config();
+	const char *redirect_url;
+	const char *host = NULL;
+	char redirect_to_us[128];
+
+	MHD_get_connection_values(connection, MHD_HEADER_KIND, get_host_value_callback, &host);
+
+	if (is_splashpage(host, url) ||
+			check_authdir_match(url, config->authdir)) {
+		redirect_url = get_redirect_url(connection);
+		/* TODO: what should we do when we get such request? */
+		if (redirect_url == NULL || strlen(redirect_url) == 0)
+			return show_splashpage(connection, client);
+		else
+			return authenticate_client(connection, ip_addr, mac, redirect_url, client);
+	} else if (check_authdir_match(url, config->denydir)) {
+		auth_client_action(ip_addr, mac, AUTH_MAKE_DEAUTHENTICATED);
+		snprintf(redirect_to_us, 128, "http://%s:%u/", config->gw_address, config->gw_port);
+		return send_redirect_temp(connection, redirect_to_us);
+	}
+
+	/* user doesn't wants the splashpage or tried to auth itself */
+	return serve_file(connection, client, url);
+}
+
+/**
  * @brief preauthenticated - called for all request of a client in this state.
  * @param connection
- * @param ip_addr - needs to be freed
- * @param mac - needs to be freed
+ * @param ip_addr
+ * @param mac
  * @return
  */
 static int preauthenticated(struct MHD_Connection *connection,
@@ -369,7 +415,7 @@ static int preauthenticated(struct MHD_Connection *connection,
 	/* check if this client wants to be authenticated */
 	if (try_to_authenticate(connection, client, host, url)) {
 		redirect_url = get_redirect_url(connection);
-		return authenticated(connection, ip_addr, mac, redirect_url, client);
+		return authenticate_client(connection, ip_addr, mac, redirect_url, client);
 	}
 
 	/* we check here if we have to serve this request or we redirect it. */
