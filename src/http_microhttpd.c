@@ -51,6 +51,7 @@ static int authenticate_client(struct MHD_Connection *connection, const char *ip
 static int get_host_value_callback(void *cls, enum MHD_ValueKind kind, const char *key, const char *value);
 static int serve_file(struct MHD_Connection *connection, t_client *client, const char *url);
 static int show_splashpage(struct MHD_Connection *connection, t_client *client);
+static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, const char *originurl);
 static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *client, const char *host, const char *url);
 static int send_error(struct MHD_Connection *connection, int error);
 static int send_redirect_temp(struct MHD_Connection *connection, const char *url);
@@ -409,6 +410,7 @@ static int preauthenticated(struct MHD_Connection *connection,
 			    t_client *client) {
 	char *host = NULL;
 	const char *redirect_url;
+	s_config *config = config_get_config();
 
 	if (!client) {
 		client = add_client(ip_addr);
@@ -420,45 +422,43 @@ static int preauthenticated(struct MHD_Connection *connection,
 
 	/* check if this is a redirect querty with a foreign host as target */
 	if(is_foreign_hosts(connection, host)) {
-		return redirect_to_splashpage(connection, client, host, url, 1);
+		return redirect_to_splashpage(connection, client, host, url);
 	}
 
 	/* request is directed to us */
-	/* check if this client wants to be authenticated */
-	if (try_to_authenticate(connection, client, host, url)) {
+	/* check if client wants to be authenticated */
+	if(check_authdir_match(url, config->authdir)) {
 		redirect_url = get_redirect_url(connection);
-		return authenticate_client(connection, ip_addr, mac, redirect_url, client);
+		if (try_to_authenticate(connection, client, host, url)) {
+			return authenticate_client(connection, ip_addr, mac, redirect_url, client);
+		} else {
+			/* user used an invalid token, redirect to splashpage but hold query "redir" intact */
+			return encode_and_redirect_to_splashpage(connection, redirect_url);
+		}
 	}
 
-	/* we check here if we have to serve this request or we redirect it. */
 	if(is_splashpage(host, url)) {
 		return show_splashpage(connection, client);
 	}
 
-	/* no special handling left - try to server a static content to the user */
+	/* no special handling left - try to serve static content to the user */
 	return serve_file(connection, client, url);
 }
 
 /**
- * @brief redirect the client to the splash page
+ * @brief encode originurl and redirect the client to the splash page
  * @param connection
  * @param client
- * @param host
- * @param url
+ * @param originurl
  * @return
  */
-static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *client, const char *host, const char *url) {
-	char *originurl = NULL;
+static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, const char *originurl) {
 	char *splashpageurl = NULL;
-	char *query = NULL;
 	char encoded[2048];
 	int ret;
 	s_config *config = config_get_config();
 
-	get_query(connection, &query);
 
-
-	safe_asprintf(&originurl, "http://%s%s%s%s", host, url, strlen(query) ? "?" : "" , query);
 	memset(encoded, 0, sizeof(encoded));
 	if (uh_urlencode(encoded, 2048, originurl, strlen(originurl)) == -1) {
 		debug(LOG_WARNING, "could not encode url");
@@ -472,6 +472,26 @@ static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *c
 	free(splashpageurl);
 	return ret;
 }
+
+/**
+ * @brief redirect_to_splashpage
+ * @param connection
+ * @param client
+ * @param host
+ * @param url
+ * @return
+ */
+static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *client, const char *host, const char *url) {
+	char *originurl = NULL;
+	char *query = "";
+
+	get_query(connection, &query);
+
+	safe_asprintf(&originurl, "http://%s%s%s%s", host, url, strlen(query) ? "?" : "" , query);
+
+	return encode_and_redirect_to_splashpage(connection, originurl);
+}
+
 
 /**
  *	Add client making a request to client list.
