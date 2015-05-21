@@ -614,6 +614,7 @@ static int send_error(struct MHD_Connection *connection, int error)
 	const char *page_501 = "<html><head><title>Error 501</title></head><body><h1>Error 501 - Not Implemented</h1></body></html>";
 	const char *page_503 = "<html><head><title>Error 503</title></head><body><h1>Error 503 - Internal Server Error</h1></body></html>";
 
+	const char *mimetype = lookup_mimetype("foo.html");
 
 	int ret = MHD_NO;
 
@@ -621,30 +622,36 @@ static int send_error(struct MHD_Connection *connection, int error)
 	{
 		case 400:
 			response = MHD_create_response_from_data(strlen(page_400), (char *)page_400, MHD_NO, MHD_NO);
+			MHD_add_response_header(response, "Content-Type", mimetype);
 			ret = MHD_queue_response(connection, MHD_HTTP_BAD_REQUEST, response);
 			break;
 
 		case 403:
 			response = MHD_create_response_from_data(strlen(page_403), (char *)page_403, MHD_NO, MHD_NO);
+			MHD_add_response_header(response, "Content-Type", mimetype);
 			ret = MHD_queue_response(connection, MHD_HTTP_FORBIDDEN, response);
 			break;
 
 		case 404:
 			response = MHD_create_response_from_data(strlen(page_404), (char *)page_404, MHD_NO, MHD_NO);
+			MHD_add_response_header(response, "Content-Type", mimetype);
 			ret = MHD_queue_response(connection, MHD_HTTP_NOT_FOUND, response);
 			break;
 
 		case 500:
 			response = MHD_create_response_from_data(strlen(page_500), (char *)page_500, MHD_NO, MHD_NO);
+			MHD_add_response_header(response, "Content-Type", mimetype);
 			ret = MHD_queue_response(connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
 			break;
 
 		case 501:
 			response = MHD_create_response_from_data(strlen(page_501), (char *)page_501, MHD_NO, MHD_NO);
+			MHD_add_response_header(response, "Content-Type", mimetype);
 			ret = MHD_queue_response(connection, MHD_HTTP_NOT_IMPLEMENTED, response);
 			break;
 		case 503:
 			response = MHD_create_response_from_data(strlen(page_503), (char *)page_503, MHD_NO, MHD_NO);
+			MHD_add_response_header(response, "Content-Type", mimetype);
 			ret = MHD_queue_response(connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
 			break;
 	}
