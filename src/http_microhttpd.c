@@ -54,7 +54,7 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client);
 static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *client, const char *host, const char *url);
 static int send_error(struct MHD_Connection *connection, int error);
 static int send_redirect_temp(struct MHD_Connection *connection, const char *url);
-static int need_a_redirect(struct MHD_Connection *connection, const char *host);
+static int is_foreign_hosts(struct MHD_Connection *connection, const char *host);
 static int is_splashpage(const char *host, const char *url);
 static int get_query(struct MHD_Connection *connection, char **collect_query);
 static const char *get_redirect_url(struct MHD_Connection *connection);
@@ -108,14 +108,20 @@ static int counter_iterator(void *cls, enum MHD_ValueKind kind, const char *key,
 	return MHD_YES;
 }
 
-static int need_a_redirect(struct MHD_Connection *connection, const char *host) {
+static int is_foreign_hosts(struct MHD_Connection *connection, const char *host) {
 	char our_host[24];
 	s_config *config = config_get_config();
 	snprintf(our_host, 24, "%s:%u", config->gw_address, config->gw_port);
 
-	/* TODO: port 80 is special, because the hostname doesn't need a port */
 	/* we serve all request without a host entry as well we serve all request going to our gw_address */
-	if (host == NULL || !strcmp(host, our_host))
+	if (host == NULL)
+		return 0;
+
+	if (!strcmp(host, our_host))
+		return 0;
+
+	/* port 80 is special, because the hostname doesn't need a port */
+	if (config->gw_port == 80 && !strcmp(host, config->gw_address))
 		return 0;
 
 	return 1;
@@ -412,6 +418,12 @@ static int preauthenticated(struct MHD_Connection *connection,
 
 	MHD_get_connection_values(connection, MHD_HEADER_KIND, get_host_value_callback, &host);
 
+	/* check if this is a redirect querty with a foreign host as target */
+	if(is_foreign_hosts(connection, host)) {
+		return redirect_to_splashpage(connection, client, host, url, 1);
+	}
+
+	/* request is directed to us */
 	/* check if this client wants to be authenticated */
 	if (try_to_authenticate(connection, client, host, url)) {
 		redirect_url = get_redirect_url(connection);
@@ -419,13 +431,12 @@ static int preauthenticated(struct MHD_Connection *connection,
 	}
 
 	/* we check here if we have to serve this request or we redirect it. */
-	if(need_a_redirect(connection, host))
-		return redirect_to_splashpage(connection, client, host, url);
-	else if(is_splashpage(host, url)) {
+	if(is_splashpage(host, url)) {
 		return show_splashpage(connection, client);
-	} else {
-		return serve_file(connection, client, url);
 	}
+
+	/* no special handling left - try to server a static content to the user */
+	return serve_file(connection, client, url);
 }
 
 /**
