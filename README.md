@@ -48,10 +48,10 @@ need, though.
   install from the project website, copy it to /tmp/ on your OpenWrt router,
   and, in as root on the router, run:
 
-  ```ipkg install /tmp/nodogsplash*.ipk```
+  ```opkg install /tmp/nodogsplash*.ipk```
 
   (Note: to prevent installation of an older package, you may have to remove
-  references to remote package repositories in your ipkg.conf file)
+  references to remote package repositories in your /etc/opkg.conf file)
 * If the interface that you want nodogsplash to manage is not br-lan,
   edit /etc/nodogsplash/nodogsplash.conf and set GatewayInterface.
 * To start nodogsplash, run the following, or just reboot the router:
@@ -69,7 +69,7 @@ need, though.
 
 * To uninstall nodogsplash:
 
-    ```ipkg remove nodogsplash```
+    ```opkg remove nodogsplash```
 
 ##3. How nodogsplash works
 
