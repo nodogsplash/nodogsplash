@@ -142,7 +142,7 @@ thread_ndsctl(void *arg)
 		len = (socklen_t) sizeof(sa_un); /* <<< ADDED BY DPLACKO */
 		if ((fd = accept(sock, (struct sockaddr *)&sa_un, &len)) == -1) {
 			debug(LOG_ERR, "Accept failed on control socket: %s",
-					strerror(errno));
+				  strerror(errno));
 			pthread_exit(NULL);
 		} else {
 			debug(LOG_DEBUG, "Accepted connection on ndsctl socket %d (%s)", fd, sa_un.sun_path);

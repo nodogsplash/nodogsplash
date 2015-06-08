@@ -32,8 +32,7 @@ int uh_urldecode(char *buf, int blen, const char *src, int slen)
 		(((x) <= 'F') ? ((x) - 'A' + 10) : \
 			((x) - 'a' + 10)))
 
-	for (i = 0; (i < slen) && (len < blen); i++)
-	{
+	for (i = 0; (i < slen) && (len < blen); i++) {
 		if (src[i] != '%') {
 			buf[len++] = src[i];
 			continue;
@@ -59,21 +58,15 @@ int uh_urlencode(char *buf, int blen, const char *src, int slen)
 	int len = 0;
 	static const char hex[] = "0123456789abcdef";
 
-	for (i = 0; (i < slen) && (len < blen); i++)
-	{
+	for (i = 0; (i < slen) && (len < blen); i++) {
 		if( isalnum(src[i]) || (src[i] == '-') || (src[i] == '_') ||
-				(src[i] == '.') || (src[i] == '~') )
-		{
+				(src[i] == '.') || (src[i] == '~') ) {
 			buf[len++] = src[i];
-		}
-		else if ((len+3) <= blen)
-		{
+		} else if ((len+3) <= blen) {
 			buf[len++] = '%';
 			buf[len++] = hex[(src[i] >> 4) & 15];
 			buf[len++] = hex[ src[i]			 & 15];
-		}
-		else
-		{
+		} else {
 			len = -1;
 			break;
 		}
@@ -90,8 +83,7 @@ int uh_b64decode(char *buf, int blen, const void *src, int slen)
 	int len = 0;
 	int i = 0;
 
-	for (i = 0; (i <= slen) && (str[i] != 0); i++)
-	{
+	for (i = 0; (i <= slen) && (str[i] != 0); i++) {
 		cin = str[i];
 
 		if ((cin >= '0') && (cin <= '9'))

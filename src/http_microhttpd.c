@@ -73,7 +73,8 @@ struct collect_query_key {
 	const char *value;
 };
 
-static int collect_query_key(void *cls, enum MHD_ValueKind kind, const char *key, const char *value) {
+static int collect_query_key(void *cls, enum MHD_ValueKind kind, const char *key, const char *value)
+{
 	struct collect_query_key *query_key = cls;
 	query_key->value = NULL;
 
@@ -92,7 +93,8 @@ static int collect_query_key(void *cls, enum MHD_ValueKind kind, const char *key
 	return MHD_YES;
 }
 
-static int collect_query_string(void *cls, enum MHD_ValueKind kind, const char *key, const char * value) {
+static int collect_query_string(void *cls, enum MHD_ValueKind kind, const char *key, const char * value)
+{
 	/* what happens when '?=foo' supplied? */
 	struct collect_query *collect_query = cls;
 	if (key && !value) {
@@ -105,11 +107,13 @@ static int collect_query_string(void *cls, enum MHD_ValueKind kind, const char *
 }
 
 /* a dump iterator required for counting all elements */
-static int counter_iterator(void *cls, enum MHD_ValueKind kind, const char *key, const char *value) {
+static int counter_iterator(void *cls, enum MHD_ValueKind kind, const char *key, const char *value)
+{
 	return MHD_YES;
 }
 
-static int is_foreign_hosts(struct MHD_Connection *connection, const char *host) {
+static int is_foreign_hosts(struct MHD_Connection *connection, const char *host)
+{
 	char our_host[24];
 	s_config *config = config_get_config();
 	snprintf(our_host, 24, "%s:%u", config->gw_address, config->gw_port);
@@ -128,7 +132,8 @@ static int is_foreign_hosts(struct MHD_Connection *connection, const char *host)
 	return 1;
 }
 
-static int is_splashpage(const char *host, const char *url) {
+static int is_splashpage(const char *host, const char *url)
+{
 	char our_host[24];
 	s_config *config = config_get_config();
 	snprintf(our_host, 24, "%s:%u", config->gw_address, config->gw_port);
@@ -173,7 +178,8 @@ static int is_splashpage(const char *host, const char *url) {
  * @return ip address - must be freed by caller
  */
 static char *
-get_ip(struct MHD_Connection *connection) {
+get_ip(struct MHD_Connection *connection)
+{
 	const union MHD_ConnectionInfo *connection_info;
 	char *ip_addr = NULL;
 	const struct sockaddr *client_addr;
@@ -189,21 +195,21 @@ get_ip(struct MHD_Connection *connection) {
 	addrin6 = (const struct sockaddr_in6 *) client_addr;
 
 	switch(client_addr->sa_family) {
-		case AF_INET:
-			ip_addr = calloc(1, INET_ADDRSTRLEN+1);
-			if(!inet_ntop(addrin->sin_family, &(addrin->sin_addr), ip_addr , sizeof(struct sockaddr_in))) {
-				free(ip_addr);
-				return NULL;
-			}
-			break;
+	case AF_INET:
+		ip_addr = calloc(1, INET_ADDRSTRLEN+1);
+		if(!inet_ntop(addrin->sin_family, &(addrin->sin_addr), ip_addr , sizeof(struct sockaddr_in))) {
+			free(ip_addr);
+			return NULL;
+		}
+		break;
 
-		case AF_INET6:
-			ip_addr = calloc(1, INET6_ADDRSTRLEN+1);
-			if(!inet_ntop(addrin6->sin6_family, &(addrin6->sin6_addr), ip_addr , sizeof(struct sockaddr_in6))){
-				free(ip_addr);
-				return NULL;
-			}
-			break;
+	case AF_INET6:
+		ip_addr = calloc(1, INET6_ADDRSTRLEN+1);
+		if(!inet_ntop(addrin6->sin6_family, &(addrin6->sin6_addr), ip_addr , sizeof(struct sockaddr_in6))) {
+			free(ip_addr);
+			return NULL;
+		}
+		break;
 	}
 
 	return ip_addr;
@@ -223,11 +229,12 @@ get_ip(struct MHD_Connection *connection) {
  */
 int
 libmicrohttpd_cb(void *cls,
-		 struct MHD_Connection *connection,
-		 const char *url,
-		 const char *method,
-		 const char *version,
-		 const char *upload_data, size_t *upload_data_size, void **ptr) {
+				 struct MHD_Connection *connection,
+				 const char *url,
+				 const char *method,
+				 const char *version,
+				 const char *upload_data, size_t *upload_data_size, void **ptr)
+{
 
 	t_client *client;
 	char *ip_addr;
@@ -251,8 +258,7 @@ libmicrohttpd_cb(void *cls,
 	client = client_list_find(ip_addr, mac);
 	if(client) {
 		if(client->fw_connection_state == FW_MARK_AUTHENTICATED ||
-				client->fw_connection_state == FW_MARK_TRUSTED)
-		{
+				client->fw_connection_state == FW_MARK_TRUSTED) {
 			/* client already authed - dangerous!!! This should never happen */
 			ret = authenticated(connection, ip_addr, mac, url, client);
 			free(mac);
@@ -274,7 +280,8 @@ libmicrohttpd_cb(void *cls,
  *
  * url must look ("/%s/", authdir) to match this
  */
-static int check_authdir_match(const char *url, const char *authdir) {
+static int check_authdir_match(const char *url, const char *authdir)
+{
 	if (strlen(url) != strlen(authdir)+2)
 		return 0;
 
@@ -285,7 +292,8 @@ static int check_authdir_match(const char *url, const char *authdir) {
 	return 1;
 }
 
-static int check_token_is_valid(struct MHD_Connection *connection, t_client *client) {
+static int check_token_is_valid(struct MHD_Connection *connection, t_client *client)
+{
 	/* token check */
 	struct collect_query_key query_key = { .key = "token" };
 
@@ -311,7 +319,8 @@ static int check_token_is_valid(struct MHD_Connection *connection, t_client *cli
  * @param url
  * @return
  */
-static int try_to_authenticate(struct MHD_Connection *connection, t_client *client, const char *host, const char *url) {
+static int try_to_authenticate(struct MHD_Connection *connection, t_client *client, const char *host, const char *url)
+{
 	/* a successful auth looks like
 	 * http://192.168.42.1:2050/nodogsplash_auth/?redir=http%3A%2F%2Fberlin.freifunk.net%2F&tok=94c4cdd2
 	 * when authaction -> http://192.168.42.1:2050/nodogsplash_auth/
@@ -342,10 +351,11 @@ static int try_to_authenticate(struct MHD_Connection *connection, t_client *clie
  * @return
  */
 static int authenticate_client(struct MHD_Connection *connection,
-			 const char *ip_addr,
-			 const char *mac,
-			 const char *redirect_url,
-			 t_client *client) {
+							   const char *ip_addr,
+							   const char *mac,
+							   const char *redirect_url,
+							   t_client *client)
+{
 	/* TODO: handle redirect_url == NULL */
 	auth_client_action(ip_addr, mac, AUTH_MAKE_AUTHENTICATED);
 	return send_redirect_temp(connection, redirect_url);
@@ -367,10 +377,11 @@ static int authenticate_client(struct MHD_Connection *connection,
  * - when a user calls deny url -> deauth it
  */
 static int authenticated(struct MHD_Connection *connection,
-			    const char *ip_addr,
-			    const char *mac,
-			    const char *url,
-			    t_client *client) {
+						 const char *ip_addr,
+						 const char *mac,
+						 const char *url,
+						 t_client *client)
+{
 	s_config *config = config_get_config();
 	const char *redirect_url;
 	const char *host = NULL;
@@ -404,10 +415,11 @@ static int authenticated(struct MHD_Connection *connection,
  * @return
  */
 static int preauthenticated(struct MHD_Connection *connection,
-			    const char *ip_addr,
-			    const char *mac,
-			    const char *url,
-			    t_client *client) {
+							const char *ip_addr,
+							const char *mac,
+							const char *url,
+							t_client *client)
+{
 	char *host = NULL;
 	const char *redirect_url;
 	s_config *config = config_get_config();
@@ -461,7 +473,8 @@ static int preauthenticated(struct MHD_Connection *connection,
  * @param originurl
  * @return
  */
-static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, const char *originurl) {
+static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, const char *originurl)
+{
 	char *splashpageurl = NULL;
 	char encoded[2048];
 	int ret;
@@ -490,7 +503,8 @@ static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, 
  * @param url
  * @return
  */
-static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *client, const char *host, const char *url) {
+static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *client, const char *host, const char *url)
+{
 	char *originurl = NULL;
 	char *query = "";
 
@@ -520,7 +534,8 @@ add_client(const char *ip_addr)
 	return client;
 }
 
-int send_redirect_temp(struct MHD_Connection *connection, const char *url) {
+int send_redirect_temp(struct MHD_Connection *connection, const char *url)
+{
 	struct MHD_Response *response;
 	int ret;
 	char *redirect;
@@ -549,7 +564,8 @@ int send_redirect_temp(struct MHD_Connection *connection, const char *url) {
  * @param redirect_url_len
  * @return NULL or redirect url
  */
-static const char *get_redirect_url(struct MHD_Connection *connection) {
+static const char *get_redirect_url(struct MHD_Connection *connection)
+{
 	struct collect_query_key query_key = { .key = "redir" };
 
 	MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, &collect_query_key, &query_key);
@@ -560,7 +576,8 @@ static const char *get_redirect_url(struct MHD_Connection *connection) {
 	return query_key.value;
 }
 
-static int get_query(struct MHD_Connection *connection, char **query) {
+static int get_query(struct MHD_Connection *connection, char **query)
+{
 	int element_counter;
 	char **elements;
 	struct collect_query collect_query;
@@ -580,7 +597,7 @@ static int get_query(struct MHD_Connection *connection, char **query) {
 	//	static int get_host_value_callback(void *cls, enum MHD_ValueKind kind, const char *key, const char *value) {
 	MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, collect_query_string, &collect_query);
 
-	for(i=0; i<element_counter;i++) {
+	for(i=0; i<element_counter; i++) {
 		if(!elements[i])
 			continue;
 		length += strlen(elements[i]);
@@ -592,7 +609,7 @@ static int get_query(struct MHD_Connection *connection, char **query) {
 	/* don't miss the zero terminator */
 	*query = calloc(1, length+1);
 
-	for(i=0, j=0; i<element_counter;i++) {
+	for(i=0, j=0; i<element_counter; i++) {
 		if(!elements[i])
 			continue;
 		strncpy(*query + j, elements[i], length-j);
@@ -618,42 +635,41 @@ static int send_error(struct MHD_Connection *connection, int error)
 
 	int ret = MHD_NO;
 
-	switch (error)
-	{
-		case 400:
-			response = MHD_create_response_from_data(strlen(page_400), (char *)page_400, MHD_NO, MHD_NO);
-			MHD_add_response_header(response, "Content-Type", mimetype);
-			ret = MHD_queue_response(connection, MHD_HTTP_BAD_REQUEST, response);
-			break;
+	switch (error) {
+	case 400:
+		response = MHD_create_response_from_data(strlen(page_400), (char *)page_400, MHD_NO, MHD_NO);
+		MHD_add_response_header(response, "Content-Type", mimetype);
+		ret = MHD_queue_response(connection, MHD_HTTP_BAD_REQUEST, response);
+		break;
 
-		case 403:
-			response = MHD_create_response_from_data(strlen(page_403), (char *)page_403, MHD_NO, MHD_NO);
-			MHD_add_response_header(response, "Content-Type", mimetype);
-			ret = MHD_queue_response(connection, MHD_HTTP_FORBIDDEN, response);
-			break;
+	case 403:
+		response = MHD_create_response_from_data(strlen(page_403), (char *)page_403, MHD_NO, MHD_NO);
+		MHD_add_response_header(response, "Content-Type", mimetype);
+		ret = MHD_queue_response(connection, MHD_HTTP_FORBIDDEN, response);
+		break;
 
-		case 404:
-			response = MHD_create_response_from_data(strlen(page_404), (char *)page_404, MHD_NO, MHD_NO);
-			MHD_add_response_header(response, "Content-Type", mimetype);
-			ret = MHD_queue_response(connection, MHD_HTTP_NOT_FOUND, response);
-			break;
+	case 404:
+		response = MHD_create_response_from_data(strlen(page_404), (char *)page_404, MHD_NO, MHD_NO);
+		MHD_add_response_header(response, "Content-Type", mimetype);
+		ret = MHD_queue_response(connection, MHD_HTTP_NOT_FOUND, response);
+		break;
 
-		case 500:
-			response = MHD_create_response_from_data(strlen(page_500), (char *)page_500, MHD_NO, MHD_NO);
-			MHD_add_response_header(response, "Content-Type", mimetype);
-			ret = MHD_queue_response(connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
-			break;
+	case 500:
+		response = MHD_create_response_from_data(strlen(page_500), (char *)page_500, MHD_NO, MHD_NO);
+		MHD_add_response_header(response, "Content-Type", mimetype);
+		ret = MHD_queue_response(connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
+		break;
 
-		case 501:
-			response = MHD_create_response_from_data(strlen(page_501), (char *)page_501, MHD_NO, MHD_NO);
-			MHD_add_response_header(response, "Content-Type", mimetype);
-			ret = MHD_queue_response(connection, MHD_HTTP_NOT_IMPLEMENTED, response);
-			break;
-		case 503:
-			response = MHD_create_response_from_data(strlen(page_503), (char *)page_503, MHD_NO, MHD_NO);
-			MHD_add_response_header(response, "Content-Type", mimetype);
-			ret = MHD_queue_response(connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
-			break;
+	case 501:
+		response = MHD_create_response_from_data(strlen(page_501), (char *)page_501, MHD_NO, MHD_NO);
+		MHD_add_response_header(response, "Content-Type", mimetype);
+		ret = MHD_queue_response(connection, MHD_HTTP_NOT_IMPLEMENTED, response);
+		break;
+	case 503:
+		response = MHD_create_response_from_data(strlen(page_503), (char *)page_503, MHD_NO, MHD_NO);
+		MHD_add_response_header(response, "Content-Type", mimetype);
+		ret = MHD_queue_response(connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
+		break;
 	}
 
 	if (response)
@@ -669,7 +685,8 @@ static int send_error(struct MHD_Connection *connection, int error)
  * @param value
  * @return MHD_YES or MHD_NO. MHD_NO means we found our item and this callback will not called again.
  */
-static int get_host_value_callback(void *cls, enum MHD_ValueKind kind, const char *key, const char *value) {
+static int get_host_value_callback(void *cls, enum MHD_ValueKind kind, const char *key, const char *value)
+{
 	char **host = (char **)cls;
 	if (MHD_HEADER_KIND != kind) {
 		*host = NULL;
@@ -689,7 +706,8 @@ static int get_host_value_callback(void *cls, enum MHD_ValueKind kind, const cha
  * @param client
  * @return
  */
-static int show_splashpage(struct MHD_Connection *connection, t_client *client) {
+static int show_splashpage(struct MHD_Connection *connection, t_client *client)
+{
 	struct MHD_Response *response;
 	struct templater templor;
 	s_config *config = config_get_config();
@@ -801,15 +819,16 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client) 
  * @param filename
  * @return a pointer within file is returned. NULL can be returned as well as
  */
-const char *get_extension(const char *filename) {
+const char *get_extension(const char *filename)
+{
 	int pos = strlen(filename);
 	while(pos > 0) {
 		pos--;
 		switch (filename[pos]) {
-			case '/':
-				return NULL;
-			case '.':
-				return (filename+pos+1);
+		case '/':
+			return NULL;
+		case '.':
+			return (filename+pos+1);
 		}
 	}
 
@@ -818,7 +837,8 @@ const char *get_extension(const char *filename) {
 
 #define DEFAULT_MIME_TYPE "application/octet-stream"
 
-const char *lookup_mimetype(const char *filename) {
+const char *lookup_mimetype(const char *filename)
+{
 	int i;
 	const char *extension;
 
@@ -845,7 +865,8 @@ const char *lookup_mimetype(const char *filename) {
  * @param client
  * @return
  */
-static int serve_file(struct MHD_Connection *connection, t_client *client, const char *url) {
+static int serve_file(struct MHD_Connection *connection, t_client *client, const char *url)
+{
 	s_config *config = config_get_config();
 	struct MHD_Response *response;
 	char filename[PATH_MAX];

@@ -32,7 +32,8 @@ const char *variable_names[18] = {
 	"version"
 };
 
-static int get_variable_index(const char *name) {
+static int get_variable_index(const char *name)
+{
 	int j;
 
 	for(j=0; j < ARRAY_SIZE(variable_names); j++) {
@@ -49,7 +50,8 @@ static int get_variable_index(const char *name) {
  * Variable names starts with an '$'.
  * Variable ending is detected if when first non-alphanumeric char is shown - except underline ('_').
  */
-int tmpl_parse(struct templater *templor, char *dst, size_t dst_len, const char *src, size_t src_len) {
+int tmpl_parse(struct templater *templor, char *dst, size_t dst_len, const char *src, size_t src_len)
+{
 	int src_i = 0; /* track input buffer position */
 	int dst_i = 0;
 	int varlen;
@@ -116,7 +118,8 @@ int tmpl_parse(struct templater *templor, char *dst, size_t dst_len, const char 
 	return 0;
 }
 
-int tmpl_set_variable(struct templater *templor, const char *name, const char *value) {
+int tmpl_set_variable(struct templater *templor, const char *name, const char *value)
+{
 	int idx;
 
 	if(!templor)
@@ -137,7 +140,8 @@ int tmpl_set_variable(struct templater *templor, const char *name, const char *v
 	return 0;
 }
 
-void tmpl_init_templor(struct templater *templor) {
+void tmpl_init_templor(struct templater *templor)
+{
 	if(!templor)
 		return;
 	memset(templor, 0x0, sizeof(*templor));
