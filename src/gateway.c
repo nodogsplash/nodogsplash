@@ -248,23 +248,23 @@ main_loop(void)
 
 	/* Initializes the web server */
 	if ((webserver = MHD_start_daemon(
-				 MHD_USE_EPOLL_INTERNALLY_LINUX_ONLY,
-				 config->gw_port,
-				 NULL, NULL,
-				 libmicrohttpd_cb, NULL,
-				 MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 120,
-				 MHD_OPTION_END)) == NULL) {
+						 MHD_USE_EPOLL_INTERNALLY_LINUX_ONLY,
+						 config->gw_port,
+						 NULL, NULL,
+						 libmicrohttpd_cb, NULL,
+						 MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 120,
+						 MHD_OPTION_END)) == NULL) {
 		debug(LOG_ERR, "Could not create web server: %s", strerror(errno));
 		exit(1);
 	}
 	/* TODO: set listening socket */
 	debug(LOG_NOTICE, "Created web server on %s:%d", config->gw_address, config->gw_port);
-/*
-	httpdAddCContent(webserver, "/", "", 0, NULL, http_nodogsplash_callback_index);
-	httpdAddCWildcardContent(webserver, config->authdir, NULL, http_nodogsplash_callback_auth);
-	httpdAddCWildcardContent(webserver, config->denydir, NULL, http_nodogsplash_callback_deny);
-	httpdAddC404Content(webserver, http_nodogsplash_callback_404);
-*/
+	/*
+		httpdAddCContent(webserver, "/", "", 0, NULL, http_nodogsplash_callback_index);
+		httpdAddCWildcardContent(webserver, config->authdir, NULL, http_nodogsplash_callback_auth);
+		httpdAddCWildcardContent(webserver, config->denydir, NULL, http_nodogsplash_callback_deny);
+		httpdAddC404Content(webserver, http_nodogsplash_callback_404);
+	*/
 	/* Reset the firewall (cleans it, in case we are restarting after nodogsplash crash) */
 
 	fw_destroy();
