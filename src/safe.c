@@ -36,7 +36,6 @@
 #include <errno.h>
 #include <syslog.h>
 
-#include "microhttpd.h"
 #include "safe.h"
 #include "debug.h"
 
