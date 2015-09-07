@@ -253,6 +253,7 @@ main_loop(void)
 						 NULL, NULL,
 						 libmicrohttpd_cb, NULL,
 						 MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 120,
+						 MHD_OPTION_LISTENING_ADDRESS_REUSE, 1,
 						 MHD_OPTION_END)) == NULL) {
 		debug(LOG_ERR, "Could not create web server: %s", strerror(errno));
 		exit(1);
