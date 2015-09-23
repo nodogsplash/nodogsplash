@@ -488,8 +488,8 @@ static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, 
 	}
 
 	safe_asprintf(&splashpageurl, "http://%s:%u%s?redir=%s", config->gw_address , config->gw_port, "/splash.html", encoded);
-	debug(LOG_WARNING, "originurl: %s", originurl);
-	debug(LOG_WARNING, "splashpageurl: %s", splashpageurl);
+	debug(LOG_DEBUG, "originurl: %s", originurl);
+	debug(LOG_DEBUG, "splashpageurl: %s", splashpageurl);
 
 	ret = send_redirect_temp(connection, splashpageurl);
 	free(splashpageurl);
