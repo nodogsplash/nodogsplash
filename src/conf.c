@@ -722,6 +722,13 @@ config_read(const char *filename)
 				config.daemon = value;
 			}
 			break;
+		case oDebugLevel:
+			if(sscanf(p1, "%d", &config.debuglevel) < 1 || config.debuglevel < LOG_EMERG || config.debuglevel > LOG_DEBUG) {
+				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s. Valid debuglevel %d..%d", p1, s, linenum, filename, LOG_EMERG, LOG_DEBUG);
+				debug(LOG_ERR, "Exiting...");
+				exit(-1);
+			}
+			break;
 		case oMaxClients:
 			if(sscanf(p1, "%d", &config.maxclients) < 1) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
