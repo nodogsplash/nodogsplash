@@ -80,8 +80,8 @@ thread_httpd(void *args)
 	} else {
 		debug(LOG_DEBUG, "Thread %d: No valid request received from %s", serialnum, r->clientAddr);
 	}
-	httpdEndRequest(r);
 	debug(LOG_DEBUG, "Thread %d ended request from %s", serialnum, r->clientAddr);
+	httpdEndRequest(r);
 
 	pthread_mutex_lock(&httpd_mutex);
 	current_httpd_threads--;
