@@ -286,6 +286,7 @@ ndsctl_auth(int fd, char *arg)
 	/* We get the client or return... */
 	if ((client = client_list_find_by_ip(arg)) != NULL);
 	else if ((client = client_list_find_by_mac(arg)) != NULL);
+	else if ((client = client_list_find_by_token(arg)) != NULL);
 	else {
 		debug(LOG_DEBUG, "Client not found.");
 		UNLOCK_CLIENT_LIST();
