@@ -1,4 +1,4 @@
-nodogsplash (1.0.0-1) unstable; urgency=low
+nodogsplash (1.0.0-1) stable; urgency=low
 
   * make "ndsctl auth/deauth" work with tokens [vavrecan]
   * add support for ipset [vavrecan]
@@ -12,7 +12,7 @@ nodogsplash (1.0.0-1) unstable; urgency=low
   * remove static variables shared by threads to avoid race conditions [sayuan]
   * allow conditional strip of binaries in debian package [smoe]
 
- -- Moritz Warning <moritzwarning@web.de>  Fri, 27 May 2016, 23:42:00 +0200
+ -- Moritz Warning <moritzwarning@web.de>  Fri, 27 May 2016 18:26:35 -0400
 
 nodogsplash (0.9-beta9.9.9-2) unstable; urgency=low
 
