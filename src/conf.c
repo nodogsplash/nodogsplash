@@ -487,6 +487,7 @@ _parse_firewall_rule(t_firewall_ruleset *ruleset, char *leftover)
 	char *port = NULL; /**< port(s) to allow/block */
 	char *protocol = NULL; /**< protocol to allow/block: tcp/udp/icmp/all */
 	char *mask = NULL; /**< Netmask */
+	char *ipset = NULL; /**< ipset */
 	char *other_kw = NULL; /**< other key word */
 	t_firewall_rule *tmp;
 	t_firewall_rule *tmp2;
@@ -547,6 +548,15 @@ _parse_firewall_rule(t_firewall_ruleset *ruleset, char *leftover)
 		}
 	}
 
+	if (strncmp(leftover, "ipset", 5) == 0) {
+		TO_NEXT_WORD(leftover, finished);
+		/* Get ipset now */
+		ipset = leftover;
+		TO_NEXT_WORD(leftover, finished);
+
+		/* TODO check if ipset exists */
+	}
+
 	/* Now, look for optional IP address/mask */
 	if (!finished) {
 		/* should be exactly "to" */
@@ -580,6 +590,8 @@ _parse_firewall_rule(t_firewall_ruleset *ruleset, char *leftover)
 		tmp->protocol = safe_strdup(protocol);
 	if (port != NULL)
 		tmp->port = safe_strdup(port);
+	if (ipset != NULL)
+		tmp->ipset = safe_strdup(ipset);
 	if (mask == NULL)
 		tmp->mask = safe_strdup("0.0.0.0/0");
 	else

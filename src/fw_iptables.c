@@ -245,6 +245,11 @@ _iptables_compile(const char table[], const char chain[], t_firewall_rule *rule)
 				 (sizeof(command) - strlen(command)),
 				 "--dport %s ", rule->port);
 	}
+	if (rule->ipset != NULL) {
+		snprintf((command + strlen(command)),
+				 (sizeof(command) - strlen(command)),
+				 "-m set --match-set %s dst ", rule->ipset);
+	}
 	snprintf((command + strlen(command)),
 			 (sizeof(command) - strlen(command)),
 			 "-j %s", mode);
