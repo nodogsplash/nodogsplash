@@ -1,6 +1,8 @@
 
 nodogsplash (1.0.0)
 
+  * make "ndsctl auth/deauth" work with tokens [vavrecan]
+  * add support for ipset [vavrecan]
   * fix segfault under high load and no daemon mode and debbuglevel 7 [hylics]
   * make "ndsctl auth" work with IP or MAC address [gazambuja]
   * allow to set debuglevel in configuration [lynxis]
