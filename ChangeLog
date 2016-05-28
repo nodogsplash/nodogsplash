@@ -12,7 +12,7 @@ nodogsplash (1.0.0)
   * make clientmac and gatewaymac variable available in the splash page [mwarning]
   * remove static variables shared by threads to avoid race conditions [sayuan]
 
- -- Moritz Warning <moritzwarning@web.de>  Fri, 27 May 2016, 23:42:00 +0200
+ -- Moritz Warning <moritzwarning@web.de>  Fri, 27 May 2016 18:26:35 -0400
 
 nodogsplash (0.9-beta9.9.9)
 
