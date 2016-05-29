@@ -1,3 +1,19 @@
+
+nodogsplash (1.0.0)
+
+  * make "ndsctl auth/deauth" work with tokens [vavrecan]
+  * add support for ipset [vavrecan]
+  * fix segfault under high load and no daemon mode and debbuglevel 7 [hylics]
+  * make "ndsctl auth" work with IP or MAC address [gazambuja]
+  * allow to set debuglevel in configuration [lynxis]
+  * set default loglevel from NOTICE to WARNING [lynxis]
+  * fix crash when gw_mac is null [KeaneWang]
+  * Fixed an overflow issue in BinVoucher when path to BinVoucher is too long [alexattws]
+  * make clientmac and gatewaymac variable available in the splash page [mwarning]
+  * remove static variables shared by threads to avoid race conditions [sayuan]
+
+ -- Moritz Warning <moritzwarning@web.de>  Fri, 27 May 2016 18:26:35 -0400
+
 nodogsplash (0.9-beta9.9.9)
 
   * fix regression introduced by BinVoucher feature,
