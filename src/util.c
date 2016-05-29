@@ -704,6 +704,94 @@ get_clients_text(void)
 	return safe_strdup(buffer);
 }
 
+/*
+ * @return A string containing json clients list.
+ */
+char *
+get_clients_json(void)
+{
+	char buffer[STATUS_BUF_SIZ];
+	ssize_t len;
+	t_client *client;
+	int	   indx;
+	unsigned long int now, durationsecs = 0;
+	unsigned long long int download_bytes, upload_bytes;
+
+	now = time(NULL);
+	len = 0;
+
+	/* Update the client's counters so info is current */
+	iptables_fw_counters_update();
+
+	LOCK_CLIENT_LIST();
+
+	snprintf((buffer + len), (sizeof(buffer) - len), "{\n\"client_length\": %d,\n", get_client_list_length());
+	len = strlen(buffer);
+
+	client = client_get_first_client();
+	indx = 0;
+
+	snprintf((buffer + len), (sizeof(buffer) - len), "\"clients\":{\n");
+	len = strlen(buffer);
+	
+	while (client != NULL) {
+		snprintf((buffer + len), (sizeof(buffer) - len), "\"%s\":{\n", client->mac);
+		len = strlen(buffer);
+
+		snprintf((buffer + len), (sizeof(buffer) - len), "\"client_id\":%d,\n", indx);
+		len = strlen(buffer);
+
+		snprintf((buffer + len), (sizeof(buffer) - len), "\"ip\":\"%s\",\n\"mac\":\"%s\",\n", client->ip, client->mac);
+		len = strlen(buffer);
+
+		snprintf((buffer + len), (sizeof(buffer) - len), "\"added\":%lld,\n", (long long) client->added_time);
+		len = strlen(buffer);
+
+		snprintf((buffer + len), (sizeof(buffer) - len), "\"active\":%lld,\n", (long long) client->counters.last_updated);
+		len = strlen(buffer);
+
+		snprintf((buffer + len), (sizeof(buffer) - len), "\"duration\":%lu,\n", now - client->added_time);
+		len = strlen(buffer);
+
+		snprintf((buffer + len), (sizeof(buffer) - len), "\"token\":\"%s\",\n", client->token ? client->token : "none");
+		len = strlen(buffer);
+
+		snprintf((buffer + len), (sizeof(buffer) - len), "\"state\":\"%s\",\n",
+				 fw_connection_state_as_string(client->fw_connection_state));
+		len = strlen(buffer);
+
+		durationsecs = now - client->added_time;
+		download_bytes = client->counters.incoming;
+		upload_bytes = client->counters.outgoing;
+
+		snprintf((buffer + len), (sizeof(buffer) - len),
+				 "\"downloaded\":\"%llu\",\n\"avg_down_speed\":\"%.6g\",\n\"uploaded\":\"%llu\",\n\"avg_up_speed\":\"%.6g\"\n",
+				 download_bytes/1000, ((double)download_bytes)/125/durationsecs,
+				 upload_bytes/1000, ((double)upload_bytes)/125/durationsecs);
+		len = strlen(buffer);
+
+		indx++;
+		client = client->next;
+
+		snprintf((buffer + len), (sizeof(buffer) - len), "}");
+		len = strlen(buffer);
+
+		if(client) {
+			snprintf((buffer + len), (sizeof(buffer) - len), ",\n");
+			len = strlen(buffer);
+		}
+
+	}
+
+	snprintf((buffer + len), (sizeof(buffer) - len), "}}" );
+	len = strlen(buffer);
+
+	UNLOCK_CLIENT_LIST();
+
+	return safe_strdup(buffer);
+}
+
+
 unsigned short
 rand16(void)
 {

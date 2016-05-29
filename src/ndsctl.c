@@ -54,6 +54,7 @@ static void ndsctl_action(const char[], const char[], const char[]);
 static void ndsctl_print(const char[]);
 static void ndsctl_status(void);
 static void ndsctl_clients(void);
+static void ndsctl_json(void);
 static void ndsctl_stop(void);
 static void ndsctl_block(void);
 static void ndsctl_unblock(void);
@@ -84,6 +85,7 @@ usage(void)
 	printf("commands:\n");
 	printf("  status              View the status of nodogsplash\n");
 	printf("  clients             Display machine-readable client list\n");
+	printf("  json             	  Display machine-readable client list in json format\n");
 	printf("  stop                Stop the running nodogsplash\n");
 	printf("  auth mac|ip|token   Authenticate user with specified mac, ip or token\n");
 	printf("  deauth mac|ip|token Deauthenticate user with specified mac, ip or token\n");
@@ -150,6 +152,8 @@ parse_commandline(int argc, char **argv)
 		config.command = NDSCTL_STATUS;
 	} else if (strcmp(*(argv + optind), "clients") == 0) {
 		config.command = NDSCTL_CLIENTS;
+	} else if (strcmp(*(argv + optind), "json") == 0) {
+		config.command = NDSCTL_JSON;
 	}
 
 	else if (strcmp(*(argv + optind), "stop") == 0) {
@@ -381,6 +385,12 @@ ndsctl_clients(void)
 }
 
 static void
+ndsctl_json(void)
+{
+	ndsctl_print("json");
+}
+
+static void
 ndsctl_status(void)
 {
 	ndsctl_print("status");
@@ -494,6 +504,10 @@ main(int argc, char **argv)
 
 	case NDSCTL_CLIENTS:
 		ndsctl_clients();
+		break;
+
+	case NDSCTL_JSON:
+		ndsctl_json();
 		break;
 
 	case NDSCTL_STOP:

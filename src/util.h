@@ -69,6 +69,10 @@ char *get_status_text();
  * @brief Creates a machine-readable dump of currently connected clients
  */
 char *get_clients_text();
+/*
+ * @brief Creates a machine-readable json of currently connected clients
+ */
+char *get_clients_json();
 
 /** @brief cheap random */
 unsigned short rand16(void);
