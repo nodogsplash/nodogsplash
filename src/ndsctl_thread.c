@@ -61,6 +61,7 @@ extern	pthread_mutex_t	config_mutex;
 static void *thread_ndsctl_handler(void *);
 static void ndsctl_status(int);
 static void ndsctl_clients(int);
+static void ndsctl_json(int);
 static void ndsctl_stop(int);
 static void ndsctl_block(int, char *);
 static void ndsctl_unblock(int, char *);
@@ -192,6 +193,8 @@ thread_ndsctl_handler(void *arg)
 		ndsctl_status(fd);
 	} else if (strncmp(request, "clients", 7) == 0) {
 		ndsctl_clients(fd);
+	} else if (strncmp(request, "json", 4) == 0) {
+		ndsctl_json(fd);
 	} else if (strncmp(request, "stop", 4) == 0) {
 		ndsctl_stop(fd);
 	} else if (strncmp(request, "block", 5) == 0) {
@@ -255,6 +258,20 @@ ndsctl_clients(int fd)
 	int len = 0;
 
 	status = get_clients_text();
+	len = strlen(status);
+
+	write(fd, status, len);
+
+	free(status);
+}
+
+static void
+ndsctl_json(int fd)
+{
+	char * status = NULL;
+	int len = 0;
+
+	status = get_clients_json();
 	len = strlen(status);
 
 	write(fd, status, len);
