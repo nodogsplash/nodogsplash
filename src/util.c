@@ -38,7 +38,6 @@
 #include <pthread.h>
 #include <sys/wait.h>
 #include <sys/types.h>
-#include <sys/unistd.h>
 #include <netinet/in.h>
 #include <sys/ioctl.h>
 #include <arpa/inet.h>
