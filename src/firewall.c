@@ -89,29 +89,40 @@ unsigned int FW_MARK_MASK;             /**< @brief Iptables mask: bitwise or of 
 char *
 arp_get(const char req_ip[])
 {
-	FILE *proc;
-	char ip[INET6_ADDRSTRLEN];
-	char mac[18];
+	int type = 0;
+	int flags = 0;
+	char ip[16] = {0};
+	char mac[18] = {0};
+	char mask[16] = {0};
+	char line[128] = {0};
+	char dev[128] = {0};
 	char *reply = NULL;
+	FILE *proc_arp = NULL;
 
-	if (!(proc = fopen("/proc/net/arp", "r"))) {
+	if (!(proc_arp = fopen("/proc/net/arp", "r"))) {
 		return NULL;
 	}
 
 	/* Skip first line */
-	while (!feof(proc) && fgetc(proc) != '\n');
+	fgets(line, sizeof(line), proc_arp);
 
 	/* Find ip, copy mac in reply */
-	reply = NULL;
-	while (!feof(proc) && (fscanf(proc, " %15[0-9.] %*s %*s %17[A-Fa-f0-9:] %*s %*s", ip, mac) == 2)) {
-		if (strcmp(ip, req_ip) == 0) {
+	while (fgets(line, sizeof(line), proc_arp))
+	{
+		if (sscanf(line, "%s 0x%x 0x%x %s %s %s\n",
+				ip, &type, &flags, mac, mask, dev) < 4)
+		{
+			break;
+		}
+
+		if (0 == strcmp(ip, req_ip))
+		{
 			reply = safe_strdup(mac);
 			break;
 		}
 	}
 
-	fclose(proc);
-
+	fclose(proc_arp);
 	return reply;
 }
 
