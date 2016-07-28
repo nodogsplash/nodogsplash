@@ -37,7 +37,6 @@
 #include <pthread.h>
 #include <sys/wait.h>
 #include <sys/types.h>
-#include <sys/unistd.h>
 
 #include <string.h>
 
@@ -63,7 +62,6 @@
 #include <netinet/ip_icmp.h>
 #endif
 
-#include "httpd.h"
 #include "safe.h"
 #include "debug.h"
 #include "conf.h"

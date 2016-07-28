@@ -1,19 +1,16 @@
 
 CC?=gcc
-CFLAGS?=-O2
-CFLAGS+=-Isrc -Ilibhttpd
+CFLAGS?=-O0 -g -Wall
+CFLAGS+=-Isrc
 #CFLAGS+=-Wall -Wwrite-strings -pedantic -std=gnu99
 LDFLAGS+=-pthread
-LDLIBS=
+LDLIBS=-lmicrohttpd
 
 STRIP=yes
 
 NDS_OBJS=src/auth.o src/client_list.o src/commandline.o src/conf.o \
-	src/debug.o src/firewall.o src/fw_iptables.o src/gateway.o src/http.o \
-	src/httpd_thread.o src/ndsctl_thread.o src/safe.o src/tc.o src/util.o
-
-LIBHTTPD_OBJS=libhttpd/api.o libhttpd/ip_acl.o \
-	libhttpd/protocol.o libhttpd/version.o
+	src/debug.o src/firewall.o src/fw_iptables.o src/gateway.o src/http_microhttpd.o src/http_microhttpd_utils.o \
+	src/ndsctl_thread.o src/safe.o src/tc.o src/util.o src/template.o
 
 .PHONY: all clean install checkastyle fixstyle
 
@@ -29,7 +26,7 @@ ndsctl: src/ndsctl.o
 	$(CC) $(LDFLAGS) -o ndsctl $+ $(LDLIBS)
 
 clean:
-	rm -f nodogsplash ndsctl src/*.o libhttpd/*.o
+	rm -f nodogsplash ndsctl src/*.o
 	rm -rf dist
 
 install:
