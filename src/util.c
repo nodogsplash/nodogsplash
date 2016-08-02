@@ -542,7 +542,12 @@ get_status_text()
 		len = strlen(buffer);
 		free(str);
 
-		durationsecs = now - client->added_time;
+		if(now > client->added_time) {
+			durationsecs = now - client->added_time;
+		} else {
+			// prevent divison by 0 later
+			durationsecs = 1;
+		}
 
 		str = format_time(durationsecs);
 		snprintf((buffer + len), (sizeof(buffer) - len), "  Added duration:  %s\n", str);
