@@ -3,6 +3,7 @@ nodogsplash (1.0.1)
 
   * Set version in source code to 1.0.1 [mwarning]
   * Add 'ndsctl json' option [gazambuja]
+  * Fix possible division by zero and negative durations [mwarning]
 
  -- Moritz Warning <moritzwarning@web.de> Thu, 28 Jul 2016 18:13:01 -0400
 
