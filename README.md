@@ -132,6 +132,8 @@ mangle PREROUTING and POSTROUTING tables to jump to these IMQ's. The result is
 simple but effective tail-drop rate limiting (no packet classification or
 fairness queueing is done).
 
+Note: IMQ is not included anymore by OpenWrt Attitude Adjustment (12.09).
+
 ##4. Customizing nodogsplash
 
 The default shipped configuration is intended to be usable and reasonably
