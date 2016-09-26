@@ -31,7 +31,8 @@
 
 /** @brief Execute a shell command
  */
-int execute(const char cmd_line[], int quiet);
+int execute_simple(const char cmd_line[], int quiet);
+int execute(const char cmd_line[], int quiet, char *msg, size_t msg_len);
 struct in_addr *wd_gethostbyname(const char name[]);
 
 /* @brief Get IP address of an interface */

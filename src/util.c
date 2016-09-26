@@ -87,22 +87,28 @@ extern int created_httpd_threads;
 extern int current_httpd_threads;
 
 
+int execute_simple(const char cmd_line[], int quiet) {
+	return execute(cmd_line, quiet, NULL, 0);
+}
+
 /** Fork a child and execute a shell command.
  * The parent process waits for the child to return,
  * and returns the child's exit() value.
  * @return Return code of the command
  */
 int
-execute(const char cmd_line[], int quiet)
+execute(const char cmd_line[], int quiet, char *msg, size_t msg_len)
 {
 	int status, retval;
 	pid_t pid, rc;
 	struct sigaction sa, oldsa;
 	const char *new_argv[4];
+	int pipes[2] = { 0 };
 	new_argv[0] = "/bin/sh";
 	new_argv[1] = "-c";
 	new_argv[2] = cmd_line;
 	new_argv[3] = NULL;
+	FILE *stdin = NULL;
 
 	/* Temporarily get rid of SIGCHLD handler (see gateway.c), until child exits.
 	 * Will handle SIGCHLD here with waitpid() in the parent. */
@@ -114,11 +120,17 @@ execute(const char cmd_line[], int quiet)
 		debug(LOG_ERR, "sigaction() failed to set default SIGCHLD handler: %s", strerror(errno));
 	}
 
+	pipe(pipes);
 	pid = safe_fork();
 
 	if (pid == 0) {    /* for the child process:         */
+		dup2(pipes[1], STDOUT_FILENO);
+		close(pipes[0]);
 
-		if (quiet) close(2); /* Close stderr if quiet flag is on */
+		if (quiet) {
+				/* Close stderr if quiet flag is on */
+				close(2);
+		}
 		if (execvp("/bin/sh", (char *const *)new_argv) == -1) {    /* execute the command  */
 			debug(LOG_ERR, "execvp(): %s", strerror(errno));
 		} else {
@@ -127,6 +139,8 @@ execute(const char cmd_line[], int quiet)
 		exit(1);
 
 	} else {        /* for the parent:      */
+		close(pipes[1]);
+		stdin = fdopen(pipes[0],"r");
 
 		debug(LOG_DEBUG, "Waiting for PID %d to exit", (int)pid);
 		do {
@@ -154,6 +168,11 @@ execute(const char cmd_line[], int quiet)
 		debug(LOG_DEBUG, "Restoring previous SIGCHLD handler");
 		if (sigaction(SIGCHLD, &oldsa, NULL) == -1) {
 			debug(LOG_ERR, "sigaction() failed to restore SIGCHLD handler! Error %s", strerror(errno));
+		}
+
+		if(stdout && msg && msg_len) {
+			fgets(msg, msg_len, stdin);
+			fclose(stdin);
 		}
 
 		return retval;
@@ -428,6 +447,10 @@ get_status_text()
 
 	snprintf((buffer + len), (sizeof(buffer) - len), "Server listening: %s:%d\n",
 			 config->gw_address, config->gw_port);
+	len = strlen(buffer);
+
+	snprintf((buffer + len), (sizeof(buffer) - len), "External Server listening: %s:%d\n",
+			 config->ext_gw_address, config->ext_gw_port);
 	len = strlen(buffer);
 
 	if(config->authenticate_immediately) {
@@ -736,7 +759,7 @@ get_clients_json(void)
 
 	snprintf((buffer + len), (sizeof(buffer) - len), "\"clients\":{\n");
 	len = strlen(buffer);
-	
+
 	while (client != NULL) {
 		snprintf((buffer + len), (sizeof(buffer) - len), "\"%s\":{\n", client->mac);
 		len = strlen(buffer);
