@@ -325,6 +325,7 @@ get_ext_iface (void)
 			fscanf(input, "%s %s %*s %*s %*s %*s %*s %*s %*s %*s %*s\n", device, gw);
 			if (strcmp(gw, "00000000") == 0) {
 				free(gw);
+				fclose(input);
 				debug(LOG_INFO, "get_ext_iface(): Detected %s as the default interface after try %d", device, i);
 				return device;
 			}

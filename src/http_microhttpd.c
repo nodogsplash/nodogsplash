@@ -741,6 +741,7 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client)
 		if (ret < 0) {
 			free(splashpage_result);
 			free(splashpage_tmpl);
+			close(splashpage_fd);
 			return send_error(connection, 503);
 		}
 		bytes += ret;
@@ -805,12 +806,16 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client)
 	free(imagesdir);
 
 	response = MHD_create_response_from_buffer(strlen(splashpage_result), (void *)splashpage_result, MHD_RESPMEM_MUST_FREE);
-	if (!response)
+	if (!response) {
+		close(splashpage_fd);
 		return send_error(connection, 503);
+	}
 
 	MHD_add_response_header(response, "Content-Type", mimetype);
 	ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
 	MHD_destroy_response(response);
+
+	close(splashpage_fd);
 
 	return ret;
 }
