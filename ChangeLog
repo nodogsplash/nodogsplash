@@ -1,4 +1,8 @@
 
+nodogsplash (2.0.0)
+
+  * fix file descriptor leak [sfstudio]
+
 nodogsplash (1.0.0)
 
   * make "ndsctl auth/deauth" work with tokens [vavrecan]
