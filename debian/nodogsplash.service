@@ -1,0 +1,11 @@
+[Unit]
+Description=NoDogSplash Captive Portal
+After=network.target
+
+[Service]
+Type=forking
+ExecStart=/usr/bin/nodogsplash -d 5 $OPTIONS
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
