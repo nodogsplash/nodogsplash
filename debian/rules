@@ -15,4 +15,4 @@ export CFLAGS += -flto
 export LDFLAGS += -flto
 
 %:
-	dh $@ 
+	dh $@ --with systemd
