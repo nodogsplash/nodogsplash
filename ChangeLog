@@ -1,7 +1,19 @@
 
 nodogsplash (2.0.0)
 
+  * replace libhttp by libmicrohttpd [lynxis]
+  * implement string replace based template engine [lynxis]
+  * correct gatewaymac format to (00:11:22:33:44:ab) [lynxis]
+  * Allow an authenticated user to access the splashpage again. [lynxis]
+  * Allow an authenticated user to deauth themself using the denydir [lynxis]
+  * redirect wrong token auths to the splashpage [lynxis]
+  * support config redirectURL [lynxis]
+  * microhttpd: add content-type header to error messages [lynxis]
+  * prevent possible divison by zero and negative durations [mwarning]
+  * add debian support including systemd [efernandesng]
   * fix file descriptor leak [sfstudio]
+
+ -- Alexander Couzens <lynxis@fe80.eu> Thu, 10 Nov 2016 12:23:42 +0100
 
 nodogsplash (1.0.0)
 
