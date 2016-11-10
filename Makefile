@@ -47,6 +47,17 @@ checkastyle:
 	@command -v astyle >/dev/null 2>&1 || \
 	{ echo >&2 "We need 'astyle' but it's not installed. Aborting."; exit 1; }
 
+checkstyle: checkastyle
+	@if astyle \
+		--dry-run \
+		--lineend=linux \
+		--suffix=none \
+		--style=kr \
+		--indent=force-tab \
+		--formatted --recursive "src/*.c" "src/*.h" | grep -q -i formatted ; then \
+			echo Please fix formatting or run fixstyle ; false ; else \
+			echo Style looks ok. ; fi
+
 fixstyle: checkastyle
 	@echo "\033[1;34mChecking style ...\033[00m"
 	@if astyle \
