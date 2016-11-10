@@ -324,6 +324,9 @@ texinfo_documents = [
      'Miscellaneous'),
 ]
 
+# original homepage of nodogsplash is down.
+linkcheck_ignore = [r'http://kokoro.ucsd.edu/nodogsplash']
+
 # Documents to append as an appendix to all manuals.
 #
 # texinfo_appendices = []
