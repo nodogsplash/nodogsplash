@@ -27,6 +27,7 @@ Contents:
    install
    compile
    howitworks
+   authentication
    ndsctl
    customize
    debug
