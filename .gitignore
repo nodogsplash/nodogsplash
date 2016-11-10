@@ -1,4 +1,5 @@
 /nodogsplash
 /ndsctl
 /dist
+/docs/build
 *.o
