@@ -17,7 +17,7 @@ if [ $# -ne 1 -o "$1" != "--compile"  ] ; then
 fi
 
 if [ -z "$MHD_VERSION" ] ; then
-	MHD_VERSION="0.9.42"
+	MHD_VERSION="0.9.51"
 fi
 unset CFLAGS
 rm -rf /tmp/libmicrohttpd*
