@@ -544,7 +544,7 @@ int send_redirect_temp(struct MHD_Connection *connection, const char *url)
 	const char *redirect_body = "<html><head></head><body><a href='%s'>Click here to continue to<br>%s</a></body></html>";
 	safe_asprintf(&redirect, redirect_body, url);
 
-	response = MHD_create_response_from_data(strlen(redirect), redirect, MHD_YES, MHD_NO);
+	response = MHD_create_response_from_buffer(strlen(redirect), redirect, MHD_RESPMEM_MUST_FREE);
 	if (!response)
 		return send_error(connection, 503);
 
@@ -638,36 +638,36 @@ static int send_error(struct MHD_Connection *connection, int error)
 
 	switch (error) {
 	case 400:
-		response = MHD_create_response_from_data(strlen(page_400), (char *)page_400, MHD_NO, MHD_NO);
+		response = MHD_create_response_from_buffer(strlen(page_400), (char *)page_400, MHD_RESPMEM_PERSISTENT);
 		MHD_add_response_header(response, "Content-Type", mimetype);
 		ret = MHD_queue_response(connection, MHD_HTTP_BAD_REQUEST, response);
 		break;
 
 	case 403:
-		response = MHD_create_response_from_data(strlen(page_403), (char *)page_403, MHD_NO, MHD_NO);
+		response = MHD_create_response_from_buffer(strlen(page_403), (char *)page_403, MHD_RESPMEM_PERSISTENT);
 		MHD_add_response_header(response, "Content-Type", mimetype);
 		ret = MHD_queue_response(connection, MHD_HTTP_FORBIDDEN, response);
 		break;
 
 	case 404:
-		response = MHD_create_response_from_data(strlen(page_404), (char *)page_404, MHD_NO, MHD_NO);
+		response = MHD_create_response_from_buffer(strlen(page_404), (char *)page_404, MHD_RESPMEM_PERSISTENT);
 		MHD_add_response_header(response, "Content-Type", mimetype);
 		ret = MHD_queue_response(connection, MHD_HTTP_NOT_FOUND, response);
 		break;
 
 	case 500:
-		response = MHD_create_response_from_data(strlen(page_500), (char *)page_500, MHD_NO, MHD_NO);
+		response = MHD_create_response_from_buffer(strlen(page_500), (char *)page_500, MHD_RESPMEM_PERSISTENT);
 		MHD_add_response_header(response, "Content-Type", mimetype);
 		ret = MHD_queue_response(connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
 		break;
 
 	case 501:
-		response = MHD_create_response_from_data(strlen(page_501), (char *)page_501, MHD_NO, MHD_NO);
+		response = MHD_create_response_from_buffer(strlen(page_501), (char *)page_501, MHD_RESPMEM_PERSISTENT);
 		MHD_add_response_header(response, "Content-Type", mimetype);
 		ret = MHD_queue_response(connection, MHD_HTTP_NOT_IMPLEMENTED, response);
 		break;
 	case 503:
-		response = MHD_create_response_from_data(strlen(page_503), (char *)page_503, MHD_NO, MHD_NO);
+		response = MHD_create_response_from_buffer(strlen(page_503), (char *)page_503, MHD_RESPMEM_PERSISTENT);
 		MHD_add_response_header(response, "Content-Type", mimetype);
 		ret = MHD_queue_response(connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
 		break;
