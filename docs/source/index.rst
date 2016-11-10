@@ -26,12 +26,12 @@ Contents:
    overview
    install
    compile
+   faq
    howitworks
    authentication
    ndsctl
    customize
    debug
-   versionv1v2
 
 Indices and tables
 ==================
