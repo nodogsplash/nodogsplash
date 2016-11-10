@@ -49,10 +49,15 @@ checkastyle:
 
 fixstyle: checkastyle
 	@echo "\033[1;34mChecking style ...\033[00m"
-	@astyle --lineend=linux --suffix=none --style=kr --indent=force-tab \
-	--formatted --recursive "src/*.c" "src/*.h"|grep formatted \
-	&& echo "\033[1;33mPrevious files have been corrected\033[00m" \
-	|| echo "\033[0;32mAll files are ok\033[00m"
+	@if astyle \
+		--dry-run \
+		--lineend=linux \
+		--suffix=none \
+		--style=kr \
+		--indent=force-tab \
+		--formatted --recursive "src/*.c" "src/*.h" | grep -q -i formatted ; then \
+			echo "\033[1;33mPrevious files have been corrected\033[00m" ; else \
+			echo "\033[0;32mAll files are ok\033[00m" ; fi
 
 DEBVERSION=$(shell dpkg-parsechangelog | grep ^Version |cut -f2 -d\  | sed -e 's/-[0-9]*$$//' )
 deb: clean
