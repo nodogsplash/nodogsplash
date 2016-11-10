@@ -6,6 +6,9 @@ before_script:
 
 script:
  - make
+# -W to turn warnings into errors
+ - cd docs/ ; make SPHINXOPTS=-W dummy
+ - cd docs/ ; make SPHINXOPTS=-W linkcheck
 
 env:
   - CFLAGS="-I/tmp/libmicrohttpd_install/include" LDFLAGS="-L/tmp/libmicrohttpd_install/lib"
