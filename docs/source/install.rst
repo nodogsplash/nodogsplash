@@ -44,3 +44,15 @@ Debian
 ******
 
 There isn't a packet in the repostiory (yet). But we have support for a debian package.
+Requirements beside debian tools are:
+
+- libmicrohttpd (>= 0.9.51) [stretch]
+- or compile it by yourself
+
+``sudo apt-get install debhelper dpkg-dev dh-systemd libmicrohttpd-dev``
+
+Go into the nodogsplash directory and call
+
+``dpkg-buildpackage -b -uc``
+
+You will find the .deb packages in parent directory.
