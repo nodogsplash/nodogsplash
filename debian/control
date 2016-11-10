@@ -11,7 +11,7 @@ Vcs-Browser: http://github.com/nodogsplash/nodogsplash
 
 Package: nodogsplash
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libmicrohttpd12 (>= 0.9.50)
+Depends: ${shlibs:Depends}, ${misc:Depends}, libmicrohttpd12 (>= 0.9.51)
 Description: manage access to public internet access
  Nodogsplash controls access to a public Internet connection and offers
  a simple way to open a Hotspot for wireless networks. It provides a
