@@ -5,6 +5,7 @@ before_script:
   - bash ./build_libmicrohttpd.sh --compile
 
 script:
+ - make checkstyle
  - make
 
 env:
