@@ -46,13 +46,31 @@ Debian
 There isn't a packet in the repostiory (yet). But we have support for a debian package.
 Requirements beside debian tools are:
 
-- libmicrohttpd (>= 0.9.51) [stretch]
-- or compile it by yourself
+- libmicrohttpd-dev (>= 0.9.51) [avaiable in **stretch**]
+
+But you can also compile libmicrohttpd on your own if you're still running jessie or older.
+
 
 ``sudo apt-get install debhelper dpkg-dev dh-systemd libmicrohttpd-dev``
 
-Go into the nodogsplash directory and call
 
-``dpkg-buildpackage -b -uc``
+.. code::
+
+   apt-get install build-essential debhelper devscripts hardening-includes
+
+Run this command in the repository root folder to create the package:
+
+.. code::
+
+   dpkg-buildpackage
+
+The package will be created in the parent directory.
+
+
+Use this command if you want to create an unsigned package:
+
+.. code::
+
+   dpkg-buildpackage -b -rfakeroot -us -uc
 
 You will find the .deb packages in parent directory.
