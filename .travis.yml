@@ -5,6 +5,8 @@ dist: trusty
 before_script:
   - bash ./build_libmicrohttpd.sh --compile
 
+install: "pip install Sphinx"
+
 script:
  - make
 # -W to turn warnings into errors
