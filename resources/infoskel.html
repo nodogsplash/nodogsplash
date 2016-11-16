@@ -1,83 +1,54 @@
+<!DOCTYPE html>
 <html>
-<!--
-	The nodogsplash server may signal an exception by serving
-	this page to the user, with variables title and content
-	intended to indicate the category and detailed message
-	corresponding to the exception.
-
-Available variables:
-	gatewayname: $gatewayname
-	version: $version
-	title: $title
-	content: $content
-	imagesdir: $imagesdir
-	pagesdir: $pagesdir
--->
 <head>
-<title>$title</title>
-<meta HTTP-EQUIV='Pragma' CONTENT='no-cache'>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Error - Something Went Wrong!</title>
 <style>
-body {
-	margin: 10px 60px 0 60px;
-	font-family : bitstream vera sans, sans-serif;
-	color: #000000;
+body {background-color:lightgrey; color:black; margin-left: 5%; margin-right: 5%;}
+p, li {text-align: left; margin-left: 0%; margin-right: 5%}
+input[type=button] {
+-webkit-appearance: none; -moz-appearance: none;
+margin-left: 0%; margin-right: 5%;
+text-align:left;   
+display: left;
+font-size: 1em; line-height: 2.5em;
+color: #333;
+font-weight: bold;
+height: 2.5em; width: auto;
+background: #fdfdfd;
+background: -moz-linear-gradient(top, #fdfdfd 0%, #bebebe 100%); 
+background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#fdfdfd), color-stop(100%,#bebebe));
+background: -webkit-linear-gradient(top, #fdfdfd 0%,#bebebe 100%);
+background: -o-linear-gradient(top, #fdfdfd 0%,#bebebe 100%);
+background: -ms-linear-gradient(top, #fdfdfd 0%,#bebebe 100%);
+background: linear-gradient(to bottom, #fdfdfd 0%,#bebebe 100%);
+border: 1px solid #bbb;
+border-radius: 10px;
+-webkit-border-radius: 10px;
+-moz-border-radius: 10px;
 }
-a {
-	color: #000000;
-}
-a:active {
-  color: #000000;
-}
-a:link {
-	color: #000000;
-}
-a:visited {
-	color: #000000;
-}
-#header {
-	height: 30px;
-	background-color: #DDDDDD;
-	padding: 20px;
-	font-size: 20pt;
-	text-align: center;
-	border: 2px solid #000000;
-	border-bottom: 0;
-}
-#menu {
-	width: 200px;
-	float: right;
-	background-color: #DDDDDD;
-	border: 2px solid #000000;
-	font-size: 80%;
-	min-height: 300px;
-}
-#menu h2 {
-	margin: 0;
-	background-color: #000000;
-	text-align: center;
-	color: #DDDDDD;
-}
-
-#content {
-	padding: 20px;
-	border: 2px solid #000000;
-	min-height: 300px;
-}
+hr {display: block;margin-top: 0.5em;margin-bottom: 0.5em;margin-left: auto;margin-right: auto;border-style: inset;border-width: 5px;} 
 </style>
 </head>
 <body>
-<div id="header">$title</div>
-<div id="menu">
-	<h2>Info</h2>
-	<ul>
-	<li>Version: $version
-	<li>Node ID: $gatewayname
-	</ul>
-</div>
-<div id="content">
-	<h2>$title</h2>$content</div>
-	<div>Copyright (C) 2004-2013.  This software is released under the GNU GPL license.</div>
-</div>
+
+<hr><p><span style="color:blue; font-style:normal;"><b>$gatewayname Hotspot Gateway.</b></span>
+<br><br><b><span style="color:red; font-style:normal;">OOOPS! Something seems to have gone wrong!</span></b></p>
+<hr><b>The most likely cause is that your connection timed out.<br>Please click the button to try again.</b>
+
+<FORM>
+<INPUT TYPE="button" VALUE="Continue" onClick="window.location.href='http://google.com'">
+</FORM>
+<hr>
+
+<b>Received Error: $content<br>Software version: $version</b>
+	
+	<hr>Copyright (C) 2004-2013.  This software is released under the GNU GPL license.
+
 </body>
 </html>
 
