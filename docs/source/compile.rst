@@ -28,6 +28,16 @@ To compile nodogsplash please ues the package definiton from the feeds package.
 
 .. code::
 
+   git clone git://git.openwrt.org/trunk/openwrt.git
    cd openwrt
    ./scripts/feeds update
+   ./scripts/feeds install
    ./scripts/feeds install nodogsplash
+
+Select the appropiate "Target System" and "Target Profile" in the menuconfig menu and build the image.
+
+.. code::
+
+   make defconfig
+   make menuconfig
+   make
