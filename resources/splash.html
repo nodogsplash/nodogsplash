@@ -39,8 +39,8 @@ Or just append them to the authentication link:
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel='shortcut icon' href='$imagesdir/splash.jpg' type='image/x-icon' />
 <title>$gatewayname Entry</title>
+	
 <style>
-
 body
 {
 background-color:lightgrey; 
@@ -69,13 +69,13 @@ line-height: 2.5em;
 font-weight: bold;
 border: 1px solid;
 }
-
 </style>
 </head>
-<body>
 
+<body>
 <b>$gatewayname Hotspot Gateway.</b>
-<br><br><b>
+<br><br>
+<b>
 <img src="$imagesdir/splash.jpg" alt="Splash Page:For access to the Internet, please click Continue."> 
 <hr>
 <span style="color:red; font-style:normal;">
@@ -83,14 +83,15 @@ Welcome!
 </span>
 </b>
 <hr>
-<b><br>For access to the Internet, please click Continue.</b><br><br><hr>
+<b><br>For access to the Internet, please click Continue.</b><br><br>
+<hr>
 <form method='get' action='$authaction'>
 <input type='hidden' name='tok' value='$tok'>
 <input type='hidden' name='redir' value='$redir'>
-<input type='submit' value='Continue'></form>
-
+<input type='submit' value='Continue'>
+</form>
 	
-	<hr>Copyright (C) 2004-2016.  This software is released under the GNU GPL license.
+<hr>Copyright (C) 2004-2016.  This software is released under the GNU GPL license.
 
 </body>
 </html>
