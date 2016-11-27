@@ -32,6 +32,7 @@ Or just append them to the authentication link:
 	info
 	voucher
 -->
+	
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -74,7 +75,8 @@ border: 1px solid;
 
 <body>
 <b>$gatewayname Hotspot Gateway.</b>
-<br><br>
+<br>
+<br>
 <b>
 <img src="$imagesdir/splash.jpg" alt="Splash Page:For access to the Internet, please click Continue."> 
 <hr>
@@ -83,8 +85,12 @@ Welcome!
 </span>
 </b>
 <hr>
-<b><br>For access to the Internet, please click Continue.</b><br><br>
+<br>
+<b>For access to the Internet, please click Continue.</b>
+<br>
+<br>
 <hr>
+
 <form method='get' action='$authaction'>
 <input type='hidden' name='tok' value='$tok'>
 <input type='hidden' name='redir' value='$redir'>
