@@ -242,9 +242,13 @@ libmicrohttpd_cb(void *cls,
 	char *mac;
 	int ret;
 
+	debug(LOG_DEBUG, "access: %s %s", method, url);
+
 	/* only allow get */
-	if(0 != strcmp(method, "GET"))
+	if(0 != strcmp(method, "GET")) {
+		debug(LOG_DEBUG, "Unsupported http method %s", method);
 		return send_error(connection, 503);
+	}
 
 	/* switch between preauth, authenticated */
 	/* - always - set caching headers
