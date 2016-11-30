@@ -56,8 +56,8 @@ static int
 tc_do_command(const char format[], ...)
 {
 	va_list vlist;
-	char *fmt_cmd;
-	char *cmd;
+	char *fmt_cmd = NULL;
+	char *cmd = NULL;
 	int rc;
 
 	va_start(vlist, format);
@@ -174,7 +174,7 @@ tc_init_tc()
 {
 	int upload_limit, download_limit;
 	int upload_imq, download_imq;
-	char *download_imqname, *upload_imqname, *cmd;
+	char *download_imqname = NULL, *upload_imqname = NULL, *cmd = NULL;
 	s_config *config;
 	int rc = 0, ret = 0;
 
@@ -237,7 +237,7 @@ tc_destroy_tc()
 	old_tc_quiet = tc_quiet;
 	tc_quiet = 1;
 	s_config *config;
-	char *download_imqname, *upload_imqname, *cmd;
+	char *download_imqname = NULL, *upload_imqname = NULL, *cmd = NULL;
 
 	config = config_get_config();
 	safe_asprintf(&download_imqname,"imq%d",config->download_imq); /* must free */

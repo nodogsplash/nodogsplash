@@ -539,7 +539,7 @@ int send_redirect_temp(struct MHD_Connection *connection, const char *url)
 {
 	struct MHD_Response *response;
 	int ret;
-	char *redirect;
+	char *redirect = NULL;
 
 	const char *redirect_body = "<html><head></head><body><a href='%s'>Click here to continue to<br>%s</a></body></html>";
 	safe_asprintf(&redirect, redirect_body, url, url);

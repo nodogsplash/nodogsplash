@@ -171,7 +171,7 @@ _client_list_append(const char ip[], const char mac[], const char token[])
 char *
 _client_list_make_auth_token(const char ip[], const char mac[])
 {
-	char *token;
+	char *token = NULL;
 
 	safe_asprintf(&token,"%04hx%04hx", rand16(), rand16());
 

@@ -153,7 +153,7 @@ int
 iptables_do_command(const char *format, ...)
 {
 	va_list vlist;
-	char *fmt_cmd, *cmd;
+	char *fmt_cmd = NULL, *cmd = NULL;
 	s_config *config;
 	int rc;
 	int i;

@@ -351,7 +351,7 @@ char *
 format_time(unsigned long int secs)
 {
 	unsigned int days, hours, minutes, seconds;
-	char * str;
+	char *str = NULL;
 
 	days = secs / (24 * 60 * 60);
 	secs -= days * (24 * 60 * 60);
