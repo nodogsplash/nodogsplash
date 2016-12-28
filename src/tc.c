@@ -99,7 +99,7 @@ tc_attach_client(char *down_dev, int download_limit, char *up_dev, int upload_li
 						down_dev, id + 1, ip, 53, id + 1);
 		/* bulk traffic class */
 		rc |= tc_do_command("class add dev %s parent 1:%d classid 1:%d hfsc ls m1 0kbit d 100ms m2 %dkbit ul rate %dkbit",
-						down_dev, id, id + 2, dlimit / 5, dlimit / 10);
+						down_dev, id, id + 2, dlimit / 5, dlimit);
 		rc |= tc_do_command("filter add dev %s protocol ip parent 1: prio %d u32 match ip dst %s flowid 1:%d",
 						down_dev, id + 2, ip, id + 2);
 		/* codel for each leaf class */
@@ -121,7 +121,7 @@ tc_attach_client(char *down_dev, int download_limit, char *up_dev, int upload_li
 						up_dev, id + 1, ip, 53, id + 1);
 		/* bulk traffic class */
 		rc |= tc_do_command("class add dev %s parent 1:%d classid 1:%d hfsc ls m1 0kbit d 100ms m2 %dkbit ul rate %dkbit",
-						up_dev, id, id + 2, ulimit / 5, ulimit / 10);
+						up_dev, id, id + 2, ulimit / 5, ulimit);
 		rc |= tc_do_command("filter add dev %s protocol ip parent 1: prio %d u32 match ip src %s flowid 1:%d",
 						up_dev, id + 2, ip, id + 2);
 		/* codel for each leaf class */
