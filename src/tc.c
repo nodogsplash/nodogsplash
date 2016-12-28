@@ -161,7 +161,7 @@ tc_detach_client(char *down_dev, int download_limit, char *up_dev, int upload_li
 }
 
 /*
- * dev is name of device to attach qdisc to (tipically an IFB)
+ * dev is name of device to attach qdisc to (typically an IFB)
  * upload_limit is in kbits/s
  * Some ideas here from Rudy's qos-scripts
  * http://forum.openwrt.org/viewtopic.php?id=4112&p=1

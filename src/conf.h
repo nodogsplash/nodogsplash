@@ -178,7 +178,6 @@ typedef struct {
 	int traffic_control;		/**< @brief boolean, whether to do tc */
 	int download_limit;		/**< @brief Download limit, kb/s */
 	int upload_limit;		/**< @brief Upload limit, kb/s */
-	int download_ifb;		/**< @brief Number of IFB handling download */
 	int upload_ifb;		/**< @brief Number of IFB handling upload */
 	int log_syslog;		/**< @brief boolean, whether to log to syslog */
 	int syslog_facility;		/**< @brief facility to use when using syslog for logging */
