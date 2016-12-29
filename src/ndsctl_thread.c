@@ -57,9 +57,6 @@ extern	pthread_mutex_t	client_list_mutex;
 extern	pthread_mutex_t	config_mutex;
 
 static void *thread_ndsctl_handler(void *);
-static void ndsctl_status(int);
-static void ndsctl_clients(int);
-static void ndsctl_json(int);
 static void ndsctl_stop(pthread_t);
 static void ndsctl_block(int, char *);
 static void ndsctl_unblock(int, char *);
@@ -245,48 +242,6 @@ thread_ndsctl_handler(void *arg)
 	debug(LOG_DEBUG, "Exiting thread_ndsctl_handler....");
 
 	return NULL;
-}
-
-static void
-ndsctl_status(int fd)
-{
-	char *status = NULL;
-	int len = 0;
-
-	status = get_status_text();
-	len = strlen(status);
-
-	write(fd, status, len);
-
-	free(status);
-}
-
-static void
-ndsctl_clients(int fd)
-{
-	char * status = NULL;
-	int len = 0;
-
-	status = get_clients_text();
-	len = strlen(status);
-
-	write(fd, status, len);
-
-	free(status);
-}
-
-static void
-ndsctl_json(int fd)
-{
-	char * status = NULL;
-	int len = 0;
-
-	status = get_clients_json();
-	len = strlen(status);
-
-	write(fd, status, len);
-
-	free(status);
 }
 
 /** A bit of an hack, self kills.... */

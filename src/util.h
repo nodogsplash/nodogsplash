@@ -61,17 +61,18 @@ int is_auth_online();
  */
 char *get_uptime_string();
 /*
- * @brief Creates a human-readable paragraph of the status of the nodogsplash process
+ * @brief Writes a human-readable paragraph of the status of the nodogsplash process
  */
-char *get_status_text();
+void ndsctl_status(int fd);
 /*
- * @brief Creates a machine-readable dump of currently connected clients
+ * @brief Writes a machine-readable dump of currently connected clients
  */
-char *get_clients_text();
+void ndsctl_clients(int fd);
+
 /*
- * @brief Creates a machine-readable json of currently connected clients
+ * @brief Writes a machine-readable json of currently connected clients
  */
-char *get_clients_json();
+void ndsctl_json(int fd);
 
 /** @brief cheap random */
 unsigned short rand16(void);
