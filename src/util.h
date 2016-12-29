@@ -26,8 +26,6 @@
 #ifndef _UTIL_H_
 #define _UTIL_H_
 
-#define STATUS_BUF_SIZ	16384
-
 /** @brief Execute a shell command
  */
 int execute(const char cmd_line[], int quiet);
