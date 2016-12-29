@@ -1,0 +1,43 @@
+How to compile Nodogsplash
+##########################
+
+Linux/Unix
+**********
+
+Install libmicrohttpd including the header files (often call -dev package).
+
+.. code::
+
+   git clone https://github.com/nodogsplash/nodogsplash.git
+   cd nodogsplash
+   make
+
+If you installed the libmicrohttpd to another location please like /tmp/libmicrohttpd_install/
+replace the make call with
+
+.. code::
+
+   make CFLAGS="-I/tmp/libmicrohttpd_install/include" LDFLAGS="-L/tmp/libmicrohttpd_install/lib"
+
+After compiling you can call ``make install`` to install nodogsplash to /usr/
+
+OpenWrt
+*******
+
+To compile nodogsplash please ues the package definiton from the feeds package.
+
+.. code::
+
+   git clone git://git.openwrt.org/trunk/openwrt.git
+   cd openwrt
+   ./scripts/feeds update
+   ./scripts/feeds install
+   ./scripts/feeds install nodogsplash
+
+Select the appropiate "Target System" and "Target Profile" in the menuconfig menu and build the image.
+
+.. code::
+
+   make defconfig
+   make menuconfig
+   make

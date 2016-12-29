@@ -1,7 +1,7 @@
 .\" generated with Ronn/v0.7.3
 .\" http://github.com/rtomayko/ronn/tree/0.7.3
 .
-.TH "README" "" "August 2013" "" ""
+.TH "README" "" "April 2016" "" ""
 .
 .SH "NAME"
 \fBREADME\fR
@@ -10,10 +10,10 @@
 Nodogsplash offers a simple way to provide restricted access to an internet connection\. It is derived from the codebase of the Wifi Guard Dog project\. Nodogsplash is released under the GNU General Public License\.
 .
 .IP "\(bu" 4
-Nodogsplash: http://kokoro\.ucsd\.edu/nodogsplash
+Mailing List: http://ml\.ninux\.org/mailman/listinfo/nodogsplash
 .
 .IP "\(bu" 4
-OpenWrt: http://openwrt\.org/
+Original Homepage: http://kokoro\.ucsd\.edu/nodogsplash
 .
 .IP "\(bu" 4
 Wifidog: http://dev\.wifidog\.org/
@@ -41,10 +41,10 @@ Make sure your router is basically working before you try to install nodogsplash
 To install nodogsplash, obtain the nodogsplash*\.ipk package you want to install from the project website, copy it to /tmp/ on your OpenWrt router, and, in as root on the router, run:
 .
 .IP
-\fBipkg install /tmp/nodogsplash*\.ipk\fR
+\fBopkg install /tmp/nodogsplash*\.ipk\fR
 .
 .IP
-(Note: to prevent installation of an older package, you may have to remove references to remote package repositories in your ipkg\.conf file)
+(Note: to prevent installation of an older package, you may have to remove references to remote package repositories in your /etc/opkg\.conf file)
 .
 .IP "\(bu" 4
 If the interface that you want nodogsplash to manage is not br\-lan, edit /etc/nodogsplash/nodogsplash\.conf and set GatewayInterface\.
@@ -68,7 +68,7 @@ To stop nodogsplash:
 To uninstall nodogsplash:
 .
 .IP
-\fBipkg remove nodogsplash\fR
+\fBopkg remove nodogsplash\fR
 .
 .IP "" 0
 .
@@ -120,7 +120,7 @@ where
 \fIpermission\fR is required and must be allow, block, drop, log, or ulog\.
 .
 .IP "\(bu" 4
-\fIprotocol\fR is optional\. If present must be tcp, udp, icmp, or all\. Defaults to all\.
+\fIprotocol\fR is optional\. If present, it must be tcp, udp, icmp, or all\. Defaults to all\.
 .
 .IP "\(bu" 4
 port \fIportrange\fR is optional\. If present, protocol must be tcp or udp\. portrange can be a single integer port number, or a colon\-separated port range, e\.g\. 1024:1028\. Defaults to all ports\.
@@ -156,24 +156,28 @@ When the splash page is served, the following variables in the page are replaced
 .
 .IP "" 0
 .
-.P
-```
-.
 .IP "" 4
 .
 .nf
 
+<form method=\'GET\' action=\'$authaction\'>
   <input type=\'hidden\' name=\'tok\' value=\'$tok\'>
   <input type=\'hidden\' name=\'redir\' value=\'$redir\'>
   <input type=\'submit\' value=\'Click Here to Enter\'>
-  </form>
+</form>
 .
 .fi
 .
 .IP "" 0
 .
-.P
-```
+.IP "\(bu" 4
+\fI$clientip\fR, \fI$clientmac\fR and \fI$gatewaymac\fR The respective addresses of the client or gateway\. This might be usefull in cases where the data needs to be forwarded to some other place by the plash page itself\.
+.
+.IP "\(bu" 4
+\fI$nclients\fR and \fI$maxclients\fR User stats\. Usefull when you need to display something like "n of m users online" on the splash site\.
+.
+.IP "\(bu" 4
+\fI$uptime\fR The time Nodogsplash is running\.
 .
 .IP "\(bu" 4
 To change the appearance of informational and error pages which may occasionally be served by nodogsplash, edit the infoskel file:
@@ -191,11 +195,26 @@ In this file, variables \fI$gatewayname\fR, \fI$version\fR, \fI$title\fR, and \f
 .SS "5\.1 Site\-wide username and password"
 Nodogsplash can be configured to require a username and/or password to be entered on the splash page as part of the authentication process\. Since the username and password are site\-wide (not per user), and they are sent in the clear using HTTP GET, this is not a secure mechanism\. To enable this, edit \fInodogsplash\.conf\fR to set parameters \fIPasswordAuthentication\fR, \fIUsernameAuthentication\fR, \fIPassword\fR, \fIUsername\fR, and \fIPasswordAttempts\fR as desired\. Then the splash page must use a GET\-method HTML form to send user\-entered username and/or password as values of variables \fInodoguser\fR and \fInodogpass\fR respectively, along with others as required, to the server\. For example:
 .
-.P
-\fB<form method=\'GET\' action=\'$authaction\'> <input type=\'hidden\' name=\'tok\' value=\'$tok\'> <input type=\'hidden\' name=\'redir\' value=\'$redir\'> username: <input type=\'text\' name=\'nodoguser\' value=\'\' size=\'12\' maxlength=\'12\'> <br> password: <input type=\'password\' name=\'nodogpass\' value=\'\' size=\'12\' maxlength=\'10\'> <br> <input type=\'submit\' value=\'Enter\'> </form>\fR
+.IP "" 4
 .
-.SS "5\.2 Forwarding authentification"
-Nodogsplash allows to call an external program for authentification using the options BinVoucher/EnablePreAuth/ForceVoucher in nodogsplash\.conf\. The given program for BinVoucher will be called with the clients MAC address and is expected to output the number of seconds the client is to be authenticated (<= 0 seconds for no authentication)\. The output is also allowed to contain the download and upload speed limit for the clients traffic in KBits/s\.
+.nf
+
+  <form method=\'GET\' action=\'$authaction\'>
+  <input type=\'hidden\' name=\'tok\' value=\'$tok\'>
+  <input type=\'hidden\' name=\'redir\' value=\'$redir\'>
+  username: <input type=\'text\' name=\'nodoguser\' value=\'\' size=\'12\' maxlength=\'12\'>
+  <br>
+  password: <input type=\'password\' name=\'nodogpass\' value=\'\' size=\'12\' maxlength=\'10\'>
+  <br>
+  <input type=\'submit\' value=\'Enter\'>
+  </form>
+.
+.fi
+.
+.IP "" 0
+.
+.SS "5\.2 Forwarding authentication"
+Nodogsplash allows to call an external program for authentication using the options BinVoucher/EnablePreAuth/ForceVoucher in nodogsplash\.conf\. The given program for BinVoucher will be called using the clients MAC address as argument\. The output is expected to be the number of seconds the client is to be authenticated\. It may also contain the clients download and upload speed limit in KBits/s\. See the example configuration file for further details\.
 .
 .SH "6\. Using ndsctl"
 A nodogsplash install includes ndsctl, a separate application which provides some control over a running nodogsplash process by communicating with it over a unix socket\. Some command line options:

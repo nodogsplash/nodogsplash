@@ -41,7 +41,6 @@
 #include <errno.h>
 
 #include "common.h"
-#include "httpd.h"
 #include "util.h"
 #include "conf.h"
 #include "debug.h"
@@ -50,6 +49,7 @@
 #include "client_list.h"
 #include "fw_iptables.h"
 #include "firewall.h"
+#include "gateway.h"
 
 #include "ndsctl_thread.h"
 
@@ -60,7 +60,8 @@ extern	pthread_mutex_t	config_mutex;
 static void *thread_ndsctl_handler(void *);
 static void ndsctl_status(int);
 static void ndsctl_clients(int);
-static void ndsctl_stop(int);
+static void ndsctl_json(int);
+static void ndsctl_stop(pthread_t);
 static void ndsctl_block(int, char *);
 static void ndsctl_unblock(int, char *);
 static void ndsctl_allow(int, char *);
@@ -73,11 +74,16 @@ static void ndsctl_loglevel(int, char *);
 static void ndsctl_password(int, char *);
 static void ndsctl_username(int, char *);
 
+struct ndsctl_args {
+	int fd;
+	pthread_t ndsctl_master_id;
+};
+
 /** Launches a thread that monitors the control socket for request
 @param arg Must contain a pointer to a string containing the Unix domain socket to open
 @todo This thread loops infinitely, need a watchdog to verify that it is still running?
 */
-void
+void*
 thread_ndsctl(void *arg)
 {
 	int	sock,    fd;
@@ -86,6 +92,7 @@ thread_ndsctl(void *arg)
 	int result;
 	pthread_t	tid;
 	socklen_t len;
+	struct ndsctl_args *child_thread_args;
 
 	debug(LOG_DEBUG, "Starting ndsctl.");
 
@@ -98,7 +105,6 @@ thread_ndsctl(void *arg)
 		debug(LOG_ERR, "NDSCTL socket name too long");
 		exit(1);
 	}
-
 
 	debug(LOG_DEBUG, "Creating socket");
 	sock = socket(PF_UNIX, SOCK_STREAM, 0);
@@ -137,9 +143,13 @@ thread_ndsctl(void *arg)
 		if ((fd = accept(sock, (struct sockaddr *)&sa_un, &len)) == -1) {
 			debug(LOG_ERR, "Accept failed on control socket: %s",
 				  strerror(errno));
+			pthread_exit(NULL);
 		} else {
 			debug(LOG_DEBUG, "Accepted connection on ndsctl socket %d (%s)", fd, sa_un.sun_path);
-			result = pthread_create(&tid, NULL, &thread_ndsctl_handler, (void *) (size_t) fd);
+			child_thread_args = calloc(1, sizeof(struct ndsctl_args));
+			child_thread_args->fd = fd;
+			child_thread_args->ndsctl_master_id = pthread_self();
+			result = pthread_create(&tid, NULL, &thread_ndsctl_handler, (void *) child_thread_args);
 			if (result != 0) {
 				debug(LOG_ERR, "FATAL: Failed to create a new thread (ndsctl handler) - exiting");
 				termination_handler(0);
@@ -147,22 +157,23 @@ thread_ndsctl(void *arg)
 			pthread_detach(tid);
 		}
 	}
+
+	return NULL;
 }
 
 
 static void *
 thread_ndsctl_handler(void *arg)
 {
-	int	fd,
-		done,
-		i;
-	char	request[MAX_BUF];
-	ssize_t	read_bytes,
-			len;
+	int done, i;
+	char request[MAX_BUF];
+	ssize_t read_bytes, len;
+	struct ndsctl_args *args = arg;
+	pthread_t ndsctl_master = args->ndsctl_master_id;
+	int fd = args->fd;
+	free(args);
 
 	debug(LOG_DEBUG, "Entering thread_ndsctl_handler....");
-
-	fd = (int) (size_t) arg;
 
 	debug(LOG_DEBUG, "Read bytes and stuff from %d", fd);
 
@@ -173,8 +184,7 @@ thread_ndsctl_handler(void *arg)
 
 	/* Read.... */
 	while (!done && read_bytes < (sizeof(request) - 1)) {
-		len = read(fd, request + read_bytes,
-				   sizeof(request) - read_bytes);
+		len = read(fd, request + read_bytes, sizeof(request) - read_bytes);
 
 		/* Have we gotten a command yet? */
 		for (i = read_bytes; i < (read_bytes + len); i++) {
@@ -194,8 +204,10 @@ thread_ndsctl_handler(void *arg)
 		ndsctl_status(fd);
 	} else if (strncmp(request, "clients", 7) == 0) {
 		ndsctl_clients(fd);
+	} else if (strncmp(request, "json", 4) == 0) {
+		ndsctl_json(fd);
 	} else if (strncmp(request, "stop", 4) == 0) {
-		ndsctl_stop(fd);
+		ndsctl_stop(ndsctl_master);
 	} else if (strncmp(request, "block", 5) == 0) {
 		ndsctl_block(fd, (request + 6));
 	} else if (strncmp(request, "unblock", 7) == 0) {
@@ -239,7 +251,7 @@ thread_ndsctl_handler(void *arg)
 static void
 ndsctl_status(int fd)
 {
-	char * status = NULL;
+	char *status = NULL;
 	int len = 0;
 
 	status = get_status_text();
@@ -264,14 +276,25 @@ ndsctl_clients(int fd)
 	free(status);
 }
 
+static void
+ndsctl_json(int fd)
+{
+	char * status = NULL;
+	int len = 0;
+
+	status = get_clients_json();
+	len = strlen(status);
+
+	write(fd, status, len);
+
+	free(status);
+}
+
 /** A bit of an hack, self kills.... */
 static void
-ndsctl_stop(int fd)
+ndsctl_stop(pthread_t ndsctl_master_id)
 {
-	pid_t	pid;
-
-	pid = getpid();
-	kill(pid, SIGINT);
+	pthread_cancel(ndsctl_master_id);
 }
 
 static void
@@ -282,12 +305,15 @@ ndsctl_auth(int fd, char *arg)
 	debug(LOG_DEBUG, "Entering ndsctl_auth...");
 
 	LOCK_CLIENT_LIST();
-	/* arg should be IP address of client */
+	/* arg can be IP or MAC address of client */
 	debug(LOG_DEBUG, "Argument: %s (@%x)", arg, arg);
 
-	/* Add client to client list... */
-	if ((client = client_list_add_client(arg)) == NULL) {
-		debug(LOG_DEBUG, "Could not add client.");
+	/* We get the client or return... */
+	if ((client = client_list_find_by_ip(arg)) != NULL);
+	else if ((client = client_list_find_by_mac(arg)) != NULL);
+	else if ((client = client_list_find_by_token(arg)) != NULL);
+	else {
+		debug(LOG_DEBUG, "Client not found.");
 		UNLOCK_CLIENT_LIST();
 		write(fd, "No", 2);
 		return;
@@ -321,6 +347,7 @@ ndsctl_deauth(int fd, char *arg)
 	/* We get the client or return... */
 	if ((client = client_list_find_by_ip(arg)) != NULL);
 	else if ((client = client_list_find_by_mac(arg)) != NULL);
+	else if ((client = client_list_find_by_token(arg)) != NULL);
 	else {
 		debug(LOG_DEBUG, "Client not found.");
 		UNLOCK_CLIENT_LIST();

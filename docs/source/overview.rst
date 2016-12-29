@@ -1,18 +1,5 @@
-##0. The Nodogsplash project
-
-Nodogsplash offers a simple way to provide restricted access to an internet
-connection. It is derived from the codebase of the Wifi Guard Dog project.
-Nodogsplash is released under the GNU General Public License.
-
-* Mailing List: http://ml.ninux.org/mailman/listinfo/nodogsplash
-* Original Homepage: http://kokoro.ucsd.edu/nodogsplash
-* Wifidog: http://dev.wifidog.org/
-* GNU GPL: http://www.gnu.org/copyleft/gpl.html
-
-The following describes what Nodogsplash does, how to get it and run it, and
-how to customize its behavior for your application.
-
-##1. Overview
+Overview
+########
 
 Nodogsplash offers a solution to this problem: You want to provide controlled
 and reasonably secure public access to an internet connection; and while you
@@ -31,11 +18,3 @@ you don't want to grant all of your available upload or download bandwidth.
 Specific features of Nodogsplash are configurable, by editing the configuration
 file and the splash page. The default installed configuration may be all you
 need, though.
-
-##2. Documentation
-
-For additonal documentation please look at https://nodogsplash.readthedocs.io/en/latest/
-
----
-
-Email contact: nodogsplash (at) ml.ninux.org

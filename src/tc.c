@@ -53,7 +53,7 @@ static int tc_quiet = 0;
 
 /** @internal */
 static int
-tc_do_command(char *format, ...)
+tc_do_command(const char format[], ...)
 {
 	va_list vlist;
 	char *fmt_cmd;
@@ -78,7 +78,7 @@ tc_do_command(char *format, ...)
 }
 
 int
-tc_attach_client(char *down_dev, int download_limit, char *up_dev, int upload_limit, int idx, char *ip)
+tc_attach_client(const char down_dev[], int download_limit, const char up_dev[], int upload_limit, int idx, const char ip[])
 {
 	int rc = 0;
 	s_config *config = config_get_config();
@@ -135,7 +135,7 @@ tc_attach_client(char *down_dev, int download_limit, char *up_dev, int upload_li
 }
 
 int
-tc_detach_client(char *down_dev, int download_limit, char *up_dev, int upload_limit, int idx)
+tc_detach_client(const char down_dev[], int download_limit, const char up_dev[], int upload_limit, int idx)
 {
 	int rc = 0, n;
 	int id = 3 * idx + 10;
@@ -167,7 +167,7 @@ tc_detach_client(char *down_dev, int download_limit, char *up_dev, int upload_li
  * http://forum.openwrt.org/viewtopic.php?id=4112&p=1
  */
 static int
-tc_attach_upload_qdisc(char *dev, char *ifb_dev, int upload_limit)
+tc_attach_upload_qdisc(const char dev[], const char ifb_dev[], int upload_limit)
 {
 	int rc = 0;
 
@@ -197,7 +197,7 @@ tc_attach_upload_qdisc(char *dev, char *ifb_dev, int upload_limit)
  * http://forum.openwrt.org/viewtopic.php?id=4112&p=1
  */
 static int
-tc_attach_download_qdisc(char *dev, char *ifb_dev, int download_limit)
+tc_attach_download_qdisc(const char dev[], const char ifb_dev[], int download_limit)
 {
 	int rc = 0;
 
@@ -254,8 +254,9 @@ tc_init_tc()
 			rc |= tc_attach_upload_qdisc(config->gw_interface,upload_ifbname,upload_limit);
 		}
 	}
-
 	free(upload_ifbname);
+
+	return rc;
 }
 
 

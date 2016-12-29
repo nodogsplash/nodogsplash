@@ -27,21 +27,17 @@
   @author Copyright (C) 2005 Mina Naguib <mina@ilesansfil.org>
  */
 
+#define _GNU_SOURCE
 
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-
-#include "httpd.h"
-#include "safe.h"
-#include "debug.h"
 #include <syslog.h>
 
-
-/* From gateway.c */
-extern httpd * webserver;
+#include "safe.h"
+#include "debug.h"
 
 void * safe_malloc (size_t size)
 {
@@ -54,7 +50,7 @@ void * safe_malloc (size_t size)
 	return (retval);
 }
 
-char * safe_strdup(const char *s)
+char * safe_strdup(const char s[])
 {
 	char * retval = NULL;
 	if (!s) {
@@ -100,14 +96,10 @@ pid_t safe_fork(void)
 	result = fork();
 
 	if (result == -1) {
-		debug(LOG_CRIT, "Failed to fork: %s.  Bailing out", strerror(errno));
-		exit (1);
+		debug(LOG_CRIT, "Failed to fork: %s. Bailing out", strerror(errno));
+		abort();
 	} else if (result == 0) {
 		/* I'm the child - do some cleanup */
-		if (webserver) {
-			close(webserver->serverSock);
-			webserver = NULL;
-		}
 	}
 
 	return result;

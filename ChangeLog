@@ -1,41 +1,76 @@
-nodogsplash-0.9_beta9.9.9
 
-	* fix regression introduced by BinVoucher feature,
-		traffic was not blocked except on port 80 [mwarning]
-	* make returned upload/download value by BinVoucher script
-		optional, as stated in the documentation [mwarning]
+nodogsplash (2.0.0)
 
- -- mwarning <moritzwarning@web.de>  Sun, 15 Jun 2014 22:55:12 +0200
+  * replace libhttp by libmicrohttpd [lynxis]
+  * implement string replace based template engine [lynxis]
+  * correct gatewaymac format to (00:11:22:33:44:ab) [lynxis]
+  * Allow an authenticated user to access the splashpage again. [lynxis]
+  * Allow an authenticated user to deauth themself using the denydir [lynxis]
+  * redirect wrong token auths to the splashpage [lynxis]
+  * support config redirectURL [lynxis]
+  * microhttpd: add content-type header to error messages [lynxis]
+  * prevent possible divison by zero and negative durations [mwarning]
+  * add debian support including systemd [efernandesng]
+  * fix file descriptor leak [sfstudio]
 
-nodogsplash-0.9_beta9.9.8
+ -- Alexander Couzens <lynxis@fe80.eu> Thu, 10 Nov 2016 12:23:42 +0100
 
-	* send HTTP 302 instead of 307 because we use HTTP 1.0 [champtar]
-	* add support for DROP, LOG, ULOG target for firewall rules [champtar]
-	* remove multi-threading as libhttpd does not support it [sayuan]
-	* add new parameters BinVoucher, ForceVoucher and EnablePreAuth
-	  in combination with per user bandwidth limitation [lindnermarek]
-	* merge updates from Wifidog (1.1.3_beta6 @1162) up to @1464 [mwarning]
-		* excluding commit [1375] containing feature from wifidog ticket #466
-	* rewrite build system to use a simple Makefile [mwarning]
-	* unify code style: astyle --style=k&r --indent=tab [mwarning]
-	* send HTTP 405 for pre-authenticated non GET requests [redhotpenguin]
-	* fix crash when token/redir is not set [mwarning]
-	* avoid deadlocks for debug output [sayuan]
-	* Debian package [sayuan]
-	* OpenWrt package [mwarning]
+nodogsplash (1.0.0)
+
+  * make "ndsctl auth/deauth" work with tokens [vavrecan]
+  * add support for ipset [vavrecan]
+  * fix segfault under high load and no daemon mode and debbuglevel 7 [hylics]
+  * make "ndsctl auth" work with IP or MAC address [gazambuja]
+  * allow to set debuglevel in configuration [lynxis]
+  * set default loglevel from NOTICE to WARNING [lynxis]
+  * fix crash when gw_mac is null [KeaneWang]
+  * Fixed an overflow issue in BinVoucher when path to BinVoucher is too long [alexattws]
+  * make clientmac and gatewaymac variable available in the splash page [mwarning]
+  * remove static variables shared by threads to avoid race conditions [sayuan]
+
+ -- Moritz Warning <moritzwarning@web.de>  Fri, 27 May 2016 18:26:35 -0400
+
+nodogsplash (0.9-beta9.9.9)
+
+  * fix regression introduced by BinVoucher feature,
+    traffic was not blocked except on port 80 [mwarning]
+  * make returned upload/download value by BinVoucher script
+    optional, as stated in the documentation [mwarning]
+
+ -- Moritz Warning <moritzwarning@web.de>  Sun, 15 Jun 2014 22:55:12 +0200
+
+nodogsplash (0.9-beta9.9.8)
+
+  * send HTTP 302 instead of 307 because we use HTTP 1.0 [champtar]
+  * add support for DROP, LOG, ULOG target for firewall rules [champtar]
+  * remove multi-threading as libhttpd does not support it [sayuan]
+  * add new parameters BinVoucher, ForceVoucher and EnablePreAuth
+    in combination with per user bandwidth limitation [lindnermarek]
+  * merge updates from Wifidog (1.1.3_beta6 @1162) up to @1464 [mwarning]
+    * excluding commit [1375] containing feature from wifidog ticket #466
+  * rewrite build system to use a simple Makefile [mwarning]
+  * unify code style: astyle --style=k&r --indent=tab [mwarning]
+  * send HTTP 405 for pre-authenticated non GET requests [redhotpenguin]
+  * fix crash when token/redir is not set [mwarning]
+  * avoid deadlocks for debug output [sayuan]
+  * Debian package [sayuan]
+  * OpenWrt package [mwarning]
 
  -- Moritz Warning <moritzwarning@web.de>  Fri, 06 Sep 2013 18:08:39 +0200
 
-nodogsplash-0.9.9-3
+nodogsplash (0.9.9)
 
-	* Fixed buffer overflow bug in ndsctl.
-	* Improved SIGCHLD handling in gateway.c and util.c.
-	* Added FirewallRulesets trusted-users and trusted-users-to-router. This permits customized access control for trusted users, as for authenticated users, with the same ruleset semantics, instead of always accepting all trusted packets.
-	* Added EmptyRuleSetPolicy directives for .conf file.  Permits optionally passing packets through to pre-existing firewall rules.
-	* updated debian rules (for building debian package)
+  * Fixed buffer overflow bug in ndsctl.
+  * Improved SIGCHLD handling in gateway.c and util.c.
+  * Added FirewallRulesets trusted-users and trusted-users-to-router.
+    This permits customized access control for trusted users, as for
+    authenticated users, with the same ruleset semantics, instead of
+    always accepting all trusted packets.
+  * Added EmptyRuleSetPolicy directives for .conf file. Permits optionally
+    passing packets through to pre-existing firewall rules.
+  * updated debian rules (for building debian package)
 
  -- Andraz Sraka <a@frubsd.org>  Sun, 11 Aug 2009 09:15:00 -0100
 
-
 2007-05-01
-	* Development of nodogsplash starts, based on WifiDog 1.1.3_beta6
+  * Development of nodogsplash starts, based on WifiDog 1.1.3_beta6

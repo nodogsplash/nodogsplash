@@ -37,7 +37,6 @@
 #include <pthread.h>
 #include <sys/wait.h>
 #include <sys/types.h>
-#include <sys/unistd.h>
 
 #include <string.h>
 
@@ -63,7 +62,6 @@
 #include <netinet/ip_icmp.h>
 #endif
 
-#include "httpd.h"
 #include "safe.h"
 #include "debug.h"
 #include "conf.h"
@@ -89,10 +87,10 @@ unsigned int FW_MARK_MASK;             /**< @brief Iptables mask: bitwise or of 
  * @todo Make this function portable (using shell scripts?)
  */
 char *
-arp_get(const char *req_ip)
+arp_get(const char req_ip[])
 {
 	FILE *proc;
-	char ip[16];
+	char ip[INET6_ADDRSTRLEN];
 	char mac[18];
 	char *reply = NULL;
 
@@ -122,14 +120,8 @@ arp_get(const char *req_ip)
 int
 fw_init(void)
 {
-	int flags, oneopt = 1, zeroopt = 0;
-	int result = 0;
-	t_client * client = NULL;
-
 	debug(LOG_INFO, "Initializing Firewall");
-	result = iptables_fw_init();
-
-	return result;
+	return iptables_fw_init();
 }
 
 
@@ -154,7 +146,6 @@ fw_refresh_client_list(void)
 	char *ip, *mac;
 	t_client *cp1, *cp2;
 	time_t now, added_time, last_updated;
-	unsigned long long incoming, outgoing;
 	s_config *config = config_get_config();
 
 	/* Update all the counters */
@@ -170,8 +161,6 @@ fw_refresh_client_list(void)
 
 		ip = safe_strdup(cp1->ip);
 		mac = safe_strdup(cp1->mac);
-		outgoing = cp1->counters.outgoing;
-		incoming = cp1->counters.incoming;
 
 		if (!(cp1 = client_list_find(ip, mac))) {
 			debug(LOG_ERR, "Node %s was freed while being re-validated!", ip);
@@ -207,7 +196,7 @@ fw_refresh_client_list(void)
 }
 
 /** Return a string representing a connection state */
-char *
+const char *
 fw_connection_state_as_string(int mark)
 {
 	if(mark == FW_MARK_PREAUTHENTICATED) return "Preauthenticated";

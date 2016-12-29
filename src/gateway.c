@@ -29,11 +29,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <syslog.h>
 #include <pthread.h>
 #include <signal.h>
 #include <errno.h>
 #include <time.h>
+
 
 /* for strerror() */
 #include <string.h>
@@ -46,7 +48,7 @@
 #include <sys/un.h>
 
 #include "common.h"
-#include "httpd.h"
+#include "http_microhttpd.h"
 #include "safe.h"
 #include "debug.h"
 #include "conf.h"
@@ -54,12 +56,11 @@
 #include "firewall.h"
 #include "commandline.h"
 #include "auth.h"
-#include "http.h"
 #include "client_list.h"
 #include "ndsctl_thread.h"
-#include "httpd_handler.h"
 #include "util.h"
 
+#include <microhttpd.h>
 
 /** XXX Ugly hack
  * We need to remember the thread IDs of threads that simulate wait with pthread_cond_timedwait
@@ -68,10 +69,18 @@
 static pthread_t tid_client_check = 0;
 
 /* The internal web server */
-httpd * webserver = NULL;
+struct MHD_Daemon * webserver = NULL;
 
 /* Time when nodogsplash started  */
 time_t started_time = 0;
+
+
+/* Avoid race condition of folloing variables */
+pthread_mutex_t httpd_mutex = PTHREAD_MUTEX_INITIALIZER;
+/* Total number of httpd request handling threads started */
+int created_httpd_threads;
+/* Number of current httpd request handling threads */
+int current_httpd_threads;
 
 
 /**@internal
@@ -209,14 +218,11 @@ init_signals(void)
 static void
 main_loop(void)
 {
-	int result;
+	int result = 0;
 	pthread_t	tid;
-	s_config *config = config_get_config();
-	struct timespec wait_time;
-	int msec;
-	request *r;
-	void **params;
-	int* thread_serial_num_p;
+	s_config *config;
+
+	config = config_get_config();
 
 	/* Set the time when nodogsplash started */
 	if (!started_time) {
@@ -234,36 +240,33 @@ main_loop(void)
 			debug(LOG_ERR, "Could not get IP address information of %s, exiting...", config->gw_interface);
 			exit(1);
 		}
-		debug(LOG_NOTICE, "Detected gateway %s at %s", config->gw_interface, config->gw_address);
 	}
+	if ((config->gw_mac = get_iface_mac(config->gw_interface)) == NULL) {
+		debug(LOG_ERR, "Could not get MAC address information of %s, exiting...", config->gw_interface);
+		exit(1);
+	}
+	debug(LOG_NOTICE, "Detected gateway %s at %s (%s)", config->gw_interface, config->gw_address, config->gw_mac);
 
 	/* Initializes the web server */
-	if ((webserver = httpdCreate(config->gw_address, config->gw_port)) == NULL) {
+	if ((webserver = MHD_start_daemon(
+						 MHD_USE_EPOLL_INTERNALLY,
+						 config->gw_port,
+						 NULL, NULL,
+						 libmicrohttpd_cb, NULL,
+						 MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 120,
+						 MHD_OPTION_LISTENING_ADDRESS_REUSE, 1,
+						 MHD_OPTION_END)) == NULL) {
 		debug(LOG_ERR, "Could not create web server: %s", strerror(errno));
 		exit(1);
 	}
+	/* TODO: set listening socket */
 	debug(LOG_NOTICE, "Created web server on %s:%d", config->gw_address, config->gw_port);
-
-	/* Set web root for server */
-	debug(LOG_DEBUG, "Setting web root: %s",config->webroot);
-	httpdSetFileBase(webserver,config->webroot);
-
-	/* Add images files to server: any file in config->imagesdir can be served */
-	debug(LOG_DEBUG, "Setting images subdir: %s",config->imagesdir);
-	httpdAddWildcardContent(webserver,config->imagesdir,NULL,config->imagesdir);
-
-	/* Add pages files to server: any file in config->pagesdir can be served */
-	debug(LOG_DEBUG, "Setting pages subdir: %s",config->pagesdir);
-	httpdAddWildcardContent(webserver,config->pagesdir,NULL,config->pagesdir);
-
-
-	debug(LOG_DEBUG, "Registering callbacks to web server");
-
-	httpdAddCContent(webserver, "/", "", 0, NULL, http_nodogsplash_callback_index);
-	httpdAddCWildcardContent(webserver, config->authdir, NULL, http_nodogsplash_callback_auth);
-	httpdAddCWildcardContent(webserver, config->denydir, NULL, http_nodogsplash_callback_deny);
-	httpdAddC404Content(webserver, http_nodogsplash_callback_404);
-
+	/*
+		httpdAddCContent(webserver, "/", "", 0, NULL, http_nodogsplash_callback_index);
+		httpdAddCWildcardContent(webserver, config->authdir, NULL, http_nodogsplash_callback_auth);
+		httpdAddCWildcardContent(webserver, config->denydir, NULL, http_nodogsplash_callback_deny);
+		httpdAddC404Content(webserver, http_nodogsplash_callback_404);
+	*/
 	/* Reset the firewall (cleans it, in case we are restarting after nodogsplash crash) */
 
 	fw_destroy();
@@ -277,7 +280,7 @@ main_loop(void)
 	}
 
 	/* Start client statistics and timeout clean-up thread */
-	result = pthread_create(&tid_client_check, NULL, (void *)thread_client_timeout_check, NULL);
+	result = pthread_create(&tid_client_check, NULL, thread_client_timeout_check, NULL);
 	if (result != 0) {
 		debug(LOG_ERR, "FATAL: Failed to create thread_client_timeout_check - exiting");
 		termination_handler(0);
@@ -285,44 +288,18 @@ main_loop(void)
 	pthread_detach(tid_client_check);
 
 	/* Start control thread */
-	result = pthread_create(&tid, NULL, (void *)thread_ndsctl, (void *)safe_strdup(config->ndsctl_sock));
+	result = pthread_create(&tid, NULL, thread_ndsctl, (void *)safe_strdup(config->ndsctl_sock));
 	if (result != 0) {
 		debug(LOG_ERR, "FATAL: Failed to create thread_ndsctl - exiting");
-		termination_handler(0);
-	}
-	pthread_detach(tid);
-
-	/*
-	 * Enter the httpd request handling loop
-	 */
-	debug(LOG_NOTICE, "Waiting for connections");
-	while(1) {
-		r = httpdGetConnection(webserver, NULL);
-
-		/* We can't convert this to a switch because there might be
-		 * values that are not -1, 0 or 1. */
-		if (webserver->lastError == -1) {
-			/* Interrupted system call */
-			continue; /* continue loop from the top */
-		} else if (webserver->lastError < -1) {
-			/*
-			 * FIXME
-			 * An error occurred - should we abort?
-			 * reboot the device ?
-			 */
-			debug(LOG_ERR, "FATAL: httpdGetConnection returned unexpected value %d, exiting.", webserver->lastError);
-			termination_handler(0);
-		} else if (r != NULL) {
-			/* We got a connection */
-			handle_http_request(webserver, r);
-		} else {
-			/* webserver->lastError should be 2 */
-			/* XXX We failed an ACL.... No handling because
-			 * we don't set any... */
-		}
+		termination_handler(1);
 	}
 
-	/* never reached */
+	result = pthread_join(tid, NULL);
+	if (result) {
+		debug(LOG_INFO, "Failed to wait for nodogsplash thread.");
+	}
+	MHD_stop_daemon(webserver);
+	termination_handler(result);
 }
 
 /** Main entry point for nodogsplash.

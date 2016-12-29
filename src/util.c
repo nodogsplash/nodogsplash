@@ -38,14 +38,14 @@
 #include <pthread.h>
 #include <sys/wait.h>
 #include <sys/types.h>
-#include <sys/unistd.h>
 #include <netinet/in.h>
 #include <sys/ioctl.h>
 #include <arpa/inet.h>
+#include <sys/time.h>
+#include <ifaddrs.h>
 
 #if defined(__NetBSD__)
 #include <sys/socket.h>
-#include <ifaddrs.h>
 #include <net/if.h>
 #include <net/if_dl.h>
 #include <util.h>
@@ -67,6 +67,7 @@
 #include "conf.h"
 #include "debug.h"
 #include "firewall.h"
+#include "fw_iptables.h"
 
 
 static pthread_mutex_t ghbn_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -75,11 +76,15 @@ static pthread_mutex_t ghbn_mutex = PTHREAD_MUTEX_INITIALIZER;
 extern time_t started_time;
 
 /* Defined in clientlist.c */
-extern	pthread_mutex_t	client_list_mutex;
-extern	pthread_mutex_t	config_mutex;
+extern pthread_mutex_t client_list_mutex;
+extern pthread_mutex_t config_mutex;
 
 /* Defined in auth.c */
 extern unsigned int authenticated_since_start;
+
+/* Defined in gateway.c */
+extern int created_httpd_threads;
+extern int current_httpd_threads;
 
 
 /** Fork a child and execute a shell command.
@@ -88,7 +93,7 @@ extern unsigned int authenticated_since_start;
  * @return Return code of the command
  */
 int
-execute(char *cmd_line, int quiet)
+execute(const char cmd_line[], int quiet)
 {
 	int status, retval;
 	pid_t pid, rc;
@@ -156,7 +161,7 @@ execute(char *cmd_line, int quiet)
 }
 
 struct in_addr *
-wd_gethostbyname(const char *name) {
+wd_gethostbyname(const char name[]) {
 	struct hostent *he;
 	struct in_addr *h_addr, *in_addr_temp;
 
@@ -183,74 +188,60 @@ wd_gethostbyname(const char *name) {
 }
 
 char *
-get_iface_ip(const char *ifname)
+get_iface_ip(const char ifname[])
 {
-#if defined(__linux__)
-	struct ifreq if_data;
-	struct in_addr in;
-	char *ip_str;
-	int sockd;
-	u_int32_t ip;
+	char addrbuf[INET6_ADDRSTRLEN+1];
+	const struct ifaddrs *cur;
+	struct ifaddrs *addrs;
+	s_config *config;
 
-	/* Create a socket */
-	if ((sockd = socket (AF_INET, SOCK_PACKET, htons(0x8086))) < 0) {
-		debug(LOG_ERR, "socket(): %s", strerror(errno));
-		return NULL;
-	}
-
-	/* Get IP of internal interface */
-	strcpy (if_data.ifr_name, ifname);
-
-	/* Get the IP address */
-	if (ioctl (sockd, SIOCGIFADDR, &if_data) < 0) {
-		debug(LOG_ERR, "ioctl(): SIOCGIFADDR %s", strerror(errno));
-		return NULL;
-	}
-	memcpy ((void *) &ip, (void *) &if_data.ifr_addr.sa_data + 2, 4);
-	in.s_addr = ip;
-
-	ip_str = inet_ntoa(in);
-	close(sockd);
-	return safe_strdup(ip_str);
-#elif defined(__NetBSD__)
-	struct ifaddrs *ifa, *ifap;
-	char *str = NULL;
-
-	if (getifaddrs(&ifap) == -1) {
+	if(getifaddrs(&addrs) < 0) {
 		debug(LOG_ERR, "getifaddrs(): %s", strerror(errno));
 		return NULL;
 	}
-	/* XXX arbitrarily pick the first IPv4 address */
-	for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
-		if (strcmp(ifa->ifa_name, ifname) == 0 &&
-				ifa->ifa_addr->sa_family == AF_INET)
-			break;
+
+	config = config_get_config();
+
+	/* Set default address */
+	sprintf(addrbuf, config->ip6 ? "::" : "0.0.0.0");
+
+	/* Iterate all interfaces */
+	cur = addrs;
+	while(cur != NULL) {
+		if( (cur->ifa_addr != NULL) && (strcmp( cur->ifa_name, ifname ) == 0) ) {
+
+			if(config->ip6 && cur->ifa_addr->sa_family == AF_INET6) {
+				inet_ntop(AF_INET6, &((struct sockaddr_in6 *)cur->ifa_addr)->sin6_addr, addrbuf, sizeof(addrbuf));
+				break;
+			}
+
+			if(!config->ip6 && cur->ifa_addr->sa_family == AF_INET) {
+				inet_ntop(AF_INET, &((struct sockaddr_in *)cur->ifa_addr)->sin_addr, addrbuf, sizeof(addrbuf));
+				break;
+			}
+		}
+
+		cur = cur->ifa_next;
 	}
-	if (ifa == NULL) {
-		debug(LOG_ERR, "%s: no IPv4 address assigned");
-		goto out;
-	}
-	str = safe_strdup(inet_ntoa(
-						  ((struct sockaddr_in *)ifa->ifa_addr)->sin_addr));
-out:
-	freeifaddrs(ifap);
-	return str;
-#else
-	return safe_strdup("0.0.0.0");
-#endif
+
+	freeifaddrs(addrs);
+
+	return safe_strdup(addrbuf);
 }
 
 char *
-get_iface_mac(const char *ifname)
+get_iface_mac(const char ifname[])
 {
 #if defined(__linux__)
 	int r, s;
+	s_config *config;
 	struct ifreq ifr;
-	char *hwaddr, mac[13];
+	char *hwaddr, mac[18];
 
+	config = config_get_config();
 	strcpy(ifr.ifr_name, ifname);
 
-	s = socket(AF_INET, SOCK_DGRAM, 0);
+	s = socket(config->ip6 ? AF_INET6 : AF_INET, SOCK_DGRAM, 0);
 	if (-1 == s) {
 		debug(LOG_ERR, "get_iface_mac socket: %s", strerror(errno));
 		return NULL;
@@ -265,7 +256,7 @@ get_iface_mac(const char *ifname)
 
 	hwaddr = ifr.ifr_hwaddr.sa_data;
 	close(s);
-	snprintf(mac, sizeof(mac), "%02X%02X%02X%02X%02X%02X",
+	snprintf(mac, sizeof(mac), "%02x:%02x:%02x:%02x:%02x:%02x",
 			 hwaddr[0] & 0xFF,
 			 hwaddr[1] & 0xFF,
 			 hwaddr[2] & 0xFF,
@@ -278,7 +269,7 @@ get_iface_mac(const char *ifname)
 #elif defined(__NetBSD__)
 	struct ifaddrs *ifa, *ifap;
 	const char *hwaddr;
-	char mac[13], *str = NULL;
+	char mac[18], *str = NULL;
 	struct sockaddr_dl *sdl;
 
 	if (getifaddrs(&ifap) == -1) {
@@ -296,7 +287,7 @@ get_iface_mac(const char *ifname)
 	}
 	sdl = (struct sockaddr_dl *)ifa->ifa_addr;
 	hwaddr = LLADDR(sdl);
-	snprintf(mac, sizeof(mac), "%02X%02X%02X%02X%02X%02X",
+	snprintf(mac, sizeof(mac), "%02x:%02x:%02x:%02x:%02x:%02x",
 			 hwaddr[0] & 0xFF, hwaddr[1] & 0xFF,
 			 hwaddr[2] & 0xFF, hwaddr[3] & 0xFF,
 			 hwaddr[4] & 0xFF, hwaddr[5] & 0xFF);
@@ -334,6 +325,7 @@ get_ext_iface (void)
 			fscanf(input, "%s %s %*s %*s %*s %*s %*s %*s %*s %*s %*s\n", device, gw);
 			if (strcmp(gw, "00000000") == 0) {
 				free(gw);
+				fclose(input);
 				debug(LOG_INFO, "get_ext_iface(): Detected %s as the default interface after try %d", device, i);
 				return device;
 			}
@@ -364,7 +356,8 @@ get_ext_iface (void)
 }
 
 /* Malloc's */
-char * format_time(unsigned long int secs)
+char *
+format_time(unsigned long int secs)
 {
 	unsigned int days, hours, minutes, seconds;
 	char * str;
@@ -382,7 +375,8 @@ char * format_time(unsigned long int secs)
 }
 
 /* Caller must free. */
-char * get_uptime_string()
+char *
+get_uptime_string()
 {
 	return format_time(time(NULL)-started_time);
 }
@@ -391,7 +385,8 @@ char * get_uptime_string()
  * @return A string containing human-readable status text.
  * MUST BE free()d by caller
  */
-char * get_status_text()
+char *
+get_status_text()
 {
 	char buffer[STATUS_BUF_SIZ];
 	char timebuf[32];
@@ -499,8 +494,18 @@ char * get_status_text()
 	snprintf((buffer + len), (sizeof(buffer) - len), "====\n");
 	len = strlen(buffer);
 
-	snprintf((buffer + len), (sizeof(buffer) - len), "Client authentications since start: %lu\n", authenticated_since_start);
+	snprintf((buffer + len), (sizeof(buffer) - len), "Client authentications since start: %u\n", authenticated_since_start);
 	len = strlen(buffer);
+
+	snprintf((buffer + len), (sizeof(buffer) - len), "Httpd request threads created/current: %d/%d\n", created_httpd_threads, current_httpd_threads);
+	len = strlen(buffer);
+
+	if(config->decongest_httpd_threads) {
+		snprintf((buffer + len), (sizeof(buffer) - len), "Httpd thread decongest threshold: %d threads\n", config->httpd_thread_threshold);
+		len = strlen(buffer);
+		snprintf((buffer + len), (sizeof(buffer) - len), "Httpd thread decongest delay: %d ms\n", config->httpd_thread_delay_ms);
+		len = strlen(buffer);
+	}
 
 	/* Update the client's counters so info is current */
 	iptables_fw_counters_update();
@@ -536,7 +541,12 @@ char * get_status_text()
 		len = strlen(buffer);
 		free(str);
 
-		durationsecs = now - client->added_time;
+		if(now > client->added_time) {
+			durationsecs = now - client->added_time;
+		} else {
+			// prevent divison by 0 later
+			durationsecs = 1;
+		}
 
 		str = format_time(durationsecs);
 		snprintf((buffer + len), (sizeof(buffer) - len), "  Added duration:  %s\n", str);
@@ -629,7 +639,8 @@ char * get_status_text()
  * @return A string containing machine-readable clients list.
  * MUST BE free()d by caller
  */
-char * get_clients_text()
+char *
+get_clients_text(void)
 {
 	char buffer[STATUS_BUF_SIZ];
 	ssize_t len;
@@ -662,13 +673,13 @@ char * get_clients_text()
 		snprintf((buffer + len), (sizeof(buffer) - len), "ip=%s\nmac=%s\n", client->ip, client->mac);
 		len = strlen(buffer);
 
-		snprintf((buffer + len), (sizeof(buffer) - len), "added=%d\n", client->added_time);
+		snprintf((buffer + len), (sizeof(buffer) - len), "added=%lld\n", (long long) client->added_time);
 		len = strlen(buffer);
 
-		snprintf((buffer + len), (sizeof(buffer) - len), "active=%d\n", client->counters.last_updated);
+		snprintf((buffer + len), (sizeof(buffer) - len), "active=%lld\n", (long long) client->counters.last_updated);
 		len = strlen(buffer);
 
-		snprintf((buffer + len), (sizeof(buffer) - len), "duration=%d\n", now - client->added_time);
+		snprintf((buffer + len), (sizeof(buffer) - len), "duration=%lu\n", now - client->added_time);
 		len = strlen(buffer);
 
 		snprintf((buffer + len), (sizeof(buffer) - len), "token=%s\n", client->token ? client->token : "none");
@@ -697,15 +708,101 @@ char * get_clients_text()
 	return safe_strdup(buffer);
 }
 
-unsigned short rand16(void)
+/*
+ * @return A string containing json clients list.
+ */
+char *
+get_clients_json(void)
+{
+	char buffer[STATUS_BUF_SIZ];
+	ssize_t len;
+	t_client *client;
+	int	   indx;
+	unsigned long int now, durationsecs = 0;
+	unsigned long long int download_bytes, upload_bytes;
+
+	now = time(NULL);
+	len = 0;
+
+	/* Update the client's counters so info is current */
+	iptables_fw_counters_update();
+
+	LOCK_CLIENT_LIST();
+
+	snprintf((buffer + len), (sizeof(buffer) - len), "{\n\"client_length\": %d,\n", get_client_list_length());
+	len = strlen(buffer);
+
+	client = client_get_first_client();
+	indx = 0;
+
+	snprintf((buffer + len), (sizeof(buffer) - len), "\"clients\":{\n");
+	len = strlen(buffer);
+	
+	while (client != NULL) {
+		snprintf((buffer + len), (sizeof(buffer) - len), "\"%s\":{\n", client->mac);
+		len = strlen(buffer);
+
+		snprintf((buffer + len), (sizeof(buffer) - len), "\"client_id\":%d,\n", indx);
+		len = strlen(buffer);
+
+		snprintf((buffer + len), (sizeof(buffer) - len), "\"ip\":\"%s\",\n\"mac\":\"%s\",\n", client->ip, client->mac);
+		len = strlen(buffer);
+
+		snprintf((buffer + len), (sizeof(buffer) - len), "\"added\":%lld,\n", (long long) client->added_time);
+		len = strlen(buffer);
+
+		snprintf((buffer + len), (sizeof(buffer) - len), "\"active\":%lld,\n", (long long) client->counters.last_updated);
+		len = strlen(buffer);
+
+		snprintf((buffer + len), (sizeof(buffer) - len), "\"duration\":%lu,\n", now - client->added_time);
+		len = strlen(buffer);
+
+		snprintf((buffer + len), (sizeof(buffer) - len), "\"token\":\"%s\",\n", client->token ? client->token : "none");
+		len = strlen(buffer);
+
+		snprintf((buffer + len), (sizeof(buffer) - len), "\"state\":\"%s\",\n",
+				 fw_connection_state_as_string(client->fw_connection_state));
+		len = strlen(buffer);
+
+		durationsecs = now - client->added_time;
+		download_bytes = client->counters.incoming;
+		upload_bytes = client->counters.outgoing;
+
+		snprintf((buffer + len), (sizeof(buffer) - len),
+				 "\"downloaded\":\"%llu\",\n\"avg_down_speed\":\"%.6g\",\n\"uploaded\":\"%llu\",\n\"avg_up_speed\":\"%.6g\"\n",
+				 download_bytes/1000, ((double)download_bytes)/125/durationsecs,
+				 upload_bytes/1000, ((double)upload_bytes)/125/durationsecs);
+		len = strlen(buffer);
+
+		indx++;
+		client = client->next;
+
+		snprintf((buffer + len), (sizeof(buffer) - len), "}");
+		len = strlen(buffer);
+
+		if(client) {
+			snprintf((buffer + len), (sizeof(buffer) - len), ",\n");
+			len = strlen(buffer);
+		}
+
+	}
+
+	snprintf((buffer + len), (sizeof(buffer) - len), "}}" );
+	len = strlen(buffer);
+
+	UNLOCK_CLIENT_LIST();
+
+	return safe_strdup(buffer);
+}
+
+
+unsigned short
+rand16(void)
 {
 	static int been_seeded = 0;
 
 	if (!been_seeded) {
-		int fd, n = 0;
-		unsigned int c = 0, seed = 0;
-		char sbuf[sizeof(seed)];
-		char *s;
+		unsigned int seed = 0;
 		struct timeval now;
 
 		/* not a very good seed but what the heck, it needs to be quickly acquired */

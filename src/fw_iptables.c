@@ -38,6 +38,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <arpa/inet.h>
 
 #include "common.h"
 
@@ -51,8 +52,8 @@
 #include "util.h"
 #include "tc.h"
 
-static char * _iptables_compile(const char *, char *, t_firewall_rule *);
-static int _iptables_append_ruleset(char *, char *, char *);
+static char * _iptables_compile(const char[], const char[], t_firewall_rule *);
+static int _iptables_append_ruleset(const char[], const char[], const char[]);
 static int _iptables_init_marks(void);
 
 extern pthread_mutex_t	client_list_mutex;
@@ -66,12 +67,12 @@ static int fw_quiet = 0;
 /**
  * Used to configure use of --or-mark vs. --set-mark
  */
-static char* markop = "--set-mark";
+static const char* markop = "--set-mark";
 
 /**
  * Used to configure use of mark mask, or not
  */
-static char* markmask = "";
+static const char* markmask = "";
 
 
 /** @internal */
@@ -118,7 +119,6 @@ _iptables_init_marks()
 int
 _iptables_check_mark_masking()
 {
-
 	/* See if kernel supports mark or-ing */
 	fw_quiet = 1; /* do it quietly */
 	if (0 == iptables_do_command("-t mangle -I PREROUTING 1 -j MARK --or-mark 0x%x", FW_MARK_BLOCKED)) {
@@ -134,7 +134,9 @@ _iptables_check_mark_masking()
 	if(0 == iptables_do_command("-t filter -I FORWARD 1 -m mark --mark 0x%x/0x%x -j REJECT", FW_MARK_BLOCKED, FW_MARK_MASK)) {
 		iptables_do_command("-t filter -D FORWARD 1"); /* delete test rule we just inserted */
 		debug(LOG_DEBUG,"Kernel supports mark masking.");
-		safe_asprintf(&markmask,"/0x%x",FW_MARK_MASK);
+		char *tmp = NULL;
+		safe_asprintf(&tmp,"/0x%x",FW_MARK_MASK);
+		markmask = tmp;
 	} else {
 		debug(LOG_INFO,"Kernel does not support iptables mark masking.  Using empty mask.");
 		markmask = "";
@@ -153,6 +155,7 @@ iptables_do_command(const char *format, ...)
 {
 	va_list vlist;
 	char *fmt_cmd, *cmd;
+	s_config *config;
 	int rc;
 	int i;
 
@@ -160,7 +163,13 @@ iptables_do_command(const char *format, ...)
 	safe_vasprintf(&fmt_cmd, format, vlist);
 	va_end(vlist);
 
-	safe_asprintf(&cmd, "iptables %s", fmt_cmd);
+	config = config_get_config();
+
+	if(config->ip6) {
+		safe_asprintf(&cmd, "ip6tables %s", fmt_cmd);
+	} else {
+		safe_asprintf(&cmd, "iptables %s", fmt_cmd);
+	}
 
 	free(fmt_cmd);
 
@@ -194,11 +203,12 @@ iptables_do_command(const char *format, ...)
  * @arg rule Definition of a rule into a struct, from conf.c.
  */
 static char *
-_iptables_compile(const char * table, char *chain, t_firewall_rule *rule)
+_iptables_compile(const char table[], const char chain[], t_firewall_rule *rule)
 {
 	char command[MAX_BUF];
 	char *mode;
 
+	mode = NULL;
 	memset(command, 0, MAX_BUF);
 
 	switch (rule->target) {
@@ -235,6 +245,11 @@ _iptables_compile(const char * table, char *chain, t_firewall_rule *rule)
 				 (sizeof(command) - strlen(command)),
 				 "--dport %s ", rule->port);
 	}
+	if (rule->ipset != NULL) {
+		snprintf((command + strlen(command)),
+				 (sizeof(command) - strlen(command)),
+				 "-m set --match-set %s dst ", rule->ipset);
+	}
 	snprintf((command + strlen(command)),
 			 (sizeof(command) - strlen(command)),
 			 "-j %s", mode);
@@ -254,7 +269,7 @@ _iptables_compile(const char * table, char *chain, t_firewall_rule *rule)
  * @arg chain IPTables chain the rules go into
  */
 static int
-_iptables_append_ruleset(char *table, char *ruleset, char *chain)
+_iptables_append_ruleset(const char table[], const char ruleset[], const char chain[])
 {
 	t_firewall_rule *rule;
 	char *cmd;
@@ -274,37 +289,37 @@ _iptables_append_ruleset(char *table, char *ruleset, char *chain)
 }
 
 int
-iptables_block_mac(char *mac)
+iptables_block_mac(const char mac[])
 {
 	return iptables_do_command("-t mangle -A " CHAIN_BLOCKED " -m mac --mac-source %s -j MARK %s 0x%x", mac, markop, FW_MARK_BLOCKED);
 }
 
 int
-iptables_unblock_mac(char *mac)
+iptables_unblock_mac(const char mac[])
 {
 	return iptables_do_command("-t mangle -D " CHAIN_BLOCKED " -m mac --mac-source %s -j MARK %s 0x%x", mac, markop, FW_MARK_BLOCKED);
 }
 
 int
-iptables_allow_mac(char *mac)
+iptables_allow_mac(const char mac[])
 {
 	return iptables_do_command("-t mangle -I " CHAIN_BLOCKED " -m mac --mac-source %s -j RETURN", mac);
 }
 
 int
-iptables_unallow_mac(char *mac)
+iptables_unallow_mac(const char mac[])
 {
 	return iptables_do_command("-t mangle -D " CHAIN_BLOCKED " -m mac --mac-source %s -j RETURN", mac);
 }
 
 int
-iptables_trust_mac(char *mac)
+iptables_trust_mac(const char mac[])
 {
 	return iptables_do_command("-t mangle -A " CHAIN_TRUSTED " -m mac --mac-source %s -j MARK %s 0x%x", mac, markop, FW_MARK_TRUSTED);
 }
 
 int
-iptables_untrust_mac(char *mac)
+iptables_untrust_mac(const char mac[])
 {
 	return iptables_do_command("-t mangle -D " CHAIN_TRUSTED " -m mac --mac-source %s -j MARK %s 0x%x", mac, markop, FW_MARK_TRUSTED);
 }
@@ -324,7 +339,8 @@ iptables_fw_init(void)
 	t_MAC *pt;
 	t_MAC *pb;
 	t_MAC *pa;
-	int rc = 0, mmask = 0, macmechanism;
+	int rc = 0;
+	int macmechanism;
 
 	LOCK_CONFIG();
 	config = config_get_config();
@@ -774,6 +790,7 @@ iptables_fw_access(t_authaction action, t_client *client)
 		/* Remove the authentication rules. */
 		debug(LOG_NOTICE, "Deauthenticating %s %s", client->ip, client->mac);
 		rc |= iptables_do_command("-t mangle -D " CHAIN_OUTGOING " -s %s -m mac --mac-source %s -j MARK %s 0x%x", client->ip, client->mac, markop, FW_MARK_AUTHENTICATED);
+		rc |= iptables_do_command("-t mangle -D " CHAIN_INCOMING " -d %s -j MARK %s 0x%x", client->ip, markop, FW_MARK_AUTHENTICATED);
 		rc |= iptables_do_command("-t mangle -D " CHAIN_INCOMING " -d %s -j ACCEPT", client->ip);
 		if(traffic_control) {
 			rc |= tc_detach_client(config->gw_interface, download_limit, upload_ifbname, upload_limit, client->idx);
@@ -794,8 +811,8 @@ unsigned long long int
 iptables_fw_total_upload()
 {
 	FILE *output;
-	char *script,
-		 target[MAX_BUF];
+	const char *script;
+	char target[MAX_BUF];
 	int rc;
 	unsigned long long int counter;
 
@@ -832,8 +849,8 @@ unsigned long long int
 iptables_fw_total_download()
 {
 	FILE *output;
-	char *script,
-		 target[MAX_BUF];
+	const char *script;
+	char target[MAX_BUF];
 	int rc;
 	unsigned long long int counter;
 
@@ -871,12 +888,17 @@ iptables_fw_counters_update(void)
 {
 	FILE *output;
 	char *script,
-		 ip[16],
+		 ip[INET6_ADDRSTRLEN],
 		 target[MAX_BUF];
 	int rc;
+	int af;
+	s_config *config;
 	unsigned long long int counter;
 	t_client *p1;
-	struct in_addr tempaddr;
+	struct sockaddr_storage tempaddr;
+
+	config = config_get_config();
+	af = config->ip6 ? AF_INET6 : AF_INET;
 
 	/* Look for outgoing traffic */
 	safe_asprintf(&script, "%s %s", "iptables", "-v -n -x -t mangle -L " CHAIN_OUTGOING);
@@ -897,7 +919,7 @@ iptables_fw_counters_update(void)
 		while (('\n' != fgetc(output)) && !feof(output)) {}
 		if (3 == rc && !strcmp(target,"MARK")) {
 			/* Sanity*/
-			if (!inet_aton(ip, &tempaddr)) {
+			if (!inet_pton(af, ip, &tempaddr)) {
 				debug(LOG_WARNING, "I was supposed to read an IP address but instead got [%s] - ignoring it", ip);
 				continue;
 			}
@@ -936,7 +958,7 @@ iptables_fw_counters_update(void)
 		while (('\n' != fgetc(output)) && !feof(output)) {}
 		if (3 == rc && !strcmp(target,"ACCEPT")) {
 			/* Sanity*/
-			if (!inet_aton(ip, &tempaddr)) {
+			if (!inet_pton(af, ip, &tempaddr)) {
 				debug(LOG_WARNING, "I was supposed to read an IP address but instead got [%s] - ignoring it", ip);
 				continue;
 			}

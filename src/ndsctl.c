@@ -48,12 +48,13 @@ s_config config;
 static void usage(void);
 static void init_config(void);
 static void parse_commandline(int, char **);
-static int connect_to_server(char *);
-static int send_request(int, char *);
-static void ndsctl_action(char *, char *, char *);
-static void ndsctl_print(char *);
+static int connect_to_server(const char[]);
+static int send_request(int, const char[]);
+static void ndsctl_action(const char[], const char[], const char[]);
+static void ndsctl_print(const char[]);
 static void ndsctl_status(void);
 static void ndsctl_clients(void);
+static void ndsctl_json(void);
 static void ndsctl_stop(void);
 static void ndsctl_block(void);
 static void ndsctl_unblock(void);
@@ -78,24 +79,25 @@ usage(void)
 	printf("Usage: ndsctl [options] command [arguments]\n");
 	printf("\n");
 	printf("options:\n");
-	printf("  -s <path>         Path to the socket\n");
-	printf("  -h                Print usage\n");
+	printf("  -s <path>           Path to the socket\n");
+	printf("  -h                  Print usage\n");
 	printf("\n");
 	printf("commands:\n");
-	printf("  status            View the status of nodogsplash\n");
-	printf("  clients           Display machine-readable client list\n");
-	printf("  stop              Stop the running nodogsplash\n");
-	printf("  auth ip           Authenticate user with specified ip\n");
-	printf("  deauth mac|ip     Deauthenticate user with specified mac or ip\n");
-	printf("  block mac         Block the given MAC address\n");
-	printf("  unblock mac       Unblock the given MAC address\n");
-	printf("  allow mac         Allow the given MAC address\n");
-	printf("  unallow mac       Unallow the given MAC address\n");
-	printf("  trust mac         Trust the given MAC address\n");
-	printf("  untrust mac       Untrust the given MAC address\n");
-	printf("  loglevel n        Set logging level to n\n");
-	printf("  password pass     Set gateway password\n");
-	printf("  username name     Set gateway username\n");
+	printf("  status              View the status of nodogsplash\n");
+	printf("  clients             Display machine-readable client list\n");
+	printf("  json             	  Display machine-readable client list in json format\n");
+	printf("  stop                Stop the running nodogsplash\n");
+	printf("  auth mac|ip|token   Authenticate user with specified mac, ip or token\n");
+	printf("  deauth mac|ip|token Deauthenticate user with specified mac, ip or token\n");
+	printf("  block mac           Block the given MAC address\n");
+	printf("  unblock mac         Unblock the given MAC address\n");
+	printf("  allow mac           Allow the given MAC address\n");
+	printf("  unallow mac         Unallow the given MAC address\n");
+	printf("  trust mac           Trust the given MAC address\n");
+	printf("  untrust mac         Untrust the given MAC address\n");
+	printf("  loglevel n          Set logging level to n\n");
+	printf("  password pass       Set gateway password\n");
+	printf("  username name       Set gateway username\n");
 	printf("\n");
 }
 
@@ -150,6 +152,8 @@ parse_commandline(int argc, char **argv)
 		config.command = NDSCTL_STATUS;
 	} else if (strcmp(*(argv + optind), "clients") == 0) {
 		config.command = NDSCTL_CLIENTS;
+	} else if (strcmp(*(argv + optind), "json") == 0) {
+		config.command = NDSCTL_JSON;
 	}
 
 	else if (strcmp(*(argv + optind), "stop") == 0) {
@@ -259,7 +263,7 @@ parse_commandline(int argc, char **argv)
 }
 
 static int
-connect_to_server(char *sock_name)
+connect_to_server(const char sock_name[])
 {
 	int sock;
 	struct sockaddr_un	sa_un;
@@ -280,7 +284,7 @@ connect_to_server(char *sock_name)
 }
 
 static int
-send_request(int sock, char *request)
+send_request(int sock, const char request[])
 {
 	ssize_t	len, written;
 
@@ -304,7 +308,7 @@ send_request(int sock, char *request)
  * config.param interpolated in format with %s directive if desired.
  */
 static void
-ndsctl_action(char * cmd, char * ifyes, char * ifno)
+ndsctl_action(const char cmd[], const char ifyes[], const char ifno[])
 {
 	int sock;
 	char buffer[4096];
@@ -347,7 +351,7 @@ ndsctl_action(char * cmd, char * ifyes, char * ifno)
  *  Action given by cmd.
  */
 static void
-ndsctl_print(char * cmd)
+ndsctl_print(const char cmd[])
 {
 	int sock;
 	char buffer[4096];
@@ -378,6 +382,12 @@ static void
 ndsctl_clients(void)
 {
 	ndsctl_print("clients");
+}
+
+static void
+ndsctl_json(void)
+{
+	ndsctl_print("json");
 }
 
 static void
@@ -494,6 +504,10 @@ main(int argc, char **argv)
 
 	case NDSCTL_CLIENTS:
 		ndsctl_clients();
+		break;
+
+	case NDSCTL_JSON:
+		ndsctl_json();
 		break;
 
 	case NDSCTL_STOP:

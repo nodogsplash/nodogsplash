@@ -36,9 +36,9 @@ typedef enum {
 } t_authaction;
 
 /** @brief Take action on a single client */
-void auth_client_action(char *ip, char *mac, t_authaction action);
+void auth_client_action(const char ip[], const char mac[], t_authaction action);
 
 /** @brief Periodically check if connections expired */
-void thread_client_timeout_check(const void *arg);
+void *thread_client_timeout_check(void *arg);
 
 #endif
