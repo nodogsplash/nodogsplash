@@ -114,7 +114,6 @@ execute(const char cmd_line[], int quiet)
 	pid = safe_fork();
 
 	if (pid == 0) {    /* for the child process:         */
-
 		if (quiet) close(2); /* Close stderr if quiet flag is on */
 		if (execvp("/bin/sh", (char *const *)new_argv) == -1) {    /* execute the command  */
 			debug(LOG_ERR, "execvp(): %s", strerror(errno));
@@ -124,7 +123,6 @@ execute(const char cmd_line[], int quiet)
 		exit(1);
 
 	} else {        /* for the parent:      */
-
 		debug(LOG_DEBUG, "Waiting for PID %d to exit", (int)pid);
 		do {
 			rc = waitpid(pid, &status, 0);
@@ -254,13 +252,9 @@ get_iface_mac(const char ifname[])
 	hwaddr = ifr.ifr_hwaddr.sa_data;
 	close(s);
 	snprintf(mac, sizeof(mac), "%02x:%02x:%02x:%02x:%02x:%02x",
-			 hwaddr[0] & 0xFF,
-			 hwaddr[1] & 0xFF,
-			 hwaddr[2] & 0xFF,
-			 hwaddr[3] & 0xFF,
-			 hwaddr[4] & 0xFF,
-			 hwaddr[5] & 0xFF
-			);
+		hwaddr[0] & 0xFF, hwaddr[1] & 0xFF, hwaddr[2] & 0xFF,
+		hwaddr[3] & 0xFF, hwaddr[4] & 0xFF, hwaddr[5] & 0xFF
+	);
 
 	return safe_strdup(mac);
 #elif defined(__NetBSD__)
@@ -404,7 +398,7 @@ ndsctl_status(int fd)
 	char *str;
 	s_config *config;
 	t_client *client;
-	int	   indx;
+	int indx;
 	unsigned long int now, uptimesecs, durationsecs = 0;
 	unsigned long long int download_bytes, upload_bytes;
 	t_MAC *trust_mac;
