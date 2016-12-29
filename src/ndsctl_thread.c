@@ -138,7 +138,7 @@ thread_ndsctl(void *arg)
 	while (1) {
 
 		memset(&sa_un, 0, sizeof(sa_un));
-		len = (socklen_t) sizeof(sa_un); /* <<< ADDED BY DPLACKO */
+		len = (socklen_t) sizeof(sa_un);
 		if ((fd = accept(sock, (struct sockaddr *)&sa_un, &len)) == -1) {
 			debug(LOG_ERR, "Accept failed on control socket: %s",
 				  strerror(errno));
