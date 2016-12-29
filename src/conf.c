@@ -71,6 +71,8 @@ typedef enum {
 	oGatewayIPRange,
 	oGatewayAddress,
 	oGatewayPort,
+	oExternalGatewayAddress,
+	oExternalGatewayPort,
 	oRemoteAuthenticatorAction,
 	oEnablePreAuth,
 	oBinVoucher,
@@ -111,7 +113,8 @@ typedef enum {
 	oAllowedMACList,
 	oFWMarkAuthenticated,
 	oFWMarkTrusted,
-	oFWMarkBlocked
+	oFWMarkBlocked,
+	oProxySSL
 } OpCodes;
 
 /** @internal
@@ -129,6 +132,8 @@ static const struct {
 	{ "gatewayiprange", oGatewayIPRange },
 	{ "gatewayaddress", oGatewayAddress },
 	{ "gatewayport", oGatewayPort },
+	{ "externalgatewayaddress", oExternalGatewayAddress },
+	{ "externalgatewayport", oExternalGatewayPort },
 	{ "remoteauthenticatoraction", oRemoteAuthenticatorAction },
 	{ "enablepreauth", oEnablePreAuth },
 	{ "binvoucher", oBinVoucher },
@@ -170,6 +175,7 @@ static const struct {
 	{ "FW_MARK_AUTHENTICATED", oFWMarkAuthenticated },
 	{ "FW_MARK_TRUSTED", oFWMarkTrusted },
 	{ "FW_MARK_BLOCKED", oFWMarkBlocked },
+	{ "proxyssl", oProxySSL },
 	{ NULL, oBadOption },
 };
 
@@ -210,6 +216,8 @@ config_init(void)
 	config.gw_iprange = safe_strdup(DEFAULT_GATEWAY_IPRANGE);
 	config.gw_address = NULL;
 	config.gw_port = DEFAULT_GATEWAYPORT;
+	config.ext_gw_address = NULL;
+	config.ext_gw_port = DEFAULT_GATEWAYPORT;
 	config.remote_auth_action = NULL;
 	config.webroot = safe_strdup(DEFAULT_WEBROOT);
 	config.splashpage = safe_strdup(DEFAULT_SPLASHPAGE);
@@ -252,6 +260,7 @@ config_init(void)
 	config.FW_MARK_TRUSTED = DEFAULT_FW_MARK_TRUSTED;
 	config.FW_MARK_BLOCKED = DEFAULT_FW_MARK_BLOCKED;
 	config.ip6 = DEFAULT_IP6;
+	config.proxyssl = DEFAULT_PROXY_SSL;
 
 	/* Set up default FirewallRuleSets, and their empty ruleset policies */
 	rs = add_ruleset("trusted-users");
@@ -765,6 +774,16 @@ config_read(const char *filename)
 				exit(-1);
 			}
 			break;
+		case oExternalGatewayAddress:
+			config.ext_gw_address = safe_strdup(p1);
+			break;
+		case oExternalGatewayPort:
+			if(sscanf(p1, "%u", &config.ext_gw_port) < 1) {
+				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
+				debug(LOG_ERR, "Exiting...");
+				exit(-1);
+			}
+			break;
 		case oRemoteAuthenticatorAction:
 			config.remote_auth_action = safe_strdup(p1);
 			break;
@@ -826,6 +845,13 @@ config_read(const char *filename)
 			free(config.ndsctl_sock);
 			config.ndsctl_sock = safe_strdup(p1);
 			break;
+		case oCheckInterval:
+			if(sscanf(p1, "%i", &config.checkinterval) < 1) {
+				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
+				debug(LOG_ERR, "Exiting...");
+				exit(-1);
+			}
+		 break;
 		case oDecongestHttpdThreads:
 			if ((value = parse_boolean_value(p1)) != -1) {
 				config.decongest_httpd_threads = value;
@@ -994,6 +1020,17 @@ config_read(const char *filename)
 				exit(-1);
 			}
 			break;
+
+		case oProxySSL:
+			if ((value = parse_boolean_value(p1)) != -1) {
+				config.proxyssl = value;
+			} else {
+				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
+				debug(LOG_ERR, "Exiting...");
+				exit(-1);
+			}
+			break;
+
 		case oBadOption:
 			debug(LOG_ERR, "Bad option %s on line %d in %s", s, linenum, filename);
 			debug(LOG_ERR, "Exiting...");

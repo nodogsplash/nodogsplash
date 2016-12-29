@@ -70,7 +70,7 @@ tc_do_command(const char format[], ...)
 
 	debug(LOG_DEBUG, "Executing command: %s", cmd);
 
-	rc = execute(cmd, tc_quiet);
+	rc = execute_simple(cmd, tc_quiet);
 
 	free(cmd);
 
@@ -191,7 +191,7 @@ tc_init_tc()
 
 	if(download_limit > 0) {
 		safe_asprintf(&cmd,"ip link set %s up", download_imqname);
-		ret = execute(cmd ,tc_quiet);
+		ret = execute_simple(cmd ,tc_quiet);
 		free(cmd);
 		if( ret != 0 ) {
 			debug(LOG_ERR, "Could not set %s up. Download limiting will not work",
@@ -205,7 +205,7 @@ tc_init_tc()
 	}
 	if(upload_limit > 0) {
 		safe_asprintf(&cmd,"ip link set %s up", upload_imqname);
-		ret = execute(cmd ,tc_quiet);
+		ret = execute_simple(cmd ,tc_quiet);
 		free(cmd);
 		if( ret != 0 ) {
 			debug(LOG_ERR, "Could not set %s up. Upload limiting will not work",
@@ -249,11 +249,11 @@ tc_destroy_tc()
 	/* bring down imq's */
 	safe_asprintf(&cmd,"ip link set %s down", download_imqname);
 	debug(LOG_DEBUG, "Executing command: %s", cmd);
-	rc |= execute(cmd,tc_quiet);
+	rc |= execute_simple(cmd,tc_quiet);
 	free(cmd);
 	safe_asprintf(&cmd,"ip link set %s down", upload_imqname);
 	debug(LOG_DEBUG, "Executing command: %s", cmd);
-	rc |= execute(cmd,tc_quiet);
+	rc |= execute_simple(cmd,tc_quiet);
 	free(cmd);
 
 	free(upload_imqname);

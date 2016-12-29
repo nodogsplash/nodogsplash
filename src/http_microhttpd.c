@@ -60,6 +60,7 @@ static int is_foreign_hosts(struct MHD_Connection *connection, const char *host)
 static int is_splashpage(const char *host, const char *url);
 static int get_query(struct MHD_Connection *connection, char **collect_query);
 static const char *get_redirect_url(struct MHD_Connection *connection);
+static const char *get_voucher(struct MHD_Connection *connection);
 
 static const char *lookup_mimetype(const char *filename);
 
@@ -111,6 +112,46 @@ static int collect_query_string(void *cls, enum MHD_ValueKind kind, const char *
 static int counter_iterator(void *cls, enum MHD_ValueKind kind, const char *key, const char *value)
 {
 	return MHD_YES;
+}
+
+static int is_alphanum(const char *str)
+{
+	size_t i;
+
+	if(!str) {
+		return 0;
+	}
+
+	for (i = 0; i < strlen(str); ++i) {
+		const char c = str[i];
+		if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')))
+			return 0;
+	}
+
+	return 1;
+}
+
+static int get_voucher_data(const char *buff, t_client *client)
+{
+	int seconds = 0;
+	int upload = 0;
+	int download = 0;
+
+	/* We require at least one value */
+	if (sscanf(buff, "%d %d %d", &seconds, &upload, &download) < 1)
+		goto err;
+
+	if (seconds < 1 || upload < 0 || download < 0)
+		goto err;
+
+	client->download_limit = download;
+	client->upload_limit = upload;
+	return seconds;
+
+err:
+	client->download_limit = 0;
+	client->upload_limit = 0;
+	return 0;
 }
 
 static int is_foreign_hosts(struct MHD_Connection *connection, const char *host)
@@ -301,11 +342,11 @@ static int check_token_is_valid(struct MHD_Connection *connection, t_client *cli
 	MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, &collect_query_key, &query_key);
 
 	/* token not found in query string */
-	if (!query_key.value)
+	if (!query_key.value || strlen(query_key.value) != strlen(client->token))
 		return 0;
 
 	/* token doesn't match */
-	if (strcmp(client->token, query_key.value))
+	if (strncmp(client->token, query_key.value, strlen(query_key.value)) != 0)
 		return 0;
 
 	return 1;
@@ -400,6 +441,12 @@ static int authenticated(struct MHD_Connection *connection,
 			return authenticate_client(connection, ip_addr, mac, redirect_url, client);
 	} else if (check_authdir_match(url, config->denydir)) {
 		auth_client_action(ip_addr, mac, AUTH_MAKE_DEAUTHENTICATED);
+		if(config->bin_voucher) {
+			char *cmd = NULL;
+
+			safe_asprintf(&cmd,"%s auth_update %s %s %d", config->bin_voucher, mac, client->voucher, time(NULL) - client->added_time);
+			execute_simple(cmd , 1);
+		}
 		snprintf(redirect_to_us, 128, "http://%s:%u/", config->gw_address, config->gw_port);
 		return send_redirect_temp(connection, redirect_to_us);
 	}
@@ -452,7 +499,35 @@ static int preauthenticated(struct MHD_Connection *connection,
 			redirect_url = get_redirect_url(connection);
 
 		if (try_to_authenticate(connection, client, host, url)) {
-			return authenticate_client(connection, ip_addr, mac, redirect_url, client);
+			if (config->bin_voucher) {
+				client->voucher = safe_strdup(get_voucher(connection));
+
+				if(is_alphanum(client->voucher)) {
+					int ret;
+					char *cmd = NULL;
+					char msg[255];
+
+					safe_asprintf(&cmd,"%s auth_verify %s %s", config->bin_voucher, mac, client->voucher);
+					ret = execute(cmd , 1, msg, strlen(msg) - 1);
+
+					if(ret > 0) {
+						return encode_and_redirect_to_splashpage(connection, redirect_url);
+					} else {
+						int seconds = get_voucher_data(msg, client);
+						if(seconds < 1) {
+							return encode_and_redirect_to_splashpage(connection, redirect_url);
+						} else {
+							debug(LOG_NOTICE, "Remote auth data: client [%s, %s] authenticated for %d seconds", mac, client->ip, seconds);
+							client->added_time = time(NULL) - (config->checkinterval * config->clientforceout) + seconds;
+							return authenticate_client(connection, ip_addr, mac, redirect_url, client);
+						}
+					}
+				} else {
+					return encode_and_redirect_to_splashpage(connection, redirect_url);
+				}
+			} else {
+				return authenticate_client(connection, ip_addr, mac, redirect_url, client);
+			}
 		} else {
 			/* user used an invalid token, redirect to splashpage but hold query "redir" intact */
 			return encode_and_redirect_to_splashpage(connection, redirect_url);
@@ -558,7 +633,7 @@ int send_redirect_temp(struct MHD_Connection *connection, const char *url)
 }
 
 
-/**
+/**get_query
  * @brief get_url_from_query
  * @param connection
  * @param redirect_url as plaintext - not url encoded
@@ -572,7 +647,19 @@ static const char *get_redirect_url(struct MHD_Connection *connection)
 	MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, &collect_query_key, &query_key);
 
 	if (!query_key.value)
-		return NULL;
+		return "";
+
+	return query_key.value;
+}
+
+static const char *get_voucher(struct MHD_Connection *connection)
+{
+	struct collect_query_key query_key = { .key = "voucher" };
+
+	MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, &collect_query_key, &query_key);
+
+	if (!query_key.value)
+		return "";
 
 	return query_key.value;
 }
@@ -758,9 +845,11 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client)
 	char *imagesdir = NULL;
 	char *pagesdir = NULL;
 
+	tmpl_init_templor(&templor);
+
 	memset(redirect_url_encoded, 0, sizeof(redirect_url_encoded));
 	redirect_url = get_redirect_url(connection);
-	if (redirect_url) {
+	if (strlen(redirect_url) > 0) {
 		uh_urlencode(redirect_url_encoded, sizeof(redirect_url_encoded), redirect_url, strlen(redirect_url));
 	}
 
@@ -773,12 +862,10 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client)
 	safe_asprintf(&pagesdir, "/%s", config->pagesdir);
 	safe_asprintf(&imagesdir, "/%s", config->imagesdir);
 
-	tmpl_init_templor(&templor);
 	tmpl_set_variable(&templor, "authaction", authaction);
 	tmpl_set_variable(&templor, "authtarget", authtarget);
 	tmpl_set_variable(&templor, "clientip", client->ip);
 	tmpl_set_variable(&templor, "clientmac", client->mac);
-	//	tmpl_set_variable(&templor, "content", VERSION);
 	tmpl_set_variable(&templor, "denyaction", denyaction);
 	tmpl_set_variable(&templor, "error_msg", "");
 
@@ -787,12 +874,12 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client)
 
 	tmpl_set_variable(&templor, "imagesdir", imagesdir);
 	tmpl_set_variable(&templor, "pagesdir", pagesdir);
+	tmpl_set_variable(&templor, "redir", redirect_url);
 
 	tmpl_set_variable(&templor, "maxclients", maxclients);
 	tmpl_set_variable(&templor, "nclients", nclients);
 
-	tmpl_set_variable(&templor, "redir", redirect_url);
-	tmpl_set_variable(&templor, "tok", client->token);
+	tmpl_set_variable(&templor, "token", client->token);
 	tmpl_set_variable(&templor, "uptime", uptime);
 	tmpl_set_variable(&templor, "version", VERSION);
 

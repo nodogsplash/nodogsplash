@@ -132,6 +132,7 @@ _client_list_append(const char ip[], const char mac[], const char token[])
 	client->ip = safe_strdup(ip);
 	client->mac = safe_strdup(mac);
 	client->token = token ? safe_strdup(token) : NULL;
+	client->voucher = NULL;
 	client->fw_connection_state = FW_MARK_PREAUTHENTICATED;
 	client->counters.incoming = client->counters.incoming_history = 0;
 	client->counters.outgoing = client->counters.outgoing_history = 0;

@@ -175,7 +175,7 @@ iptables_do_command(const char *format, ...)
 	debug(LOG_DEBUG, "Executing command: %s", cmd);
 
 	for (i = 0; i < 5; i++) {
-		rc = execute(cmd, fw_quiet);
+		rc = execute_simple(cmd, fw_quiet);
 		if (rc == 4) {
 			/* iptables error code 4 indicates a resource problem that might
 			 * be temporary. So we retry to insert the rule a few times. (Mitar) */
@@ -333,6 +333,9 @@ iptables_fw_init(void)
 	char * gw_address = NULL;
 	char * gw_iprange = NULL;
 	int gw_port = 0;
+	char * ext_gw_address = NULL;
+	int ext_gw_port = 0;
+	int proxy_ssl = 0;
 	int traffic_control;
 	int set_mss, mss_value;
 	t_MAC *pt;
@@ -347,6 +350,9 @@ iptables_fw_init(void)
 	gw_address = safe_strdup(config->gw_address);    /* must free */
 	gw_iprange = safe_strdup(config->gw_iprange);    /* must free */
 	gw_port = config->gw_port;
+	ext_gw_address = safe_strdup(config->ext_gw_address);    /* must free */
+	ext_gw_port = config->ext_gw_port;
+	proxy_ssl = config->proxyssl;
 	pt = config->trustedmaclist;
 	pb = config->blockedmaclist;
 	pa = config->allowedmaclist;
@@ -446,7 +452,18 @@ iptables_fw_init(void)
 	rc |= _iptables_append_ruleset("nat", "preauthenticated-users", CHAIN_OUTGOING);
 
 	/* CHAIN_OUTGOING, packets for tcp port 80, redirect to gw_port on primary address for the iface */
-	rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p tcp --dport 80 -j DNAT --to-destination %s:%d", gw_address, gw_port);
+	if(ext_gw_address) {
+		rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p tcp --dport 80 -j DNAT --to-destination %s:%d", ext_gw_address, ext_gw_port);
+		if(proxy_ssl) {
+			rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p tcp --dport 443 -j DNAT --to-destination %s:%d", ext_gw_address, ext_gw_port);
+		}
+	} else {
+		rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p tcp --dport 80 -j DNAT --to-destination %s:%d", gw_address, gw_port);
+		if(proxy_ssl) {
+			rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p tcp --dport 443 -j DNAT --to-destination %s:%d", gw_address, gw_port);
+		}
+	}
+
 	/* CHAIN_OUTGOING, other packets  ACCEPT */
 	rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -j ACCEPT");
 
@@ -607,6 +624,7 @@ iptables_fw_init(void)
 	free(gw_interface);
 	free(gw_iprange);
 	free(gw_address);
+	free(ext_gw_address);
 
 	return rc;
 }

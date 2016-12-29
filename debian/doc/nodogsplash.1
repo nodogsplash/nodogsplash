@@ -152,7 +152,7 @@ When the splash page is served, the following variables in the page are replaced
 \fI$imagesdir\fR The directory in nodogsplash\'s web hierarchy where images to be displayed in the splash page must be located\.
 .
 .IP "\(bu" 4
-\fI$tok\fR,\fI$redir\fR,\fI$authaction\fR, and \fI$denyaction\fR are also available and can be useful if you want to write the splash page to use a GET\-method HTML form instead of using $authtarget as the value of an href attribute to communicate with the nodogsplash server\. As a simple example:
+\fI$token\fR,\fI$redir\fR,\fI$authaction\fR, and \fI$denyaction\fR are also available and can be useful if you want to write the splash page to use a GET\-method HTML form instead of using $authtarget as the value of an href attribute to communicate with the nodogsplash server\. As a simple example:
 .
 .IP "" 0
 .
@@ -161,7 +161,7 @@ When the splash page is served, the following variables in the page are replaced
 .nf
 
 <form method=\'GET\' action=\'$authaction\'>
-  <input type=\'hidden\' name=\'tok\' value=\'$tok\'>
+  <input type=\'hidden\' name=\'token\' value=\'$token\'>
   <input type=\'hidden\' name=\'redir\' value=\'$redir\'>
   <input type=\'submit\' value=\'Click Here to Enter\'>
 </form>
@@ -200,7 +200,7 @@ Nodogsplash can be configured to require a username and/or password to be entere
 .nf
 
   <form method=\'GET\' action=\'$authaction\'>
-  <input type=\'hidden\' name=\'tok\' value=\'$tok\'>
+  <input type=\'hidden\' name=\'token\' value=\'$token\'>
   <input type=\'hidden\' name=\'redir\' value=\'$redir\'>
   username: <input type=\'text\' name=\'nodoguser\' value=\'\' size=\'12\' maxlength=\'12\'>
   <br>

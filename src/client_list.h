@@ -44,6 +44,7 @@ typedef struct	_t_client {
 	char	*ip;			/**< @brief Client Ip address */
 	char	*mac;			/**< @brief Client Mac address */
 	char	*token;			/**< @brief Client token */
+	char	*voucher;		/**< @brief Voucher for binvoucher feature */
 	unsigned int fw_connection_state; /**< @brief Connection state in the firewall */
 	time_t added_time;		/**< @brief Time client added to list */
 	t_counters	counters;	/**< @brief Counters for input/output of

@@ -94,6 +94,7 @@
 #define DEFAULT_EMPTY_AUTHENTICATED_USERS_POLICY "RETURN"
 #define DEFAULT_EMPTY_PREAUTHENTICATED_USERS_POLICY "REJECT"
 #define DEFAULT_IP6 0
+#define DEFAULT_PROXY_SSL 0
 /*@}*/
 
 /**
@@ -154,6 +155,8 @@ typedef struct {
 	char *gw_address;		/**< @brief Internal IP address for our web server */
 	char *gw_mac;			/**< @brief MAC address of the interface we manage */
 	unsigned int gw_port;		/**< @brief Port the webserver will run on */
+	char *ext_gw_address;		/**< @brief Internal IP address for external web server */
+	unsigned int ext_gw_port;		/**< @brief Port of the external webserver will runs */
 	char *remote_auth_action;	/**< @brief Path for remote auth */
 	char enable_preauth;  		/**< @brief enable pre-authentication support */
 	char *bin_voucher;		/**< @brief enable voucher support */
@@ -199,6 +202,7 @@ typedef struct {
 	unsigned int FW_MARK_BLOCKED;          /**< @brief iptables mark for blocked packets */
 	unsigned int FW_MARK_TRUSTED;          /**< @brief iptables mark for trusted packets */
 	int ip6;			/**< @brief enable IPv6 */
+	int proxyssl;				/**< @brief enable proxying of ssl */
 } s_config;
 
 /** @brief Get the current gateway configuration */

@@ -27,7 +27,7 @@ const char *variable_names[18] = {
 	"pagesdir",
 	"redir",
 	"title",
-	"tok",
+	"token",
 	"uptime",
 	"version"
 };
