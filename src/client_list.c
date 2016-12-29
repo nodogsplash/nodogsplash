@@ -18,9 +18,6 @@
  *                                                                  *
  \********************************************************************/
 
-/*
- * $Id: client_list.c 901 2006-01-17 18:58:13Z mina $
- */
 /** @file client_list.c
   @brief Client List Functions
   @author Copyright (C) 2004 Alexandre Carmel-Veillex <acv@acv.ca>

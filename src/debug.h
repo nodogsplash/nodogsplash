@@ -18,7 +18,6 @@
  *                                                                  *
 \********************************************************************/
 
-/* $Id: debug.h 901 2006-01-17 18:58:13Z mina $ */
 /** @file debug.h
     @brief Debug output routines
     @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>

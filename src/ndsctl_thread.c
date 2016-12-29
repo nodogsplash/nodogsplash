@@ -18,7 +18,6 @@
  *                                                                  *
 \********************************************************************/
 
-/* $Id: ndsctl_thread.c 969 2006-02-23 17:09:32Z papril $ */
 /** @file ndsctl_thread.c
     @brief Monitoring and control of nodogsplash, server part
     @author Copyright (C) 2004 Alexandre Carmel-Veilleux <acv@acv.ca>

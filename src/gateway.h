@@ -18,7 +18,6 @@
  *                                                                  *
 \********************************************************************/
 
-/* $Id: gateway.h 901 2006-01-17 18:58:13Z mina $ */
 /** @file gateway.h
     @brief Main loop
     @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>

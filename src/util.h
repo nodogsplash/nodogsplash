@@ -18,7 +18,6 @@
  *                                                                  *
 \********************************************************************/
 
-/* $Id: util.h 969 2006-02-23 17:09:32Z papril $ */
 /** @file util.h
     @brief Misc utility functions
     @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>

@@ -18,7 +18,6 @@
  *                                                                  *
 \********************************************************************/
 
-/* $Id: ndsctl.h 901 2006-01-17 18:58:13Z mina $ */
 /** @file ndsctl.h
     @brief nodogsplash monitoring client
     @author Copyright (C) 2004 Alexandre Carmel-Veilleux <acv@acv.ca>
