@@ -18,7 +18,6 @@
  *                                                                  *
 \********************************************************************/
 
-/* $Id: conf.h 1162 2007-01-06 23:51:02Z benoitg $ */
 /** @file conf.h
     @brief Config file parsing
     @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>

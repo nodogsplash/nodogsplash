@@ -18,7 +18,6 @@
  *                                                                  *
 \********************************************************************/
 
-/* $Id: safe.h 901 2006-01-17 18:58:13Z mina $ */
 /** @file safe.h
 	  @brief Safe versions of stdlib/string functions that error out and exit if memory allocation fails
 	  @author Copyright (C) 2005 Mina Naguib <mina@ilesansfil.org>

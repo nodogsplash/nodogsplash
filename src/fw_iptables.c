@@ -18,7 +18,6 @@
  *                                                                  *
  \********************************************************************/
 
-/* $Id: fw_iptables.c 1162 2007-01-06 23:51:02Z benoitg $ */
 /** @internal
   @file fw_iptables.c
   @brief Firewall iptables functions

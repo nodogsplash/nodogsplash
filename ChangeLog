@@ -12,6 +12,7 @@ nodogsplash (2.0.0)
   * prevent possible divison by zero and negative durations [mwarning]
   * add debian support including systemd [efernandesng]
   * fix file descriptor leak [sfstudio]
+  * fix uncomplete console output [mwarning]
 
  -- Alexander Couzens <lynxis@fe80.eu> Thu, 10 Nov 2016 12:23:42 +0100
 

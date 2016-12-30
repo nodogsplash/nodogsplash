@@ -18,9 +18,6 @@
  *                                                                  *
  \********************************************************************/
 
-/*
- * $Id: safe.c 901 2006-01-17 18:58:13Z mina $
- */
 /**
   @file safe.c
   @brief Safe versions of stdlib/string functions that error out and exit if memory allocation fails

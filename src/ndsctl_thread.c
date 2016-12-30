@@ -18,7 +18,6 @@
  *                                                                  *
 \********************************************************************/
 
-/* $Id: ndsctl_thread.c 969 2006-02-23 17:09:32Z papril $ */
 /** @file ndsctl_thread.c
     @brief Monitoring and control of nodogsplash, server part
     @author Copyright (C) 2004 Alexandre Carmel-Veilleux <acv@acv.ca>
@@ -54,13 +53,10 @@
 #include "ndsctl_thread.h"
 
 /* Defined in clientlist.c */
-extern	pthread_mutex_t	client_list_mutex;
-extern	pthread_mutex_t	config_mutex;
+extern pthread_mutex_t client_list_mutex;
+extern pthread_mutex_t config_mutex;
 
 static void *thread_ndsctl_handler(void *);
-static void ndsctl_status(int);
-static void ndsctl_clients(int);
-static void ndsctl_json(int);
 static void ndsctl_stop(pthread_t);
 static void ndsctl_block(int, char *);
 static void ndsctl_unblock(int, char *);
@@ -86,9 +82,9 @@ struct ndsctl_args {
 void*
 thread_ndsctl(void *arg)
 {
-	int	sock,    fd;
-	char	*sock_name;
-	struct 	sockaddr_un	sa_un;
+	int sock, fd;
+	char *sock_name;
+	struct sockaddr_un	sa_un;
 	int result;
 	pthread_t	tid;
 	socklen_t len;
@@ -123,26 +119,21 @@ thread_ndsctl(void *arg)
 		  strlen(sock_name));
 
 	/* Which to use, AF_UNIX, PF_UNIX, AF_LOCAL, PF_LOCAL? */
-	if (bind(sock, (struct sockaddr *)&sa_un, strlen(sock_name)
-			 + sizeof(sa_un.sun_family))) {
-		debug(LOG_ERR, "Could not bind control socket: %s",
-			  strerror(errno));
+	if (bind(sock, (struct sockaddr *)&sa_un, strlen(sock_name) + sizeof(sa_un.sun_family))) {
+		debug(LOG_ERR, "Could not bind control socket: %s", strerror(errno));
 		pthread_exit(NULL);
 	}
 
 	if (listen(sock, 5)) {
-		debug(LOG_ERR, "Could not listen on control socket: %s",
-			  strerror(errno));
+		debug(LOG_ERR, "Could not listen on control socket: %s", strerror(errno));
 		pthread_exit(NULL);
 	}
 
 	while (1) {
-
 		memset(&sa_un, 0, sizeof(sa_un));
-		len = (socklen_t) sizeof(sa_un); /* <<< ADDED BY DPLACKO */
+		len = (socklen_t) sizeof(sa_un);
 		if ((fd = accept(sock, (struct sockaddr *)&sa_un, &len)) == -1) {
-			debug(LOG_ERR, "Accept failed on control socket: %s",
-				  strerror(errno));
+			debug(LOG_ERR, "Accept failed on control socket: %s", strerror(errno));
 			pthread_exit(NULL);
 		} else {
 			debug(LOG_DEBUG, "Accepted connection on ndsctl socket %d (%s)", fd, sa_un.sun_path);
@@ -161,7 +152,6 @@ thread_ndsctl(void *arg)
 	return NULL;
 }
 
-
 static void *
 thread_ndsctl_handler(void *arg)
 {
@@ -174,7 +164,6 @@ thread_ndsctl_handler(void *arg)
 	free(args);
 
 	debug(LOG_DEBUG, "Entering thread_ndsctl_handler....");
-
 	debug(LOG_DEBUG, "Read bytes and stuff from %d", fd);
 
 	/* Init variables */
@@ -246,48 +235,6 @@ thread_ndsctl_handler(void *arg)
 	debug(LOG_DEBUG, "Exiting thread_ndsctl_handler....");
 
 	return NULL;
-}
-
-static void
-ndsctl_status(int fd)
-{
-	char *status = NULL;
-	int len = 0;
-
-	status = get_status_text();
-	len = strlen(status);
-
-	write(fd, status, len);
-
-	free(status);
-}
-
-static void
-ndsctl_clients(int fd)
-{
-	char * status = NULL;
-	int len = 0;
-
-	status = get_clients_text();
-	len = strlen(status);
-
-	write(fd, status, len);
-
-	free(status);
-}
-
-static void
-ndsctl_json(int fd)
-{
-	char * status = NULL;
-	int len = 0;
-
-	status = get_clients_json();
-	len = strlen(status);
-
-	write(fd, status, len);
-
-	free(status);
 }
 
 /** A bit of an hack, self kills.... */

@@ -18,7 +18,6 @@
  *                                                                  *
 \********************************************************************/
 
-/* $Id: fw_iptables.h 901 2006-01-17 18:58:13Z mina $ */
 /** @file fw_iptables.h
     @brief Firewall iptables functions
     @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>

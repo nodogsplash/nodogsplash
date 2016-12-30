@@ -18,7 +18,6 @@
  *                                                                  *
 \********************************************************************/
 
-/* $Id: firewall.h 935 2006-02-01 03:22:04Z benoitg $ */
 /** @file firewall.h
     @brief Firewall update functions
     @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>

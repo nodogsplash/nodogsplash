@@ -18,7 +18,6 @@
  *                                                                  *
 \********************************************************************/
 
-/* $Id: commandline.h 901 2006-01-17 18:58:13Z mina $ */
 /** @file commandline.h
     @brief Command line argument handling
     @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>

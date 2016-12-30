@@ -18,9 +18,6 @@
  *                                                                  *
  \********************************************************************/
 
-/*
- * $Id: firewall.c 1162 2007-01-06 23:51:02Z benoitg $
- */
 /** @internal
   @file firewall.c
   @brief Firewall update functions
