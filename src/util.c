@@ -384,7 +384,6 @@ cprintf( int fd, const char *format, ... ) {
 	va_end( vlist );
 
 	if (rc > 0 && rc < sizeof(buffer)) {
-		printf("#%s", buffer);
 		write(fd, buffer, strlen(buffer));
 	} else {
 		debug(LOG_ERR, "failed to write format string: %s", format);
