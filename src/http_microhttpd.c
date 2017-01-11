@@ -151,8 +151,11 @@ static int is_splashpage(const char *host, const char *url)
 	} else {
 		/* hostname give - check if it's our hostname */
 
-		if (strcmp(host, our_host)) {
-			/* hostname isn't ours */
+		/* check host with port */
+		if (strcmp(host, our_host) && (80 != config->gw_port)) {
+			return 0;
+		}
+        	else if (strcmp(host, config->gw_address) && (80 == config->gw_port)) {
 			return 0;
 		}
 
