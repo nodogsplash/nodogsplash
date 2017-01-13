@@ -322,24 +322,27 @@ ndsctl_action(const char cmd[], const char ifyes[], const char ifno[])
 
 	len = send_request(sock, request);
 
-	len = 0;
-	memset(buffer, 0, sizeof(buffer));
-	while ((len < sizeof(buffer)) && ((rlen = read(sock, (buffer + len),
-									   (sizeof(buffer) - len))) > 0)) {
-		len += rlen;
-	}
-
-	if(rlen<0) {
-		fprintf(stderr, "ndsctl: Error reading socket: %s\n", strerror(errno));
-	}
-
-	if (strcmp(buffer, "Yes") == 0) {
-		printf(ifyes, config.param);
-	} else if (strcmp(buffer, "No") == 0) {
-		printf(ifno, config.param);
+	if (len < 0) {
+		fprintf(stderr, "ndsctl: Nothing was send to socket\n");
 	} else {
-		fprintf(stderr, "ndsctl: Error: nodogsplash sent an abnormal "
-				"reply.\n");
+		memset(buffer, 0, sizeof(buffer));
+		while ((len < sizeof(buffer)) && ((rlen = read(sock, (buffer + len),
+				(sizeof(buffer) - len))) > 0)) {
+			len += rlen;
+		}
+
+		if(rlen<0) {
+			fprintf(stderr, "ndsctl: Error reading socket: %s\n", strerror(errno));
+		}
+
+		if (strcmp(buffer, "Yes") == 0) {
+			printf(ifyes, config.param);
+		} else if (strcmp(buffer, "No") == 0) {
+			printf(ifno, config.param);
+		} else {
+			fprintf(stderr, "ndsctl: Error: nodogsplash sent an abnormal "
+					"reply.\n");
+		}
 	}
 
 	shutdown(sock, 2);
