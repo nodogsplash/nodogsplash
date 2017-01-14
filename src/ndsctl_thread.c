@@ -220,8 +220,8 @@ thread_ndsctl_handler(void *arg)
 		ndsctl_password(fd, (request + 9));
 	} else if (strncmp(request, "username", 8) == 0) {
 		ndsctl_username(fd, (request + 9));
-	} else if (strncmp(request, "advertisement_url", 17) == 0) {
-		ndsctl_advertisement_url(fd, (request + 18));
+	} else if (strncmp(request, "ad", 2) == 0) {
+		ndsctl_advertisement_url(fd, (request + 3));
 	}
 
 	if (!done) {

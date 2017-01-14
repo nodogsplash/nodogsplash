@@ -504,7 +504,7 @@ ndsctl_untrust(void)
 void
 ndsctl_advertisement_url(void)
 {
-	ndsctl_action("advertisement_url",
+	ndsctl_action("ad",
 				  "Success to set advertisement url to %s.\n",
 				  "Failed to set advertisement url to %s.\n");
 }
