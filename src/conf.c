@@ -111,7 +111,8 @@ typedef enum {
 	oAllowedMACList,
 	oFWMarkAuthenticated,
 	oFWMarkTrusted,
-	oFWMarkBlocked
+	oFWMarkBlocked,
+	oAdvertisementURL,
 } OpCodes;
 
 /** @internal
@@ -252,6 +253,7 @@ config_init(void)
 	config.FW_MARK_TRUSTED = DEFAULT_FW_MARK_TRUSTED;
 	config.FW_MARK_BLOCKED = DEFAULT_FW_MARK_BLOCKED;
 	config.ip6 = DEFAULT_IP6;
+	config.advertisement_url = NULL;
 
 	/* Set up default FirewallRuleSets, and their empty ruleset policies */
 	rs = add_ruleset("trusted-users");
@@ -1418,6 +1420,19 @@ int set_username(const char s[])
 	char *old = config.username;
 	if(s) {
 		config.username = safe_strdup(s);
+		if(old) free(old);
+		return 0;
+	}
+	return 1;
+}
+
+/** Set the advertisement url.
+ *  Return 0 on success.
+ */
+int set_advertisement_url(const char url[]) {
+	char *old = config.advertisement_url;
+	if(url) {
+		config.advertisement_url = safe_strdup(url);
 		if(old) free(old);
 		return 0;
 	}

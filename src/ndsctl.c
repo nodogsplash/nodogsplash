@@ -97,6 +97,7 @@ usage(void)
 	printf("  loglevel n          Set logging level to n\n");
 	printf("  password pass       Set gateway password\n");
 	printf("  username name       Set gateway username\n");
+	printf("  ad url              Set advertisement url\n");
 	printf("\n");
 }
 
@@ -250,6 +251,14 @@ parse_commandline(int argc, char **argv)
 		config.command = NDSCTL_USERNAME;
 		if ((argc - (optind + 1)) <= 0) {
 			fprintf(stderr, "ndsctl: Error: You must specify a username\n");
+			usage();
+			exit(1);
+		}
+		config.param = strdup(*(argv + optind + 1));
+	} else if (strcmp(*(argv + optind), "ad") == 0) {
+		config.command = NDSCTL_ADVERTISEMENT_URL;
+		if ((argc - (optind + 1)) <= 0) {
+			fprintf(stderr, "ndsctl: Error: You must specify a advertisement url\n");
 			usage();
 			exit(1);
 		}
@@ -492,6 +501,14 @@ ndsctl_untrust(void)
 				  "Failed to untrust MAC %s.\n");
 }
 
+void
+ndsctl_advertisement_url(void)
+{
+	ndsctl_action("advertisement_url",
+				  "Success to set advertisement url to %s.\n",
+				  "Failed to set advertisement url to %s.\n");
+}
+
 int
 main(int argc, char **argv)
 {
@@ -558,6 +575,10 @@ main(int argc, char **argv)
 
 	case NDSCTL_USERNAME:
 		ndsctl_username();
+		break;
+
+	case NDSCTL_ADVERTISEMENT_URL:
+		ndsctl_advertisement_url();
 		break;
 
 	default:

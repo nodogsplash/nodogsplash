@@ -49,7 +49,7 @@
 #define NDSCTL_USERNAME		15
 #define NDSCTL_CLIENTS 		16
 #define NDSCTL_JSON 		17
-
+#define NDSCTL_ADVERTISEMENT_URL	18
 
 typedef struct {
 	char	*socket;
