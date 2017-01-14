@@ -11,7 +11,7 @@
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #endif
 
-const char *variable_names[18] = {
+const char *variable_names[19] = {
 	"authaction",
 	"authtarget",
 	"clientip",
@@ -29,7 +29,8 @@ const char *variable_names[18] = {
 	"title",
 	"tok",
 	"uptime",
-	"version"
+	"version",
+	"advertisement_url",
 };
 
 static int get_variable_index(const char *name)
