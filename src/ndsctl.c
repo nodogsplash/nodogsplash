@@ -334,6 +334,7 @@ ndsctl_action(const char cmd[], const char ifyes[], const char ifno[])
 	if (len < 0) {
 		fprintf(stderr, "ndsctl: Nothing was send to socket\n");
 	} else {
+		len = 0;
 		memset(buffer, 0, sizeof(buffer));
 		while ((len < sizeof(buffer)) && ((rlen = read(sock, (buffer + len),
 				(sizeof(buffer) - len))) > 0)) {
