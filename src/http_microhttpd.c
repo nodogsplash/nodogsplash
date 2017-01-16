@@ -180,7 +180,7 @@ static int is_advertisement_host(const char *host)
 	int rc = 0;
 	s_config *config = config_get_config();
 
-	if (host == NULL) {
+	if (host == NULL || config->advertisement_url == NULL) {
 			return 0;
 	}
 
