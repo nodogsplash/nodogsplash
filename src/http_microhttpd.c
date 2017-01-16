@@ -186,11 +186,16 @@ static int is_advertisement_host(const char *host)
 
 	char advertisement_host[strlen(host)];
 
+	printf("Entered!\n");
+
 	if (!url_to_host(config->advertisement_url, advertisement_host)) {
 		// Success
+		printf("url : %s\nhost : %s\nadvertisement_url : %s\n");
 		if (strcmp(advertisement_host, host) == 0) {
 			rc = 1;
 		}
+	} else {
+		printf("Falling\n");
 	}
 
 	return rc;
@@ -474,9 +479,13 @@ static int preauthenticated(struct MHD_Connection *connection,
 
 	/* check if this is a redirect querty with a foreign host as target */
 	if(is_foreign_hosts(connection, host)) {
+		printf("Is foreign host\n");
 
 		if (is_advertisement_host(host)) {
+			printf("is advertisement host\n");
 			return serve_file(connection, client, url);
+		} else {
+			printf("no advertisement host\n");
 		}
 
 		return redirect_to_splashpage(connection, client, host, url);
