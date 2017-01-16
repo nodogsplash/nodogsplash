@@ -181,16 +181,16 @@ static int is_advertisement_host(const char *host)
 	s_config *config = config_get_config();
 
 	if (host == NULL) {
-			return 1;
+			return 0;
 	}
 
-	char advertisement_host[strlen(host)];
+	char advertisement_host[strlen(config->advertisement_url)];
 
 	printf("Entered!\n");
 
 	if (!url_to_host(config->advertisement_url, advertisement_host)) {
 		// Success
-		printf("url : %s\nhost : %s\nadvertisement_url : %s\n");
+		printf("host : %s\advertisement host : %s\nadvertisement_url : %s\n", host, advertisement_host, config->advertisement_url);
 		if (strcmp(advertisement_host, host) == 0) {
 			rc = 1;
 		}
