@@ -183,7 +183,7 @@ static int is_advertisement_host(const char *host)
 			return 1;
 	}
 
-	char advertisement_host[strlen(url)] = { 0, };
+	char advertisement_host[strlen(host)] = { 0, };
 
 	if (!url_to_host(config->advertisement_url, advertisement_host)) {
 		// Success
