@@ -1,6 +1,6 @@
 
 CC?=gcc
-CFLAGS?=-O0 -g -Wall
+CFLAGS?=-O0 -g -Wall -std=c11
 CFLAGS+=-Isrc
 #CFLAGS+=-Wall -Wwrite-strings -pedantic -std=gnu99
 LDFLAGS+=-pthread
@@ -33,7 +33,7 @@ install:
 #ifeq(yes,$(STRIP))
 	strip nodogsplash
 	strip ndsctl
-#endif	
+#endif
 	mkdir -p $(DESTDIR)/usr/bin/
 	cp ndsctl $(DESTDIR)/usr/bin/
 	cp nodogsplash $(DESTDIR)/usr/bin/
