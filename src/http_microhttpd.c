@@ -178,6 +178,7 @@ static int is_splashpage(const char *host, const char *url)
 static int is_advertisement_host(const char *host)
 {
 	int rc = 0;
+	s_config *config = config_get_config();
 
 	if (host == NULL) {
 			return 1;
