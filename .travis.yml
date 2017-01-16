@@ -1,6 +1,14 @@
 language: c
 sudo: false
 
+before_install:
+  - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+  - sudo apt-get update -qq
+
+install:
+  - sudo apt-get install -qq gcc-4.8
+  - export CC="gcc-4.8"
+
 before_script:
   - bash ./build_libmicrohttpd.sh --compile
 
