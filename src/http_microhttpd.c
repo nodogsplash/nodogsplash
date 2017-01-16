@@ -60,6 +60,8 @@ static int is_foreign_hosts(struct MHD_Connection *connection, const char *host)
 static int is_splashpage(const char *host, const char *url);
 static int get_query(struct MHD_Connection *connection, char **collect_query);
 static const char *get_redirect_url(struct MHD_Connection *connection);
+static int is_advertisement_host(const char *host);
+static int url_to_host(const char *host, char *buf);
 
 static const char *lookup_mimetype(const char *filename);
 
@@ -172,6 +174,42 @@ static int is_splashpage(const char *host, const char *url)
 	/* doesnt hit one of our rules - this isn't the splashpage */
 	return 0;
 }
+
+static int is_advertisement_host(const char *host)
+{
+	int rc = 0;
+
+	if (host == NULL) {
+			return 1;
+	}
+
+	char advertisement_host[strlen(url)] = { 0, };
+
+	if (!url_to_host(config->advertisement_url, advertisement_host)) {
+		// Success
+		if (strcmp(advertisement_host, host) == 0) {
+			rc = 1;
+		}
+	}
+
+	return rc;
+}
+
+static int url_to_host(const char *host, char *buf)
+{
+	if (host == NULL) {
+		return 1;
+	}
+
+	sscanf(host, "http://%99[^/]", buf);
+
+	if (buf[0] == '\0') {
+		return 1;
+	}
+
+	return 0;
+}
+
 
 /**
  * @brief get_ip
@@ -435,6 +473,11 @@ static int preauthenticated(struct MHD_Connection *connection,
 
 	/* check if this is a redirect querty with a foreign host as target */
 	if(is_foreign_hosts(connection, host)) {
+
+		if (is_advertisement_host(host)) {
+			return serve_file(connection, client, url);
+		}
+
 		return redirect_to_splashpage(connection, client, host, url);
 	}
 
