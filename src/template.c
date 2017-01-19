@@ -135,7 +135,7 @@ int tmpl_set_variable(struct templater *templor, const char *name, const char *v
 	if(templor->variables[idx])
 		free((void *)templor->variables[idx]);
 
-	templor->variables[idx] = safe_strdup(value);
+	templor->variables[idx] = value;
 
 	return 0;
 }
