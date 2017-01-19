@@ -511,13 +511,19 @@ static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, 
 static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *client, const char *host, const char *url)
 {
 	char *originurl = NULL;
-	char *query = "";
+	char *query = NULL;
+	int ret = 0;
 
 	get_query(connection, &query);
+	if (!query) {
+		/* no mem */
+		return send_error(connection, 503);
+	}
 
 	safe_asprintf(&originurl, "http://%s%s%s%s", host, url, strlen(query) ? "?" : "" , query);
-
-	return encode_and_redirect_to_splashpage(connection, originurl);
+	ret = encode_and_redirect_to_splashpage(connection, originurl);
+	free(query);
+	return ret;
 }
 
 
@@ -581,6 +587,8 @@ static const char *get_redirect_url(struct MHD_Connection *connection)
 	return query_key.value;
 }
 
+/* save the query or empty string into **query.
+ * the call must free query later */
 static int get_query(struct MHD_Connection *connection, char **query)
 {
 	int element_counter;
