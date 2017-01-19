@@ -883,7 +883,7 @@ static int serve_file(struct MHD_Connection *connection, t_client *client, const
 	char filename[PATH_MAX];
 	int ret = MHD_NO;
 	const char *mimetype = NULL;
-	size_t size;
+	off_t size;
 
 	snprintf(filename, PATH_MAX, "%s/%s", config->webroot, url);
 
@@ -910,6 +910,9 @@ static int serve_file(struct MHD_Connection *connection, t_client *client, const
 
 	/* serving file and creating response */
 	size = lseek(fd, 0, SEEK_END);
+	if (size < 0)
+		return send_error(connection, 404);
+
 	response = MHD_create_response_from_fd(size, fd);
 	if (!response)
 		return send_error(connection, 503);
