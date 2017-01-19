@@ -287,7 +287,7 @@ main_loop(void)
 	pthread_detach(tid_client_check);
 
 	/* Start control thread */
-	result = pthread_create(&tid, NULL, thread_ndsctl, (void *)safe_strdup(config->ndsctl_sock));
+	result = pthread_create(&tid, NULL, thread_ndsctl, (void *)(config->ndsctl_sock));
 	if (result != 0) {
 		debug(LOG_ERR, "FATAL: Failed to create thread_ndsctl - exiting");
 		termination_handler(1);

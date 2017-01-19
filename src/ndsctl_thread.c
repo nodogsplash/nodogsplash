@@ -83,7 +83,7 @@ void*
 thread_ndsctl(void *arg)
 {
 	int sock, fd;
-	char *sock_name;
+	const char *sock_name;
 	struct sockaddr_un	sa_un;
 	int result;
 	pthread_t	tid;
