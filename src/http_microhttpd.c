@@ -781,7 +781,6 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client)
 	safe_asprintf(&denyaction, "http://%s:%d/%s/", config->gw_address, config->gw_port, config->denydir);
 	safe_asprintf(&authaction, "http://%s:%d/%s/", config->gw_address, config->gw_port, config->authdir);
 	safe_asprintf(&authtarget, "http://%s:%d/%s/?token=%s&redir=%s", config->gw_address, config->gw_port, config->authdir, client->token, redirect_url_encoded);
-	safe_asprintf(&authaction, "http://%s:%d/%s/", config->gw_address, config->gw_port, config->authdir);
 	safe_asprintf(&pagesdir, "/%s", config->pagesdir);
 	safe_asprintf(&imagesdir, "/%s", config->imagesdir);
 
@@ -790,7 +789,6 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client)
 	tmpl_set_variable(&templor, "authtarget", authtarget);
 	tmpl_set_variable(&templor, "clientip", client->ip);
 	tmpl_set_variable(&templor, "clientmac", client->mac);
-	//	tmpl_set_variable(&templor, "content", VERSION);
 	tmpl_set_variable(&templor, "denyaction", denyaction);
 	tmpl_set_variable(&templor, "error_msg", "");
 
@@ -809,12 +807,14 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client)
 	tmpl_set_variable(&templor, "version", VERSION);
 
 	tmpl_parse(&templor, splashpage_result, size + TMPLVAR_SIZE, splashpage_tmpl, size);
-	free(authaction);
-	free(denyaction);
-	free(maxclients);
-	free(nclients);
-	free(uptime);
 	free(splashpage_tmpl);
+	free(uptime);
+	free(nclients);
+	free(maxclients);
+	free(denyaction);
+	free(authaction);
+	free(authtarget);
+	free(pagesdir);
 	free(imagesdir);
 
 	response = MHD_create_response_from_buffer(strlen(splashpage_result), (void *)splashpage_result, MHD_RESPMEM_MUST_FREE);
