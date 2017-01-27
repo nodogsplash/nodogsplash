@@ -898,7 +898,7 @@ static int serve_file(struct MHD_Connection *connection, t_client *client, const
 
 	/* check if file exists and is not a directory */
 	ret = stat(filename, &stat_buf);
-	if (!ret) {
+	if (ret) {
 		/* stat failed */
 		return send_error(connection, 404);
 	}
