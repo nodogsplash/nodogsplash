@@ -522,6 +522,7 @@ static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *c
 
 	safe_asprintf(&originurl, "http://%s%s%s%s", host, url, strlen(query) ? "?" : "" , query);
 	ret = encode_and_redirect_to_splashpage(connection, originurl);
+	free(originurl);
 	free(query);
 	return ret;
 }
