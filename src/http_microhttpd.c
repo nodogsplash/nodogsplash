@@ -899,6 +899,14 @@ static int serve_file(struct MHD_Connection *connection, t_client *client, const
 		/* ignore links */
 		if (!S_ISLNK(stat_buf.st_mode))
 #endif /* S_ISLNK */
+
+		if (url == NULL)
+			debug(LOG_ERR, "Corner case bug #164 triggered by NULL. Please report it. Sending 404");
+		else if (strlen(url) <= 0)
+			debug(LOG_ERR, "Corner case bug #164 triggered by strlen. Please report it. Sending 404");
+		else if (url[0] == '/' && strlen(url) == 1)
+			debug(LOG_ERR, "Corner case bug #164 triggered by /. Please report it. Sending 404");
+
 		return send_error(connection, 404);
 	}
 
