@@ -425,7 +425,7 @@ static int preauthenticated(struct MHD_Connection *connection,
 							const char *url,
 							t_client *client)
 {
-	char *host = NULL;
+	const char *host = NULL;
 	const char *redirect_url;
 	s_config *config = config_get_config();
 
@@ -701,14 +701,14 @@ static int send_error(struct MHD_Connection *connection, int error)
  */
 static int get_host_value_callback(void *cls, enum MHD_ValueKind kind, const char *key, const char *value)
 {
-	char **host = (char **)cls;
+	const char **host = (const char **)cls;
 	if (MHD_HEADER_KIND != kind) {
 		*host = NULL;
 		return MHD_NO;
 	}
 
 	if (!strcmp("Host", key)) {
-		*host = safe_strdup(value);
+		*host = value;
 		return MHD_NO;
 	}
 
