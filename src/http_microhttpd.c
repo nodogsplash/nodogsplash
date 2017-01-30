@@ -488,14 +488,20 @@ static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, 
 	int ret;
 	s_config *config = config_get_config();
 
-
 	memset(encoded, 0, sizeof(encoded));
-	if (uh_urlencode(encoded, 2048, originurl, strlen(originurl)) == -1) {
-		debug(LOG_WARNING, "could not encode url");
+	if (originurl) {
+		if (uh_urlencode(encoded, 2048, originurl, strlen(originurl)) == -1) {
+			debug(LOG_WARNING, "could not encode url");
+		} else {
+			debug(LOG_DEBUG, "originurl: %s", originurl);
+		}
 	}
 
-	safe_asprintf(&splashpageurl, "http://%s:%u%s?redir=%s", config->gw_address , config->gw_port, "/splash.html", encoded);
-	debug(LOG_DEBUG, "originurl: %s", originurl);
+	if (encoded[0])
+		safe_asprintf(&splashpageurl, "http://%s:%u%s?redir=%s", config->gw_address , config->gw_port, "/splash.html", encoded);
+	else
+		safe_asprintf(&splashpageurl, "http://%s:%u%s", config->gw_address , config->gw_port, "/splash.html");
+
 	debug(LOG_DEBUG, "splashpageurl: %s", splashpageurl);
 
 	ret = send_redirect_temp(connection, splashpageurl);
