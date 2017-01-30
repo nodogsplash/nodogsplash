@@ -662,6 +662,7 @@ static int send_refresh(struct MHD_Connection *connection)
 
 	response = MHD_create_response_from_buffer(strlen(refresh), (char *)refresh, MHD_RESPMEM_PERSISTENT);
 	MHD_add_response_header(response, "Content-Type", mimetype);
+	MHD_add_response_header (response, MHD_HTTP_HEADER_CONNECTION, "close");
 	ret = MHD_queue_response(connection, 200, response);
 
 	return ret;
