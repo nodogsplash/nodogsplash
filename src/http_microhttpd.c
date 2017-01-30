@@ -301,19 +301,23 @@ static int check_authdir_match(const char *url, const char *authdir)
 static int check_token_is_valid(struct MHD_Connection *connection, t_client *client)
 {
 	/* token check */
-	struct collect_query_key query_key = { .key = "token" };
+	struct collect_query_key token_key = { .key = "token" };
+	struct collect_query_key tok_key = { .key = "tok" };
 
-	MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, &collect_query_key, &query_key);
+	MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, &collect_query_key, &token_key);
+	MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, &collect_query_key, &tok_key);
 
 	/* token not found in query string */
-	if (!query_key.value)
+	if (!token_key.value && !tok_key.value)
 		return 0;
 
-	/* token doesn't match */
-	if (strcmp(client->token, query_key.value))
-		return 0;
+	if (token_key.value && !strcmp(client->token, token_key.value))
+		return 1;
 
-	return 1;
+	if (tok_key.value && !strcmp(client->token, tok_key.value))
+		return 1;
+
+	return 0;
 }
 
 
