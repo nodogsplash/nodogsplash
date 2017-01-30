@@ -56,6 +56,7 @@ static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, 
 static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *client, const char *host, const char *url);
 static int send_error(struct MHD_Connection *connection, int error);
 static int send_redirect_temp(struct MHD_Connection *connection, const char *url);
+static int send_refresh(struct MHD_Connection *connection);
 static int is_foreign_hosts(struct MHD_Connection *connection, const char *host);
 static int is_splashpage(const char *host, const char *url);
 static int get_query(struct MHD_Connection *connection, char **collect_query);
@@ -411,6 +412,14 @@ static int authenticated(struct MHD_Connection *connection,
 		return send_redirect_temp(connection, redirect_to_us);
 	}
 
+
+	/* check if this is an late request meaning the user tries to get the internet, but ended up here,
+	 * because the iptables rule came to late */
+	if (is_foreign_hosts(connection, host)) {
+		/* might happen if the firewall rule isn't yet installed */
+		return send_refresh(connection);
+	}
+
 	/* user doesn't wants the splashpage or tried to auth itself */
 	return serve_file(connection, client, url);
 }
@@ -641,6 +650,21 @@ static int get_query(struct MHD_Connection *connection, char **query)
 
 	free(elements);
 	return 0;
+}
+
+static int send_refresh(struct MHD_Connection *connection)
+{
+	struct MHD_Response *response = NULL;
+
+	const char *refresh = "<html><meta http-equiv=\"refresh\" content=\"1\"><head/></html>";
+	const char *mimetype = lookup_mimetype("foo.html");
+	int ret;
+
+	response = MHD_create_response_from_buffer(strlen(refresh), (char *)refresh, MHD_RESPMEM_PERSISTENT);
+	MHD_add_response_header(response, "Content-Type", mimetype);
+	ret = MHD_queue_response(connection, 200, response);
+
+	return ret;
 }
 
 static int send_error(struct MHD_Connection *connection, int error)
