@@ -845,6 +845,7 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client)
 
 	tmpl_set_variable(&templor, "redir", redirect_url);
 	tmpl_set_variable(&templor, "tok", client->token);
+	tmpl_set_variable(&templor, "token", client->token);
 	tmpl_set_variable(&templor, "uptime", uptime);
 	tmpl_set_variable(&templor, "version", VERSION);
 

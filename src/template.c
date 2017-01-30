@@ -11,7 +11,7 @@
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #endif
 
-const char *variable_names[18] = {
+const char *variable_names[19] = {
 	"authaction",
 	"authtarget",
 	"clientip",
@@ -28,6 +28,7 @@ const char *variable_names[18] = {
 	"redir",
 	"title",
 	"tok",
+	"token",
 	"uptime",
 	"version"
 };
