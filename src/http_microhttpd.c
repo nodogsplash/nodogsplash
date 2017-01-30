@@ -363,7 +363,10 @@ static int authenticate_client(struct MHD_Connection *connection,
 {
 	/* TODO: handle redirect_url == NULL */
 	auth_client_action(ip_addr, mac, AUTH_MAKE_AUTHENTICATED);
-	return send_redirect_temp(connection, redirect_url);
+	if (redirect_url)
+		return send_redirect_temp(connection, redirect_url);
+	else
+		return send_error(connection, 200);
 }
 
 /**
