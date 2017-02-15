@@ -66,6 +66,7 @@
 #include "firewall.h"
 #include "fw_iptables.h"
 #include "auth.h"
+#include "util.h"
 
 
 extern pthread_mutex_t client_list_mutex;
@@ -166,7 +167,14 @@ fw_refresh_client_list(void)
 				debug(LOG_NOTICE, "%s %s inactive %d secs. kB in: %llu  kB out: %llu",
 					cp1->ip, cp1->mac, config->checkinterval * config->clienttimeout,
 					cp1->counters.incoming/1000, cp1->counters.outgoing/1000);
-				if (cp1->fw_connection_state == FW_MARK_AUTHENTICATED) {
+
+				if(cp1->fw_connection_state == FW_MARK_AUTHENTICATED) {
+					if(config->bin_voucher) {
+						char *cmd = NULL;
+
+						safe_asprintf(&cmd,"%s auth_update %s %s %d", config->bin_voucher, cp1->mac, cp1->voucher, now - (last_updated + (config->checkinterval * config->clienttimeout)));
+						execute_simple(cmd , 1);
+					}
 					iptables_fw_access(AUTH_MAKE_DEAUTHENTICATED, cp1);
 				}
 				client_list_delete(cp1);
@@ -175,7 +183,14 @@ fw_refresh_client_list(void)
 				debug(LOG_NOTICE, "%s %s connected %d secs. kB in: %llu kB out: %llu",
 					cp1->ip, cp1->mac, config->checkinterval * config->clientforceout,
 					cp1->counters.incoming/1000, cp1->counters.outgoing/1000);
+
 				if (cp1->fw_connection_state == FW_MARK_AUTHENTICATED) {
+					if(config->bin_voucher) {
+						char *cmd = NULL;
+
+						safe_asprintf(&cmd,"%s auth_update %s %s %d", config->bin_voucher, cp1->mac, cp1->voucher, now - (added_time + (config->checkinterval * config->clientforceout)));
+						execute_simple(cmd , 1);
+					}
 					iptables_fw_access(AUTH_MAKE_DEAUTHENTICATED, cp1);
 				}
 				client_list_delete(cp1);

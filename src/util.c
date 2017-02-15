@@ -83,6 +83,13 @@ extern unsigned int authenticated_since_start;
 extern int created_httpd_threads;
 extern int current_httpd_threads;
 
+/**
+ * Wrapper for execute() call without saving stdout
+ * output.
+ */
+int execute_simple(const char cmd_line[], int quiet) {
+	return execute(cmd_line, quiet, NULL, 0);
+}
 
 /** Fork a child and execute a shell command.
  * The parent process waits for the child to return,
@@ -90,12 +97,14 @@ extern int current_httpd_threads;
  * @return Return code of the command
  */
 int
-execute(const char cmd_line[], int quiet)
+execute(const char cmd_line[], int quiet, char *msg, size_t msg_len)
 {
 	int status, retval;
 	pid_t pid, rc;
 	struct sigaction sa, oldsa;
 	const char *new_argv[4];
+	int pipes[2] = { 0 };
+	FILE *stdin = NULL;
 	new_argv[0] = "/bin/sh";
 	new_argv[1] = "-c";
 	new_argv[2] = cmd_line;
@@ -111,10 +120,16 @@ execute(const char cmd_line[], int quiet)
 		debug(LOG_ERR, "sigaction() failed to set default SIGCHLD handler: %s", strerror(errno));
 	}
 
+	pipe(pipes);
 	pid = safe_fork();
 
 	if (pid == 0) {    /* for the child process:         */
-		if (quiet) close(2); /* Close stderr if quiet flag is on */
+		dup2(pipes[1], STDOUT_FILENO);
+		close(pipes[0]);
+		if (quiet) {
+			/* Close stderr if quiet flag is on */
+			close(2);
+		}
 		if (execvp("/bin/sh", (char *const *)new_argv) == -1) {    /* execute the command  */
 			debug(LOG_ERR, "execvp(): %s", strerror(errno));
 		} else {
@@ -123,6 +138,9 @@ execute(const char cmd_line[], int quiet)
 		exit(1);
 
 	} else {        /* for the parent:      */
+		close(pipes[1]);
+		stdin = fdopen(pipes[0],"r");
+
 		debug(LOG_DEBUG, "Waiting for PID %d to exit", (int)pid);
 		do {
 			rc = waitpid(pid, &status, 0);
@@ -151,6 +169,12 @@ execute(const char cmd_line[], int quiet)
 			debug(LOG_ERR, "sigaction() failed to restore SIGCHLD handler! Error %s", strerror(errno));
 		}
 
+		if(msg != NULL && msg_len > 0) {
+			fgets(msg, msg_len, stdin);
+			fclose(stdin);
+		}
+
+		fclose(stdin);
 		return retval;
 	}
 }
