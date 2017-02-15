@@ -138,6 +138,7 @@ _client_list_append(const char ip[], const char mac[], const char token[])
 	last_client_time = time(NULL);
 	client->counters.last_updated = last_client_time;
 	client->added_time = last_client_time;
+	client->voucher = NULL;
 
 	for (i = 0; i < maxclients; i++) {
 		if (client_arr[i])
