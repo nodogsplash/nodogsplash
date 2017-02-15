@@ -52,7 +52,7 @@ typedef struct	_t_client {
 	int download_limit;           /**< @brief Download limit, kb/s */
 	int upload_limit;             /**< @brief Upload limit, kb/s */
 	int idx;
-	char	*voucher;		/**< @brief Voucher for binvoucher feature */
+	char *voucher;			/**< @brief Voucher for binvoucher feature */
 } t_client;
 
 /** @brief Get the first element of the list of connected clients
