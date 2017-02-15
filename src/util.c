@@ -84,9 +84,8 @@ extern int created_httpd_threads;
 extern int current_httpd_threads;
 
 /**
- *
- *
- *
+ * Wrapper for execute() call without saving stdout
+ * output.
  */
 int execute_simple(const char cmd_line[], int quiet) {
 	return execute(cmd_line, quiet, NULL, 0);
