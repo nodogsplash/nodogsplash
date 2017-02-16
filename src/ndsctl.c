@@ -224,7 +224,7 @@ parse_commandline(int argc, char **argv)
 		config.command = NDSCTL_DEAUTH;
 		if ((argc - (optind + 1)) <= 0) {
 			fprintf(stderr, "ndsctl: Error: You must specify an IP "
-					"or a Mac address to deauth\n");
+					"or a MAC address to deauth\n");
 			usage();
 			exit(1);
 		}

@@ -214,7 +214,7 @@ client_list_add_client(const char ip[])
 	return client;
 }
 
-/** Finds a  client by its IP and MAC, returns NULL if the client could not
+/** Finds a client by its IP and MAC, returns NULL if the client could not
  * be found
  * @param ip IP we are looking for in the linked list
  * @param mac MAC we are looking for in the linked list
@@ -258,9 +258,9 @@ client_list_find_by_ip(const char ip[])
 }
 
 /**
- * Finds a  client by its Mac, returns NULL if the client could not
+ * Finds a client by its MAC, returns NULL if the client could not
  * be found
- * @param mac Mac we are looking for in the linked list
+ * @param mac MAC we are looking for in the linked list
  * @return Pointer to the client, or NULL if not found
  */
 t_client *
