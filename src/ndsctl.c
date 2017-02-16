@@ -84,7 +84,7 @@ usage(void)
 	printf("commands:\n");
 	printf("  status              View the status of nodogsplash\n");
 	printf("  clients             Display machine-readable client list\n");
-	printf("  json             	  Display machine-readable client list in json format\n");
+	printf("  json                Display machine-readable client list in json format\n");
 	printf("  stop                Stop the running nodogsplash\n");
 	printf("  auth mac|ip|token   Authenticate user with specified mac, ip or token\n");
 	printf("  deauth mac|ip|token Deauthenticate user with specified mac, ip or token\n");

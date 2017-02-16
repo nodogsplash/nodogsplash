@@ -185,7 +185,7 @@ get_ip(struct MHD_Connection *connection)
 	const union MHD_ConnectionInfo *connection_info;
 	char *ip_addr = NULL;
 	const struct sockaddr *client_addr;
-	const struct sockaddr_in	*addrin;
+	const struct sockaddr_in *addrin;
 	const struct sockaddr_in6 *addrin6;
 	if (!(connection_info = MHD_get_connection_info(connection, MHD_CONNECTION_INFO_CLIENT_ADDRESS))) {
 		return NULL;
@@ -231,11 +231,11 @@ get_ip(struct MHD_Connection *connection)
  */
 int
 libmicrohttpd_cb(void *cls,
-				 struct MHD_Connection *connection,
-				 const char *url,
-				 const char *method,
-				 const char *version,
-				 const char *upload_data, size_t *upload_data_size, void **ptr)
+				struct MHD_Connection *connection,
+				const char *url,
+				const char *method,
+				const char *version,
+				const char *upload_data, size_t *upload_data_size, void **ptr)
 {
 
 	t_client *client;
