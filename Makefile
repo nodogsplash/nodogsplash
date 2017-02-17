@@ -1,7 +1,7 @@
 
 CC?=gcc
 CFLAGS?=-O0 -g -Wall
-CFLAGS+=-Isrc
+CFLAGS+=-Isrc -std=gnu11
 #CFLAGS+=-Wall -Wwrite-strings -pedantic -std=gnu99
 LDFLAGS+=-pthread
 LDLIBS=-lmicrohttpd
@@ -33,7 +33,7 @@ install:
 #ifeq(yes,$(STRIP))
 	strip nodogsplash
 	strip ndsctl
-#endif	
+#endif
 	mkdir -p $(DESTDIR)/usr/bin/
 	cp ndsctl $(DESTDIR)/usr/bin/
 	cp nodogsplash $(DESTDIR)/usr/bin/

@@ -199,6 +199,7 @@ typedef struct {
 	unsigned int FW_MARK_BLOCKED;          /**< @brief iptables mark for blocked packets */
 	unsigned int FW_MARK_TRUSTED;          /**< @brief iptables mark for trusted packets */
 	int ip6;			/**< @brief enable IPv6 */
+	char* advertisement_url; /* @brief advertisement url */
 } s_config;
 
 /** @brief Get the current gateway configuration */
@@ -251,6 +252,7 @@ int check_mac_format(const char[]);
 int set_log_level(int);
 int set_password(const char[]);
 int set_username(const char[]);
+int set_advertisement_url(const char url[]);
 
 #define LOCK_CONFIG() do { \
 	debug(LOG_DEBUG, "Locking config"); \

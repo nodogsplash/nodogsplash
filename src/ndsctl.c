@@ -37,6 +37,7 @@
 #include <unistd.h>
 #include <syslog.h>
 #include <errno.h>
+#include <getopt.h>
 
 #include "ndsctl.h"
 
@@ -97,6 +98,7 @@ usage(void)
 	printf("  loglevel n          Set logging level to n\n");
 	printf("  password pass       Set gateway password\n");
 	printf("  username name       Set gateway username\n");
+	printf("  ad url              Set advertisement url\n");
 	printf("\n");
 }
 
@@ -254,6 +256,14 @@ parse_commandline(int argc, char **argv)
 			exit(1);
 		}
 		config.param = strdup(*(argv + optind + 1));
+	} else if (strcmp(*(argv + optind), "ad") == 0) {
+		config.command = NDSCTL_ADVERTISEMENT_URL;
+		if ((argc - (optind + 1)) <= 0) {
+			fprintf(stderr, "ndsctl: Error: You must specify a advertisement url\n");
+			usage();
+			exit(1);
+		}
+		config.param = strdup(*(argv + optind + 1));
 	} else {
 		fprintf(stderr, "ndsctl: Error: Invalid command \"%s\"\n", *(argv + optind));
 		usage();
@@ -322,24 +332,28 @@ ndsctl_action(const char cmd[], const char ifyes[], const char ifno[])
 
 	len = send_request(sock, request);
 
-	len = 0;
-	memset(buffer, 0, sizeof(buffer));
-	while ((len < sizeof(buffer)) && ((rlen = read(sock, (buffer + len),
-									   (sizeof(buffer) - len))) > 0)) {
-		len += rlen;
-	}
-
-	if(rlen<0) {
-		fprintf(stderr, "ndsctl: Error reading socket: %s\n", strerror(errno));
-	}
-
-	if (strcmp(buffer, "Yes") == 0) {
-		printf(ifyes, config.param);
-	} else if (strcmp(buffer, "No") == 0) {
-		printf(ifno, config.param);
+	if (len < 0) {
+		fprintf(stderr, "ndsctl: Nothing was send to socket\n");
 	} else {
-		fprintf(stderr, "ndsctl: Error: nodogsplash sent an abnormal "
-				"reply.\n");
+		len = 0;
+		memset(buffer, 0, sizeof(buffer));
+		while ((len < sizeof(buffer)) && ((rlen = read(sock, (buffer + len),
+				(sizeof(buffer) - len))) > 0)) {
+			len += rlen;
+		}
+
+		if(rlen<0) {
+			fprintf(stderr, "ndsctl: Error reading socket: %s\n", strerror(errno));
+		}
+
+		if (strcmp(buffer, "Yes") == 0) {
+			printf(ifyes, config.param);
+		} else if (strcmp(buffer, "No") == 0) {
+			printf(ifno, config.param);
+		} else {
+			fprintf(stderr, "ndsctl: Error: nodogsplash sent an abnormal "
+					"reply.\n");
+		}
 	}
 
 	shutdown(sock, 2);
@@ -489,6 +503,14 @@ ndsctl_untrust(void)
 				  "Failed to untrust MAC %s.\n");
 }
 
+void
+ndsctl_advertisement_url(void)
+{
+	ndsctl_action("ad",
+				  "Success to set advertisement url to %s.\n",
+				  "Failed to set advertisement url to %s.\n");
+}
+
 int
 main(int argc, char **argv)
 {
@@ -555,6 +577,10 @@ main(int argc, char **argv)
 
 	case NDSCTL_USERNAME:
 		ndsctl_username();
+		break;
+
+	case NDSCTL_ADVERTISEMENT_URL:
+		ndsctl_advertisement_url();
 		break;
 
 	default:

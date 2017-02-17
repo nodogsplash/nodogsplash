@@ -28,6 +28,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <syslog.h>
+#include <getopt.h>
 
 #include "debug.h"
 #include "safe.h"

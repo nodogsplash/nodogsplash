@@ -837,7 +837,6 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client)
 	tmpl_set_variable(&templor, "clientmac", client->mac);
 	tmpl_set_variable(&templor, "denyaction", denyaction);
 	tmpl_set_variable(&templor, "error_msg", "");
-
 	tmpl_set_variable(&templor, "gatewaymac", config->gw_mac);
 	tmpl_set_variable(&templor, "gatewayname", config->gw_name);
 
@@ -852,6 +851,8 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client)
 	tmpl_set_variable(&templor, "token", client->token);
 	tmpl_set_variable(&templor, "uptime", uptime);
 	tmpl_set_variable(&templor, "version", VERSION);
+
+	tmpl_set_variable(&templor, "advertisement_url", config->advertisement_url);
 
 	tmpl_parse(&templor, splashpage_result, size + TMPLVAR_SIZE, splashpage_tmpl, size);
 	free(splashpage_tmpl);

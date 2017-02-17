@@ -30,7 +30,8 @@ const char *variable_names[19] = {
 	"tok",
 	"token",
 	"uptime",
-	"version"
+	"version",
+	"advertisement_url",
 };
 
 static int get_variable_index(const char *name)

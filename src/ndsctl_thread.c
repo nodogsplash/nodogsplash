@@ -69,6 +69,7 @@ static void ndsctl_deauth(int, char *);
 static void ndsctl_loglevel(int, char *);
 static void ndsctl_password(int, char *);
 static void ndsctl_username(int, char *);
+static void ndsctl_advertisement_url(int, char *);
 
 struct ndsctl_args {
 	int fd;
@@ -219,6 +220,8 @@ thread_ndsctl_handler(void *arg)
 		ndsctl_password(fd, (request + 9));
 	} else if (strncmp(request, "username", 8) == 0) {
 		ndsctl_username(fd, (request + 9));
+	} else if (strncmp(request, "ad", 2) == 0) {
+		ndsctl_advertisement_url(fd, (request + 3));
 	}
 
 	if (!done) {
@@ -493,4 +496,19 @@ ndsctl_username(int fd, char *arg)
 	UNLOCK_CONFIG();
 
 	debug(LOG_DEBUG, "Exiting ndsctl_username.");
+}
+
+static void
+ndsctl_advertisement_url(int fd, char *arg) {
+
+	LOCK_CONFIG();
+
+	if (!set_advertisement_url(arg)) {
+		write(fd, "Yes", 3);
+		debug(LOG_NOTICE, "Set advertisement url to %s.", arg);
+	} else {
+		write(fd, "No", 2);
+	}
+
+	UNLOCK_CONFIG();
 }
