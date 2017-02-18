@@ -101,7 +101,7 @@ static int collect_query_string(void *cls, enum MHD_ValueKind kind, const char *
 	struct collect_query *collect_query = cls;
 	if (key && !value) {
 		collect_query->elements[collect_query->i] = safe_strdup(key);
-	} else if(key && value) {
+	} else if (key && value) {
 		safe_asprintf(&(collect_query->elements[collect_query->i]), "%s=%s", key, value);
 	}
 	collect_query->i++;
@@ -199,7 +199,7 @@ get_ip(struct MHD_Connection *connection)
 	switch(client_addr->sa_family) {
 	case AF_INET:
 		ip_addr = calloc(1, INET_ADDRSTRLEN+1);
-		if(!inet_ntop(addrin->sin_family, &(addrin->sin_addr), ip_addr , sizeof(struct sockaddr_in))) {
+		if (!inet_ntop(addrin->sin_family, &(addrin->sin_addr), ip_addr , sizeof(struct sockaddr_in))) {
 			free(ip_addr);
 			return NULL;
 		}
@@ -207,7 +207,7 @@ get_ip(struct MHD_Connection *connection)
 
 	case AF_INET6:
 		ip_addr = calloc(1, INET6_ADDRSTRLEN+1);
-		if(!inet_ntop(addrin6->sin6_family, &(addrin6->sin6_addr), ip_addr , sizeof(struct sockaddr_in6))) {
+		if (!inet_ntop(addrin6->sin6_family, &(addrin6->sin6_addr), ip_addr , sizeof(struct sockaddr_in6))) {
 			free(ip_addr);
 			return NULL;
 		}
@@ -246,7 +246,7 @@ libmicrohttpd_cb(void *cls,
 	debug(LOG_DEBUG, "access: %s %s", method, url);
 
 	/* only allow get */
-	if(0 != strcmp(method, "GET")) {
+	if (0 != strcmp(method, "GET")) {
 		debug(LOG_DEBUG, "Unsupported http method %s", method);
 		return send_error(connection, 503);
 	}
@@ -262,8 +262,8 @@ libmicrohttpd_cb(void *cls,
 	mac = arp_get(ip_addr);
 
 	client = client_list_find(ip_addr, mac);
-	if(client) {
-		if(client->fw_connection_state == FW_MARK_AUTHENTICATED ||
+	if (client) {
+		if (client->fw_connection_state == FW_MARK_AUTHENTICATED ||
 				client->fw_connection_state == FW_MARK_TRUSTED) {
 			/* client already authed - dangerous!!! This should never happen */
 			ret = authenticated(connection, ip_addr, mac, url, client);
@@ -454,13 +454,13 @@ static int preauthenticated(struct MHD_Connection *connection,
 	MHD_get_connection_values(connection, MHD_HEADER_KIND, get_host_value_callback, &host);
 
 	/* check if this is a redirect querty with a foreign host as target */
-	if(is_foreign_hosts(connection, host)) {
+	if (is_foreign_hosts(connection, host)) {
 		return redirect_to_splashpage(connection, client, host, url);
 	}
 
 	/* request is directed to us */
 	/* check if client wants to be authenticated */
-	if(check_authdir_match(url, config->authdir)) {
+	if (check_authdir_match(url, config->authdir)) {
 
 		/* Only the first request will redirected to config->redirectURL.
 		 * When the client reloads a page when it's authenticated, it should be redirected
@@ -479,7 +479,7 @@ static int preauthenticated(struct MHD_Connection *connection,
 		}
 	}
 
-	if(is_splashpage(host, url)) {
+	if (is_splashpage(host, url)) {
 		return show_splashpage(connection, client);
 	}
 
@@ -634,11 +634,11 @@ static int get_query(struct MHD_Connection *connection, char **query)
 	MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, collect_query_string, &collect_query);
 
 	for(i=0; i<element_counter; i++) {
-		if(!elements[i])
+		if (!elements[i])
 			continue;
 		length += strlen(elements[i]);
 
-		if(i >0) /* q=foo&o=bar the '&' need also some space */
+		if (i >0) /* q=foo&o=bar the '&' need also some space */
 			length++;
 	}
 
@@ -646,7 +646,7 @@ static int get_query(struct MHD_Connection *connection, char **query)
 	*query = calloc(1, length+1);
 
 	for(i=0, j=0; i<element_counter; i++) {
-		if(!elements[i])
+		if (!elements[i])
 			continue;
 		strncpy(*query + j, elements[i], length-j);
 		free(elements[i]);
@@ -907,16 +907,16 @@ const char *lookup_mimetype(const char *filename)
 	int i;
 	const char *extension;
 
-	if(!filename) {
+	if (!filename) {
 		return NULL;
 	}
 
 	extension = get_extension(filename);
-	if(!extension)
+	if (!extension)
 		return DEFAULT_MIME_TYPE;
 
 	for(i=0; i< ARRAY_SIZE(uh_mime_types); i++) {
-		if(strcmp(extension, uh_mime_types[i].extn) == 0) {
+		if (strcmp(extension, uh_mime_types[i].extn) == 0) {
 			return uh_mime_types[i].mime;
 		}
 	}

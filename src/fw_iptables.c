@@ -130,7 +130,7 @@ _iptables_check_mark_masking()
 	}
 
 	/* See if kernel supports mark masking */
-	if(0 == iptables_do_command("-t filter -I FORWARD 1 -m mark --mark 0x%x/0x%x -j REJECT", FW_MARK_BLOCKED, FW_MARK_MASK)) {
+	if (0 == iptables_do_command("-t filter -I FORWARD 1 -m mark --mark 0x%x/0x%x -j REJECT", FW_MARK_BLOCKED, FW_MARK_MASK)) {
 		iptables_do_command("-t filter -D FORWARD 1"); /* delete test rule we just inserted */
 		debug(LOG_DEBUG,"Kernel supports mark masking.");
 		char *tmp = NULL;
@@ -164,7 +164,7 @@ iptables_do_command(const char *format, ...)
 
 	config = config_get_config();
 
-	if(config->ip6) {
+	if (config->ip6) {
 		safe_asprintf(&cmd, "ip6tables %s", fmt_cmd);
 	} else {
 		safe_asprintf(&cmd, "iptables %s", fmt_cmd);
@@ -184,7 +184,7 @@ iptables_do_command(const char *format, ...)
 			break;
 		}
 	}
-	if(!fw_quiet && rc != 0) {
+	if (!fw_quiet && rc != 0) {
 		debug(LOG_ERR, "Nonzero exit status %d from command: %s", rc, cmd);
 	}
 
@@ -389,14 +389,14 @@ iptables_fw_init(void)
 	}
 
 	/* Rules to mark as blocked MAC address packets in mangle PREROUTING */
-	if(MAC_BLOCK == macmechanism) {
+	if (MAC_BLOCK == macmechanism) {
 		/* with the MAC_BLOCK mechanism,
 		 * MAC's on the block list are marked as blocked;
 		 * everything else passes */
 		for (; pb != NULL; pb = pb->next) {
 			rc |= iptables_block_mac(pb->mac);
 		}
-	} else if(MAC_ALLOW == macmechanism) {
+	} else if (MAC_ALLOW == macmechanism) {
 		/* with the MAC_ALLOW mechanism,
 		 * MAC's on the allow list pass;
 		 * everything else is to be marked as blocked */
@@ -412,7 +412,7 @@ iptables_fw_init(void)
 	}
 
 	/* Set up for traffic control */
-	if(traffic_control) {
+	if (traffic_control) {
 		rc |= tc_init_tc();
 	}
 
@@ -493,7 +493,7 @@ iptables_fw_init(void)
 	 * else:
 	 *    jump to CHAIN_TRUSTED_TO_ROUTER, and load and use users-to-router ruleset
 	 */
-	if(is_empty_ruleset("trusted-users-to-router")) {
+	if (is_empty_ruleset("trusted-users-to-router")) {
 		rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -m mark --mark 0x%x%s -j %s", FW_MARK_TRUSTED, markmask, get_empty_ruleset_policy("trusted-users-to-router"));
 	} else {
 		rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -m mark --mark 0x%x%s -j " CHAIN_TRUSTED_TO_ROUTER, FW_MARK_TRUSTED, markmask);
@@ -512,7 +512,7 @@ iptables_fw_init(void)
 	 * else:
 	 *    load and use users-to-router ruleset
 	 */
-	if(is_empty_ruleset("users-to-router")) {
+	if (is_empty_ruleset("users-to-router")) {
 		rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -j %s", get_empty_ruleset_policy("users-to-router"));
 	} else {
 		/* CHAIN_TO_ROUTER, append the "users-to-router" ruleset */
@@ -551,7 +551,7 @@ iptables_fw_init(void)
 	 * else:
 	 *    jump to CHAIN_TRUSTED, and load and use trusted-users ruleset
 	 */
-	if(is_empty_ruleset("trusted-users")) {
+	if (is_empty_ruleset("trusted-users")) {
 		rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m mark --mark 0x%x%s -j %s", FW_MARK_TRUSTED, markmask, get_empty_ruleset_policy("trusted-users"));
 	} else {
 		rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m mark --mark 0x%x%s -j " CHAIN_TRUSTED, FW_MARK_TRUSTED, markmask);
@@ -571,7 +571,7 @@ iptables_fw_init(void)
 	 * else:
 	 *    jump to CHAIN_AUTHENTICATED, and load and use authenticated-users ruleset
 	 */
-	if(is_empty_ruleset("authenticated-users")) {
+	if (is_empty_ruleset("authenticated-users")) {
 		rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m mark --mark 0x%x%s -j %s", FW_MARK_AUTHENTICATED, markmask, get_empty_ruleset_policy("authenticated-users"));
 	} else {
 		rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m mark --mark 0x%x%s -j " CHAIN_AUTHENTICATED, FW_MARK_AUTHENTICATED, markmask);
@@ -590,7 +590,7 @@ iptables_fw_init(void)
 	 * else:
 	 *    load and use authenticated-users ruleset
 	 */
-	if(is_empty_ruleset("preauthenticated-users")) {
+	if (is_empty_ruleset("preauthenticated-users")) {
 		rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -j %s ",  get_empty_ruleset_policy("preauthenticated-users"));
 	} else {
 		rc |= _iptables_append_ruleset("filter", "preauthenticated-users", CHAIN_TO_INTERNET);
@@ -626,7 +626,7 @@ iptables_fw_destroy(void)
 	traffic_control = config->traffic_control;
 	UNLOCK_CONFIG();
 
-	if(traffic_control) {
+	if (traffic_control) {
 		debug(LOG_DEBUG, "Destroying our tc hooks");
 		tc_destroy_tc();
 	}
@@ -781,7 +781,7 @@ iptables_fw_access(t_authaction action, t_client *client)
 		rc |= iptables_do_command("-t mangle -A " CHAIN_INCOMING " -d %s -j MARK %s 0x%x%x", client->ip, markop, client->idx + 10, FW_MARK_AUTHENTICATED);
 		/* This rule is just for download (incoming) byte counting, see iptables_fw_counters_update() */
 		rc |= iptables_do_command("-t mangle -A " CHAIN_INCOMING " -d %s -j ACCEPT", client->ip);
-		if(traffic_control) {
+		if (traffic_control) {
 			rc |= tc_attach_client(download_imqname, download_limit, upload_imqname, upload_limit, client->idx, FW_MARK_AUTHENTICATED);
 		}
 		break;
@@ -791,7 +791,7 @@ iptables_fw_access(t_authaction action, t_client *client)
 		rc |= iptables_do_command("-t mangle -D " CHAIN_OUTGOING " -s %s -m mac --mac-source %s -j MARK %s 0x%x%x", client->ip, client->mac, markop, client->idx + 10, FW_MARK_AUTHENTICATED);
 		rc |= iptables_do_command("-t mangle -D " CHAIN_INCOMING " -d %s -j MARK %s 0x%x%x", client->ip, markop, client->idx + 10, FW_MARK_AUTHENTICATED);
 		rc |= iptables_do_command("-t mangle -D " CHAIN_INCOMING " -d %s -j ACCEPT", client->ip);
-		if(traffic_control) {
+		if (traffic_control) {
 			rc |= tc_detach_client(download_imqname, upload_imqname, client->idx);
 		}
 		break;

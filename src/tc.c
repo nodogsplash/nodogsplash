@@ -189,11 +189,11 @@ tc_init_tc()
 
 	tc_quiet = 0;
 
-	if(download_limit > 0) {
+	if (download_limit > 0) {
 		safe_asprintf(&cmd,"ip link set %s up", download_imqname);
 		ret = execute(cmd ,tc_quiet);
 		free(cmd);
-		if( ret != 0 ) {
+		if ( ret != 0 ) {
 			debug(LOG_ERR, "Could not set %s up. Download limiting will not work", download_imqname);
 		} else {
 			/* jump to the imq in mangle CHAIN_INCOMING */
@@ -202,11 +202,11 @@ tc_init_tc()
 			rc |= tc_attach_download_qdisc(download_imqname,download_limit);
 		}
 	}
-	if(upload_limit > 0) {
+	if (upload_limit > 0) {
 		safe_asprintf(&cmd,"ip link set %s up", upload_imqname);
 		ret = execute(cmd ,tc_quiet);
 		free(cmd);
-		if( ret != 0 ) {
+		if (ret != 0) {
 			debug(LOG_ERR, "Could not set %s up. Upload limiting will not work", upload_imqname);
 			rc = -1;
 		} else {

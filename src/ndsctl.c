@@ -356,7 +356,7 @@ ndsctl_print(const char cmd[])
 		printf("%s", buffer);
 	}
 
-	if(len<0) {
+	if (len < 0) {
 		fprintf(stderr, "ndsctl: Error reading socket: %s\n", strerror(errno));
 	}
 

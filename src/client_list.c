@@ -113,7 +113,7 @@ _client_list_append(const char ip[], const char mac[], const char token[])
 
 	config = config_get_config();
 	maxclients = config->maxclients;
-	if(client_count >= maxclients) {
+	if (client_count >= maxclients) {
 		debug(LOG_NOTICE, "Already list %d clients, cannot add %s %s", client_count, ip, mac);
 		return NULL;
 	}
@@ -190,7 +190,7 @@ client_list_add_client(const char ip[])
 	t_client *client;
 	char *mac, *token;
 
-	if(!check_ip_format(ip)) {
+	if (!check_ip_format(ip)) {
 		/* Inappropriate format in IP address */
 		debug(LOG_NOTICE, "Illegal IP format [%s]", ip);
 		return NULL;

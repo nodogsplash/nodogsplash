@@ -107,7 +107,7 @@ auth_client_action(const char ip[], const char mac[], t_authaction action)
 	switch(action) {
 
 	case AUTH_MAKE_AUTHENTICATED:
-		if(client->fw_connection_state != FW_MARK_AUTHENTICATED) {
+		if (client->fw_connection_state != FW_MARK_AUTHENTICATED) {
 			client->fw_connection_state = FW_MARK_AUTHENTICATED;
 			iptables_fw_access(AUTH_MAKE_AUTHENTICATED, client);
 			authenticated_since_start++;
@@ -117,7 +117,7 @@ auth_client_action(const char ip[], const char mac[], t_authaction action)
 		break;
 
 	case AUTH_MAKE_DEAUTHENTICATED:
-		if(client->fw_connection_state == FW_MARK_AUTHENTICATED) {
+		if (client->fw_connection_state == FW_MARK_AUTHENTICATED) {
 			iptables_fw_access(AUTH_MAKE_DEAUTHENTICATED, client);
 		}
 		client_list_delete(client);

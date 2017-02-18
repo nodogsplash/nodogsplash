@@ -99,8 +99,8 @@ sigchld_handler(int s)
 
 	rc = waitpid(-1, &status, WNOHANG | WUNTRACED);
 
-	if(rc == -1) {
-		if(errno == ECHILD) {
+	if (rc == -1) {
+		if (errno == ECHILD) {
 			debug(LOG_DEBUG, "SIGCHLD handler: waitpid(): No child exists now.");
 		} else {
 			debug(LOG_ERR, "SIGCHLD handler: Error reaping child (waitpid() returned -1): %s", strerror(errno));
@@ -108,12 +108,12 @@ sigchld_handler(int s)
 		return;
 	}
 
-	if(WIFEXITED(status)) {
+	if (WIFEXITED(status)) {
 		debug(LOG_DEBUG, "SIGCHLD handler: Process PID %d exited normally, status %d", (int)rc, WEXITSTATUS(status));
 		return;
 	}
 
-	if(WIFSIGNALED(status)) {
+	if (WIFSIGNALED(status)) {
 		debug(LOG_DEBUG, "SIGCHLD handler: Process PID %d exited due to signal %d", (int)rc, WTERMSIG(status));
 		return;
 	}
@@ -271,7 +271,7 @@ main_loop(void)
 	fw_destroy();
 	/* Then initialize it */
 	debug(LOG_NOTICE, "Initializing firewall rules");
-	if( fw_init() != 0 ) {
+	if (fw_init() != 0) {
 		debug(LOG_ERR, "Error initializing firewall rules! Cleaning up");
 		fw_destroy();
 		debug(LOG_ERR, "Exiting because of error initializing firewall rules");
