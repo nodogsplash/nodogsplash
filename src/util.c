@@ -303,9 +303,9 @@ get_ext_iface (void)
 	char *device, *gw;
 	int i = 1;
 	int keep_detecting = 1;
-	pthread_cond_t		cond = PTHREAD_COND_INITIALIZER;
-	pthread_mutex_t		cond_mutex = PTHREAD_MUTEX_INITIALIZER;
-	struct	timespec	timeout;
+	pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+	pthread_mutex_t cond_mutex = PTHREAD_MUTEX_INITIALIZER;
+	struct timespec timeout;
 	device = (char *)malloc(16);
 	gw = (char *)malloc(16);
 	debug(LOG_DEBUG, "get_ext_iface(): Autodectecting the external interface from routing table");
@@ -653,8 +653,8 @@ ndsctl_json(int fd)
 		upload_bytes = client->counters.outgoing;
 
 		cprintf(fd, "\"downloaded\":\"%llu\",\n\"avg_down_speed\":\"%.6g\",\n\"uploaded\":\"%llu\",\n\"avg_up_speed\":\"%.6g\"\n",
-				download_bytes/1000, ((double)download_bytes)/125/durationsecs,
-				upload_bytes/1000, ((double)upload_bytes)/125/durationsecs);
+			download_bytes/1000, ((double)download_bytes)/125/durationsecs,
+			upload_bytes/1000, ((double)upload_bytes)/125/durationsecs);
 
 		indx++;
 		client = client->next;

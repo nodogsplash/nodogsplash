@@ -46,7 +46,7 @@
 
 
 /* Defined in clientlist.c */
-extern pthread_mutex_t	client_list_mutex;
+extern pthread_mutex_t client_list_mutex;
 
 /* Count number of authentications */
 unsigned int authenticated_since_start = 0;
@@ -61,7 +61,7 @@ thread_client_timeout_check(void *arg)
 {
 	pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 	pthread_mutex_t cond_mutex = PTHREAD_MUTEX_INITIALIZER;
-	struct	timespec	timeout;
+	struct timespec timeout;
 
 	while (1) {
 		debug(LOG_DEBUG, "Running fw_refresh_client_list()");
@@ -99,8 +99,7 @@ auth_client_action(const char ip[], const char mac[], t_authaction action)
 
 	/* Client should already have hit the server and be on the client list */
 	if (client == NULL) {
-		debug(LOG_ERR, "Client %s %s action %d is not on client list",
-			  ip, mac, action);
+		debug(LOG_ERR, "Client %s %s action %d is not on client list", ip, mac, action);
 		UNLOCK_CLIENT_LIST();
 		return;
 	}

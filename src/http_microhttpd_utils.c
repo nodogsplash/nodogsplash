@@ -19,8 +19,8 @@
 
 #include <ctype.h>
 
-/* blen is the size of buf; slen is the length of src.	The input-string need
-** not be, and the output string will not be, null-terminated.	Returns the
+/* blen is the size of buf; slen is the length of src. The input-string need
+** not be, and the output string will not be, null-terminated. Returns the
 ** length of the decoded string, -1 on buffer overflow, -2 on malformed string. */
 int uh_urldecode(char *buf, int blen, const char *src, int slen)
 {
@@ -65,7 +65,7 @@ int uh_urlencode(char *buf, int blen, const char *src, int slen)
 		} else if ((len+3) <= blen) {
 			buf[len++] = '%';
 			buf[len++] = hex[(src[i] >> 4) & 15];
-			buf[len++] = hex[ src[i]			 & 15];
+			buf[len++] = hex[ src[i] & 15];
 		} else {
 			len = -1;
 			break;
@@ -79,7 +79,7 @@ int uh_b64decode(char *buf, int blen, const void *src, int slen)
 {
 	const unsigned char *str = src;
 	unsigned int cout = 0;
-	unsigned int cin	= 0;
+	unsigned int cin = 0;
 	int len = 0;
 	int i = 0;
 

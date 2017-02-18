@@ -64,7 +64,7 @@ int tmpl_parse(struct templater *templor, char *dst, size_t dst_len, const char 
 	memset(dst, 0x0, dst_len);
 	while((src_i < src_len) && (dst_i < dst_len)) {
 		if(src[src_i] != '$') {
-			dst[dst_i]	= src[src_i];
+			dst[dst_i] = src[src_i];
 			dst_i++;
 			src_i++;
 			continue;
@@ -103,7 +103,7 @@ int tmpl_parse(struct templater *templor, char *dst, size_t dst_len, const char 
 			continue;
 		}
 
-		/* check if	variable name is empty */
+		/* check if variable name is empty */
 		if (templor->variables[varidx] == NULL ||
 				strlen(templor->variables[varidx]) == 0) {
 			src_i += varlen;

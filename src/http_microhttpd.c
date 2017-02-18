@@ -143,7 +143,7 @@ static int is_splashpage(const char *host, const char *url)
 	if (host == NULL) {
 		/* no hostname given
 		 * '/' -> splash
-		 * ''	-> splash [is this even possible with MHD?
+		 * '' -> splash [is this even possible with MHD?
 		 */
 		if (strlen(url) == 0 ||
 				!strcmp("/", url)) {
@@ -158,7 +158,7 @@ static int is_splashpage(const char *host, const char *url)
 		}
 
 		/* '/' -> splash
-		 * ''	-> splash
+		 * '' -> splash
 		 */
 		if (strlen(url) == 0 ||
 				!strcmp("/", url)) {
@@ -361,10 +361,10 @@ static int try_to_authenticate(struct MHD_Connection *connection, t_client *clie
  * @return
  */
 static int authenticate_client(struct MHD_Connection *connection,
-							   const char *ip_addr,
-							   const char *mac,
-							   const char *redirect_url,
-							   t_client *client)
+							const char *ip_addr,
+							const char *mac,
+							const char *redirect_url,
+							t_client *client)
 {
 	/* TODO: handle redirect_url == NULL */
 	auth_client_action(ip_addr, mac, AUTH_MAKE_AUTHENTICATED);
@@ -390,10 +390,10 @@ static int authenticate_client(struct MHD_Connection *connection,
  * - when a user calls deny url -> deauth it
  */
 static int authenticated(struct MHD_Connection *connection,
-						 const char *ip_addr,
-						 const char *mac,
-						 const char *url,
-						 t_client *client)
+						const char *ip_addr,
+						const char *mac,
+						const char *url,
+						t_client *client)
 {
 	s_config *config = config_get_config();
 	const char *redirect_url;
@@ -560,7 +560,7 @@ static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *c
 static t_client *
 add_client(const char *ip_addr)
 {
-	t_client	*client;
+	t_client *client;
 
 	LOCK_CLIENT_LIST();
 	client = client_list_add_client(ip_addr);
@@ -581,7 +581,7 @@ int send_redirect_temp(struct MHD_Connection *connection, const char *url)
 	if (!response)
 		return send_error(connection, 503);
 
-	//	MHD_set_response_options(response, MHD_RF_HTTP_VERSION_1_0_ONLY, MHD_RO_END);
+	// MHD_set_response_options(response, MHD_RF_HTTP_VERSION_1_0_ONLY, MHD_RO_END);
 	MHD_add_response_header(response, "Location", url);
 	MHD_add_response_header(response, "Connection", "close");
 	ret = MHD_queue_response(connection, MHD_HTTP_TEMPORARY_REDIRECT, response);
@@ -630,7 +630,7 @@ static int get_query(struct MHD_Connection *connection, char **query)
 	collect_query.i = 0;
 	collect_query.elements = elements;
 
-	//	static int get_host_value_callback(void *cls, enum MHD_ValueKind kind, const char *key, const char *value) {
+	// static int get_host_value_callback(void *cls, enum MHD_ValueKind kind, const char *key, const char *value) {
 	MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, collect_query_string, &collect_query);
 
 	for(i=0; i<element_counter; i++) {

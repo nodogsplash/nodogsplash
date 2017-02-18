@@ -160,8 +160,7 @@ parse_commandline(int argc, char **argv)
 	} else if (strcmp(*(argv + optind), "block") == 0) {
 		config.command = NDSCTL_BLOCK;
 		if ((argc - (optind + 1)) <= 0) {
-			fprintf(stderr, "ndsctl: Error: You must specify a "
-					"MAC address to block\n");
+			fprintf(stderr, "ndsctl: Error: You must specify a MAC address to block\n");
 			usage();
 			exit(1);
 		}
@@ -169,8 +168,7 @@ parse_commandline(int argc, char **argv)
 	} else if (strcmp(*(argv + optind), "unblock") == 0) {
 		config.command = NDSCTL_UNBLOCK;
 		if ((argc - (optind + 1)) <= 0) {
-			fprintf(stderr, "ndsctl: Error: You must specify a "
-					"MAC address to unblock\n");
+			fprintf(stderr, "ndsctl: Error: You must specify a MAC address to unblock\n");
 			usage();
 			exit(1);
 		}
@@ -178,8 +176,7 @@ parse_commandline(int argc, char **argv)
 	} else if (strcmp(*(argv + optind), "allow") == 0) {
 		config.command = NDSCTL_ALLOW;
 		if ((argc - (optind + 1)) <= 0) {
-			fprintf(stderr, "ndsctl: Error: You must specify a "
-					"MAC address to allow\n");
+			fprintf(stderr, "ndsctl: Error: You must specify a MAC address to allow\n");
 			usage();
 			exit(1);
 		}
@@ -187,8 +184,7 @@ parse_commandline(int argc, char **argv)
 	} else if (strcmp(*(argv + optind), "unallow") == 0) {
 		config.command = NDSCTL_UNALLOW;
 		if ((argc - (optind + 1)) <= 0) {
-			fprintf(stderr, "ndsctl: Error: You must specify a "
-					"MAC address to unallow\n");
+			fprintf(stderr, "ndsctl: Error: You must specify a MAC address to unallow\n");
 			usage();
 			exit(1);
 		}
@@ -196,8 +192,7 @@ parse_commandline(int argc, char **argv)
 	} else if (strcmp(*(argv + optind), "trust") == 0) {
 		config.command = NDSCTL_TRUST;
 		if ((argc - (optind + 1)) <= 0) {
-			fprintf(stderr, "ndsctl: Error: You must specify a "
-					"MAC address to trust\n");
+			fprintf(stderr, "ndsctl: Error: You must specify a MAC address to trust\n");
 			usage();
 			exit(1);
 		}
@@ -205,8 +200,7 @@ parse_commandline(int argc, char **argv)
 	} else if (strcmp(*(argv + optind), "untrust") == 0) {
 		config.command = NDSCTL_UNTRUST;
 		if ((argc - (optind + 1)) <= 0) {
-			fprintf(stderr, "ndsctl: Error: You must specify a "
-					"MAC address to untrust\n");
+			fprintf(stderr, "ndsctl: Error: You must specify a MAC address to untrust\n");
 			usage();
 			exit(1);
 		}
@@ -214,8 +208,7 @@ parse_commandline(int argc, char **argv)
 	} else if (strcmp(*(argv + optind), "auth") == 0) {
 		config.command = NDSCTL_AUTH;
 		if ((argc - (optind + 1)) <= 0) {
-			fprintf(stderr, "ndsctl: Error: You must specify an IP "
-					"address to auth\n");
+			fprintf(stderr, "ndsctl: Error: You must specify an IP address to auth\n");
 			usage();
 			exit(1);
 		}
@@ -223,8 +216,7 @@ parse_commandline(int argc, char **argv)
 	} else if (strcmp(*(argv + optind), "deauth") == 0) {
 		config.command = NDSCTL_DEAUTH;
 		if ((argc - (optind + 1)) <= 0) {
-			fprintf(stderr, "ndsctl: Error: You must specify an IP "
-					"or a MAC address to deauth\n");
+			fprintf(stderr, "ndsctl: Error: You must specify an IP or a MAC address to deauth\n");
 			usage();
 			exit(1);
 		}
@@ -232,8 +224,7 @@ parse_commandline(int argc, char **argv)
 	} else if (strcmp(*(argv + optind), "loglevel") == 0) {
 		config.command = NDSCTL_LOGLEVEL;
 		if ((argc - (optind + 1)) <= 0) {
-			fprintf(stderr, "ndsctl: Error: You must specify an integer "
-					"loglevel to loglevel\n");
+			fprintf(stderr, "ndsctl: Error: You must specify an integer loglevel to loglevel\n");
 			usage();
 			exit(1);
 		}
@@ -265,7 +256,7 @@ static int
 connect_to_server(const char sock_name[])
 {
 	int sock;
-	struct sockaddr_un	sa_un;
+	struct sockaddr_un sa_un;
 
 	/* Connect to socket */
 	sock = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -273,8 +264,7 @@ connect_to_server(const char sock_name[])
 	sa_un.sun_family = AF_UNIX;
 	strncpy(sa_un.sun_path, sock_name, (sizeof(sa_un.sun_path) - 1));
 
-	if (connect(sock, (struct sockaddr *)&sa_un,
-				strlen(sa_un.sun_path) + sizeof(sa_un.sun_family))) {
+	if (connect(sock, (struct sockaddr *)&sa_un, strlen(sa_un.sun_path) + sizeof(sa_un.sun_family))) {
 		fprintf(stderr, "ndsctl: nodogsplash probably not started (Error: %s)\n", strerror(errno));
 		exit(1);
 	}
@@ -285,14 +275,13 @@ connect_to_server(const char sock_name[])
 static int
 send_request(int sock, const char request[])
 {
-	ssize_t	len, written;
+	ssize_t len, written;
 
 	len = 0;
 	while (len != strlen(request)) {
 		written = write(sock, (request + len), strlen(request) - len);
 		if (written == -1) {
-			fprintf(stderr, "Write to nodogsplash failed: %s\n",
-					strerror(errno));
+			fprintf(stderr, "Write to nodogsplash failed: %s\n", strerror(errno));
 			exit(1);
 		}
 		len += written;
@@ -316,8 +305,7 @@ ndsctl_action(const char cmd[], const char ifyes[], const char ifno[])
 
 	sock = connect_to_server(config.socket);
 
-	snprintf(request, sizeof(request)-strlen(NDSCTL_TERMINATOR),
-			 "%s %s", cmd, config.param);
+	snprintf(request, sizeof(request)-strlen(NDSCTL_TERMINATOR), "%s %s", cmd, config.param);
 	strcat(request, NDSCTL_TERMINATOR);
 
 	len = send_request(sock, request);
@@ -325,11 +313,11 @@ ndsctl_action(const char cmd[], const char ifyes[], const char ifno[])
 	len = 0;
 	memset(buffer, 0, sizeof(buffer));
 	while ((len < sizeof(buffer)) && ((rlen = read(sock, (buffer + len),
-									   (sizeof(buffer) - len))) > 0)) {
+		(sizeof(buffer) - len))) > 0)) {
 		len += rlen;
 	}
 
-	if(rlen<0) {
+	if (rlen < 0) {
 		fprintf(stderr, "ndsctl: Error reading socket: %s\n", strerror(errno));
 	}
 
@@ -338,8 +326,7 @@ ndsctl_action(const char cmd[], const char ifyes[], const char ifno[])
 	} else if (strcmp(buffer, "No") == 0) {
 		printf(ifno, config.param);
 	} else {
-		fprintf(stderr, "ndsctl: Error: nodogsplash sent an abnormal "
-				"reply.\n");
+		fprintf(stderr, "ndsctl: Error: nodogsplash sent an abnormal reply.\n");
 	}
 
 	shutdown(sock, 2);
@@ -405,88 +392,88 @@ void
 ndsctl_loglevel(void)
 {
 	ndsctl_action("loglevel",
-				  "Log level set to %s.\n",
-				  "Failed to set log level to %s.\n");
+				"Log level set to %s.\n",
+				"Failed to set log level to %s.\n");
 }
 
 void
 ndsctl_password(void)
 {
 	ndsctl_action("password",
-				  "Password set to %s.\n",
-				  "Failed to set password to %s.\n");
+				"Password set to %s.\n",
+				"Failed to set password to %s.\n");
 }
 
 void
 ndsctl_username(void)
 {
 	ndsctl_action("username",
-				  "Username set to %s.\n",
-				  "Failed to set username to %s.\n");
+				"Username set to %s.\n",
+				"Failed to set username to %s.\n");
 }
 
 void
 ndsctl_deauth(void)
 {
 	ndsctl_action("deauth",
-				  "Client %s deauthenticated.\n",
-				  "Client %s not found.\n");
+				"Client %s deauthenticated.\n",
+				"Client %s not found.\n");
 }
 
 void
 ndsctl_auth(void)
 {
 	ndsctl_action("auth",
-				  "Client %s authenticated.\n",
-				  "Failed to authenticate client %s.\n");
+				"Client %s authenticated.\n",
+				"Failed to authenticate client %s.\n");
 }
 
 void
 ndsctl_block(void)
 {
 	ndsctl_action("block",
-				  "MAC %s blocked.\n",
-				  "Failed to block MAC %s.\n");
+				"MAC %s blocked.\n",
+				"Failed to block MAC %s.\n");
 }
 
 void
 ndsctl_unblock(void)
 {
 	ndsctl_action("unblock",
-				  "MAC %s unblocked.\n",
-				  "Failed to unblock MAC %s.\n");
+				"MAC %s unblocked.\n",
+				"Failed to unblock MAC %s.\n");
 }
 
 void
 ndsctl_allow(void)
 {
 	ndsctl_action("allow",
-				  "MAC %s allowed.\n",
-				  "Failed to allow MAC %s.\n");
+				"MAC %s allowed.\n",
+				"Failed to allow MAC %s.\n");
 }
 
 void
 ndsctl_unallow(void)
 {
 	ndsctl_action("unallow",
-				  "MAC %s unallowed.\n",
-				  "Failed to unallow MAC %s.\n");
+				"MAC %s unallowed.\n",
+				"Failed to unallow MAC %s.\n");
 }
 
 void
 ndsctl_trust(void)
 {
 	ndsctl_action("trust",
-				  "MAC %s trusted.\n",
-				  "Failed to trust MAC %s.\n");
+				"MAC %s trusted.\n",
+				"Failed to trust MAC %s.\n");
 }
 
 void
 ndsctl_untrust(void)
 {
 	ndsctl_action("untrust",
-				  "MAC %s untrusted.\n",
-				  "Failed to untrust MAC %s.\n");
+				"MAC %s untrusted.\n",
+				"Failed to untrust MAC %s.\n");
 }
 
 int

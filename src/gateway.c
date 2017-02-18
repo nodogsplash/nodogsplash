@@ -218,7 +218,7 @@ static void
 main_loop(void)
 {
 	int result = 0;
-	pthread_t	tid;
+	pthread_t tid;
 	s_config *config;
 
 	config = config_get_config();
@@ -248,13 +248,13 @@ main_loop(void)
 
 	/* Initializes the web server */
 	if ((webserver = MHD_start_daemon(
-						 MHD_USE_EPOLL_INTERNALLY,
-						 config->gw_port,
-						 NULL, NULL,
-						 libmicrohttpd_cb, NULL,
-						 MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 120,
-						 MHD_OPTION_LISTENING_ADDRESS_REUSE, 1,
-						 MHD_OPTION_END)) == NULL) {
+						MHD_USE_EPOLL_INTERNALLY,
+						config->gw_port,
+						NULL, NULL,
+						libmicrohttpd_cb, NULL,
+						MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 120,
+						MHD_OPTION_LISTENING_ADDRESS_REUSE, 1,
+						MHD_OPTION_END)) == NULL) {
 		debug(LOG_ERR, "Could not create web server: %s", strerror(errno));
 		exit(1);
 	}

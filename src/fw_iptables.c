@@ -51,12 +51,12 @@
 #include "util.h"
 #include "tc.h"
 
-static char * _iptables_compile(const char[], const char[], t_firewall_rule *);
+static char *_iptables_compile(const char[], const char[], t_firewall_rule *);
 static int _iptables_append_ruleset(const char[], const char[], const char[]);
 static int _iptables_init_marks(void);
 
-extern pthread_mutex_t	client_list_mutex;
-extern pthread_mutex_t	config_mutex;
+extern pthread_mutex_t client_list_mutex;
+extern pthread_mutex_t config_mutex;
 
 /**
  * Make nonzero to supress the error output of the firewall during destruction.
@@ -99,17 +99,17 @@ _iptables_init_marks()
 	FW_MARK_MASK = FW_MARK_BLOCKED | FW_MARK_TRUSTED | FW_MARK_AUTHENTICATED;
 
 	debug(LOG_INFO,"Iptables mark %s: 0x%x",
-		  fw_connection_state_as_string(FW_MARK_PREAUTHENTICATED),
-		  FW_MARK_PREAUTHENTICATED);
+		fw_connection_state_as_string(FW_MARK_PREAUTHENTICATED),
+		FW_MARK_PREAUTHENTICATED);
 	debug(LOG_INFO,"Iptables mark %s: 0x%x",
-		  fw_connection_state_as_string(FW_MARK_AUTHENTICATED),
-		  FW_MARK_AUTHENTICATED);
+		fw_connection_state_as_string(FW_MARK_AUTHENTICATED),
+		FW_MARK_AUTHENTICATED);
 	debug(LOG_INFO,"Iptables mark %s: 0x%x",
-		  fw_connection_state_as_string(FW_MARK_TRUSTED),
-		  FW_MARK_TRUSTED);
+		fw_connection_state_as_string(FW_MARK_TRUSTED),
+		FW_MARK_TRUSTED);
 	debug(LOG_INFO,"Iptables mark %s: 0x%x",
-		  fw_connection_state_as_string(FW_MARK_BLOCKED),
-		  FW_MARK_BLOCKED);
+		fw_connection_state_as_string(FW_MARK_BLOCKED),
+		FW_MARK_BLOCKED);
 
 	return 0;
 }
@@ -407,8 +407,7 @@ iptables_fw_init(void)
 			rc |= iptables_allow_mac(pa->mac);
 		}
 	} else {
-		debug(LOG_ERR, "Unknown MAC mechanism: %d",
-			  macmechanism);
+		debug(LOG_ERR, "Unknown MAC mechanism: %d", macmechanism);
 		rc = -1;
 	}
 
@@ -698,9 +697,9 @@ iptables_fw_destroy(void)
  */
 int
 iptables_fw_destroy_mention(
-	const char * table,
-	const char * chain,
-	const char * mention
+	const char *table,
+	const char *chain,
+	const char *mention
 )
 {
 	FILE *p = NULL;
@@ -888,8 +887,8 @@ iptables_fw_counters_update(void)
 {
 	FILE *output;
 	char *script,
-		 ip[INET6_ADDRSTRLEN],
-		 target[MAX_BUF];
+		ip[INET6_ADDRSTRLEN],
+		target[MAX_BUF];
 	int rc;
 	int af;
 	s_config *config;

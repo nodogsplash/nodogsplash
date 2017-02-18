@@ -287,8 +287,7 @@ config_parse_opcode(const char *cp, const char *filename, int linenum)
 		if (strcasecmp(cp, keywords[i].name) == 0)
 			return keywords[i].opcode;
 
-	debug(LOG_ERR, "%s: line %d: Bad configuration option: %s",
-		  filename, linenum, cp);
+	debug(LOG_ERR, "%s: line %d: Bad configuration option: %s", filename, linenum, cp);
 	return oBadOption;
 }
 

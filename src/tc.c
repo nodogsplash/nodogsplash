@@ -132,9 +132,9 @@ tc_attach_upload_qdisc(const char dev[], int upload_limit)
 
 	rc |= tc_do_command("qdisc add dev %s root handle 1: htb default 2 r2q %d", dev, 1700);
 	rc |= tc_do_command("class add dev %s parent 1: classid 1:1 htb rate 100Mbps ceil 100Mbps burst %d cburst %d mtu %d",
-						dev, burst*10, burst, mtu);
+		dev, burst*10, burst, mtu);
 	rc |= tc_do_command("class add dev %s parent 1:1 classid 1:2 htb rate %dkbit ceil %dkbit burst %d cburst %d mtu %d prio 1",
-						dev, upload_limit, upload_limit, burst*10, burst, mtu);
+		dev, upload_limit, upload_limit, burst*10, burst, mtu);
 
 	return rc;
 }
@@ -157,9 +157,9 @@ tc_attach_download_qdisc(const char dev[], int download_limit)
 
 	rc |= tc_do_command("qdisc add dev %s root handle 1: htb default 2 r2q %d", dev, 1700);
 	rc |= tc_do_command("class add dev %s parent 1: classid 1:1 htb rate 100Mbps ceil 100Mbps burst %d cburst %d mtu %d",
-						dev, burst*10, burst, mtu);
+		dev, burst*10, burst, mtu);
 	rc |= tc_do_command("class add dev %s parent 1:1 classid 1:2 htb rate %dkbit ceil %dkbit burst %d cburst %d mtu %d prio 1",
-						dev, download_limit, download_limit, burst*10, burst, mtu);
+		dev, download_limit, download_limit, burst*10, burst, mtu);
 
 	return rc;
 }
@@ -194,8 +194,7 @@ tc_init_tc()
 		ret = execute(cmd ,tc_quiet);
 		free(cmd);
 		if( ret != 0 ) {
-			debug(LOG_ERR, "Could not set %s up. Download limiting will not work",
-				  download_imqname);
+			debug(LOG_ERR, "Could not set %s up. Download limiting will not work", download_imqname);
 		} else {
 			/* jump to the imq in mangle CHAIN_INCOMING */
 			rc |= iptables_do_command("-t mangle -A " CHAIN_INCOMING " -j IMQ --todev %d ", download_imq);
@@ -208,8 +207,7 @@ tc_init_tc()
 		ret = execute(cmd ,tc_quiet);
 		free(cmd);
 		if( ret != 0 ) {
-			debug(LOG_ERR, "Could not set %s up. Upload limiting will not work",
-				  upload_imqname);
+			debug(LOG_ERR, "Could not set %s up. Upload limiting will not work", upload_imqname);
 			rc = -1;
 		} else {
 			/* jump to the imq in mangle CHAIN_OUTGOING */
