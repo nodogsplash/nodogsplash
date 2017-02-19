@@ -140,7 +140,6 @@ fw_destroy(void)
 void
 fw_refresh_client_list(void)
 {
-	char *ip, *mac;
 	t_client *cp1, *cp2;
 	time_t now, added_time, last_updated;
 	s_config *config = config_get_config();
@@ -156,11 +155,8 @@ fw_refresh_client_list(void)
 	for (cp1 = cp2 = client_get_first_client(); NULL != cp1; cp1 = cp2) {
 		cp2 = cp1->next;
 
-		ip = safe_strdup(cp1->ip);
-		mac = safe_strdup(cp1->mac);
-
-		if (!(cp1 = client_list_find(ip, mac))) {
-			debug(LOG_ERR, "Node %s was freed while being re-validated!", ip);
+		if (!(cp1 = client_list_find(cp1->ip, cp1->mac))) {
+			debug(LOG_ERR, "Node %s was freed while being re-validated!", cp1->ip);
 		} else {
 			now = time(NULL);
 			last_updated = cp1->counters.last_updated;
@@ -185,9 +181,6 @@ fw_refresh_client_list(void)
 				client_list_delete(cp1);
 			}
 		}
-
-		free(ip);
-		free(mac);
 	}
 	UNLOCK_CLIENT_LIST();
 }
