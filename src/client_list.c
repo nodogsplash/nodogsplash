@@ -207,8 +207,7 @@ client_list_add_client(const char ip[])
 		client = _client_list_append(ip, mac, token);
 		free(token);
 	} else {
-		debug(LOG_INFO, "Client %s %s token %s already on client list",
-			  ip, mac, client->token);
+		debug(LOG_INFO, "Client %s %s token %s already on client list", ip, mac, client->token);
 	}
 	free(mac);
 	return client;
