@@ -1,4 +1,3 @@
-
 nodogsplash (2.0.0)
 
   * replace libhttp by libmicrohttpd [lynxis]
@@ -14,7 +13,7 @@ nodogsplash (2.0.0)
   * fix file descriptor leak [sfstudio]
   * fix uncomplete console output [mwarning]
 
- -- Alexander Couzens <lynxis@fe80.eu> Thu, 10 Nov 2016 12:23:42 +0100
+ -- Alexander Couzens <lynxis@fe80.eu>  Thu, 10 Nov 2016 12:23:42 +0100
 
 nodogsplash (1.0.0)
 
