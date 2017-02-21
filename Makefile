@@ -12,7 +12,7 @@ NDS_OBJS=src/auth.o src/client_list.o src/commandline.o src/conf.o \
 	src/debug.o src/firewall.o src/fw_iptables.o src/gateway.o src/http_microhttpd.o src/http_microhttpd_utils.o \
 	src/ndsctl_thread.o src/safe.o src/tc.o src/util.o src/template.o
 
-.PHONY: all clean install checkastyle fixstyle
+.PHONY: all clean install checkastyle fixstyle deb
 
 all: nodogsplash ndsctl
 
@@ -70,10 +70,10 @@ fixstyle: checkastyle
 			echo "\033[1;33mPrevious files have been corrected\033[00m" ; else \
 			echo "\033[0;32mAll files are ok\033[00m" ; fi
 
-DEBVERSION=$(shell dpkg-parsechangelog | grep ^Version |cut -f2 -d\  | sed -e 's/-[0-9]*$$//' )
+DEBVERSION=$(shell dpkg-parsechangelog | awk -F'[ -]' '/^Version/{print($$2); exit;}' )
 deb: clean
 	mkdir -p dist/nodogsplash-$(DEBVERSION)
 	tar --exclude dist --exclude ".git*" -cf - . | (cd dist/nodogsplash-$(DEBVERSION) && tar xf -)
-	cd dist && tar cjf nodogsplash_$(DEBVERSION).orig.tar.bz2 nodogsplash-$(DEBVERSION)
-	cd dist/nodogsplash-$(DEBVERSION) && dpkg-buildpackage -us -uc
+	cd dist && tar cjf nodogsplash_$(DEBVERSION).orig.tar.bz2 nodogsplash-$(DEBVERSION) && cd -
+	cd dist/nodogsplash-$(DEBVERSION) && dpkg-buildpackage -us -uc && cd -
 	rm -rf dist/nodogsplash-$(DEBVERSION)
