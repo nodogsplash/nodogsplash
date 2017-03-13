@@ -172,12 +172,9 @@ typedef struct {
 	char *username;			/**< @brief Username for username authentication */
 	char *password;			/**< @brief Password for password authentication */
 	int passwordattempts;		/**< @brief Number of attempted password authentications allowed */
-	int clienttimeout;		/**< @brief How many CheckIntervals before an inactive client
-				   must be re-authenticated */
-	int clientforceout;		/**< @brief How many CheckIntervals before a client
-				   must be re-authenticated */
-	int checkinterval;		/**< @brief Period the the client timeout check
-				   thread will run, in seconds */
+	int clienttimeout;		/**< @brief How many CheckIntervals before an inactive client must be re-authenticated */
+	int clientforceout;		/**< @brief How many CheckIntervals before a client must be re-authenticated */
+	int checkinterval;		/**< @brief Period the the client timeout check thread will run, in seconds */
 	int authenticate_immediately;	/**< @brief boolean, whether to auth noninteractively */
 	int set_mss;			/**< @brief boolean, whether to set mss */
 	int mss_value;			/**< @brief int, mss value; <= 0 clamp to pmtu */
@@ -190,15 +187,15 @@ typedef struct {
 	int syslog_facility;		/**< @brief facility to use when using syslog for logging */
 	int decongest_httpd_threads;	/**< @brief boolean, whether to avoid httpd thread congestion */
 	int httpd_thread_threshold; 	/**< @brief number of concurrent httpd threads before trying decongestion */
-	int httpd_thread_delay_ms; /**< @brief ms delay before starting a httpd thread after threshold */
+	int httpd_thread_delay_ms;	/**< @brief ms delay before starting a httpd thread after threshold */
 	int macmechanism; 		/**< @brief mechanism wrt MAC addrs */
 	t_firewall_ruleset *rulesets;	/**< @brief firewall rules */
 	t_MAC *trustedmaclist;		/**< @brief list of trusted macs */
 	t_MAC *blockedmaclist;		/**< @brief list of blocked macs */
 	t_MAC *allowedmaclist;		/**< @brief list of allowed macs */
-	unsigned int FW_MARK_AUTHENTICATED;    /**< @brief iptables mark for authenticated packets */
-	unsigned int FW_MARK_BLOCKED;          /**< @brief iptables mark for blocked packets */
-	unsigned int FW_MARK_TRUSTED;          /**< @brief iptables mark for trusted packets */
+	unsigned int FW_MARK_AUTHENTICATED;	/**< @brief iptables mark for authenticated packets */
+	unsigned int FW_MARK_BLOCKED;	/**< @brief iptables mark for blocked packets */
+	unsigned int FW_MARK_TRUSTED;	/**< @brief iptables mark for trusted packets */
 	int ip6;			/**< @brief enable IPv6 */
 	char *splash_address;			/**< @brief enable custom splash support, DNS or IP goes here. */
 	unsigned int splash_port;			/**< @brief set the custom splash port */

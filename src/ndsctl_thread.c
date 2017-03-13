@@ -84,9 +84,9 @@ thread_ndsctl(void *arg)
 {
 	int sock, fd;
 	const char *sock_name;
-	struct sockaddr_un	sa_un;
+	struct sockaddr_un sa_un;
 	int result;
-	pthread_t	tid;
+	pthread_t tid;
 	socklen_t len;
 	struct ndsctl_args *child_thread_args;
 
@@ -111,12 +111,10 @@ thread_ndsctl(void *arg)
 	unlink(sock_name);
 
 	debug(LOG_DEBUG, "Filling sockaddr_un");
-	strcpy(sa_un.sun_path, sock_name); /* XXX No size check because we
-				      * check a few lines before. */
+	strcpy(sa_un.sun_path, sock_name); /* XXX No size check because we check a few lines before. */
 	sa_un.sun_family = AF_UNIX;
 
-	debug(LOG_DEBUG, "Binding socket (%s) (%d)", sa_un.sun_path,
-		  strlen(sock_name));
+	debug(LOG_DEBUG, "Binding socket (%s) (%d)", sa_un.sun_path, strlen(sock_name));
 
 	/* Which to use, AF_UNIX, PF_UNIX, AF_LOCAL, PF_LOCAL? */
 	if (bind(sock, (struct sockaddr *)&sa_un, strlen(sock_name) + sizeof(sa_un.sun_family))) {
@@ -247,7 +245,7 @@ ndsctl_stop(pthread_t ndsctl_master_id)
 static void
 ndsctl_auth(int fd, char *arg)
 {
-	t_client	*client;
+	t_client *client;
 	char *ip, *mac;
 	debug(LOG_DEBUG, "Entering ndsctl_auth...");
 
@@ -283,7 +281,7 @@ ndsctl_auth(int fd, char *arg)
 static void
 ndsctl_deauth(int fd, char *arg)
 {
-	t_client	*client;
+	t_client *client;
 	char *ip, *mac;
 	debug(LOG_DEBUG, "Entering ndsctl_deauth...");
 

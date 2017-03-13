@@ -293,8 +293,7 @@ config_parse_opcode(const char *cp, const char *filename, int linenum)
 		if (strcasecmp(cp, keywords[i].name) == 0)
 			return keywords[i].opcode;
 
-	debug(LOG_ERR, "%s: line %d: Bad configuration option: %s",
-		  filename, linenum, cp);
+	debug(LOG_ERR, "%s: line %d: Bad configuration option: %s", filename, linenum, cp);
 	return oBadOption;
 }
 
@@ -330,7 +329,7 @@ add_ruleset(const char rulesetname[])
 
 	ruleset = get_ruleset(rulesetname);
 
-	if(ruleset != NULL) {
+	if (ruleset != NULL) {
 		debug(LOG_DEBUG, "add_ruleset(): FirewallRuleSet %s already exists.", rulesetname);
 		return ruleset;
 	}
@@ -367,7 +366,7 @@ parse_empty_ruleset_policy(char *ptr, const char *filename, int lineno)
 	/* get the ruleset struct with this name; error if it doesn't exist */
 	debug(LOG_DEBUG, "Parsing EmptyRuleSetPolicy for %s", rulesetname);
 	ruleset = get_ruleset(rulesetname);
-	if(ruleset == NULL) {
+	if (ruleset == NULL) {
 		debug(LOG_ERR, "Unrecognized FirewallRuleSet name: %s at line %d in %s", rulesetname, lineno, filename);
 		debug(LOG_ERR, "Exiting...");
 		exit(-1);
@@ -386,7 +385,7 @@ parse_empty_ruleset_policy(char *ptr, const char *filename, int lineno)
 	 "block" means iptables REJECT
 	*/
 	if (ruleset->emptyrulesetpolicy != NULL) free(ruleset->emptyrulesetpolicy);
-	if(!strcasecmp(policy,"passthrough")) {
+	if (!strcasecmp(policy,"passthrough")) {
 		ruleset->emptyrulesetpolicy =  safe_strdup("RETURN");
 	} else if (!strcasecmp(policy,"allow")) {
 		ruleset->emptyrulesetpolicy =  safe_strdup("ACCEPT");
@@ -415,13 +414,13 @@ parse_firewall_ruleset(const char *rulesetname, FILE *fd, const char *filename, 
 
 	/* find whitespace delimited word in ruleset string; this is its name */
 	p1 = strchr(rulesetname,' ');
-	if(p1) *p1 = '\0';
+	if (p1) *p1 = '\0';
 	p1 = strchr(rulesetname,'\t');
-	if(p1) *p1 = '\0';
+	if (p1) *p1 = '\0';
 
 	debug(LOG_DEBUG, "Parsing FirewallRuleSet %s", rulesetname);
 	ruleset = get_ruleset(rulesetname);
-	if(ruleset == NULL) {
+	if (ruleset == NULL) {
 		debug(LOG_ERR, "Unrecognized FirewallRuleSet name: %s", rulesetname);
 		debug(LOG_ERR, "Exiting...");
 		exit(-1);
@@ -433,10 +432,10 @@ parse_firewall_ruleset(const char *rulesetname, FILE *fd, const char *filename, 
 		p1 = _strip_whitespace(line);
 
 		/* if nothing left, get next line */
-		if(p1[0] == '\0') continue;
+		if (p1[0] == '\0') continue;
 
 		/* if closing brace, we are done */
-		if(p1[0] == '}') break;
+		if (p1[0] == '}') break;
 
 		/* next, we coopt the parsing of the regular config */
 
@@ -444,7 +443,7 @@ parse_firewall_ruleset(const char *rulesetname, FILE *fd, const char *filename, 
 		p2 = p1;
 		while ((*p2 != '\0') && (!isblank(*p2))) p2++;
 		/* if this is end of line, it's a problem */
-		if(p2[0] == '\0') {
+		if (p2[0] == '\0') {
 			debug(LOG_ERR, "FirewallRule incomplete on line %d in %s", *linenum, filename);
 			debug(LOG_ERR, "Exiting...");
 			exit(-1);
@@ -534,7 +533,7 @@ _parse_firewall_rule(t_firewall_ruleset *ruleset, char *leftover)
 
 	/* Get the optional port or port range */
 	if (strncmp(leftover, "port", 4) == 0) {
-		if(protocol == NULL ||
+		if (protocol == NULL ||
 				!(strncmp(protocol, "tcp", 3) == 0 || strncmp(protocol, "udp", 3) == 0)) {
 			debug(LOG_ERR, "Port without tcp or udp protocol");
 			return -3; /*< Fail */
@@ -628,7 +627,7 @@ get_empty_ruleset_policy(const char *rulesetname)
 {
 	t_firewall_ruleset *rs;
 	rs = get_ruleset(rulesetname);
-	if(rs == NULL) return NULL;
+	if (rs == NULL) return NULL;
 	return rs->emptyrulesetpolicy;
 }
 
@@ -706,7 +705,7 @@ config_read(const char *filename)
 		s = _strip_whitespace(line);
 
 		/* if nothing left, get next line */
-		if(s[0] == '\0') continue;
+		if (s[0] == '\0') continue;
 
 		/* now we require the line must have form: <option><whitespace><arg>
 		 * even if <arg> is just a left brace, for example
@@ -716,7 +715,7 @@ config_read(const char *filename)
 		p1 = s;
 		while ((*p1 != '\0') && (!isspace(*p1))) p1++;
 		/* if this is end of line, it's a problem */
-		if(p1[0] == '\0') {
+		if (p1[0] == '\0') {
 			debug(LOG_ERR, "Option %s requires argument on line %d in %s", s, linenum, filename);
 			debug(LOG_ERR, "Exiting...");
 			exit(-1);
@@ -739,14 +738,14 @@ config_read(const char *filename)
 			}
 			break;
 		case oDebugLevel:
-			if(sscanf(p1, "%d", &config.debuglevel) < 1 || config.debuglevel < LOG_EMERG || config.debuglevel > LOG_DEBUG) {
+			if (sscanf(p1, "%d", &config.debuglevel) < 1 || config.debuglevel < LOG_EMERG || config.debuglevel > LOG_DEBUG) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s. Valid debuglevel %d..%d", p1, s, linenum, filename, LOG_EMERG, LOG_DEBUG);
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);
 			}
 			break;
 		case oMaxClients:
-			if(sscanf(p1, "%d", &config.maxclients) < 1) {
+			if (sscanf(p1, "%d", &config.maxclients) < 1) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);
@@ -765,7 +764,7 @@ config_read(const char *filename)
 			config.gw_address = safe_strdup(p1);
 			break;
 		case oGatewayPort:
-			if(sscanf(p1, "%u", &config.gw_port) < 1) {
+			if (sscanf(p1, "%u", &config.gw_port) < 1) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);
@@ -803,8 +802,8 @@ config_read(const char *filename)
 			parse_allowed_mac_list(p1);
 			break;
 		case oMACmechanism:
-			if(!strcasecmp("allow",p1)) config.macmechanism = MAC_ALLOW;
-			else if(!strcasecmp("block",p1)) config.macmechanism = MAC_BLOCK;
+			if (!strcasecmp("allow",p1)) config.macmechanism = MAC_ALLOW;
+			else if (!strcasecmp("block",p1)) config.macmechanism = MAC_BLOCK;
 			else {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
@@ -842,28 +841,28 @@ config_read(const char *filename)
 			}
 			break;
 		case oHttpdThreadThreshold:
-			if(sscanf(p1, "%d", &config.httpd_thread_threshold) < 1) {
+			if (sscanf(p1, "%d", &config.httpd_thread_threshold) < 1) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);
 			}
 			break;
 		case oHttpdThreadDelayMS:
-			if(sscanf(p1, "%d", &config.httpd_thread_delay_ms) < 1) {
+			if (sscanf(p1, "%d", &config.httpd_thread_delay_ms) < 1) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);
 			}
 			break;
 		case oClientIdleTimeout:
-			if(sscanf(p1, "%d", &config.clienttimeout) < 1) {
+			if (sscanf(p1, "%d", &config.clienttimeout) < 1) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);
 			}
 			break;
 		case oClientForceTimeout:
-			if(sscanf(p1, "%d", &config.clientforceout) < 1) {
+			if (sscanf(p1, "%d", &config.clientforceout) < 1) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);
@@ -897,7 +896,7 @@ config_read(const char *filename)
 			}
 			break;
 		case oPasswordAttempts:
-			if(sscanf(p1, "%d", &config.passwordattempts) < 1) {
+			if (sscanf(p1, "%d", &config.passwordattempts) < 1) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);
@@ -919,7 +918,7 @@ config_read(const char *filename)
 			}
 			break;
 		case oMSSValue:
-			if(sscanf(p1, "%d", &config.mss_value) < 1) {
+			if (sscanf(p1, "%d", &config.mss_value) < 1) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);
@@ -935,35 +934,35 @@ config_read(const char *filename)
 			}
 			break;
 		case oDownloadLimit:
-			if(sscanf(p1, "%d", &config.download_limit) < 1) {
+			if (sscanf(p1, "%d", &config.download_limit) < 1) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);
 			}
 			break;
 		case oUploadLimit:
-			if(sscanf(p1, "%d", &config.upload_limit) < 1) {
+			if (sscanf(p1, "%d", &config.upload_limit) < 1) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);
 			}
 			break;
 		case oDownloadIMQ:
-			if(sscanf(p1, "%d", &config.download_imq) < 1) {
+			if (sscanf(p1, "%d", &config.download_imq) < 1) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);
 			}
 			break;
 		case oUploadIMQ:
-			if(sscanf(p1, "%d", &config.upload_imq) < 1) {
+			if (sscanf(p1, "%d", &config.upload_imq) < 1) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);
 			}
 			break;
 		case oFWMarkAuthenticated:
-			if(sscanf(p1, "%x", &config.FW_MARK_AUTHENTICATED) < 1 ||
+			if (sscanf(p1, "%x", &config.FW_MARK_AUTHENTICATED) < 1 ||
 					config.FW_MARK_AUTHENTICATED == 0 ||
 					config.FW_MARK_AUTHENTICATED == config.FW_MARK_BLOCKED ||
 					config.FW_MARK_AUTHENTICATED == config.FW_MARK_TRUSTED) {
@@ -973,7 +972,7 @@ config_read(const char *filename)
 			}
 			break;
 		case oFWMarkBlocked:
-			if(sscanf(p1, "%x", &config.FW_MARK_BLOCKED) < 1 ||
+			if (sscanf(p1, "%x", &config.FW_MARK_BLOCKED) < 1 ||
 					config.FW_MARK_BLOCKED == 0 ||
 					config.FW_MARK_BLOCKED == config.FW_MARK_AUTHENTICATED ||
 					config.FW_MARK_BLOCKED == config.FW_MARK_TRUSTED) {
@@ -983,7 +982,7 @@ config_read(const char *filename)
 			}
 			break;
 		case oFWMarkTrusted:
-			if(sscanf(p1, "%x", &config.FW_MARK_TRUSTED) < 1 ||
+			if (sscanf(p1, "%x", &config.FW_MARK_TRUSTED) < 1 ||
 					config.FW_MARK_TRUSTED == 0 ||
 					config.FW_MARK_TRUSTED == config.FW_MARK_AUTHENTICATED ||
 					config.FW_MARK_TRUSTED == config.FW_MARK_BLOCKED) {
@@ -997,13 +996,15 @@ config_read(const char *filename)
 			break;
 		case oSplashPort:
 			if(sscanf(p1, "%u", &config.splash_port) < 1) {
+		case oCheckInterval:
+			if (sscanf(p1, "%i", &config.checkinterval) < 1 || config.checkinterval < 1) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);
 			}
 			break;
 		case oSyslogFacility:
-			if(sscanf(p1, "%d", &config.syslog_facility) < 1) {
+			if (sscanf(p1, "%d", &config.syslog_facility) < 1) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);
@@ -1159,7 +1160,7 @@ void parse_trusted_mac_list(const char ptr[])
 	ptrcopyptr = ptrcopy = safe_strdup(ptr);
 
 	while ((possiblemac = strsep(&ptrcopy, ", \t"))) {
-		if(strlen(possiblemac)>0) add_to_trusted_mac_list(possiblemac);
+		if (strlen(possiblemac)>0) add_to_trusted_mac_list(possiblemac);
 	}
 
 	free(ptrcopyptr);
@@ -1276,7 +1277,7 @@ void parse_blocked_mac_list(const char ptr[])
 	ptrcopyptr = ptrcopy = safe_strdup(ptr);
 
 	while ((possiblemac = strsep(&ptrcopy, ", \t"))) {
-		if(strlen(possiblemac)>0) add_to_blocked_mac_list(possiblemac);
+		if (strlen(possiblemac)>0) add_to_blocked_mac_list(possiblemac);
 	}
 
 	free(ptrcopyptr);
@@ -1392,7 +1393,7 @@ void parse_allowed_mac_list(const char ptr[])
 	ptrcopyptr = ptrcopy = safe_strdup(ptr);
 
 	while ((possiblemac = strsep(&ptrcopy, ", \t"))) {
-		if(strlen(possiblemac) > 0) {
+		if (strlen(possiblemac) > 0) {
 			add_to_allowed_mac_list(possiblemac);
 		}
 	}
@@ -1417,9 +1418,9 @@ int set_log_level(int level)
 int set_password(const char s[])
 {
 	char *old = config.password;
-	if(s) {
+	if (s) {
 		config.password = safe_strdup(s);
-		if(old) free(old);
+		if (old) free(old);
 		return 0;
 	}
 	return 1;
@@ -1431,9 +1432,9 @@ int set_password(const char s[])
 int set_username(const char s[])
 {
 	char *old = config.username;
-	if(s) {
+	if (s) {
 		config.username = safe_strdup(s);
-		if(old) free(old);
+		if (old) free(old);
 		return 0;
 	}
 	return 1;
