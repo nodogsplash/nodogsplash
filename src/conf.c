@@ -998,7 +998,7 @@ config_read(const char *filename)
 			}
 			break;
 		case oCheckInterval:
-			if(sscanf(p1, "%i", &config.checkinterval) < 1) {
+			if(sscanf(p1, "%i", &config.checkinterval || config.checkinterval < 1) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);
@@ -1022,7 +1022,7 @@ config_read(const char *filename)
 			}
 			break;
 		case oDnsSpoofingPort:
-			if(sscanf(p1, "%u", &config.dns_spoofing_port) < 
+			if(sscanf(p1, "%u", &config.dns_spoofing_port) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);
