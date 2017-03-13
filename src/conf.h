@@ -96,6 +96,7 @@
 #define DEFAULT_IP6 0
 #define DEFAULT_SPLASH_PORT 80
 #define DEFAULT_DNS_SPOOFING 0
+#define DEFAULT_DNS_SPOOFING_PORT 5353
 /*@}*/
 
 /**
@@ -203,6 +204,8 @@ typedef struct {
 	int ip6;			/**< @brief enable IPv6 */
 	char *splash_address;			/**< @brief enable custom splash support, DNS or IP goes here. */
 	unsigned int splash_port;			/**< @brief set the custom splash port */
+	int dns_spoofing;			/**< @brief enables dns spoofing support if dnsmasq is available */
+	unsigned int dns_spoofing_port;			/**< @brief dns spoofing port which every request is redirected too */
 } s_config;
 
 /** @brief Get the current gateway configuration */

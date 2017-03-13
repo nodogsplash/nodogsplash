@@ -113,7 +113,9 @@ typedef enum {
 	oFWMarkTrusted,
 	oFWMarkBlocked,
 	oSplashAddress,
-	oSplashPort
+	oSplashPort,
+	oDnsSpoofing,
+	oDnsSpoofingPort,
 } OpCodes;
 
 /** @internal
@@ -174,6 +176,8 @@ static const struct {
 	{ "FW_MARK_BLOCKED", oFWMarkBlocked },
 	{ "splashaddress", oSplashAddress },
 	{ "splashport", oSplashPort },
+	{ "dnsspoofing", oDnsSpoofing },
+	{ "dnsspoofingport", oDnsSpoofingPort },
 	{ NULL, oBadOption },
 };
 
@@ -258,6 +262,8 @@ config_init(void)
 	config.ip6 = DEFAULT_IP6;
 	config.splash_address = NULL;
 	config.splash_port = DEFAULT_SPLASH_PORT;
+	config.dns_spoofing = DEFAULT_DNS_SPOOFING;
+	config.dns_spoofing_port = DEFAULT_DNS_SPOOFING_PORT;
 
 	/* Set up default FirewallRuleSets, and their empty ruleset policies */
 	rs = add_ruleset("trusted-users");
@@ -1004,6 +1010,20 @@ config_read(const char *filename)
 			break;
 		case oSplashPort:
 			if(sscanf(p1, "%u", &config.splash_port) < 1) {
+				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
+				debug(LOG_ERR, "Exiting...");
+				exit(-1);
+			}
+			break;
+		case oDnsSpoofing:
+			if(sscanf(p1, "%i", &config.dns_spoofing) < 1) {
+				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
+				debug(LOG_ERR, "Exiting...");
+				exit(-1);
+			}
+			break;
+		case oDnsSpoofingPort:
+			if(sscanf(p1, "%u", &config.dns_spoofing_port) < 1) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);

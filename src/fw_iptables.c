@@ -452,6 +452,12 @@ iptables_fw_init(void)
 		rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p tcp --dport 80 -j DNAT --to-destination %s:%d", gw_address, gw_port);
 	}
 
+	/* CHAIN_OUTGOING, packets will be redirected to local dns server */
+	if(config->dns_spoofing) {
+		rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p tcp --dport 53 -j REDIRECT --to-port %d", config->dns_spoofing_port);
+		rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p udp --dport 53 -j REDIRECT --to-port %d", config->dns_spoofing_port);
+	}
+
 	/* CHAIN_OUTGOING, other packets  ACCEPT */
 	rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -j ACCEPT");
 
