@@ -991,13 +991,18 @@ config_read(const char *filename)
 				exit(-1);
 			}
 			break;
+		case oCheckInterval:
+			if (sscanf(p1, "%i", &config.checkinterval) < 1 || config.checkinterval < 1) {
+				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
+				debug(LOG_ERR, "Exiting...");
+				exit(-1);
+			}
+			break;
 		case oSplashAddress:
 			config.splash_address = safe_strdup(p1);
 			break;
 		case oSplashPort:
 			if(sscanf(p1, "%u", &config.splash_port) < 1) {
-		case oCheckInterval:
-			if (sscanf(p1, "%i", &config.checkinterval) < 1 || config.checkinterval < 1) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);
