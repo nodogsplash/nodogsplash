@@ -94,6 +94,8 @@
 #define DEFAULT_EMPTY_AUTHENTICATED_USERS_POLICY "RETURN"
 #define DEFAULT_EMPTY_PREAUTHENTICATED_USERS_POLICY "REJECT"
 #define DEFAULT_IP6 0
+#define DEFAULT_SPLASH_PORT 80
+#define DEFAULT_DNS_SPOOFING 0
 /*@}*/
 
 /**
@@ -199,6 +201,8 @@ typedef struct {
 	unsigned int FW_MARK_BLOCKED;          /**< @brief iptables mark for blocked packets */
 	unsigned int FW_MARK_TRUSTED;          /**< @brief iptables mark for trusted packets */
 	int ip6;			/**< @brief enable IPv6 */
+	char *splash_address;			/**< @brief enable custom splash support, DNS or IP goes here. */
+	unsigned int splash_port;			/**< @brief set the custom splash port */
 } s_config;
 
 /** @brief Get the current gateway configuration */
