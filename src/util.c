@@ -126,8 +126,8 @@ execute(const char cmd_line[], int quiet)
 		debug(LOG_DEBUG, "Waiting for PID %d to exit", (int)pid);
 		do {
 			rc = waitpid(pid, &status, 0);
-			if(rc == -1) {
-				if(errno == ECHILD) {
+			if (rc == -1) {
+				if (errno == ECHILD) {
 					debug(LOG_DEBUG, "waitpid(): No child exists now. Assuming normal exit for PID %d", (int)pid);
 					retval = 0;
 				} else {
@@ -136,11 +136,11 @@ execute(const char cmd_line[], int quiet)
 				}
 				break;
 			}
-			if(WIFEXITED(status)) {
+			if (WIFEXITED(status)) {
 				debug(LOG_DEBUG, "Process PID %d exited normally, status %d", (int)rc, WEXITSTATUS(status));
 				retval = (WEXITSTATUS(status));
 			}
-			if(WIFSIGNALED(status)) {
+			if (WIFSIGNALED(status)) {
 				debug(LOG_DEBUG, "Process PID %d exited due to signal %d", (int)rc, WTERMSIG(status));
 				retval = -1;
 			}
@@ -190,7 +190,7 @@ get_iface_ip(const char ifname[])
 	struct ifaddrs *addrs;
 	s_config *config;
 
-	if(getifaddrs(&addrs) < 0) {
+	if (getifaddrs(&addrs) < 0) {
 		debug(LOG_ERR, "getifaddrs(): %s", strerror(errno));
 		return NULL;
 	}
@@ -203,14 +203,14 @@ get_iface_ip(const char ifname[])
 	/* Iterate all interfaces */
 	cur = addrs;
 	while(cur != NULL) {
-		if( (cur->ifa_addr != NULL) && (strcmp( cur->ifa_name, ifname ) == 0) ) {
+		if ( (cur->ifa_addr != NULL) && (strcmp( cur->ifa_name, ifname ) == 0) ) {
 
-			if(config->ip6 && cur->ifa_addr->sa_family == AF_INET6) {
+			if (config->ip6 && cur->ifa_addr->sa_family == AF_INET6) {
 				inet_ntop(AF_INET6, &((struct sockaddr_in6 *)cur->ifa_addr)->sin6_addr, addrbuf, sizeof(addrbuf));
 				break;
 			}
 
-			if(!config->ip6 && cur->ifa_addr->sa_family == AF_INET) {
+			if (!config->ip6 && cur->ifa_addr->sa_family == AF_INET) {
 				inet_ntop(AF_INET, &((struct sockaddr_in *)cur->ifa_addr)->sin_addr, addrbuf, sizeof(addrbuf));
 				break;
 			}
@@ -303,9 +303,9 @@ get_ext_iface (void)
 	char *device, *gw;
 	int i = 1;
 	int keep_detecting = 1;
-	pthread_cond_t		cond = PTHREAD_COND_INITIALIZER;
-	pthread_mutex_t		cond_mutex = PTHREAD_MUTEX_INITIALIZER;
-	struct	timespec	timeout;
+	pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+	pthread_mutex_t cond_mutex = PTHREAD_MUTEX_INITIALIZER;
+	struct timespec timeout;
 	device = (char *)malloc(16);
 	gw = (char *)malloc(16);
 	debug(LOG_DEBUG, "get_ext_iface(): Autodectecting the external interface from routing table");
@@ -422,33 +422,33 @@ ndsctl_status(int fd)
 	cprintf(fd, "Managed IP range: %s\n", config->gw_iprange);
 	cprintf(fd, "Server listening: %s:%d\n", config->gw_address, config->gw_port);
 
-	if(config->authenticate_immediately) {
+	if (config->authenticate_immediately) {
 		cprintf(fd, "Authenticate immediately: yes\n");
 	} else {
 		cprintf(fd, "Splashpage: %s/%s\n", config->webroot, config->splashpage);
 	}
 
-	if(config->redirectURL) {
+	if (config->redirectURL) {
 		cprintf(fd, "Redirect URL: %s\n", config->redirectURL);
 	}
 
-	if(config->passwordauth) {
+	if (config->passwordauth) {
 		cprintf(fd, "Gateway password: %s\n", config->password);
 	}
 
-	if(config->usernameauth) {
+	if (config->usernameauth) {
 		cprintf(fd, "Gateway username: %s\n", config->username);
 	}
 
 	cprintf(fd, "Traffic control: %s\n", config->traffic_control ? "yes" : "no");
 
-	if(config->traffic_control) {
-		if(config->download_limit > 0) {
+	if (config->traffic_control) {
+		if (config->download_limit > 0) {
 			cprintf(fd, "Download rate limit: %d kbit/s\n", config->download_limit);
 		} else {
 			cprintf(fd, "Download rate limit: none\n");
 		}
-		if(config->upload_limit > 0) {
+		if (config->upload_limit > 0) {
 			cprintf(fd, "Upload rate limit: %d kbit/s\n", config->upload_limit);
 		} else {
 			cprintf(fd, "Upload rate limit: none\n");
@@ -466,7 +466,7 @@ ndsctl_status(int fd)
 	cprintf(fd, "Client authentications since start: %u\n", authenticated_since_start);
 	cprintf(fd, "Httpd request threads created/current: %d/%d\n", created_httpd_threads, current_httpd_threads);
 
-	if(config->decongest_httpd_threads) {
+	if (config->decongest_httpd_threads) {
 		cprintf(fd, "Httpd thread decongest threshold: %d threads\n", config->httpd_thread_threshold);
 		cprintf(fd, "Httpd thread decongest delay: %d ms\n", config->httpd_thread_delay_ms);
 	}
@@ -479,7 +479,7 @@ ndsctl_status(int fd)
 	cprintf(fd, "Current clients: %d\n", get_client_list_length());
 
 	client = client_get_first_client();
-	if(client) {
+	if (client) {
 		cprintf(fd, "\n");
 	}
 
@@ -499,7 +499,7 @@ ndsctl_status(int fd)
 		cprintf(fd, "  Active duration: %s\n", str);
 		free(str);
 
-		if(now > client->added_time) {
+		if (now > client->added_time) {
 			durationsecs = now - client->added_time;
 		} else {
 			// prevent divison by 0 later
@@ -531,7 +531,7 @@ ndsctl_status(int fd)
 
 	cprintf(fd, "Blocked MAC addresses:");
 
-	if(config->macmechanism == MAC_ALLOW) {
+	if (config->macmechanism == MAC_ALLOW) {
 		cprintf(fd, " N/A\n");
 	} else  if (config->blockedmaclist != NULL) {
 		cprintf(fd, "\n");
@@ -544,7 +544,7 @@ ndsctl_status(int fd)
 
 	cprintf(fd, "Allowed MAC addresses:");
 
-	if(config->macmechanism == MAC_BLOCK) {
+	if (config->macmechanism == MAC_BLOCK) {
 		cprintf(fd, " N/A\n");
 	} else  if (config->allowedmaclist != NULL) {
 		cprintf(fd, "\n");
@@ -587,7 +587,7 @@ ndsctl_clients(int fd)
 	cprintf(fd, "%d\n", get_client_list_length());
 
 	client = client_get_first_client();
-	if(client) {
+	if (client) {
 		cprintf(fd, "\n");
 	}
 
@@ -653,14 +653,14 @@ ndsctl_json(int fd)
 		upload_bytes = client->counters.outgoing;
 
 		cprintf(fd, "\"downloaded\":\"%llu\",\n\"avg_down_speed\":\"%.6g\",\n\"uploaded\":\"%llu\",\n\"avg_up_speed\":\"%.6g\"\n",
-				download_bytes/1000, ((double)download_bytes)/125/durationsecs,
-				upload_bytes/1000, ((double)upload_bytes)/125/durationsecs);
+			download_bytes/1000, ((double)download_bytes)/125/durationsecs,
+			upload_bytes/1000, ((double)upload_bytes)/125/durationsecs);
 
 		indx++;
 		client = client->next;
 
 		cprintf(fd, "}");
-		if(client) {
+		if (client) {
 			cprintf(fd, ",\n");
 		}
 	}

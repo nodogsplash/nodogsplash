@@ -1,5 +1,4 @@
-
-nodogsplash (2.0.0) stable; urgency=low
+nodogsplash (2.0.0-1) stable; urgency=low
 
   * replace libhttp by libmicrohttpd [lynxis]
   * implement string replace based template engine [lynxis]
@@ -13,7 +12,7 @@ nodogsplash (2.0.0) stable; urgency=low
   * add debian support including systemd [efernandesng]
   * fix file descriptor leak [sfstudio]
 
- -- Alexander Couzens <lynxis@fe80.eu> Thu, 10 Nov 2016 12:23:42 +0100
+ -- Alexander Couzens <lynxis@fe80.eu>  Thu, 10 Nov 2016 12:23:42 +0100
 
 nodogsplash (1.0.0-1) stable; urgency=low
 

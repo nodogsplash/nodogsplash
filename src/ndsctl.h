@@ -27,7 +27,7 @@
 #ifndef _NDSCTL_H_
 #define _NDSCTL_H_
 
-#define DEFAULT_SOCK	"/tmp/ndsctl.sock"
+#define DEFAULT_SOCK "/tmp/ndsctl.sock"
 
 #define NDSCTL_TERMINATOR	"\r\n\r\n"
 
@@ -52,9 +52,9 @@
 
 
 typedef struct {
-	char	*socket;
-	int	command;
-	char	*param;
+	char *socket;
+	int command;
+	char *param;
 } s_config;
 
 

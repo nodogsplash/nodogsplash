@@ -113,7 +113,7 @@ _client_list_append(const char ip[], const char mac[], const char token[])
 
 	config = config_get_config();
 	maxclients = config->maxclients;
-	if(client_count >= maxclients) {
+	if (client_count >= maxclients) {
 		debug(LOG_NOTICE, "Already list %d clients, cannot add %s %s", client_count, ip, mac);
 		return NULL;
 	}
@@ -190,7 +190,7 @@ client_list_add_client(const char ip[])
 	t_client *client;
 	char *mac, *token;
 
-	if(!check_ip_format(ip)) {
+	if (!check_ip_format(ip)) {
 		/* Inappropriate format in IP address */
 		debug(LOG_NOTICE, "Illegal IP format [%s]", ip);
 		return NULL;
@@ -207,14 +207,13 @@ client_list_add_client(const char ip[])
 		client = _client_list_append(ip, mac, token);
 		free(token);
 	} else {
-		debug(LOG_INFO, "Client %s %s token %s already on client list",
-			  ip, mac, client->token);
+		debug(LOG_INFO, "Client %s %s token %s already on client list", ip, mac, client->token);
 	}
 	free(mac);
 	return client;
 }
 
-/** Finds a  client by its IP and MAC, returns NULL if the client could not
+/** Finds a client by its IP and MAC, returns NULL if the client could not
  * be found
  * @param ip IP we are looking for in the linked list
  * @param mac MAC we are looking for in the linked list
@@ -258,9 +257,9 @@ client_list_find_by_ip(const char ip[])
 }
 
 /**
- * Finds a  client by its Mac, returns NULL if the client could not
+ * Finds a client by its MAC, returns NULL if the client could not
  * be found
- * @param mac Mac we are looking for in the linked list
+ * @param mac MAC we are looking for in the linked list
  * @return Pointer to the client, or NULL if not found
  */
 t_client *
