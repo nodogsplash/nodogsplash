@@ -477,9 +477,9 @@ iptables_fw_init(void)
 	/* CHAIN_TO_ROUTER packets marked BLOCKED  DROP */
 	rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -m mark --mark 0x%x%s -j DROP", FW_MARK_BLOCKED, markmask);
 	/* CHAIN_TO_ROUTER, invalid packets  DROP */
-	rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -m state --state INVALID -j DROP");
+	rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -m conntrack --ctstate INVALID -j DROP");
 	/* CHAIN_TO_ROUTER, related and established packets  ACCEPT */
-	rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -m state --state RELATED,ESTABLISHED -j ACCEPT");
+	rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT");
 	/* CHAIN_TO_ROUTER, bogus SYN packets  DROP */
 	rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -p tcp --tcp-flags SYN SYN \\! --tcp-option 2 -j  DROP");
 
@@ -498,7 +498,7 @@ iptables_fw_init(void)
 	} else {
 		rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -m mark --mark 0x%x%s -j " CHAIN_TRUSTED_TO_ROUTER, FW_MARK_TRUSTED, markmask);
 		/* CHAIN_TRUSTED_TO_ROUTER, related and established packets  ACCEPT */
-		rc |= iptables_do_command("-t filter -A " CHAIN_TRUSTED_TO_ROUTER " -m state --state RELATED,ESTABLISHED -j ACCEPT");
+		rc |= iptables_do_command("-t filter -A " CHAIN_TRUSTED_TO_ROUTER " -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT");
 		/* CHAIN_TRUSTED_TO_ROUTER, append the "trusted-users-to-router" ruleset */
 		rc |= _iptables_append_ruleset("filter", "trusted-users-to-router", CHAIN_TRUSTED_TO_ROUTER);
 		/* CHAIN_TRUSTED_TO_ROUTER, any packets not matching that ruleset  REJECT */
@@ -531,7 +531,7 @@ iptables_fw_init(void)
 	/* CHAIN_TO_INTERNET packets marked BLOCKED  DROP */
 	rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m mark --mark 0x%x%s -j DROP", FW_MARK_BLOCKED, markmask);
 	/* CHAIN_TO_INTERNET, invalid packets  DROP */
-	rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m state --state INVALID -j DROP");
+	rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m conntrack --ctstate INVALID -j DROP");
 	/* CHAIN_TO_INTERNET, deal with MSS */
 	if (set_mss) {
 		/* XXX this mangles, so 'should' be done in the mangle POSTROUTING chain.
@@ -556,7 +556,7 @@ iptables_fw_init(void)
 	} else {
 		rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m mark --mark 0x%x%s -j " CHAIN_TRUSTED, FW_MARK_TRUSTED, markmask);
 		/* CHAIN_TRUSTED, related and established packets  ACCEPT */
-		rc |= iptables_do_command("-t filter -A " CHAIN_TRUSTED " -m state --state RELATED,ESTABLISHED -j ACCEPT");
+		rc |= iptables_do_command("-t filter -A " CHAIN_TRUSTED " -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT");
 		/* CHAIN_TRUSTED, append the "trusted-users" ruleset */
 		rc |= _iptables_append_ruleset("filter", "trusted-users", CHAIN_TRUSTED);
 		/* CHAIN_TRUSTED, any packets not matching that ruleset  REJECT */
@@ -576,7 +576,7 @@ iptables_fw_init(void)
 	} else {
 		rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m mark --mark 0x%x%s -j " CHAIN_AUTHENTICATED, FW_MARK_AUTHENTICATED, markmask);
 		/* CHAIN_AUTHENTICATED, related and established packets  ACCEPT */
-		rc |= iptables_do_command("-t filter -A " CHAIN_AUTHENTICATED " -m state --state RELATED,ESTABLISHED -j ACCEPT");
+		rc |= iptables_do_command("-t filter -A " CHAIN_AUTHENTICATED " -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT");
 		/* CHAIN_AUTHENTICATED, append the "authenticated-users" ruleset */
 		rc |= _iptables_append_ruleset("filter", "authenticated-users", CHAIN_AUTHENTICATED);
 		/* CHAIN_AUTHENTICATED, any packets not matching that ruleset  REJECT */
