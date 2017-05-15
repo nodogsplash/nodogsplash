@@ -1,3 +1,11 @@
+nodogsplash (1.0.2-1) stable; urgency=medium
+
+  * fix iptables syntax for 1.6.1 [ghost]
+  * small allocation optimization [mwarning]
+  * fix compilation for musl libc [jow]
+
+ --  <mwarning@xanax>  Mon, 15 May 2017 23:21:16 +0200
+
 nodogsplash (1.0.1-1) stable; urgency=low
 
   * Set version in source code to 1.0.1 [mwarning]
