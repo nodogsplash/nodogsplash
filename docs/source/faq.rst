@@ -29,3 +29,10 @@ I would like to use QoS or TrafficControl on OpenWrt
 This feature is broken since OpenWrt 12.09 (Attitude Adjustment), because
 OpenWrt removed the IMQ (Intermediate queueing device) support. We're looking
 for somebody who want to fix that.
+
+Is https:// redirection supported?
+**********************************
+
+No. We believe this is the wrong way to do it, because all connection would have a critical certificate failure.
+As certain network managers evolved on major Operating Systems (Linux, Android, iOS/macOS, Windows),
+the network manager will detect the presence of a hotspot and notify the user.
