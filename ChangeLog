@@ -12,8 +12,11 @@ nodogsplash (2.0.0)
   * add debian support including systemd [efernandesng]
   * fix file descriptor leak [sfstudio]
   * fix uncomplete console output [mwarning]
+  * update splash.html (#152) [bluewavenet]
+  * fw_iptables: fix iptables syntax for 1.6.1 [mwarning]
+  * fix CheckInterval option (#168) [zaolin]
 
- -- Alexander Couzens <lynxis@fe80.eu>  Thu, 10 Nov 2016 12:23:42 +0100
+ -- Alexander Couzens <lynxis@fe80.eu>  Mon, 29 May 2017 12:23:42 +0100
 
 nodogsplash (1.0.0)
 
