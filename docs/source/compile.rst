@@ -12,8 +12,8 @@ Install libmicrohttpd including the header files (often call -dev package).
    cd nodogsplash
    make
 
-If you installed the libmicrohttpd to another location please like /tmp/libmicrohttpd_install/
-replace the make call with
+If you installed the libmicrohttpd to another location (e.g. /tmp/libmicrohttpd_install/)
+replace path in the make call with
 
 .. code::
 
@@ -24,7 +24,7 @@ After compiling you can call ``make install`` to install nodogsplash to /usr/
 OpenWrt
 *******
 
-To compile nodogsplash please ues the package definiton from the feeds package.
+To compile nodogsplash please use the package definiton from the feeds package.
 
 .. code::
 
