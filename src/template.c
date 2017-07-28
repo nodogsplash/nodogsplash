@@ -39,7 +39,6 @@ static int get_variable_index(const char *name)
 
 	for(j=0; j < ARRAY_SIZE(variable_names); j++) {
 		if (strcmp(name, variable_names[j]) == 0) {
-			fprintf(stderr, "vari %s = %s %d", name, variable_names[j], j);
 			return j;
 		}
 	}
