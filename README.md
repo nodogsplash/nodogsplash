@@ -1,4 +1,4 @@
-##0. The Nodogsplash project
+## 0. The Nodogsplash project
 
 Nodogsplash offers a simple way to provide restricted access to an internet
 connection. It is derived from the codebase of the Wifi Guard Dog project.
@@ -12,7 +12,7 @@ Nodogsplash is released under the GNU General Public License.
 The following describes what Nodogsplash does, how to get it and run it, and
 how to customize its behavior for your application.
 
-##1. Overview
+## 1. Overview
 
 Nodogsplash offers a solution to this problem: You want to provide controlled
 and reasonably secure public access to an internet connection; and while you
@@ -32,7 +32,7 @@ Specific features of Nodogsplash are configurable, by editing the configuration
 file and the splash page. The default installed configuration may be all you
 need, though.
 
-##2. Documentation
+## 2. Documentation
 
 For additonal documentation please look at https://nodogsplash.readthedocs.io/en/latest/
 
