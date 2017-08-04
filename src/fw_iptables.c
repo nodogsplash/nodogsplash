@@ -212,19 +212,19 @@ _iptables_compile(const char table[], const char chain[], t_firewall_rule *rule)
 
 	switch (rule->target) {
 	case TARGET_DROP:
-		mode = safe_strdup("DROP");
+		mode = "DROP";
 		break;
 	case TARGET_REJECT:
-		mode = safe_strdup("REJECT");
+		mode = "REJECT";
 		break;
 	case TARGET_ACCEPT:
-		mode = safe_strdup("ACCEPT");
+		mode = "ACCEPT";
 		break;
 	case TARGET_LOG:
-		mode = safe_strdup("LOG");
+		mode = "LOG";
 		break;
 	case TARGET_ULOG:
-		mode = safe_strdup("ULOG");
+		mode = "ULOG";
 		break;
 	}
 
@@ -252,8 +252,6 @@ _iptables_compile(const char table[], const char chain[], t_firewall_rule *rule)
 	snprintf((command + strlen(command)),
 			 (sizeof(command) - strlen(command)),
 			 "-j %s", mode);
-
-	free(mode);
 
 	/* XXX The buffer command, an automatic variable, will get cleaned
 	 * off of the stack when we return, so we strdup() it. */
