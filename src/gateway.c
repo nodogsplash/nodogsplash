@@ -26,6 +26,12 @@
   @author Copyright (C) 2008 Paul Kube <nodogsplash@kokoro.ucsd.edu>
  */
 
+
+// Check for libmicrohttp version >= 0.9.51
+#if MHD_VERSION < 0x00095100
+#error libmicrohttp version >= 0.9.51 required
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
