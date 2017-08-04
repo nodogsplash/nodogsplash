@@ -165,9 +165,9 @@ iptables_do_command(const char *format, ...)
 	config = config_get_config();
 
 	if (config->ip6) {
-		safe_asprintf(&cmd, "ip6tables %s", fmt_cmd);
+		safe_asprintf(&cmd, "ip6tables --wait %s", fmt_cmd);
 	} else {
-		safe_asprintf(&cmd, "iptables %s", fmt_cmd);
+		safe_asprintf(&cmd, "iptables --wait %s", fmt_cmd);
 	}
 
 	free(fmt_cmd);
