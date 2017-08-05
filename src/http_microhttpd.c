@@ -61,9 +61,47 @@ static int is_foreign_hosts(struct MHD_Connection *connection, const char *host)
 static int is_splashpage(const char *host, const char *url);
 static int get_query(struct MHD_Connection *connection, char **collect_query);
 static const char *get_redirect_url(struct MHD_Connection *connection);
-
+static const char *get_voucher(struct MHD_Connection *connection);
 static const char *lookup_mimetype(const char *filename);
 
+static int is_alphanum(const char *str)
+{
+	size_t i;
+
+	if(!str) {
+		return 0;
+	}
+
+	for (i = 0; i < strlen(str); ++i) {
+		const char c = str[i];
+		if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')))
+			return 0;
+	}
+
+	return 1;
+}
+
+static int get_voucher_data(const char *buff, t_client *client)
+{
+	int seconds = 0;
+	int upload = 0;
+	int download = 0;
+
+	/* We require at least one value */
+	if (sscanf(buff, "%d %d %d", &seconds, &upload, &download) < 1)
+		goto err;
+	if (seconds < 1 || upload < 0 || download < 0)
+		goto err;
+
+	client->download_limit = download;
+	client->upload_limit = upload;
+	return seconds;
+
+err:
+	client->download_limit = 0;
+	client->upload_limit = 0;
+	return 0;
+}
 
 struct collect_query {
 	int i;
@@ -412,6 +450,12 @@ static int authenticated(struct MHD_Connection *connection,
 			return authenticate_client(connection, ip_addr, mac, redirect_url, client);
 	} else if (check_authdir_match(url, config->denydir)) {
 		auth_client_action(ip_addr, mac, AUTH_MAKE_DEAUTHENTICATED);
+		if(config->bin_voucher) {
+			char *cmd = NULL;
+
+			safe_asprintf(&cmd,"%s auth_update %s %s %d", config->bin_voucher, mac, client->voucher, time(NULL) - client->added_time);
+			execute_simple(cmd , 1);
+		}
 		snprintf(redirect_to_us, 128, "http://%s:%u/", config->gw_address, config->gw_port);
 		return send_redirect_temp(connection, redirect_to_us);
 	}
@@ -472,7 +516,35 @@ static int preauthenticated(struct MHD_Connection *connection,
 			redirect_url = get_redirect_url(connection);
 
 		if (try_to_authenticate(connection, client, host, url)) {
-			return authenticate_client(connection, ip_addr, mac, redirect_url, client);
+			if (config->bin_voucher) {
+				client->voucher = safe_strdup(get_voucher(connection));
+
+				if(is_alphanum(client->voucher)) {
+					int ret;
+					char *cmd = NULL;
+					char msg[255];
+
+					safe_asprintf(&cmd,"%s auth_verify %s %s", config->bin_voucher, mac, client->voucher);
+					ret = execute(cmd , 1, msg, strlen(msg) - 1);
+
+					if(ret > 0) {
+						return encode_and_redirect_to_splashpage(connection, redirect_url);
+					} else {
+						int seconds = get_voucher_data(msg, client);
+						if(seconds < 1) {
+							return encode_and_redirect_to_splashpage(connection, redirect_url);
+						} else {
+							debug(LOG_NOTICE, "Remote auth data: client [%s, %s] authenticated for %d seconds", mac, client->ip, seconds);
+							client->added_time = time(NULL) - (config->checkinterval * config->clientforceout) + seconds;
+							return authenticate_client(connection, ip_addr, mac, redirect_url, client);
+						}
+					}
+				} else {
+					return encode_and_redirect_to_splashpage(connection, redirect_url);
+				}
+			} else {
+				return authenticate_client(connection, ip_addr, mac, redirect_url, client);
+			}
 		} else {
 			/* user used an invalid token, redirect to splashpage but hold query "redir" intact */
 			return encode_and_redirect_to_splashpage(connection, redirect_url);
@@ -601,6 +673,18 @@ int send_redirect_temp(struct MHD_Connection *connection, const char *url)
 static const char *get_redirect_url(struct MHD_Connection *connection)
 {
 	struct collect_query_key query_key = { .key = "redir" };
+
+	MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, &collect_query_key, &query_key);
+
+	if (!query_key.value)
+			return NULL;
+
+	return query_key.value;
+}
+
+static const char *get_voucher(struct MHD_Connection *connection)
+{
+	struct collect_query_key query_key = { .key = "voucher" };
 
 	MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, &collect_query_key, &query_key);
 

@@ -175,7 +175,7 @@ iptables_do_command(const char *format, ...)
 	debug(LOG_DEBUG, "Executing command: %s", cmd);
 
 	for (i = 0; i < 5; i++) {
-		rc = execute(cmd, fw_quiet);
+		rc = execute_simple(cmd ,fw_quiet);
 		if (rc == 4) {
 			/* iptables error code 4 indicates a resource problem that might
 			 * be temporary. So we retry to insert the rule a few times. (Mitar) */
