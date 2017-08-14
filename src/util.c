@@ -169,11 +169,12 @@ execute(const char cmd_line[], int quiet, char *msg, size_t msg_len)
 			debug(LOG_ERR, "sigaction() failed to restore SIGCHLD handler! Error %s", strerror(errno));
 		}
 
-		if(stdout && msg && msg_len) {
+		if(msg != NULL && msg_len > 0) {
 			fgets(msg, msg_len, stdin);
 			fclose(stdin);
 		}
 
+		fclose(stdin);
 		return retval;
 	}
 }

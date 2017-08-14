@@ -450,12 +450,6 @@ static int authenticated(struct MHD_Connection *connection,
 			return authenticate_client(connection, ip_addr, mac, redirect_url, client);
 	} else if (check_authdir_match(url, config->denydir)) {
 		auth_client_action(ip_addr, mac, AUTH_MAKE_DEAUTHENTICATED);
-		if(config->bin_voucher) {
-			char *cmd = NULL;
-
-			safe_asprintf(&cmd,"%s auth_update %s %s %d", config->bin_voucher, mac, client->voucher, time(NULL) - client->added_time);
-			execute_simple(cmd , 1);
-		}
 		snprintf(redirect_to_us, 128, "http://%s:%u/", config->gw_address, config->gw_port);
 		return send_redirect_temp(connection, redirect_to_us);
 	}
@@ -525,13 +519,13 @@ static int preauthenticated(struct MHD_Connection *connection,
 					char msg[255];
 
 					safe_asprintf(&cmd,"%s auth_verify %s %s", config->bin_voucher, mac, client->voucher);
-					ret = execute(cmd , 1, msg, strlen(msg) - 1);
+					ret = execute(cmd , 1, msg, sizeof(msg) - 1);
 
 					if(ret > 0) {
 						return encode_and_redirect_to_splashpage(connection, redirect_url);
 					} else {
 						int seconds = get_voucher_data(msg, client);
-						if(seconds < 1) {
+						if(seconds <= 1) {
 							return encode_and_redirect_to_splashpage(connection, redirect_url);
 						} else {
 							debug(LOG_NOTICE, "Remote auth data: client [%s, %s] authenticated for %d seconds", mac, client->ip, seconds);
