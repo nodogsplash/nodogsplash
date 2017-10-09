@@ -1,0 +1,26 @@
+Forwarding Authentication Service (FAS)
+
+Author: Rob White @bluewavenet - BlueWave Projects and Services
+Copyright (C) 2015-2017 BlueWave Projects and Services. This software is released under the GNU GPL license.
+
+Nodogsplash (NDS) can support external (to NDS) authentication without using the Binvoucher functionality.
+ 
+The BinVoucher process was originally intended to support Forwarding Authentication. This is a non trivial function and although partially implemented in early versions, is not implemented at all in version 2, at the time of writing.
+
+Fortunately, Forwarding Authentication can be done without any modification to the core NDS code and in a way that is compatible with all versions, pre v1 beta through to the current release of v2.
+
+The defacto industry standard Captive Portal Detection (CPD), present on almost all devices these days, invokes the NDS splash page with various parameters passed to it by NDS, including the client access token.  
+
+It is a simple matter to pass this token to an external Forwarding Authentication Service (FAS) by using some form of redirect in the splash page.
+
+For a client to access this external service, the ip address and port number of the service must be added to the NDS walled garden in nodogsplash.conf or its equivalent UCI config file if running under LEDE/OpenWrt.
+
+Presented here will be various configuration files and remote php scripts, intended as an example implementation of FAS.
+
+PHP will be used in this example but any web server cgi could be used. The web server hosting FAS may be on the router running NDS or may be external to that box, either on the local network or out on the Internet, using http or https.
+
+Required changes to NDS are restricted only to config files and the splash.html file.
+
+The simple example to be presented here will support multiple, pre-defined username/password combinations.
+
+It will be no more secure than the original sitewide username/password supported by NDS as it will use a simle unencrypted flat database file, but a high degree of security could be built into a production system should developers require it, with all the tools of an independent secure web server and scripting language potentially available to the FAS.
