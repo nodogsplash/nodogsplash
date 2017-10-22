@@ -112,6 +112,20 @@ arp_get(const char req_ip[])
 	return reply;
 }
 
+int
+is_arp_valid()
+{
+	FILE *arp_file = fopen("/proc/net/arp", "r");
+	int rc = 0;
+
+	if (arp_file) {
+		rc = 1;
+		fclose(arp_file);
+	}
+
+	return rc;
+}
+
 /** Initialize the firewall rules
  */
 int
@@ -161,7 +175,18 @@ fw_refresh_client_list(void)
 			now = time(NULL);
 			last_updated = cp1->counters.last_updated;
 			added_time = cp1->added_time;
-			if (last_updated +  (config->checkinterval * config->clienttimeout) <= now) {
+
+			if (is_arp_valid() && !arp_get(ip)) {
+				/* ICMP pings can be blocked by a firewall.
+				so it replaces with ARP to determine the disconnect of the client. */
+				debug(LOG_NOTICE, "Client %s is disconnected", ip);
+
+				if (cp1->fw_connection_state == FW_MARK_AUTHENTICATED) {
+					iptables_fw_access(AUTH_MAKE_DEAUTHENTICATED, cp1);
+				}
+
+				client_list_delete(cp1);
+			} else if (last_updated +  (config->checkinterval * config->clienttimeout) <= now) {
 				/* Timing out inactive user */
 				debug(LOG_NOTICE, "%s %s inactive %d secs. kB in: %llu  kB out: %llu",
 					cp1->ip, cp1->mac, config->checkinterval * config->clienttimeout,
@@ -195,4 +220,3 @@ fw_connection_state_as_string(int mark)
 	if (mark == FW_MARK_BLOCKED) return "Blocked";
 	return "ERROR: unrecognized mark";
 }
-
