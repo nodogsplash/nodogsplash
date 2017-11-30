@@ -136,6 +136,10 @@ thread_ndsctl(void *arg)
 		} else {
 			debug(LOG_DEBUG, "Accepted connection on ndsctl socket %d (%s)", fd, sa_un.sun_path);
 			child_thread_args = calloc(1, sizeof(struct ndsctl_args));
+			if (child_thread_args == NULL) {
+				debug(LOG_ERR, "FATAL: Failed to allocate memory for thread arguments");
+				termination_handler(0);
+			}
 			child_thread_args->fd = fd;
 			child_thread_args->ndsctl_master_id = pthread_self();
 			result = pthread_create(&tid, NULL, &thread_ndsctl_handler, (void *) child_thread_args);

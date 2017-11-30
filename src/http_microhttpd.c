@@ -199,6 +199,9 @@ get_ip(struct MHD_Connection *connection)
 	switch(client_addr->sa_family) {
 	case AF_INET:
 		ip_addr = calloc(1, INET_ADDRSTRLEN+1);
+		if (ip_addr == NULL) {
+			return NULL;
+		}
 		if (!inet_ntop(addrin->sin_family, &(addrin->sin_addr), ip_addr , sizeof(struct sockaddr_in))) {
 			free(ip_addr);
 			return NULL;
@@ -207,6 +210,9 @@ get_ip(struct MHD_Connection *connection)
 
 	case AF_INET6:
 		ip_addr = calloc(1, INET6_ADDRSTRLEN+1);
+		if (ip_addr == NULL) {
+			return NULL;
+		}
 		if (!inet_ntop(addrin6->sin6_family, &(addrin6->sin6_addr), ip_addr , sizeof(struct sockaddr_in6))) {
 			free(ip_addr);
 			return NULL;
@@ -627,6 +633,9 @@ static int get_query(struct MHD_Connection *connection, char **query)
 		return 0;
 	}
 	elements = calloc(element_counter, sizeof(char *));
+	if (elements == NULL) {
+		return 0;
+	}
 	collect_query.i = 0;
 	collect_query.elements = elements;
 
@@ -644,6 +653,13 @@ static int get_query(struct MHD_Connection *connection, char **query)
 
 	/* don't miss the zero terminator */
 	*query = calloc(1, length+1);
+	if (*query == NULL) {
+		for(i=0; i < element_counter; i++) {
+			free(elements[i]);
+		}
+		free(elements);
+		return 0;
+	}
 
 	for(i=0, j=0; i<element_counter; i++) {
 		if (!elements[i])
@@ -792,7 +808,16 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client)
 
 	/* we TMPLVAR_SIZE for template variables */
 	splashpage_tmpl = calloc(1, size);
+	if (splashpage_tmpl == NULL) {
+		close(splashpage_fd);
+		return send_error(connection, 503);
+	}
 	splashpage_result = calloc(1, size + TMPLVAR_SIZE);
+	if (splashpage_result == NULL) {
+		close(splashpage_fd);
+		free(splashpage_tmpl);
+		return send_error(connection, 503);
+	}
 
 	while (bytes < size) {
 		ret = read(splashpage_fd, splashpage_tmpl+bytes, size-bytes);
