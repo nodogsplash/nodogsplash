@@ -79,6 +79,10 @@ int tmpl_parse(struct templater *templor, char *dst, size_t dst_len, const char 
 				; varlen++)
 			;
 
+		if (src[src_i] == '(' || src[varlen] == ')') {
+			continue;
+		}
+
 		/* variable to long, cant be a valid variable */
 		if (varlen > sizeof(varname)-1) {
 			/* we already parsed the varname and can skip these chars
