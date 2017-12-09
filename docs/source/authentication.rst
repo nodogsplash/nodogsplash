@@ -42,10 +42,9 @@ For a client to access this external service, the ip address and port number of 
 
 Included are various configuration files and remote php scripts, intended as an example implementation of FAS to demonstrate the methods.
 
-INSTALLATION
-************
-NOTE: USING HTTPS
-Your FAS can be an https server, but self signed certificates will throw dire "Here Be Dragons" warnings on your client devices when the redirection to your FAS takes place. Also even if using a registered CA all browsers will still return a security error on returning to Nodogsplash. This can be prevented by using wget to return to Nodogsplash from your FAS script instead of an html GET.
+FAS Installation
+****************
+NOTE: USING HTTPS. Your FAS can be an https server, but self signed certificates will throw dire "Here Be Dragons" warnings on your client devices when the redirection to your FAS takes place. Also even if using a registered CA all browsers will still return a security error on returning to Nodogsplash. This can be prevented by using wget to return to Nodogsplash from your FAS script instead of an html GET.
 
 The contents of the FAS etc folder should be placed in the /etc folder of your NoDogSplash router, overwriting existing files.
 
