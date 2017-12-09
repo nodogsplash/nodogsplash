@@ -30,11 +30,11 @@ Forwarding Authentication Service (FAS)
 ***************************************
 
 Nodogsplash (NDS) can support external (to NDS) authentication.
-The BinVoucher process was derived to support this and has been called Forwarding Authentication. This is a non trivial function and although partially implemented in early versions, is not implemented in version 2, at the time of writing.
+The BinVoucher process was derived to support this and has been called Forwarding Authentication. This is a non trivial function and although partially implemented in early versions, is not implemented at all in version 2, at the time of writing.
 
 Fortunately, Forwarding Authentication can be done without any modification to the core NDS code and in a way that is compatible with all versions, pre v1 beta through to the current release of v2.
 
-The defacto industry standard Captive Portal Detection (CPD), present on almost all devices these days, invokes the NDS splash page with various parameters passed to it by NDS, including the client access token.  
+The defacto industry standard Captive Portal Detection (CPD), present on almost all devices these days, invokes the NDS splash page with various parameters passed to the splash page by NDS, including the client access token.  
 
 It is a simple matter to pass this token to an external Forwarding Authentication Service (FAS) by using a redirect in the splash page.
 
@@ -47,7 +47,7 @@ INSTALLATION
 NOTE: USING HTTPS
 Your FAS can be an https server, but self signed certificates will throw dire "Here Be Dragons" warnings on your client devices when the redirection to your FAS takes place. Also even if using a registered CA all browsers will still return a security error on returning to Nodogsplash. This can be prevented by using wget to return to Nodogsplash from your FAS script instead of an html GET.
 
-The contents of the etc folder should be placed in the /etc folder of your NoDogSplash router, overwriting existing files.
+The contents of the FAS etc folder should be placed in the /etc folder of your NoDogSplash router, overwriting existing files.
 
 The following two files should be edited as follows.
 
