@@ -946,6 +946,8 @@ const char *lookup_mimetype(const char *filename)
 		}
 	}
 
+	debug(LOG_INFO, "Could not find corresponding mimetype for %s extension", extension);
+
 	return DEFAULT_MIME_TYPE;
 }
 
