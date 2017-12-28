@@ -1,3 +1,10 @@
+nodogsplash (all versions)
+
+  * Added Forwarding Authentication Service (FAS).
+  Support for external (to NDS) authentication without using Binvoucher. [bluewavenet]
+
+ -- Rob White <dot@blue-wave.net>  Thu, 28 Dec 2017 11:36:10 +0000
+
 nodogsplash (2.0.0)
 
   * replace libhttp by libmicrohttpd [lynxis]
