@@ -88,7 +88,12 @@ static const struct mimetype uh_mime_types[] = {
 	{ "pac",		"application/x-ns-proxy-autoconfig" },
 	{ "wpad.dat",	"application/x-ns-proxy-autoconfig" },
 
-	{ NULL, NULL }
+	{ "woff",		"application/x-font-woff" },
+	{ "woff2",		"application/x-font-woff2" },
+	{ "ttf",		"application/x-font-ttf" },
+	{ "eot",		"application/vnd.ms-fontobject" },
+	{ "svg",		"image/svg+xml" },
+	{ "otf",		"application/x-font-opentype" },
 };
 
 #endif
