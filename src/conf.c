@@ -155,7 +155,6 @@ static const struct {
 	{ "downloadimq", oDownloadIMQ },
 	{ "uploadimq", oUploadIMQ },
 	{ "syslogfacility", oSyslogFacility },
-	{ "syslogfacility", oSyslogFacility },
 	{ "ndsctlsocket", oNdsctlSocket },
 	{ "decongesthttpdthreads", oDecongestHttpdThreads },
 	{ "httpdthreadthreshold", oHttpdThreadThreshold },
