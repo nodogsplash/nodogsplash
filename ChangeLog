@@ -1,7 +1,8 @@
-nodogsplash (all versions)
+nodogsplash (2.0.1)
 
-  * Added Forwarding Authentication Service (FAS).
-  Support for external (to NDS) authentication without using Binvoucher. [bluewavenet]
+  * Added Forwarding Authentication Service (FAS). [bluewavenet]
+  * Support for external (to NDS) authentication without using Binvoucher. [bluewavenet]
+  * Fix crash when mimetype is not found. [azsde]
 
  -- Rob White <dot@blue-wave.net>  Thu, 28 Dec 2017 11:36:10 +0000
 
