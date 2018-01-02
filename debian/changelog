@@ -1,3 +1,11 @@
+nodogsplash (2.0.1-1) stable; urgency=medium
+
+  * Added Forwarding Authentication Service (FAS). [bluewavenet]
+  * Support for external (to NDS) authentication without using Binvoucher. [bluewavenet]
+  * Fix crash when mimetype is not found. [azsde]
+
+ -- Moritz Warning <moritzwarning@web.de>  Tue, 02 Jan 2018 08:31:52 -0500
+
 nodogsplash (2.0.0-1) stable; urgency=low
 
   * replace libhttp by libmicrohttpd [lynxis]
