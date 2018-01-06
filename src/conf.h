@@ -27,7 +27,7 @@
 #ifndef _CONF_H_
 #define _CONF_H_
 
-#define VERSION "2.0.0-git"
+#define VERSION "2.0.1"
 
 /*@{*/
 /** Defines */
