@@ -89,7 +89,6 @@ typedef enum {
 	oClientIdleTimeout,
 	oClientForceTimeout,
 	oCheckInterval,
-	oAuthenticateImmediately,
 	oSetMSS,
 	oMSSValue,
 	oTrafficControl,
@@ -146,7 +145,6 @@ static const struct {
 	{ "clientidletimeout", oClientIdleTimeout },
 	{ "clientforcetimeout", oClientForceTimeout },
 	{ "checkinterval", oCheckInterval },
-	{ "authenticateimmediately",	oAuthenticateImmediately },
 	{ "setmss", oSetMSS },
 	{ "mssvalue", oMSSValue },
 	{ "trafficcontrol",	oTrafficControl },
@@ -856,15 +854,6 @@ config_read(const char *filename)
 			break;
 		case oClientForceTimeout:
 			if (sscanf(p1, "%d", &config.clientforceout) < 1) {
-				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
-				debug(LOG_ERR, "Exiting...");
-				exit(-1);
-			}
-			break;
-		case oAuthenticateImmediately:
-			if ((value = parse_boolean_value(p1)) != -1) {
-				config.authenticate_immediately = value;
-			} else {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);
