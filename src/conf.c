@@ -110,7 +110,9 @@ typedef enum {
 	oAllowedMACList,
 	oFWMarkAuthenticated,
 	oFWMarkTrusted,
-	oFWMarkBlocked
+	oFWMarkBlocked,
+	oSplashAddress,
+	oSplashPort
 } OpCodes;
 
 /** @internal
@@ -167,6 +169,8 @@ static const struct {
 	{ "FW_MARK_AUTHENTICATED", oFWMarkAuthenticated },
 	{ "FW_MARK_TRUSTED", oFWMarkTrusted },
 	{ "FW_MARK_BLOCKED", oFWMarkBlocked },
+	{ "splashaddress", oSplashAddress },
+	{ "splashport", oSplashPort },
 	{ NULL, oBadOption },
 };
 
@@ -249,6 +253,8 @@ config_init(void)
 	config.FW_MARK_TRUSTED = DEFAULT_FW_MARK_TRUSTED;
 	config.FW_MARK_BLOCKED = DEFAULT_FW_MARK_BLOCKED;
 	config.ip6 = DEFAULT_IP6;
+	config.splash_address = NULL;
+	config.splash_port = DEFAULT_SPLASH_PORT;
 
 	/* Set up default FirewallRuleSets, and their empty ruleset policies */
 	rs = add_ruleset("trusted-users");
@@ -975,6 +981,16 @@ config_read(const char *filename)
 			break;
 		case oCheckInterval:
 			if (sscanf(p1, "%i", &config.checkinterval) < 1 || config.checkinterval < 1) {
+				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
+				debug(LOG_ERR, "Exiting...");
+				exit(-1);
+			}
+			break;
+		case oSplashAddress:
+			config.splash_address = safe_strdup(p1);
+			break;
+		case oSplashPort:
+			if(sscanf(p1, "%u", &config.splash_port) < 1) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);
