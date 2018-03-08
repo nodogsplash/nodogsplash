@@ -196,3 +196,7 @@ fw_connection_state_as_string(int mark)
 	return "ERROR: unrecognized mark";
 }
 
+/** automatically deauthorize preauthenticated users if not self-authenticated withing 5 minutes */
+else if (added_time + (config->checkinterval * 5 <= now && cp1->fw_connection_state == FW_MARK_PREAUTHENTICATED ) {
+client_list_delete(cp1);
+}
