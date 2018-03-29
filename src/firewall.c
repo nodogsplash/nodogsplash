@@ -189,10 +189,11 @@ fw_refresh_client_list(void)
 const char *
 fw_connection_state_as_string(int mark)
 {
-	if (mark == FW_MARK_PREAUTHENTICATED) return "Preauthenticated";
-	if (mark == FW_MARK_AUTHENTICATED) return "Authenticated";
-	if (mark == FW_MARK_TRUSTED) return "Trusted";
-	if (mark == FW_MARK_BLOCKED) return "Blocked";
-	return "ERROR: unrecognized mark";
+	switch (mark) {
+	case FW_MARK_PREAUTHENTICATED:return "Preauthenticated";
+	case FW_MARK_AUTHENTICATED: return "Authenticated";
+	case FW_MARK_TRUSTED: return "Trusted";
+	case FW_MARK_BLOCKED: return "Blocked";
+	default: return "ERROR: unrecognized mark";
+	}
 }
-
