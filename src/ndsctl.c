@@ -154,7 +154,6 @@ parse_commandline(int argc, char **argv)
 	} else if (strcmp(*(argv + optind), "json") == 0) {
 		config.command = NDSCTL_JSON;
 	}
-
 	else if (strcmp(*(argv + optind), "stop") == 0) {
 		config.command = NDSCTL_STOP;
 	} else if (strcmp(*(argv + optind), "block") == 0) {

@@ -202,7 +202,7 @@ get_ip(struct MHD_Connection *connection)
 		if (ip_addr == NULL) {
 			return NULL;
 		}
-		if (!inet_ntop(addrin->sin_family, &(addrin->sin_addr), ip_addr , sizeof(struct sockaddr_in))) {
+		if (!inet_ntop(addrin->sin_family, &(addrin->sin_addr), ip_addr, sizeof(struct sockaddr_in))) {
 			free(ip_addr);
 			return NULL;
 		}
@@ -213,7 +213,7 @@ get_ip(struct MHD_Connection *connection)
 		if (ip_addr == NULL) {
 			return NULL;
 		}
-		if (!inet_ntop(addrin6->sin6_family, &(addrin6->sin6_addr), ip_addr , sizeof(struct sockaddr_in6))) {
+		if (!inet_ntop(addrin6->sin6_family, &(addrin6->sin6_addr), ip_addr, sizeof(struct sockaddr_in6))) {
 			free(ip_addr);
 			return NULL;
 		}
@@ -459,7 +459,7 @@ static int preauthenticated(struct MHD_Connection *connection,
 
 	MHD_get_connection_values(connection, MHD_HEADER_KIND, get_host_value_callback, &host);
 
-	/* check if this is a redirect querty with a foreign host as target */
+	/* check if this is a redirect query with a foreign host as target */
 	if (is_foreign_hosts(connection, host)) {
 		return redirect_to_splashpage(connection, client, host, url);
 	}
@@ -509,7 +509,7 @@ static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, 
 
 	memset(encoded, 0, sizeof(encoded));
 	if (originurl) {
-		if (uh_urlencode(encoded, 2048, originurl, strlen(originurl)) == -1) {
+		if (uh_urlencode(encoded, sizeof(encoded), originurl, strlen(originurl)) == -1) {
 			debug(LOG_WARNING, "could not encode url");
 		} else {
 			debug(LOG_DEBUG, "originurl: %s", originurl);
@@ -775,6 +775,7 @@ static int get_host_value_callback(void *cls, enum MHD_ValueKind kind, const cha
 
 	return MHD_YES;
 }
+
 /**
  * @brief show_splashpage is called when the client clicked on Ok as well when the client doesn't know us yet.
  * @param connection

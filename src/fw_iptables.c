@@ -125,23 +125,23 @@ _iptables_check_mark_masking()
 		debug(LOG_DEBUG, "Kernel supports --or-mark.");
 		markop = "--or-mark";
 	} else {
-		debug(LOG_INFO,"Kernel does not support iptables --or-mark.  Using --set-mark instead.");
+		debug(LOG_INFO,"Kernel does not support iptables --or-mark. Using --set-mark instead.");
 		markop = "--set-mark";
 	}
 
 	/* See if kernel supports mark masking */
 	if (0 == iptables_do_command("-t filter -I FORWARD 1 -m mark --mark 0x%x/0x%x -j REJECT", FW_MARK_BLOCKED, FW_MARK_MASK)) {
 		iptables_do_command("-t filter -D FORWARD 1"); /* delete test rule we just inserted */
-		debug(LOG_DEBUG,"Kernel supports mark masking.");
+		debug(LOG_DEBUG, "Kernel supports mark masking.");
 		char *tmp = NULL;
 		safe_asprintf(&tmp,"/0x%x",FW_MARK_MASK);
 		markmask = tmp;
 	} else {
-		debug(LOG_INFO,"Kernel does not support iptables mark masking.  Using empty mask.");
+		debug(LOG_INFO, "Kernel does not support iptables mark masking. Using empty mask.");
 		markmask = "";
 	}
 
-	debug(LOG_INFO,"Iptables mark op \"%s\" and mark mask \"%s\".", markop, markmask);
+	debug(LOG_INFO, "Iptables mark op \"%s\" and mark mask \"%s\".", markop, markmask);
 
 	fw_quiet = 0; /* restore verbosity */
 
@@ -327,9 +327,9 @@ int
 iptables_fw_init(void)
 {
 	s_config *config;
-	char * gw_interface = NULL;
-	char * gw_address = NULL;
-	char * gw_iprange = NULL;
+	char *gw_interface = NULL;
+	char *gw_address = NULL;
+	char *gw_iprange = NULL;
 	int gw_port = 0;
 	int traffic_control;
 	int set_mss, mss_value;
@@ -398,9 +398,9 @@ iptables_fw_init(void)
 		/* with the MAC_ALLOW mechanism,
 		 * MAC's on the allow list pass;
 		 * everything else is to be marked as blocked */
-		/* So, append at end of chain a rule to mark everything blocked */
+		// So, append at end of chain a rule to mark everything blocked
 		rc |= iptables_do_command("-t mangle -A " CHAIN_BLOCKED " -j MARK %s 0x%x", markop, FW_MARK_BLOCKED);
-		/* But insert at beginning of chain rules to pass allowed MAC's */
+		// But insert at beginning of chain rules to pass allowed MAC's
 		for (; pa != NULL; pa = pa->next) {
 			rc |= iptables_allow_mac(pa->mac);
 		}
@@ -433,18 +433,18 @@ iptables_fw_init(void)
 	 * nat PREROUTING chain
 	 */
 
-	/* packets coming in on gw_interface jump to CHAIN_OUTGOING */
+	// packets coming in on gw_interface jump to CHAIN_OUTGOING
 	rc |= iptables_do_command("-t nat -I PREROUTING -i %s -s %s -j " CHAIN_OUTGOING, gw_interface, gw_iprange);
-	/* CHAIN_OUTGOING, packets marked TRUSTED  ACCEPT */
+	// CHAIN_OUTGOING, packets marked TRUSTED  ACCEPT
 	rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -m mark --mark 0x%x%s -j ACCEPT", FW_MARK_TRUSTED, markmask);
-	/* CHAIN_OUTGOING, packets marked AUTHENTICATED  ACCEPT */
+	// CHAIN_OUTGOING, packets marked AUTHENTICATED  ACCEPT
 	rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -m mark --mark 0x%x%s -j ACCEPT",FW_MARK_AUTHENTICATED, markmask);
-	/* CHAIN_OUTGOING, append the "preauthenticated-users" ruleset */
+	// CHAIN_OUTGOING, append the "preauthenticated-users" ruleset
 	rc |= _iptables_append_ruleset("nat", "preauthenticated-users", CHAIN_OUTGOING);
 
-	/* CHAIN_OUTGOING, packets for tcp port 80, redirect to gw_port on primary address for the iface */
+	// CHAIN_OUTGOING, packets for tcp port 80, redirect to gw_port on primary address for the iface
 	rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p tcp --dport 80 -j DNAT --to-destination %s:%d", gw_address, gw_port);
-	/* CHAIN_OUTGOING, other packets  ACCEPT */
+	// CHAIN_OUTGOING, other packets ACCEPT
 	rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -j ACCEPT");
 
 	/*
@@ -459,7 +459,7 @@ iptables_fw_init(void)
 	 *
 	 */
 
-	/* Create new chains in the filter table */
+	// Create new chains in the filter table
 	rc |= iptables_do_command("-t filter -N " CHAIN_TO_INTERNET);
 	rc |= iptables_do_command("-t filter -N " CHAIN_TO_ROUTER);
 	rc |= iptables_do_command("-t filter -N " CHAIN_AUTHENTICATED);
@@ -470,21 +470,21 @@ iptables_fw_init(void)
 	 * filter INPUT chain
 	 */
 
-	/* packets coming in on gw_interface jump to CHAIN_TO_ROUTER */
+	// packets coming in on gw_interface jump to CHAIN_TO_ROUTER
 	rc |= iptables_do_command("-t filter -I INPUT -i %s -s %s -j " CHAIN_TO_ROUTER, gw_interface, gw_iprange);
-	/* CHAIN_TO_ROUTER packets marked BLOCKED  DROP */
+	// CHAIN_TO_ROUTER packets marked BLOCKED DROP
 	rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -m mark --mark 0x%x%s -j DROP", FW_MARK_BLOCKED, markmask);
-	/* CHAIN_TO_ROUTER, invalid packets  DROP */
+	// CHAIN_TO_ROUTER, invalid packets DROP
 	rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -m conntrack --ctstate INVALID -j DROP");
-	/* CHAIN_TO_ROUTER, related and established packets  ACCEPT */
+	// CHAIN_TO_ROUTER, related and established packets ACCEPT
 	rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT");
-	/* CHAIN_TO_ROUTER, bogus SYN packets  DROP */
-	rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -p tcp --tcp-flags SYN SYN \\! --tcp-option 2 -j  DROP");
+	// CHAIN_TO_ROUTER, bogus SYN packets DROP
+	rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -p tcp --tcp-flags SYN SYN \\! --tcp-option 2 -j DROP");
 
-	/* CHAIN_TO_ROUTER, packets to HTTP listening on gw_port on router ACCEPT */
+	// CHAIN_TO_ROUTER, packets to HTTP listening on gw_port on router ACCEPT
 	rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -p tcp --dport %d -j ACCEPT", gw_port);
 
-	/* CHAIN_TO_ROUTER, packets marked TRUSTED: */
+	// CHAIN_TO_ROUTER, packets marked TRUSTED:
 
 	/* if trusted-users-to-router ruleset is empty:
 	 *    use empty ruleset policy
@@ -495,15 +495,15 @@ iptables_fw_init(void)
 		rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -m mark --mark 0x%x%s -j %s", FW_MARK_TRUSTED, markmask, get_empty_ruleset_policy("trusted-users-to-router"));
 	} else {
 		rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -m mark --mark 0x%x%s -j " CHAIN_TRUSTED_TO_ROUTER, FW_MARK_TRUSTED, markmask);
-		/* CHAIN_TRUSTED_TO_ROUTER, related and established packets  ACCEPT */
+		// CHAIN_TRUSTED_TO_ROUTER, related and established packets ACCEPT
 		rc |= iptables_do_command("-t filter -A " CHAIN_TRUSTED_TO_ROUTER " -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT");
-		/* CHAIN_TRUSTED_TO_ROUTER, append the "trusted-users-to-router" ruleset */
+		// CHAIN_TRUSTED_TO_ROUTER, append the "trusted-users-to-router" ruleset
 		rc |= _iptables_append_ruleset("filter", "trusted-users-to-router", CHAIN_TRUSTED_TO_ROUTER);
-		/* CHAIN_TRUSTED_TO_ROUTER, any packets not matching that ruleset  REJECT */
+		// CHAIN_TRUSTED_TO_ROUTER, any packets not matching that ruleset REJECT
 		rc |= iptables_do_command("-t filter -A " CHAIN_TRUSTED_TO_ROUTER " -j REJECT --reject-with icmp-port-unreachable");
 	}
 
-	/* CHAIN_TO_ROUTER, other packets: */
+	// CHAIN_TO_ROUTER, other packets:
 
 	/* if users-to-router ruleset is empty:
 	 *    use empty ruleset policy
@@ -524,13 +524,13 @@ iptables_fw_init(void)
 	 * filter FORWARD chain
 	 */
 
-	/* packets coming in on gw_interface jump to CHAIN_TO_INTERNET */
+	// packets coming in on gw_interface jump to CHAIN_TO_INTERNET
 	rc |= iptables_do_command("-t filter -I FORWARD -i %s -s %s -j " CHAIN_TO_INTERNET, gw_interface, gw_iprange);
-	/* CHAIN_TO_INTERNET packets marked BLOCKED  DROP */
+	// CHAIN_TO_INTERNET packets marked BLOCKED DROP
 	rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m mark --mark 0x%x%s -j DROP", FW_MARK_BLOCKED, markmask);
-	/* CHAIN_TO_INTERNET, invalid packets  DROP */
+	// CHAIN_TO_INTERNET, invalid packets DROP
 	rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m conntrack --ctstate INVALID -j DROP");
-	/* CHAIN_TO_INTERNET, deal with MSS */
+	// CHAIN_TO_INTERNET, deal with MSS
 	if (set_mss) {
 		/* XXX this mangles, so 'should' be done in the mangle POSTROUTING chain.
 		 * However OpenWRT standard S35firewall does it in filter FORWARD,
@@ -553,11 +553,11 @@ iptables_fw_init(void)
 		rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m mark --mark 0x%x%s -j %s", FW_MARK_TRUSTED, markmask, get_empty_ruleset_policy("trusted-users"));
 	} else {
 		rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m mark --mark 0x%x%s -j " CHAIN_TRUSTED, FW_MARK_TRUSTED, markmask);
-		/* CHAIN_TRUSTED, related and established packets  ACCEPT */
+		// CHAIN_TRUSTED, related and established packets ACCEPT
 		rc |= iptables_do_command("-t filter -A " CHAIN_TRUSTED " -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT");
-		/* CHAIN_TRUSTED, append the "trusted-users" ruleset */
+		// CHAIN_TRUSTED, append the "trusted-users" ruleset
 		rc |= _iptables_append_ruleset("filter", "trusted-users", CHAIN_TRUSTED);
-		/* CHAIN_TRUSTED, any packets not matching that ruleset  REJECT */
+		// CHAIN_TRUSTED, any packets not matching that ruleset REJECT
 		rc |= iptables_do_command("-t filter -A " CHAIN_TRUSTED " -j REJECT --reject-with icmp-port-unreachable");
 	}
 
@@ -573,11 +573,11 @@ iptables_fw_init(void)
 		rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m mark --mark 0x%x%s -j %s", FW_MARK_AUTHENTICATED, markmask, get_empty_ruleset_policy("authenticated-users"));
 	} else {
 		rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -m mark --mark 0x%x%s -j " CHAIN_AUTHENTICATED, FW_MARK_AUTHENTICATED, markmask);
-		/* CHAIN_AUTHENTICATED, related and established packets  ACCEPT */
+		// CHAIN_AUTHENTICATED, related and established packets ACCEPT
 		rc |= iptables_do_command("-t filter -A " CHAIN_AUTHENTICATED " -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT");
-		/* CHAIN_AUTHENTICATED, append the "authenticated-users" ruleset */
+		// CHAIN_AUTHENTICATED, append the "authenticated-users" ruleset
 		rc |= _iptables_append_ruleset("filter", "authenticated-users", CHAIN_AUTHENTICATED);
-		/* CHAIN_AUTHENTICATED, any packets not matching that ruleset  REJECT */
+		// CHAIN_AUTHENTICATED, any packets not matching that ruleset REJECT
 		rc |= iptables_do_command("-t filter -A " CHAIN_AUTHENTICATED " -j REJECT --reject-with icmp-port-unreachable");
 	}
 
@@ -589,11 +589,11 @@ iptables_fw_init(void)
 	 *    load and use authenticated-users ruleset
 	 */
 	if (is_empty_ruleset("preauthenticated-users")) {
-		rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -j %s ",  get_empty_ruleset_policy("preauthenticated-users"));
+		rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -j %s ", get_empty_ruleset_policy("preauthenticated-users"));
 	} else {
 		rc |= _iptables_append_ruleset("filter", "preauthenticated-users", CHAIN_TO_INTERNET);
 	}
-	/* CHAIN_TO_INTERNET, all other packets REJECT */
+	// CHAIN_TO_INTERNET, all other packets REJECT
 	rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -j REJECT --reject-with icmp-port-unreachable");
 
 	/*
