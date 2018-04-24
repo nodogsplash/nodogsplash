@@ -436,9 +436,9 @@ iptables_fw_init(void)
 	// packets coming in on gw_interface jump to CHAIN_OUTGOING
 	rc |= iptables_do_command("-t nat -I PREROUTING -i %s -s %s -j " CHAIN_OUTGOING, gw_interface, gw_iprange);
 	// CHAIN_OUTGOING, packets marked TRUSTED  ACCEPT
-	rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -m mark --mark 0x%x%s -j ACCEPT", FW_MARK_TRUSTED, markmask);
+	rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -m mark --mark 0x%x%s -j RETURN", FW_MARK_TRUSTED, markmask);
 	// CHAIN_OUTGOING, packets marked AUTHENTICATED  ACCEPT
-	rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -m mark --mark 0x%x%s -j ACCEPT",FW_MARK_AUTHENTICATED, markmask);
+	rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -m mark --mark 0x%x%s -j RETURN", FW_MARK_AUTHENTICATED, markmask);
 	// CHAIN_OUTGOING, append the "preauthenticated-users" ruleset
 	rc |= _iptables_append_ruleset("nat", "preauthenticated-users", CHAIN_OUTGOING);
 
