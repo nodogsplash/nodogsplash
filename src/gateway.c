@@ -255,7 +255,7 @@ main_loop(void)
 
 	/* Initializes the web server */
 	if ((webserver = MHD_start_daemon(
-						MHD_USE_EPOLL_INTERNALLY,
+						MHD_USE_EPOLL_INTERNALLY | MHD_USE_TCP_FASTOPEN,
 						config->gw_port,
 						NULL, NULL,
 						libmicrohttpd_cb, NULL,
