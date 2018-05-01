@@ -136,7 +136,7 @@ thread_ndsctl(void *arg)
 	ev.events = EPOLLIN|EPOLLET;
 	ev.data.fd = sock;
 
-	if(epoll_ctl(epoll_fd, EPOLL_CTL_ADD, sock, &ev) < 0) {
+	if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, sock, &ev) < 0) {
 		debug(LOG_ERR, "Could not insert socket fd to epoll set: %s", strerror(errno));
 		pthread_exit(NULL);
 	}
@@ -162,7 +162,7 @@ thread_ndsctl(void *arg)
 			pthread_exit(NULL);
 		}
 
-		for(i = 0; i < number_of_count; i++) {
+		for (i = 0; i < number_of_count; i++) {
 
 			if (events[i].data.fd == sock) {
 				if ((fd = accept(events[i].data.fd, (struct sockaddr *)&sa_un, &len)) == -1) {
@@ -174,7 +174,7 @@ thread_ndsctl(void *arg)
 					ev.events = EPOLLIN|EPOLLET;
 					ev.data.fd = fd;
 
-					if(epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fd, &ev) < 0) {
+					if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fd, &ev) < 0) {
 						debug(LOG_ERR, "Could not insert socket fd to epoll set: %s", strerror(errno));
 						free(events);
 						pthread_exit(NULL);
@@ -538,7 +538,7 @@ ndsctl_username(int fd, char *arg)
 static int
 socket_set_non_blocking(int sockfd)
 {
-	int rc = 0;
+	int rc;
 
 	rc = fcntl(sockfd, F_GETFL, 0);
 
