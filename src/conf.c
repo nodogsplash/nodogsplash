@@ -199,7 +199,7 @@ config_init(void)
 	t_firewall_ruleset *rs;
 
 	debug(LOG_DEBUG, "Setting default config parameters");
-	strncpy(config.configfile, DEFAULT_CONFIGFILE, sizeof(config.configfile));
+	strncpy(config.configfile, DEFAULT_CONFIGFILE, sizeof(config.configfile)-1);
 	config.debuglevel = DEFAULT_DEBUGLEVEL;
 	config.maxclients = DEFAULT_MAXCLIENTS;
 	config.gw_name = safe_strdup(DEFAULT_GATEWAYNAME);
