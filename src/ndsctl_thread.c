@@ -197,16 +197,14 @@ thread_ndsctl(void *arg)
 
 			} else {
 				ndsctl_handler(fd);
-
 				epoll_ctl(epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, &ev);
-
 				current_fd_count -= 1;
 
+				/* socket was closed on 'ndsctl_handler' */
 				if (events[i].data.fd > 0) {
-					shutdown(events[i].data.fd, 2);
-					close(events[i].data.fd);
 					events[i].data.fd = 0;
 				}
+
 			}
 		}
 	}
@@ -287,6 +285,11 @@ ndsctl_handler(int fd)
 
 	debug(LOG_DEBUG, "ndsctl request processed: [%s]", request);
 	debug(LOG_DEBUG, "Exiting thread_ndsctl_handler....");
+
+	if (fd > 0) {
+		shutdown(fd, 2);
+		close(fd);
+	}
 }
 
 /** A bit of an hack, self kills.... */
