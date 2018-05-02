@@ -89,8 +89,8 @@ thread_ndsctl(void *arg)
 	socklen_t len;
 	struct epoll_event ev;
 	struct epoll_event *events;
-	int current_fd_count = 0;
-	int number_of_count = 0;
+	int current_fd_count;
+	int number_of_count;
 	int i;
 
 	debug(LOG_DEBUG, "Starting ndsctl.");
