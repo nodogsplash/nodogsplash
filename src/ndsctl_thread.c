@@ -164,6 +164,18 @@ thread_ndsctl(void *arg)
 
 		for (i = 0; i < number_of_count; i++) {
 
+			if ((events[i].events & EPOLLERR) || (events[i].events & EPOLLHUP) ||
+				(!(events[i].events & EPOLLIN))) {
+				debug(LOG_ERR, "Socket is not ready for communication : %s", strerror(errno));
+
+				if (events[i].data.fd > 0) {
+					shutdown(events[i].data.fd, 2);
+					close(events[i].data.fd);
+					events[i].data.fd = 0;
+				}
+				continue;
+			}
+
 			if (events[i].data.fd == sock) {
 				if ((fd = accept(events[i].data.fd, (struct sockaddr *)&sa_un, &len)) == -1) {
 					debug(LOG_ERR, "Accept failed on control socket: %s", strerror(errno));
