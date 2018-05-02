@@ -75,7 +75,7 @@ void parse_commandline(int argc, char **argv)
 
 		case 'c':
 			if (optarg) {
-				strncpy(config->configfile, optarg, sizeof(config->configfile));
+				strncpy(config->configfile, optarg, sizeof(config->configfile)-1);
 			}
 			break;
 

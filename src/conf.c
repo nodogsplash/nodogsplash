@@ -47,7 +47,7 @@
 
 /** @internal
  * Holds the current configuration of the gateway */
-static s_config config;
+static s_config config = { 0 };
 
 /**
  * Mutex for the configuration file, used by the auth_servers related
@@ -199,7 +199,7 @@ config_init(void)
 	t_firewall_ruleset *rs;
 
 	debug(LOG_DEBUG, "Setting default config parameters");
-	strncpy(config.configfile, DEFAULT_CONFIGFILE, sizeof(config.configfile));
+	strncpy(config.configfile, DEFAULT_CONFIGFILE, sizeof(config.configfile)-1);
 	config.debuglevel = DEFAULT_DEBUGLEVEL;
 	config.maxclients = DEFAULT_MAXCLIENTS;
 	config.gw_name = safe_strdup(DEFAULT_GATEWAYNAME);
