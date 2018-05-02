@@ -38,6 +38,8 @@
 #include <syslog.h>
 #include <signal.h>
 #include <errno.h>
+#include <sys/epoll.h>
+#include <fcntl.h>
 
 #include "common.h"
 #include "util.h"
@@ -52,12 +54,14 @@
 
 #include "ndsctl_thread.h"
 
+#define MAX_EVENT_SIZE 30
+
 /* Defined in clientlist.c */
 extern pthread_mutex_t client_list_mutex;
 extern pthread_mutex_t config_mutex;
 
-static void *thread_ndsctl_handler(void *);
-static void ndsctl_stop(pthread_t);
+static void ndsctl_handler(int fd);
+static void ndsctl_stop();
 static void ndsctl_block(int, char *);
 static void ndsctl_unblock(int, char *);
 static void ndsctl_allow(int, char *);
@@ -70,10 +74,7 @@ static void ndsctl_loglevel(int, char *);
 static void ndsctl_password(int, char *);
 static void ndsctl_username(int, char *);
 
-struct ndsctl_args {
-	int fd;
-	pthread_t ndsctl_master_id;
-};
+static int socket_set_non_blocking(int sockfd);
 
 /** Launches a thread that monitors the control socket for request
 @param arg Must contain a pointer to a string containing the Unix domain socket to open
@@ -82,13 +83,15 @@ struct ndsctl_args {
 void*
 thread_ndsctl(void *arg)
 {
-	int sock, fd;
+	int sock, fd, epoll_fd;
 	const char *sock_name;
 	struct sockaddr_un sa_un;
-	int result;
-	pthread_t tid;
 	socklen_t len;
-	struct ndsctl_args *child_thread_args;
+	struct epoll_event ev;
+	struct epoll_event *events;
+	int current_fd_count;
+	int number_of_count;
+	int i;
 
 	debug(LOG_DEBUG, "Starting ndsctl.");
 
@@ -127,43 +130,96 @@ thread_ndsctl(void *arg)
 		pthread_exit(NULL);
 	}
 
+	memset(&ev, 0, sizeof(struct epoll_event));
+	epoll_fd = epoll_create(MAX_EVENT_SIZE);
+
+	ev.events = EPOLLIN|EPOLLET;
+	ev.data.fd = sock;
+
+	if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, sock, &ev) < 0) {
+		debug(LOG_ERR, "Could not insert socket fd to epoll set: %s", strerror(errno));
+		pthread_exit(NULL);
+	}
+
+	events = (struct epoll_event*)calloc(MAX_EVENT_SIZE, sizeof(struct epoll_event));
+
+	if (!events) {
+		close(sock);
+		pthread_exit(NULL);
+	}
+
+	current_fd_count = 1;
+
 	while (1) {
 		memset(&sa_un, 0, sizeof(sa_un));
 		len = (socklen_t) sizeof(sa_un);
-		if ((fd = accept(sock, (struct sockaddr *)&sa_un, &len)) == -1) {
-			debug(LOG_ERR, "Accept failed on control socket: %s", strerror(errno));
+
+		number_of_count = epoll_wait(epoll_fd, events, current_fd_count, -1);
+
+		if (number_of_count == -1) {
+			debug(LOG_ERR, "Failed to wait epoll events: %s", strerror(errno));
+			free(events);
 			pthread_exit(NULL);
-		} else {
-			debug(LOG_DEBUG, "Accepted connection on ndsctl socket %d (%s)", fd, sa_un.sun_path);
-			child_thread_args = calloc(1, sizeof(struct ndsctl_args));
-			if (child_thread_args == NULL) {
-				debug(LOG_ERR, "FATAL: Failed to allocate memory for thread arguments");
-				termination_handler(0);
+		}
+
+		for (i = 0; i < number_of_count; i++) {
+
+			if ((events[i].events & EPOLLERR) || (events[i].events & EPOLLHUP) ||
+				(!(events[i].events & EPOLLIN))) {
+				debug(LOG_ERR, "Socket is not ready for communication : %s", strerror(errno));
+
+				if (events[i].data.fd > 0) {
+					shutdown(events[i].data.fd, 2);
+					close(events[i].data.fd);
+					events[i].data.fd = 0;
+				}
+				continue;
 			}
-			child_thread_args->fd = fd;
-			child_thread_args->ndsctl_master_id = pthread_self();
-			result = pthread_create(&tid, NULL, &thread_ndsctl_handler, (void *) child_thread_args);
-			if (result != 0) {
-				debug(LOG_ERR, "FATAL: Failed to create a new thread (ndsctl handler) - exiting");
-				termination_handler(0);
+
+			if (events[i].data.fd == sock) {
+				if ((fd = accept(events[i].data.fd, (struct sockaddr *)&sa_un, &len)) == -1) {
+					debug(LOG_ERR, "Accept failed on control socket: %s", strerror(errno));
+					free(events);
+					pthread_exit(NULL);
+				} else {
+					socket_set_non_blocking(fd);
+					ev.events = EPOLLIN|EPOLLET;
+					ev.data.fd = fd;
+
+					if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fd, &ev) < 0) {
+						debug(LOG_ERR, "Could not insert socket fd to epoll set: %s", strerror(errno));
+						free(events);
+						pthread_exit(NULL);
+					}
+
+					current_fd_count += 1;
+				}
+
+			} else {
+				ndsctl_handler(fd);
+				epoll_ctl(epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, &ev);
+				current_fd_count -= 1;
+
+				/* socket was closed on 'ndsctl_handler' */
+				if (events[i].data.fd > 0) {
+					events[i].data.fd = 0;
+				}
+
 			}
-			pthread_detach(tid);
 		}
 	}
+
+	free(events);
 
 	return NULL;
 }
 
-static void *
-thread_ndsctl_handler(void *arg)
+static void
+ndsctl_handler(int fd)
 {
 	int done, i;
 	char request[MAX_BUF];
 	ssize_t read_bytes, len;
-	struct ndsctl_args *args = arg;
-	pthread_t ndsctl_master = args->ndsctl_master_id;
-	int fd = args->fd;
-	free(args);
 
 	debug(LOG_DEBUG, "Entering thread_ndsctl_handler....");
 	debug(LOG_DEBUG, "Read bytes and stuff from %d", fd);
@@ -198,7 +254,7 @@ thread_ndsctl_handler(void *arg)
 	} else if (strncmp(request, "json", 4) == 0) {
 		ndsctl_json(fd);
 	} else if (strncmp(request, "stop", 4) == 0) {
-		ndsctl_stop(ndsctl_master);
+		ndsctl_stop();
 	} else if (strncmp(request, "block", 5) == 0) {
 		ndsctl_block(fd, (request + 6));
 	} else if (strncmp(request, "unblock", 7) == 0) {
@@ -225,25 +281,22 @@ thread_ndsctl_handler(void *arg)
 
 	if (!done) {
 		debug(LOG_ERR, "Invalid ndsctl request.");
-		shutdown(fd, 2);
-		close(fd);
-		pthread_exit(NULL);
 	}
 
 	debug(LOG_DEBUG, "ndsctl request processed: [%s]", request);
-
-	shutdown(fd, 2);
-	close(fd);
 	debug(LOG_DEBUG, "Exiting thread_ndsctl_handler....");
 
-	return NULL;
+	if (fd > 0) {
+		shutdown(fd, 2);
+		close(fd);
+	}
 }
 
 /** A bit of an hack, self kills.... */
 static void
-ndsctl_stop(pthread_t ndsctl_master_id)
+ndsctl_stop()
 {
-	pthread_cancel(ndsctl_master_id);
+	pthread_exit(NULL);
 }
 
 static void
@@ -495,4 +548,19 @@ ndsctl_username(int fd, char *arg)
 	UNLOCK_CONFIG();
 
 	debug(LOG_DEBUG, "Exiting ndsctl_username.");
+}
+
+static int
+socket_set_non_blocking(int sockfd)
+{
+	int rc;
+
+	rc = fcntl(sockfd, F_GETFL, 0);
+
+	if (rc) {
+		rc |= O_NONBLOCK;
+		rc = fcntl(sockfd, F_SETFL, rc);
+	}
+
+	return rc;
 }
