@@ -1,10 +1,10 @@
 Authentication
 ##############
 
-Site-wide username and password
+Nodogsplash v1 -Site-wide username and password
 *******************************
 
-Nodogsplash can be configured to require a username and/or password to be
+Nodogsplash v1 and earlier can be configured to require a username and/or password to be
 entered on the splash page as part of the authentication process. Since the
 username and password are site-wide (not per user), and they are sent in the
 clear using HTTP GET, this is not a secure mechanism.
@@ -26,7 +26,7 @@ respectively, along with others as required, to the server. For example:
    <input type='submit' value='Enter'>
    </form>
 
-Forwarding Authentication Service (FAS)
+Nodogsplash ALL versions -Forwarding Authentication Service (FAS)
 ***************************************
 
 Nodogsplash (NDS) can support external (to NDS) authentication.
@@ -56,10 +56,7 @@ Your FAS can reside on your Nodogsplash router, a web server on your LAN, or a w
 
 2:
 /etc/nodogsplash/htdocs/splash.html should also be edited to reflect the URL of your FAS service as indicated in the comments in the example file.
-Take note of the https warning in 1: above. A typical URL could be http://my-fas.net/nodog/fas.php?auth.... etc.
-
-3:
-Run the command "chmod +x /etc/init.d/nodogsplash" on your router.
+Take note of the USING HTTPS warning above. A typical URL could be http://my-fas.net/nodog/fas.php?auth.... etc.
 
 Running FAS on your Nodogsplash router:
 The example FAS service will run fairly well on uhttpd (the web server that serves Luci) on an LEDE/OpenWrt supported device with 8MB flash and 32MB ram but shortage of ram may well be an issue if more than two or three clients log in at the same time. For this reason a device with a minimum of 16MB flash and 64MB ram is recommended.
