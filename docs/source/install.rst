@@ -1,49 +1,57 @@
-Installing nodogsplash
+Installing Nodogsplash
 ######################
 
-OpenWrt
+OpenWrt (LEDE)
 *******
 
-* Have a router working with OpenWrt. Nodogsplash has been compiled against a
-  OpenWrt Attitude Adjustment buildroot; it may or may not work on other versions
-  of OpenWrt or on other kinds of Linux-based router firmware. For notes on
-  using Nodogsplash with OpenWrt Kamikaze, see below.
+* Have a router working with OpenWrt. At the time of writing, Nodogsplash has been tested with OpenWrt/LEDE 17.01.4;
+  it may or may not work on older versions of OpenWrt or on other kinds of Linux-based router firmware.
 * Make sure your router is basically working before you try to install
-  nodogsplash. In particular, make sure your DHCP daemon is serving addresses
-  on the interface that nodogsplash will manage (typically br-lan or eth1), and
-  for the following use ssh or telnet access to your router over a different
-  interface.
-* To install nodogsplash, obtain the nodogsplash*.ipk package you want to
-  install from the project website, copy it to /tmp/ on your OpenWrt router,
-  and, in as root on the router, run:
+  Nodogsplash. In particular, make sure your DHCP daemon is serving addresses on the interface that nodogsplash will manage.
+  The default is br-lan but can be changed to any interface by editing the /etc/config/nodogsplash file.
+* To install Nodogsplash, you may use the OpenWrt Luci web interface or alternatively, ssh to your router and run the command:
 
-  ``opkg install /tmp/nodogsplash*.ipk``
+    ``opkg update``
+  
+  followed by
+  
+    ``opkg install nodogsplash`` (for version 1x).
+  
+  or
+  
+    ``opkg install nodogsplash2`` (for version 2x).
+    
+* Nodogsplash is enabled by default and will start automatically on reboot or can be started and stopped manually.
+  
 
-  (Note: to prevent installation of an older package, you may have to remove
-  references to remote package repositories in your /etc/opkg.conf file)
-* If the interface that you want nodogsplash to manage is not br-lan,
-  edit /etc/nodogsplash/nodogsplash.conf and set GatewayInterface.
-* To start nodogsplash, run the following, or just reboot the router:
+* If the interface that you want Nodogsplash to manage is not br-lan,
+  edit /etc/config/nodogsplash and set GatewayInterface.
+* To start Nodogsplash, run the following, or just reboot the router:
 
     ``/etc/init.d/nodogsplash start``
 
-* To test the installation, connect a client machine to the interface on your
-  router that is managed by nodogsplash (for example, connect to the router's
-  wireless lan) and in a browser on that machine, attempt to visit any website.
-  You should see the nodogsplash splash page instead. Click on the icon; the
-  browser should redirect to the initially requested website.
-* To stop nodogsplash:
+* To test the installation, connect a client device to the interface on your
+  router that is managed by Nodogsplash (for example, connect to the router's
+  wireless lan).
+  Most client device operating systems and browsers support Captive Portal Detection (CPD) and the operating system or browser on that device will attempt to contact a pre defined port 80 web page.
+  CPD will trigger Nodogsplash to serve the default splash page where you can click or tap Continue to access the Internet.
+  
+  See the Authentication section for details of setting up a proper authentication process.
+  
+  If your client device does not display the splash page it most likely does not support CPD. You should then manually trigger Nodogsplash by trying to access a port 80 web site (for example, google.com:80 is a good choice).
+  
+* To stop Nodogsplash:
 
     ``/etc/init.d/nodogsplash stop``
 
-* To uninstall nodogsplash:
+* To uninstall Nodogsplash:
 
     ``opkg remove nodogsplash``
 
 Debian
 ******
 
-There isn't a packet in the repostiory (yet). But we have support for a debian package.
+There isn't a package in the repository (yet). But we have support for a debian package.
 Requirements beside debian tools are:
 
 - libmicrohttpd-dev (>= 0.9.51) [avaiable in **stretch**]
