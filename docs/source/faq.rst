@@ -26,13 +26,15 @@ You can, if you don't use:
 I would like to use QoS or TrafficControl on OpenWrt
 ****************************************************
 
-This feature is broken since OpenWrt 12.09 (Attitude Adjustment), because
-OpenWrt removed the IMQ (Intermediate queueing device) support. We're looking
-for somebody who want to fix that.
+The original pre version 1 feature has been broken since OpenWrt 12.09 (Attitude Adjustment), because
+OpenWrt removed the IMQ (Intermediate queueing device) support. We're looking for somebody who to fix this!
+
+However the OpenWrt package, SQM Scripts, is fully compatible with Nodogsplash and if configured to operate on the Nodogsplash interface (br-lan by default) will provide efficient IP connection based traffic control to ensure fair usage of available bandwidth.
 
 Is https:// redirection supported?
 **********************************
 
-No. We believe this is the wrong way to do it, because all connection would have a critical certificate failure.
-As certain network managers evolved on major Operating Systems (Linux, Android, iOS/macOS, Windows),
-the network manager will detect the presence of a hotspot and notify the user.
+No. We believe this is the wrong way to do it, because all connections would have a critical certificate failure.
+Https web sites are now more or less a standard and to maintain security and user confidence it is essential that captive portals DO NOT attempt to capture port 443.
+
+Captive Portal Detection (CPD) has evolved as an enhancement to the network manager component included with major Operating Systems (Linux, Android, iOS/macOS, Windows). Using a pre defined port 80 web page (depending on the vendor) the network manager will detect the presence of a captive portal hotspot and notify the user. In addition, most major browsers now support CPD.
