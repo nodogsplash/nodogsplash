@@ -1,10 +1,10 @@
 
-To create a Debian package of NoDogSplash (a *.deb file),
+To create a Debian package of NoDogSplash (a \*.deb file),
 you first need to have installed the following programs and libraries:
 
 ```
-apt-get install build-essential debhelper devscripts
-apt-get install libmicrohttpd-dev dh-systemd
+apt install build-essential debhelper devscripts
+apt install libmicrohttpd-dev dh-systemd
 ```
 
 Run this command in the repository root folder to create the package:
