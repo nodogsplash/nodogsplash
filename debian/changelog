@@ -1,3 +1,13 @@
+nodogsplash (2.1.0-1) UNRELEASED; urgency=medium
+
+  * Allow firewall rule chaining, PR #231 [bluewavenet]
+  * Update documentation [bluewavenet]
+  * Enable TCP Fast Open, PR #237 [blogcin]
+  * Avoid continuous thread creation for control interface, PR #238 [blogcin]
+  * Fix possible memory corruption for long config file path, PR #240 [blogcin]
+
+ -- Moritz Warning <moritzwarning@web.de>  Tue, 08 May 2018 19:19:00 +0000
+
 nodogsplash (2.0.1-1) stable; urgency=medium
 
   * Added Forwarding Authentication Service (FAS). [bluewavenet]

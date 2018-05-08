@@ -27,7 +27,7 @@
 #ifndef _CONF_H_
 #define _CONF_H_
 
-#define VERSION "2.0.1"
+#define VERSION "2.1.0"
 
 /*@{*/
 /** Defines */
