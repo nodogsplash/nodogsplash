@@ -1,6 +1,8 @@
 nodogsplash (2.1.0) UNRELEASED; urgency=medium
 
   * Allow firewall rule chaining, PR #231 [bluewavenet]
+  * OpenWrt: Add hook to allow firewall to restart nodogsplash after configuring additional rules, PR https://github.com/openwrt-routing/packages/pull/369 [bluewavenet]
+  * OpenWrt: Add support for mwan3(v2) and sqm-scripts, PR https://github.com/openwrt-routing/packages/pull/359 [bluewavenet]
   * Update documentation [bluewavenet]
   * Enable TCP Fast Open, PR #237 [blogcin]
   * Avoid continuous thread creation for control interface, PR #238 [blogcin]
