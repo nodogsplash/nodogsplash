@@ -1,3 +1,10 @@
+nodogsplash (2.1.1-1)
+
+  * Update nodogsplash.conf for non-OpenWrt builds
+  * Minor cosmetic changes
+  
+ -- Rob White <dot@blue-wave.net> Sat, 12 May 2018 10:03:00 +0000
+
 nodogsplash (2.1.0-1) UNRELEASED; urgency=medium
 
   * Allow firewall rule chaining, PR #231 [bluewavenet]
