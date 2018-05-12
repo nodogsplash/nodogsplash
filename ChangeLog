@@ -1,4 +1,11 @@
-nodogsplash (2.1.0) UNRELEASED; urgency=medium
+nodogsplash (2.1.1)
+  * Update nodogsplash.conf for non-OpenWrt builds
+  * Minor cosmetic changes
+  
+ -- Rob White <dot@blue-wave.net> Sat, 12 May 2018 10:03:00 +0000
+
+
+nodogsplash (2.1.0) 
 
   * Allow firewall rule chaining, PR #231 [bluewavenet]
   * OpenWrt: Add hook to allow firewall to restart nodogsplash after configuring additional rules, PR https://github.com/openwrt-routing/packages/pull/369 [bluewavenet]
