@@ -80,15 +80,6 @@ struct MHD_Daemon * webserver = NULL;
 /* Time when nodogsplash started  */
 time_t started_time = 0;
 
-
-/* Avoid race condition of folloing variables */
-pthread_mutex_t httpd_mutex = PTHREAD_MUTEX_INITIALIZER;
-/* Total number of httpd request handling threads started */
-int created_httpd_threads;
-/* Number of current httpd request handling threads */
-int current_httpd_threads;
-
-
 /**@internal
  * @brief Handles SIGCHLD signals to avoid zombie processes
  *
