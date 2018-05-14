@@ -464,7 +464,6 @@ ndsctl_status(int fd)
 	cprintf(fd, "; avg: %.6g kbit/s\n", ((double) upload_bytes) / 125 / uptimesecs);
 	cprintf(fd, "====\n");
 	cprintf(fd, "Client authentications since start: %u\n", authenticated_since_start);
-	cprintf(fd, "Httpd request threads created/current: %d/%d\n", created_httpd_threads, current_httpd_threads);
 
 	if (config->decongest_httpd_threads) {
 		cprintf(fd, "Httpd thread decongest threshold: %d threads\n", config->httpd_thread_threshold);
