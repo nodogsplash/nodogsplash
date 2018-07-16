@@ -75,29 +75,31 @@ static void ndsctl_password(void);
 static void
 usage(void)
 {
-	printf("Usage: ndsctl [options] command [arguments]\n");
-	printf("\n");
-	printf("options:\n");
-	printf("  -s <path>           Path to the socket\n");
-	printf("  -h                  Print usage\n");
-	printf("\n");
-	printf("commands:\n");
-	printf("  status              View the status of nodogsplash\n");
-	printf("  clients             Display machine-readable client list\n");
-	printf("  json                Display machine-readable client list in json format\n");
-	printf("  stop                Stop the running nodogsplash\n");
-	printf("  auth mac|ip|token   Authenticate user with specified mac, ip or token\n");
-	printf("  deauth mac|ip|token Deauthenticate user with specified mac, ip or token\n");
-	printf("  block mac           Block the given MAC address\n");
-	printf("  unblock mac         Unblock the given MAC address\n");
-	printf("  allow mac           Allow the given MAC address\n");
-	printf("  unallow mac         Unallow the given MAC address\n");
-	printf("  trust mac           Trust the given MAC address\n");
-	printf("  untrust mac         Untrust the given MAC address\n");
-	printf("  loglevel n          Set logging level to n\n");
-	printf("  password pass       Set gateway password\n");
-	printf("  username name       Set gateway username\n");
-	printf("\n");
+	printf(
+		"Usage: ndsctl [options] command [arguments]\n"
+		"\n"
+		"options:\n"
+		"  -s <path>           Path to the socket\n"
+		"  -h                  Print usage\n"
+		"\n"
+		"commands:\n"
+		"  status              View the status of nodogsplash\n"
+		"  clients             Display machine-readable client list\n"
+		"  json                Display machine-readable client list in json format\n"
+		"  stop                Stop the running nodogsplash\n"
+		"  auth mac|ip|token   Authenticate user with specified mac, ip or token\n"
+		"  deauth mac|ip|token Deauthenticate user with specified mac, ip or token\n"
+		"  block mac           Block the given MAC address\n"
+		"  unblock mac         Unblock the given MAC address\n"
+		"  allow mac           Allow the given MAC address\n"
+		"  unallow mac         Unallow the given MAC address\n"
+		"  trust mac           Trust the given MAC address\n"
+		"  untrust mac         Untrust the given MAC address\n"
+		"  loglevel n          Set logging level to n\n"
+		"  password pass       Set gateway password\n"
+		"  username name       Set gateway username\n"
+		"\n"
+	);
 }
 
 /** @internal

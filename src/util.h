@@ -61,16 +61,16 @@ char *get_uptime_string();
 /*
  * @brief Writes a human-readable paragraph of the status of the nodogsplash process
  */
-void ndsctl_status(int fd);
+void ndsctl_status(FILE *fp);
 /*
  * @brief Writes a machine-readable dump of currently connected clients
  */
-void ndsctl_clients(int fd);
+void ndsctl_clients(FILE *fp);
 
 /*
  * @brief Writes a machine-readable json of currently connected clients
  */
-void ndsctl_json(int fd);
+void ndsctl_json(FILE *fp);
 
 /** @brief cheap random */
 unsigned short rand16(void);

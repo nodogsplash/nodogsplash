@@ -62,17 +62,17 @@ extern pthread_mutex_t config_mutex;
 
 static void ndsctl_handler(int fd);
 static void ndsctl_stop();
-static void ndsctl_block(int, char *);
-static void ndsctl_unblock(int, char *);
-static void ndsctl_allow(int, char *);
-static void ndsctl_unallow(int, char *);
-static void ndsctl_trust(int, char *);
-static void ndsctl_untrust(int, char *);
-static void ndsctl_auth(int, char *);
-static void ndsctl_deauth(int, char *);
-static void ndsctl_loglevel(int, char *);
-static void ndsctl_password(int, char *);
-static void ndsctl_username(int, char *);
+static void ndsctl_block(FILE *fp, char *arg);
+static void ndsctl_unblock(FILE *fp, char *arg);
+static void ndsctl_allow(FILE *fp, char *arg);
+static void ndsctl_unallow(FILE *fp, char *arg);
+static void ndsctl_trust(FILE *fp, char *arg);
+static void ndsctl_untrust(FILE *fp, char *arg);
+static void ndsctl_auth(FILE *fp, char *arg);
+static void ndsctl_deauth(FILE *fp, char *arg);
+static void ndsctl_loglevel(FILE *fp, char *arg);
+static void ndsctl_password(FILE *fp, char *arg);
+static void ndsctl_username(FILE *fp, char *arg);
 
 static int socket_set_non_blocking(int sockfd);
 
@@ -220,6 +220,7 @@ ndsctl_handler(int fd)
 	int done, i;
 	char request[MAX_BUF];
 	ssize_t read_bytes, len;
+	FILE* fp;
 
 	debug(LOG_DEBUG, "Entering thread_ndsctl_handler....");
 	debug(LOG_DEBUG, "Read bytes and stuff from %d", fd);
@@ -228,6 +229,7 @@ ndsctl_handler(int fd)
 	read_bytes = 0;
 	done = 0;
 	memset(request, 0, sizeof(request));
+	fp = fdopen(fd, "w");
 
 	/* Read.... */
 	while (!done && read_bytes < (sizeof(request) - 1)) {
@@ -248,35 +250,35 @@ ndsctl_handler(int fd)
 	debug(LOG_DEBUG, "ndsctl request received: [%s]", request);
 
 	if (strncmp(request, "status", 6) == 0) {
-		ndsctl_status(fd);
+		ndsctl_status(fp);
 	} else if (strncmp(request, "clients", 7) == 0) {
-		ndsctl_clients(fd);
+		ndsctl_clients(fp);
 	} else if (strncmp(request, "json", 4) == 0) {
-		ndsctl_json(fd);
+		ndsctl_json(fp);
 	} else if (strncmp(request, "stop", 4) == 0) {
 		ndsctl_stop();
 	} else if (strncmp(request, "block", 5) == 0) {
-		ndsctl_block(fd, (request + 6));
+		ndsctl_block(fp, (request + 6));
 	} else if (strncmp(request, "unblock", 7) == 0) {
-		ndsctl_unblock(fd, (request + 8));
+		ndsctl_unblock(fp, (request + 8));
 	} else if (strncmp(request, "allow", 5) == 0) {
-		ndsctl_allow(fd, (request + 6));
+		ndsctl_allow(fp, (request + 6));
 	} else if (strncmp(request, "unallow", 7) == 0) {
-		ndsctl_unallow(fd, (request + 8));
+		ndsctl_unallow(fp, (request + 8));
 	} else if (strncmp(request, "trust", 5) == 0) {
-		ndsctl_trust(fd, (request + 6));
+		ndsctl_trust(fp, (request + 6));
 	} else if (strncmp(request, "untrust", 7) == 0) {
-		ndsctl_untrust(fd, (request + 8));
+		ndsctl_untrust(fp, (request + 8));
 	} else if (strncmp(request, "auth", 4) == 0) {
-		ndsctl_auth(fd, (request + 5));
+		ndsctl_auth(fp, (request + 5));
 	} else if (strncmp(request, "deauth", 6) == 0) {
-		ndsctl_deauth(fd, (request + 7));
+		ndsctl_deauth(fp, (request + 7));
 	} else if (strncmp(request, "loglevel", 8) == 0) {
-		ndsctl_loglevel(fd, (request + 9));
+		ndsctl_loglevel(fp, (request + 9));
 	} else if (strncmp(request, "password", 8) == 0) {
-		ndsctl_password(fd, (request + 9));
+		ndsctl_password(fp, (request + 9));
 	} else if (strncmp(request, "username", 8) == 0) {
-		ndsctl_username(fd, (request + 9));
+		ndsctl_username(fp, (request + 9));
 	}
 
 	if (!done) {
@@ -286,10 +288,8 @@ ndsctl_handler(int fd)
 	debug(LOG_DEBUG, "ndsctl request processed: [%s]", request);
 	debug(LOG_DEBUG, "Exiting thread_ndsctl_handler....");
 
-	if (fd > 0) {
-		shutdown(fd, 2);
-		close(fd);
-	}
+	/* Close and flush fp, also closes underlying fd */
+	fclose(fp);
 }
 
 /** A bit of an hack, self kills.... */
@@ -300,7 +300,7 @@ ndsctl_stop()
 }
 
 static void
-ndsctl_auth(int fd, char *arg)
+ndsctl_auth(FILE *fp, char *arg)
 {
 	t_client *client;
 	char *ip, *mac;
@@ -317,7 +317,7 @@ ndsctl_auth(int fd, char *arg)
 	else {
 		debug(LOG_DEBUG, "Client not found.");
 		UNLOCK_CLIENT_LIST();
-		write(fd, "No", 2);
+		fprintf(fp, "No");
 		return;
 	}
 
@@ -330,13 +330,13 @@ ndsctl_auth(int fd, char *arg)
 
 	free(ip);
 	free(mac);
-	write(fd, "Yes", 3);
+	fprintf(fp, "Yes");
 
 	debug(LOG_DEBUG, "Exiting ndsctl_auth...");
 }
 
 static void
-ndsctl_deauth(int fd, char *arg)
+ndsctl_deauth(FILE *fp, char *arg)
 {
 	t_client *client;
 	char *ip, *mac;
@@ -353,7 +353,7 @@ ndsctl_deauth(int fd, char *arg)
 	else {
 		debug(LOG_DEBUG, "Client not found.");
 		UNLOCK_CLIENT_LIST();
-		write(fd, "No", 2);
+		fprintf(fp, "No");
 		return;
 	}
 
@@ -366,13 +366,13 @@ ndsctl_deauth(int fd, char *arg)
 
 	free(ip);
 	free(mac);
-	write(fd, "Yes", 3);
+	fprintf(fp, "Yes");
 
 	debug(LOG_DEBUG, "Exiting ndsctl_deauth...");
 }
 
 static void
-ndsctl_block(int fd, char *arg)
+ndsctl_block(FILE *fp, char *arg)
 {
 	debug(LOG_DEBUG, "Entering ndsctl_block...");
 
@@ -380,9 +380,9 @@ ndsctl_block(int fd, char *arg)
 	debug(LOG_DEBUG, "Argument: [%s]", arg);
 
 	if (!add_to_blocked_mac_list(arg) && !iptables_block_mac(arg)) {
-		write(fd, "Yes", 3);
+		fprintf(fp, "Yes");
 	} else {
-		write(fd, "No", 2);
+		fprintf(fp, "No");
 	}
 
 	UNLOCK_CONFIG();
@@ -391,7 +391,7 @@ ndsctl_block(int fd, char *arg)
 }
 
 static void
-ndsctl_unblock(int fd, char *arg)
+ndsctl_unblock(FILE *fp, char *arg)
 {
 	debug(LOG_DEBUG, "Entering ndsctl_unblock...");
 
@@ -399,9 +399,9 @@ ndsctl_unblock(int fd, char *arg)
 	debug(LOG_DEBUG, "Argument: [%s]", arg);
 
 	if (!remove_from_blocked_mac_list(arg) && !iptables_unblock_mac(arg)) {
-		write(fd, "Yes", 3);
+		fprintf(fp, "Yes");
 	} else {
-		write(fd, "No", 2);
+		fprintf(fp, "No");
 	}
 
 	UNLOCK_CONFIG();
@@ -410,7 +410,7 @@ ndsctl_unblock(int fd, char *arg)
 }
 
 static void
-ndsctl_allow(int fd, char *arg)
+ndsctl_allow(FILE *fp, char *arg)
 {
 	debug(LOG_DEBUG, "Entering ndsctl_allow...");
 
@@ -418,9 +418,9 @@ ndsctl_allow(int fd, char *arg)
 	debug(LOG_DEBUG, "Argument: [%s]", arg);
 
 	if (!add_to_allowed_mac_list(arg) && !iptables_allow_mac(arg)) {
-		write(fd, "Yes", 3);
+		fprintf(fp, "Yes");
 	} else {
-		write(fd, "No", 2);
+		fprintf(fp, "No");
 	}
 
 	UNLOCK_CONFIG();
@@ -429,7 +429,7 @@ ndsctl_allow(int fd, char *arg)
 }
 
 static void
-ndsctl_unallow(int fd, char *arg)
+ndsctl_unallow(FILE *fp, char *arg)
 {
 	debug(LOG_DEBUG, "Entering ndsctl_unallow...");
 
@@ -437,9 +437,9 @@ ndsctl_unallow(int fd, char *arg)
 	debug(LOG_DEBUG, "Argument: [%s]", arg);
 
 	if (!remove_from_allowed_mac_list(arg) && !iptables_unallow_mac(arg)) {
-		write(fd, "Yes", 3);
+		fprintf(fp, "Yes");
 	} else {
-		write(fd, "No", 2);
+		fprintf(fp, "No");
 	}
 
 	UNLOCK_CONFIG();
@@ -448,7 +448,7 @@ ndsctl_unallow(int fd, char *arg)
 }
 
 static void
-ndsctl_trust(int fd, char *arg)
+ndsctl_trust(FILE *fp, char *arg)
 {
 	debug(LOG_DEBUG, "Entering ndsctl_trust...");
 
@@ -456,9 +456,9 @@ ndsctl_trust(int fd, char *arg)
 	debug(LOG_DEBUG, "Argument: [%s]", arg);
 
 	if (!add_to_trusted_mac_list(arg) && !iptables_trust_mac(arg)) {
-		write(fd, "Yes", 3);
+		fprintf(fp, "Yes");
 	} else {
-		write(fd, "No", 2);
+		fprintf(fp, "No");
 	}
 
 	UNLOCK_CONFIG();
@@ -467,7 +467,7 @@ ndsctl_trust(int fd, char *arg)
 }
 
 static void
-ndsctl_untrust(int fd, char *arg)
+ndsctl_untrust(FILE *fp, char *arg)
 {
 	debug(LOG_DEBUG, "Entering ndsctl_untrust...");
 
@@ -475,9 +475,9 @@ ndsctl_untrust(int fd, char *arg)
 	debug(LOG_DEBUG, "Argument: [%s]", arg);
 
 	if (!remove_from_trusted_mac_list(arg) && !iptables_untrust_mac(arg)) {
-		write(fd, "Yes", 3);
+		fprintf(fp, "Yes");
 	} else {
-		write(fd, "No", 2);
+		fprintf(fp, "No");
 	}
 
 	UNLOCK_CONFIG();
@@ -486,7 +486,7 @@ ndsctl_untrust(int fd, char *arg)
 }
 
 static void
-ndsctl_loglevel(int fd, char *arg)
+ndsctl_loglevel(FILE *fp, char *arg)
 {
 	int level = atoi(arg);
 
@@ -497,10 +497,10 @@ ndsctl_loglevel(int fd, char *arg)
 
 
 	if (!set_log_level(level)) {
-		write(fd, "Yes", 3);
+		fprintf(fp, "Yes");
 		debug(LOG_NOTICE, "Set debug loglevel to %d.", level);
 	} else {
-		write(fd, "No", 2);
+		fprintf(fp, "No");
 	}
 
 	UNLOCK_CONFIG();
@@ -509,7 +509,7 @@ ndsctl_loglevel(int fd, char *arg)
 }
 
 static void
-ndsctl_password(int fd, char *arg)
+ndsctl_password(FILE *fp, char *arg)
 {
 	debug(LOG_DEBUG, "Entering ndsctl_password...");
 
@@ -518,10 +518,10 @@ ndsctl_password(int fd, char *arg)
 
 
 	if (!set_password(arg)) {
-		write(fd, "Yes", 3);
+		fprintf(fp, "Yes");
 		debug(LOG_NOTICE, "Set password to %s.", arg);
 	} else {
-		write(fd, "No", 2);
+		fprintf(fp, "No");
 	}
 
 	UNLOCK_CONFIG();
@@ -530,7 +530,7 @@ ndsctl_password(int fd, char *arg)
 }
 
 static void
-ndsctl_username(int fd, char *arg)
+ndsctl_username(FILE *fp, char *arg)
 {
 	debug(LOG_DEBUG, "Entering ndsctl_username...");
 
@@ -539,10 +539,10 @@ ndsctl_username(int fd, char *arg)
 
 
 	if (!set_username(arg)) {
-		write(fd, "Yes", 3);
+		fprintf(fp, "Yes");
 		debug(LOG_NOTICE, "Set username to %s.", arg);
 	} else {
-		write(fd, "No", 2);
+		fprintf(fp, "No");
 	}
 
 	UNLOCK_CONFIG();

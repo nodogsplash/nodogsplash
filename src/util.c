@@ -372,26 +372,8 @@ get_uptime_string()
 	return format_time(time(NULL)-started_time);
 }
 
-/* Custom print format string to file descriptor */
 void
-cprintf( int fd, const char *format, ... ) {
-	char buffer[256];
-	va_list vlist;
-	int rc;
-
-	va_start( vlist, format );
-	rc = vsnprintf( buffer, sizeof(buffer), format, vlist );
-	va_end( vlist );
-
-	if (rc > 0 && rc < sizeof(buffer)) {
-		write(fd, buffer, strlen(buffer));
-	} else {
-		debug(LOG_ERR, "failed to write format string: %s", format);
-	}
-}
-
-void
-ndsctl_status(int fd)
+ndsctl_status(FILE *fp)
 {
 	char timebuf[32];
 	char *str;
@@ -406,68 +388,68 @@ ndsctl_status(int fd)
 
 	config = config_get_config();
 
-	cprintf(fd, "==================\nNoDogSplash Status\n====\n");
+	fprintf(fp, "==================\nNoDogSplash Status\n====\n");
 
 	now = time(NULL);
 	uptimesecs = now - started_time;
 
-	cprintf(fd, "Version: " VERSION "\n");
+	fprintf(fp, "Version: " VERSION "\n");
 
 	str = format_time(uptimesecs);
-	cprintf(fd, "Uptime: %s\n", str);
+	fprintf(fp, "Uptime: %s\n", str);
 	free(str);
 
-	cprintf(fd, "Gateway Name: %s\n", config->gw_name);
-	cprintf(fd, "Managed interface: %s\n", config->gw_interface);
-	cprintf(fd, "Managed IP range: %s\n", config->gw_iprange);
-	cprintf(fd, "Server listening: %s:%d\n", config->gw_address, config->gw_port);
+	fprintf(fp, "Gateway Name: %s\n", config->gw_name);
+	fprintf(fp, "Managed interface: %s\n", config->gw_interface);
+	fprintf(fp, "Managed IP range: %s\n", config->gw_iprange);
+	fprintf(fp, "Server listening: %s:%d\n", config->gw_address, config->gw_port);
 
 	if (config->authenticate_immediately) {
-		cprintf(fd, "Authenticate immediately: yes\n");
+		fprintf(fp, "Authenticate immediately: yes\n");
 	} else {
-		cprintf(fd, "Splashpage: %s/%s\n", config->webroot, config->splashpage);
+		fprintf(fp, "Splashpage: %s/%s\n", config->webroot, config->splashpage);
 	}
 
 	if (config->redirectURL) {
-		cprintf(fd, "Redirect URL: %s\n", config->redirectURL);
+		fprintf(fp, "Redirect URL: %s\n", config->redirectURL);
 	}
 
 	if (config->passwordauth) {
-		cprintf(fd, "Gateway password: %s\n", config->password);
+		fprintf(fp, "Gateway password: %s\n", config->password);
 	}
 
 	if (config->usernameauth) {
-		cprintf(fd, "Gateway username: %s\n", config->username);
+		fprintf(fp, "Gateway username: %s\n", config->username);
 	}
 
-	cprintf(fd, "Traffic control: %s\n", config->traffic_control ? "yes" : "no");
+	fprintf(fp, "Traffic control: %s\n", config->traffic_control ? "yes" : "no");
 
 	if (config->traffic_control) {
 		if (config->download_limit > 0) {
-			cprintf(fd, "Download rate limit: %d kbit/s\n", config->download_limit);
+			fprintf(fp, "Download rate limit: %d kbit/s\n", config->download_limit);
 		} else {
-			cprintf(fd, "Download rate limit: none\n");
+			fprintf(fp, "Download rate limit: none\n");
 		}
 		if (config->upload_limit > 0) {
-			cprintf(fd, "Upload rate limit: %d kbit/s\n", config->upload_limit);
+			fprintf(fp, "Upload rate limit: %d kbit/s\n", config->upload_limit);
 		} else {
-			cprintf(fd, "Upload rate limit: none\n");
+			fprintf(fp, "Upload rate limit: none\n");
 		}
 	}
 
 	download_bytes = iptables_fw_total_download();
-	cprintf(fd, "Total download: %llu kByte", download_bytes/1000);
-	cprintf(fd, "; avg: %.6g kbit/s\n", ((double) download_bytes) / 125 / uptimesecs);
+	fprintf(fp, "Total download: %llu kByte", download_bytes/1000);
+	fprintf(fp, "; avg: %.6g kbit/s\n", ((double) download_bytes) / 125 / uptimesecs);
 
 	upload_bytes = iptables_fw_total_upload();
-	cprintf(fd, "Total upload: %llu kByte", upload_bytes/1000);
-	cprintf(fd, "; avg: %.6g kbit/s\n", ((double) upload_bytes) / 125 / uptimesecs);
-	cprintf(fd, "====\n");
-	cprintf(fd, "Client authentications since start: %u\n", authenticated_since_start);
+	fprintf(fp, "Total upload: %llu kByte", upload_bytes/1000);
+	fprintf(fp, "; avg: %.6g kbit/s\n", ((double) upload_bytes) / 125 / uptimesecs);
+	fprintf(fp, "====\n");
+	fprintf(fp, "Client authentications since start: %u\n", authenticated_since_start);
 
 	if (config->decongest_httpd_threads) {
-		cprintf(fd, "Httpd thread decongest threshold: %d threads\n", config->httpd_thread_threshold);
-		cprintf(fd, "Httpd thread decongest delay: %d ms\n", config->httpd_thread_delay_ms);
+		fprintf(fp, "Httpd thread decongest threshold: %d threads\n", config->httpd_thread_threshold);
+		fprintf(fp, "Httpd thread decongest delay: %d ms\n", config->httpd_thread_delay_ms);
 	}
 
 	/* Update the client's counters so info is current */
@@ -475,27 +457,27 @@ ndsctl_status(int fd)
 
 	LOCK_CLIENT_LIST();
 
-	cprintf(fd, "Current clients: %d\n", get_client_list_length());
+	fprintf(fp, "Current clients: %d\n", get_client_list_length());
 
 	client = client_get_first_client();
 	if (client) {
-		cprintf(fd, "\n");
+		fprintf(fp, "\n");
 	}
 
 	indx = 0;
 	while (client != NULL) {
-		cprintf(fd, "Client %d\n", indx);
+		fprintf(fp, "Client %d\n", indx);
 
-		cprintf(fd, "  IP: %s MAC: %s\n", client->ip, client->mac);
+		fprintf(fp, "  IP: %s MAC: %s\n", client->ip, client->mac);
 
 		ctime_r(&(client->added_time),timebuf);
-		cprintf(fd, "  Added:   %s", timebuf);
+		fprintf(fp, "  Added:   %s", timebuf);
 
 		ctime_r(&(client->counters.last_updated),timebuf);
-		cprintf(fd, "  Active:  %s", timebuf);
+		fprintf(fp, "  Active:  %s", timebuf);
 
 		str = format_time(client->counters.last_updated - client->added_time);
-		cprintf(fd, "  Active duration: %s\n", str);
+		fprintf(fp, "  Active duration: %s\n", str);
 		free(str);
 
 		if (now > client->added_time) {
@@ -506,17 +488,17 @@ ndsctl_status(int fd)
 		}
 
 		str = format_time(durationsecs);
-		cprintf(fd, "  Added duration:  %s\n", str);
+		fprintf(fp, "  Added duration:  %s\n", str);
 		free(str);
 
-		cprintf(fd, "  Token: %s\n", client->token ? client->token : "none");
+		fprintf(fp, "  Token: %s\n", client->token ? client->token : "none");
 
-		cprintf(fd, "  State: %s\n", fw_connection_state_as_string(client->fw_connection_state));
+		fprintf(fp, "  State: %s\n", fw_connection_state_as_string(client->fw_connection_state));
 
 		download_bytes = client->counters.incoming;
 		upload_bytes = client->counters.outgoing;
 
-		cprintf(fd, "  Download: %llu kByte; avg: %.6g kbit/s\n  Upload:   %llu kByte; avg: %.6g kbit/s\n\n",
+		fprintf(fp, "  Download: %llu kByte; avg: %.6g kbit/s\n  Upload:   %llu kByte; avg: %.6g kbit/s\n\n",
 				download_bytes/1000, ((double)download_bytes)/125/durationsecs,
 				upload_bytes/1000, ((double)upload_bytes)/125/durationsecs);
 
@@ -526,50 +508,50 @@ ndsctl_status(int fd)
 
 	UNLOCK_CLIENT_LIST();
 
-	cprintf(fd, "====\n");
+	fprintf(fp, "====\n");
 
-	cprintf(fd, "Blocked MAC addresses:");
+	fprintf(fp, "Blocked MAC addresses:");
 
 	if (config->macmechanism == MAC_ALLOW) {
-		cprintf(fd, " N/A\n");
+		fprintf(fp, " N/A\n");
 	} else  if (config->blockedmaclist != NULL) {
-		cprintf(fd, "\n");
+		fprintf(fp, "\n");
 		for (block_mac = config->blockedmaclist; block_mac != NULL; block_mac = block_mac->next) {
-			cprintf(fd, "  %s\n", block_mac->mac);
+			fprintf(fp, "  %s\n", block_mac->mac);
 		}
 	} else {
-		cprintf(fd, " none\n");
+		fprintf(fp, " none\n");
 	}
 
-	cprintf(fd, "Allowed MAC addresses:");
+	fprintf(fp, "Allowed MAC addresses:");
 
 	if (config->macmechanism == MAC_BLOCK) {
-		cprintf(fd, " N/A\n");
+		fprintf(fp, " N/A\n");
 	} else  if (config->allowedmaclist != NULL) {
-		cprintf(fd, "\n");
+		fprintf(fp, "\n");
 		for (allow_mac = config->allowedmaclist; allow_mac != NULL; allow_mac = allow_mac->next) {
-			cprintf(fd, "  %s\n", allow_mac->mac);
+			fprintf(fp, "  %s\n", allow_mac->mac);
 		}
 	} else {
-		cprintf(fd, " none\n");
+		fprintf(fp, " none\n");
 	}
 
-	cprintf(fd, "Trusted MAC addresses:");
+	fprintf(fp, "Trusted MAC addresses:");
 
 	if (config->trustedmaclist != NULL) {
-		cprintf(fd, "\n");
+		fprintf(fp, "\n");
 		for (trust_mac = config->trustedmaclist; trust_mac != NULL; trust_mac = trust_mac->next) {
-			cprintf(fd, "  %s\n", trust_mac->mac);
+			fprintf(fp, "  %s\n", trust_mac->mac);
 		}
 	} else {
-		cprintf(fd, " none\n");
+		fprintf(fp, " none\n");
 	}
 
-	cprintf(fd, "========\n");
+	fprintf(fp, "========\n");
 }
 
 void
-ndsctl_clients(int fd)
+ndsctl_clients(FILE *fp)
 {
 	t_client *client;
 	int indx;
@@ -583,28 +565,28 @@ ndsctl_clients(int fd)
 
 	LOCK_CLIENT_LIST();
 
-	cprintf(fd, "%d\n", get_client_list_length());
+	fprintf(fp, "%d\n", get_client_list_length());
 
 	client = client_get_first_client();
 	if (client) {
-		cprintf(fd, "\n");
+		fprintf(fp, "\n");
 	}
 
 	indx = 0;
 	while (client != NULL) {
-		cprintf(fd, "client_id=%d\n", indx);
-		cprintf(fd, "ip=%s\nmac=%s\n", client->ip, client->mac);
-		cprintf(fd, "added=%lld\n", (long long) client->added_time);
-		cprintf(fd, "active=%lld\n", (long long) client->counters.last_updated);
-		cprintf(fd, "duration=%lu\n", now - client->added_time);
-		cprintf(fd, "token=%s\n", client->token ? client->token : "none");
-		cprintf(fd, "state=%s\n", fw_connection_state_as_string(client->fw_connection_state));
+		fprintf(fp, "client_id=%d\n", indx);
+		fprintf(fp, "ip=%s\nmac=%s\n", client->ip, client->mac);
+		fprintf(fp, "added=%lld\n", (long long) client->added_time);
+		fprintf(fp, "active=%lld\n", (long long) client->counters.last_updated);
+		fprintf(fp, "duration=%lu\n", now - client->added_time);
+		fprintf(fp, "token=%s\n", client->token ? client->token : "none");
+		fprintf(fp, "state=%s\n", fw_connection_state_as_string(client->fw_connection_state));
 
 		durationsecs = now - client->added_time;
 		download_bytes = client->counters.incoming;
 		upload_bytes = client->counters.outgoing;
 
-		cprintf(fd, "downloaded=%llu\navg_down_speed=%.6g\nuploaded=%llu\navg_up_speed=%.6g\n\n",
+		fprintf(fp, "downloaded=%llu\navg_down_speed=%.6g\nuploaded=%llu\navg_up_speed=%.6g\n\n",
 				download_bytes/1000, ((double)download_bytes)/125/durationsecs,
 				upload_bytes/1000, ((double)upload_bytes)/125/durationsecs);
 
@@ -616,7 +598,7 @@ ndsctl_clients(int fd)
 }
 
 void
-ndsctl_json(int fd)
+ndsctl_json(FILE *fp)
 {
 	t_client *client;
 	int indx;
@@ -630,41 +612,41 @@ ndsctl_json(int fd)
 
 	LOCK_CLIENT_LIST();
 
-	cprintf(fd, "{\n\"client_length\": %d,\n", get_client_list_length());
+	fprintf(fp, "{\n\"client_length\": %d,\n", get_client_list_length());
 
 	client = client_get_first_client();
 	indx = 0;
 
-	cprintf(fd, "\"clients\":{\n");
+	fprintf(fp, "\"clients\":{\n");
 
 	while (client != NULL) {
-		cprintf(fd, "\"%s\":{\n", client->mac);
-		cprintf(fd, "\"client_id\":%d,\n", indx);
-		cprintf(fd, "\"ip\":\"%s\",\n\"mac\":\"%s\",\n", client->ip, client->mac);
-		cprintf(fd, "\"added\":%lld,\n", (long long) client->added_time);
-		cprintf(fd, "\"active\":%lld,\n", (long long) client->counters.last_updated);
-		cprintf(fd, "\"duration\":%lu,\n", now - client->added_time);
-		cprintf(fd, "\"token\":\"%s\",\n", client->token ? client->token : "none");
-		cprintf(fd, "\"state\":\"%s\",\n", fw_connection_state_as_string(client->fw_connection_state));
+		fprintf(fp, "\"%s\":{\n", client->mac);
+		fprintf(fp, "\"client_id\":%d,\n", indx);
+		fprintf(fp, "\"ip\":\"%s\",\n\"mac\":\"%s\",\n", client->ip, client->mac);
+		fprintf(fp, "\"added\":%lld,\n", (long long) client->added_time);
+		fprintf(fp, "\"active\":%lld,\n", (long long) client->counters.last_updated);
+		fprintf(fp, "\"duration\":%lu,\n", now - client->added_time);
+		fprintf(fp, "\"token\":\"%s\",\n", client->token ? client->token : "none");
+		fprintf(fp, "\"state\":\"%s\",\n", fw_connection_state_as_string(client->fw_connection_state));
 
 		durationsecs = now - client->added_time;
 		download_bytes = client->counters.incoming;
 		upload_bytes = client->counters.outgoing;
 
-		cprintf(fd, "\"downloaded\":\"%llu\",\n\"avg_down_speed\":\"%.6g\",\n\"uploaded\":\"%llu\",\n\"avg_up_speed\":\"%.6g\"\n",
+		fprintf(fp, "\"downloaded\":\"%llu\",\n\"avg_down_speed\":\"%.6g\",\n\"uploaded\":\"%llu\",\n\"avg_up_speed\":\"%.6g\"\n",
 			download_bytes/1000, ((double)download_bytes)/125/durationsecs,
 			upload_bytes/1000, ((double)upload_bytes)/125/durationsecs);
 
 		indx++;
 		client = client->next;
 
-		cprintf(fd, "}");
+		fprintf(fp, "}");
 		if (client) {
-			cprintf(fd, ",\n");
+			fprintf(fp, ",\n");
 		}
 	}
 
-	cprintf(fd, "}}" );
+	fprintf(fp, "}}");
 
 	UNLOCK_CLIENT_LIST();
 }
