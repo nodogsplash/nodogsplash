@@ -517,9 +517,9 @@ static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, 
 	}
 
 	if (encoded[0])
-		safe_asprintf(&splashpageurl, "http://%s:%u%s?redir=%s", config->gw_address , config->gw_port, "/splash.html", encoded);
+		safe_asprintf(&splashpageurl, "http://%s:%u/%s?redir=%s", config->gw_address , config->gw_port, config->splashpage, encoded);
 	else
-		safe_asprintf(&splashpageurl, "http://%s:%u%s", config->gw_address , config->gw_port, "/splash.html");
+		safe_asprintf(&splashpageurl, "http://%s:%u/%s", config->gw_address , config->gw_port, config->splashpage);
 
 	debug(LOG_DEBUG, "splashpageurl: %s", splashpageurl);
 
