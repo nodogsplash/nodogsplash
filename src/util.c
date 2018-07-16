@@ -156,7 +156,8 @@ execute(const char cmd_line[], int quiet)
 }
 
 struct in_addr *
-wd_gethostbyname(const char name[]) {
+wd_gethostbyname(const char name[])
+{
 	struct hostent *he;
 	struct in_addr *h_addr, *in_addr_temp;
 

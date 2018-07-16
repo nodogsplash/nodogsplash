@@ -814,7 +814,7 @@ iptables_fw_total_upload()
 	unsigned long long int counter;
 
 	/* Look for outgoing traffic */
-	script =  "iptables -v -n -x -t mangle -L PREROUTING";
+	script = "iptables -v -n -x -t mangle -L PREROUTING";
 	output = popen(script, "r");
 	if (!output) {
 		debug(LOG_ERR, "popen(): %s", strerror(errno));
@@ -825,7 +825,7 @@ iptables_fw_total_upload()
 	while (('\n' != fgetc(output)) && !feof(output)) {}
 	while (('\n' != fgetc(output)) && !feof(output)) {}
 
-	while ( !(feof(output) )) {
+	while (!feof(output)) {
 		rc = fscanf(output, "%*d %llu %s ", &counter, target);
 		if (2 == rc && !strcmp(target,CHAIN_OUTGOING)) {
 			debug(LOG_DEBUG, "Total outgoing Bytes=%llu", counter);
@@ -837,7 +837,7 @@ iptables_fw_total_upload()
 	}
 
 	pclose(output);
-	debug(LOG_ERR, "Can't find target %s in mangle table",CHAIN_OUTGOING);
+	debug(LOG_WARNING, "Can't find target %s in mangle table", CHAIN_OUTGOING);
 	return 0;
 }
 
@@ -852,7 +852,7 @@ iptables_fw_total_download()
 	unsigned long long int counter;
 
 	/* Look for incoming traffic */
-	script =  "iptables -v -n -x -t mangle -L POSTROUTING";
+	script = "iptables -v -n -x -t mangle -L POSTROUTING";
 	output = popen(script, "r");
 	if (!output) {
 		debug(LOG_ERR, "popen(): %s", strerror(errno));
@@ -863,7 +863,7 @@ iptables_fw_total_download()
 	while (('\n' != fgetc(output)) && !feof(output)) {}
 	while (('\n' != fgetc(output)) && !feof(output)) {}
 
-	while ( !(feof(output) )) {
+	while (!feof(output)) {
 		rc = fscanf(output, "%*s %llu %s ", &counter, target);
 		if (2 == rc && !strcmp(target,CHAIN_INCOMING)) {
 			debug(LOG_DEBUG, "Total incoming Bytes=%llu", counter);
@@ -875,7 +875,7 @@ iptables_fw_total_download()
 	}
 
 	pclose(output);
-	debug(LOG_ERR, "Can't find target %s in mangle table",CHAIN_INCOMING);
+	debug(LOG_WARNING, "Can't find target %s in mangle table", CHAIN_INCOMING);
 	return 0;
 }
 
@@ -884,9 +884,9 @@ int
 iptables_fw_counters_update(void)
 {
 	FILE *output;
-	char *script,
-		ip[INET6_ADDRSTRLEN],
-		target[MAX_BUF];
+	char *script;
+	char ip[INET6_ADDRSTRLEN];
+	char target[MAX_BUF];
 	int rc;
 	int af;
 	s_config *config;
@@ -910,11 +910,11 @@ iptables_fw_counters_update(void)
 	while (('\n' != fgetc(output)) && !feof(output)) {}
 	while (('\n' != fgetc(output)) && !feof(output)) {}
 
-	while ( !(feof(output) )) {
-		rc = fscanf(output, "%*s %llu %s %*s %*s %*s %*s %15[0-9.]", &counter,target,ip);
+	while (!feof(output)) {
+		rc = fscanf(output, "%*s %llu %s %*s %*s %*s %*s %15[0-9.]", &counter, target, ip);
 		/* eat rest of line */
 		while (('\n' != fgetc(output)) && !feof(output)) {}
-		if (3 == rc && !strcmp(target,"MARK")) {
+		if (3 == rc && !strcmp(target, "MARK")) {
 			/* Sanity*/
 			if (!inet_pton(af, ip, &tempaddr)) {
 				debug(LOG_WARNING, "I was supposed to read an IP address but instead got [%s] - ignoring it", ip);
@@ -949,11 +949,11 @@ iptables_fw_counters_update(void)
 	while (('\n' != fgetc(output)) && !feof(output)) {}
 	while (('\n' != fgetc(output)) && !feof(output)) {}
 
-	while ( !(feof(output) )) {
-		rc = fscanf(output, "%*s %llu %s %*s %*s %*s %*s %*s %15[0-9.]", &counter,target,ip);
+	while (!feof(output)) {
+		rc = fscanf(output, "%*s %llu %s %*s %*s %*s %*s %*s %15[0-9.]", &counter, target, ip);
 		/* eat rest of line */
 		while (('\n' != fgetc(output)) && !feof(output)) {}
-		if (3 == rc && !strcmp(target,"ACCEPT")) {
+		if (3 == rc && !strcmp(target, "ACCEPT")) {
 			/* Sanity*/
 			if (!inet_pton(af, ip, &tempaddr)) {
 				debug(LOG_WARNING, "I was supposed to read an IP address but instead got [%s] - ignoring it", ip);

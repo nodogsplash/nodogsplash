@@ -223,7 +223,7 @@ ndsctl_handler(int fd)
 	FILE* fp;
 
 	debug(LOG_DEBUG, "Entering thread_ndsctl_handler....");
-	debug(LOG_DEBUG, "Read bytes and stuff from %d", fd);
+	debug(LOG_DEBUG, "Read bytes and stuff from descriptor %d", fd);
 
 	/* Init variables */
 	read_bytes = 0;

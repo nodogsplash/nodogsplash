@@ -795,7 +795,7 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client)
 	char *splashpage_result;
 	char *splashpage_tmpl;
 
-	snprintf(filename, PATH_MAX, "%s/%s",config->webroot ,config->splashpage);
+	snprintf(filename, PATH_MAX, "%s/%s", config->webroot ,config->splashpage);
 
 	splashpage_fd = open(filename, O_RDONLY);
 	if (splashpage_fd < 0)

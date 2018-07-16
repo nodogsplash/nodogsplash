@@ -155,8 +155,7 @@ parse_commandline(int argc, char **argv)
 		config.command = NDSCTL_CLIENTS;
 	} else if (strcmp(*(argv + optind), "json") == 0) {
 		config.command = NDSCTL_JSON;
-	}
-	else if (strcmp(*(argv + optind), "stop") == 0) {
+	} else if (strcmp(*(argv + optind), "stop") == 0) {
 		config.command = NDSCTL_STOP;
 	} else if (strcmp(*(argv + optind), "block") == 0) {
 		config.command = NDSCTL_BLOCK;
@@ -347,7 +346,7 @@ ndsctl_print(const char cmd[])
 
 	sock = connect_to_server(config.socket);
 
-	snprintf(request, sizeof(request)-strlen(NDSCTL_TERMINATOR), "%s", cmd);
+	snprintf(request, sizeof(request) - strlen(NDSCTL_TERMINATOR), "%s", cmd);
 	strcat(request, NDSCTL_TERMINATOR);
 
 	len = send_request(sock, request);
@@ -548,8 +547,8 @@ main(int argc, char **argv)
 	default:
 		/* XXX NEVER REACHED */
 		fprintf(stderr, "Unknown opcode: %d\n", config.command);
-		exit(1);
-		break;
+		return 1;
 	}
-	exit(0);
+
+	return 0;
 }
