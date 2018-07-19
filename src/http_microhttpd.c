@@ -1,13 +1,12 @@
 /********************************************************************\
- * This program is free software; you can redistribute it and/or		*
- * modify it under the terms of the GNU General Public License as	 *
- * published by the Free:Software Foundation; either version 2 of	 *
- * the License, or (at your option) any later version.							*
- *																																	*
+ * This program is free software; you can redistribute it and/or	*
+ * modify it under the terms of the GNU General Public License as	*
+ * published by the Free:Software Foundation; either version 2 of	*
+ * the License, or (at your option)anylaterversion.			*
  * This program is distributed in the hope that it will be useful,	*
- * but WITHOUT ANY WARRANTY; without even the implied warranty of	 *
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of	*
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	See the		*
- * GNU General Public License for more details.										 *
+ * GNU General Public License for more details.				*
 \********************************************************************/
 
 /** @internal
@@ -866,6 +865,10 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client)
 
 	tmpl_set_variable(&templor, "gatewaymac", config->gw_mac);
 	tmpl_set_variable(&templor, "gatewayname", config->gw_name);
+	tmpl_set_variable(&templor, "gatewayaddress", config->gw_address);
+
+	tmpl_set_variable(&templor, "forwardingport", config->fw_port);
+	tmpl_set_variable(&templor, "configstring", config->config_str);
 
 	tmpl_set_variable(&templor, "imagesdir", imagesdir);
 	tmpl_set_variable(&templor, "pagesdir", pagesdir);

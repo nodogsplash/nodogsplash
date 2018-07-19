@@ -52,6 +52,7 @@
 #define DEFAULT_GATEWAY_IPRANGE "0.0.0.0/0"
 #define DEFAULT_GATEWAYNAME "NoDogSplash"
 #define DEFAULT_GATEWAYPORT 2050
+#define DEFAULT_FORWARDINGPORT 2051
 #define DEFAULT_REMOTE_AUTH_PORT 80
 #define DEFAULT_CHECKINTERVAL 60
 #define DEFAULT_CLIENTTIMEOUT 10
@@ -105,7 +106,7 @@ typedef enum {
  */
 typedef struct _firewall_rule_t {
 	t_firewall_target target;	/**< @brief t_firewall_target */
-	char *protocol;		/**< @brief tcp, udp, etc ... */
+	char *protocol;			/**< @brief tcp, udp, etc ... */
 	char *port;			/**< @brief Port to block/allow */
 	char *mask;			/**< @brief Mask for the rule *destination* */
 	char *ipset;			/**< @brief IPset rule */
@@ -147,6 +148,8 @@ typedef struct {
 	char *gw_address;		/**< @brief Internal IP address for our web server */
 	char *gw_mac;			/**< @brief MAC address of the interface we manage */
 	unsigned int gw_port;		/**< @brief Port the webserver will run on */
+	unsigned int fw_port;		/**< @brief Port the forwarding server will run on */
+	char *config_str;		/**< @brief Config string to be passed to splash page */
 	char *webroot;			/**< @brief Directory containing splash pages, etc. */
 	char *splashpage;		/**< @brief Name of main splash page */
 	char *infoskelpage;		/**< @brief Name of info skeleton page */

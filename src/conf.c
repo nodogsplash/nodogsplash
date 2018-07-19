@@ -71,6 +71,8 @@ typedef enum {
 	oGatewayIPRange,
 	oGatewayAddress,
 	oGatewayPort,
+	oForwardingPort,
+	oConfigString,
 	oHTTPDMaxConn,
 	oWebRoot,
 	oSplashPage,
@@ -119,6 +121,8 @@ static const struct {
 	{ "gatewayiprange", oGatewayIPRange },
 	{ "gatewayaddress", oGatewayAddress },
 	{ "gatewayport", oGatewayPort },
+	{ "forwardingport", oForwardingPort },
+	{ "configstring", oConfigString },
 	{ "webroot", oWebRoot },
 	{ "splashpage", oSplashPage },
 	{ "imagesdir", oImagesDir },
@@ -189,6 +193,8 @@ config_init(void)
 	config.gw_iprange = safe_strdup(DEFAULT_GATEWAY_IPRANGE);
 	config.gw_address = NULL;
 	config.gw_port = DEFAULT_GATEWAYPORT;
+	config.fw_port = DEFAULT_FORWARDINGPORT;
+	config.config_str = NULL;
 	config.webroot = safe_strdup(DEFAULT_WEBROOT);
 	config.splashpage = safe_strdup(DEFAULT_SPLASHPAGE);
 	config.infoskelpage = safe_strdup(DEFAULT_INFOSKELPAGE);
@@ -732,6 +738,16 @@ config_read(const char *filename)
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);
 			}
+			break;
+		case oForwardingPort:
+			if (sscanf(p1, "%u", &config.fw_port) < 1) {
+				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
+				debug(LOG_ERR, "Exiting...");
+				exit(-1);
+			}
+			break;
+		case oConfigString:
+			config.config_str = safe_strdup(p1);
 			break;
 		case oFirewallRuleSet:
 			parse_firewall_ruleset(p1, fd, filename, &linenum);
