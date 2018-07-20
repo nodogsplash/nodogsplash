@@ -740,11 +740,7 @@ config_read(const char *filename)
 			}
 			break;
 		case oForwardingPort:
-			if (sscanf(p1, "%u", &config.fw_port) < 1) {
-				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
-				debug(LOG_ERR, "Exiting...");
-				exit(-1);
-			}
+			config.config_str = safe_strdup(p1);
 			break;
 		case oConfigString:
 			config.config_str = safe_strdup(p1);

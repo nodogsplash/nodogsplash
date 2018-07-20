@@ -148,7 +148,7 @@ typedef struct {
 	char *gw_address;		/**< @brief Internal IP address for our web server */
 	char *gw_mac;			/**< @brief MAC address of the interface we manage */
 	unsigned int gw_port;		/**< @brief Port the webserver will run on */
-	unsigned int fw_port;		/**< @brief Port the forwarding server will run on */
+	char *fw_port;			/**< @brief Port the forwarding server will run on */
 	char *config_str;		/**< @brief Config string to be passed to splash page */
 	char *webroot;			/**< @brief Directory containing splash pages, etc. */
 	char *splashpage;		/**< @brief Name of main splash page */
