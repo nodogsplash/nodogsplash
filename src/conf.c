@@ -740,7 +740,7 @@ config_read(const char *filename)
 			}
 			break;
 		case oForwardingPort:
-			config.config_str = safe_strdup(p1);
+			config.fw_port = safe_strdup(p1);
 			break;
 		case oConfigString:
 			config.config_str = safe_strdup(p1);
