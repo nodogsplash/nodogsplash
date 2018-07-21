@@ -195,6 +195,7 @@ config_init(void)
 	config.gw_port = DEFAULT_GATEWAYPORT;
 	config.fw_port = DEFAULT_FORWARDINGPORT;
 	config.config_str = NULL;
+	config.meta_redirect = DEFAULT_METAREDIRECT;
 	config.webroot = safe_strdup(DEFAULT_WEBROOT);
 	config.splashpage = safe_strdup(DEFAULT_SPLASHPAGE);
 	config.infoskelpage = safe_strdup(DEFAULT_INFOSKELPAGE);

@@ -854,6 +854,18 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client)
 	safe_asprintf(&authtarget, "http://%s:%d/%s/?token=%s&redir=%s", config->gw_address, config->gw_port, config->authdir, client->token, redirect_url_encoded);
 	safe_asprintf(&pagesdir, "/%s", config->pagesdir);
 	safe_asprintf(&imagesdir, "/%s", config->imagesdir);
+	safe_asprintf(&config_str, "%s", config->config_str);
+	safe_asprintf(&fw_port, "%s", config->fw_port);
+	safe_asprintf(&gw_name, "%s", config->gw_name);
+
+	if(config->meta_redirect == "1"){
+		safe_asprintf(&meta_redirect, "<meta http-equiv=\"refresh\" content=\"10;URL='http://%s:%s/?redir=%s'\" />\"", config->gw_address, fw_port, redirect_url);
+		&auth_button = "";
+	}
+	else{
+		&meta_redirect = "";
+		safe_asprintf(&auth_button, "<form method=\"get\" action=\"%s\"><input type=\"submit\" value=\"Continue\"></form>\"", authtarget);
+	}
 
 	tmpl_init_templor(&templor);
 	tmpl_set_variable(&templor, "authaction", authaction);
@@ -864,11 +876,13 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client)
 	tmpl_set_variable(&templor, "error_msg", "");
 
 	tmpl_set_variable(&templor, "gatewaymac", config->gw_mac);
-	tmpl_set_variable(&templor, "gatewayname", config->gw_name);
+	tmpl_set_variable(&templor, "gatewayname", gw_name);
 	tmpl_set_variable(&templor, "gatewayaddress", config->gw_address);
 
-	tmpl_set_variable(&templor, "forwardingport", config->fw_port);
-	tmpl_set_variable(&templor, "configstring", config->config_str);
+	tmpl_set_variable(&templor, "forwardingport", fw_port);
+	tmpl_set_variable(&templor, "configstring", config_str);
+	tmpl_set_variable(&templor, "metaredirect", meta_redirect);
+	tmpl_set_variable(&templor, "authbutton", auth_button);
 
 	tmpl_set_variable(&templor, "imagesdir", imagesdir);
 	tmpl_set_variable(&templor, "pagesdir", pagesdir);
@@ -892,6 +906,11 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client)
 	free(authtarget);
 	free(pagesdir);
 	free(imagesdir);
+	free(config_str);
+	free(fw_port);
+	free(gw_name);
+	free(meta_redirect);
+	free(auth_button);
 
 	response = MHD_create_response_from_buffer(strlen(splashpage_result), (void *)splashpage_result, MHD_RESPMEM_MUST_FREE);
 	if (!response) {

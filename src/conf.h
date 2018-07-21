@@ -53,6 +53,7 @@
 #define DEFAULT_GATEWAYNAME "NoDogSplash"
 #define DEFAULT_GATEWAYPORT 2050
 #define DEFAULT_FORWARDINGPORT "2051"
+#define DEFAULT_METAREDIRECT "1"
 #define DEFAULT_REMOTE_AUTH_PORT 80
 #define DEFAULT_CHECKINTERVAL 60
 #define DEFAULT_CLIENTTIMEOUT 10
@@ -150,6 +151,7 @@ typedef struct {
 	unsigned int gw_port;		/**< @brief Port the webserver will run on */
 	char *fw_port;			/**< @brief Port the forwarding server will run on */
 	char *config_str;		/**< @brief Config string to be passed to splash page */
+	char *meta_redirect;		/**< @brief enable meta redirect string for splash page */
 	char *webroot;			/**< @brief Directory containing splash pages, etc. */
 	char *splashpage;		/**< @brief Name of main splash page */
 	char *infoskelpage;		/**< @brief Name of info skeleton page */
