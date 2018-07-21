@@ -840,6 +840,12 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client)
 	char redirect_url_encoded[2048];
 	char *imagesdir = NULL;
 	char *pagesdir = NULL;
+	char *config_str = NULL;
+	char *fw_port = NULL;
+	char *gw_name = NULL;
+	char *meta_redirect = NULL;
+	char *auth_button = NULL;
+
 
 	memset(redirect_url_encoded, 0, sizeof(redirect_url_encoded));
 	redirect_url = get_redirect_url(connection);
