@@ -83,35 +83,16 @@ extern unsigned int authenticated_since_start;
 extern int created_httpd_threads;
 extern int current_httpd_threads;
 
-/**
- * Wrapper for execute() call without saving stdout
- * output.
- */
-int execute_simple(const char cmd_line[], int quiet) {
-	return execute(cmd_line, quiet, NULL, 0);
-}
 
-/** Fork a child and execute a shell command.
- * The parent process waits for the child to return,
- * and returns the child's exit() value.
- * @return Return code of the command
- */
-int
-execute(const char cmd_line[], int quiet, char *msg, size_t msg_len)
+static int _execute_ret(char* msg, int msg_len, const char *cmd)
 {
-	int status, retval;
-	pid_t pid, rc;
 	struct sigaction sa, oldsa;
-	const char *new_argv[4];
-	int pipes[2] = { 0 };
-	FILE *stdin = NULL;
-	new_argv[0] = "/bin/sh";
-	new_argv[1] = "-c";
-	new_argv[2] = cmd_line;
-	new_argv[3] = NULL;
+	FILE *fp;
+	int rc;
 
-	/* Temporarily get rid of SIGCHLD handler (see gateway.c), until child exits.
-	 * Will handle SIGCHLD here with waitpid() in the parent. */
+	debug(LOG_DEBUG, "Executing command: %s", cmd);
+
+	/* Temporarily get rid of SIGCHLD handler (see gateway.c), until child exits. */
 	debug(LOG_DEBUG,"Setting default SIGCHLD handler SIG_DFL");
 	sa.sa_handler = SIG_DFL;
 	sigemptyset(&sa.sa_mask);
@@ -120,63 +101,69 @@ execute(const char cmd_line[], int quiet, char *msg, size_t msg_len)
 		debug(LOG_ERR, "sigaction() failed to set default SIGCHLD handler: %s", strerror(errno));
 	}
 
-	pipe(pipes);
-	pid = safe_fork();
-
-	if (pid == 0) {    /* for the child process:         */
-		dup2(pipes[1], STDOUT_FILENO);
-		close(pipes[0]);
-		if (quiet) {
-			/* Close stderr if quiet flag is on */
-			close(2);
-		}
-		if (execvp("/bin/sh", (char *const *)new_argv) == -1) {    /* execute the command  */
-			debug(LOG_ERR, "execvp(): %s", strerror(errno));
-		} else {
-			debug(LOG_ERR, "execvp() failed");
-		}
-		exit(1);
-
-	} else {        /* for the parent:      */
-		close(pipes[1]);
-		stdin = fdopen(pipes[0],"r");
-
-		debug(LOG_DEBUG, "Waiting for PID %d to exit", (int)pid);
-		do {
-			rc = waitpid(pid, &status, 0);
-			if (rc == -1) {
-				if (errno == ECHILD) {
-					debug(LOG_DEBUG, "waitpid(): No child exists now. Assuming normal exit for PID %d", (int)pid);
-					retval = 0;
-				} else {
-					debug(LOG_ERR, "Error waiting for child (waitpid() returned -1): %s", strerror(errno));
-					retval = -1;
-				}
-				break;
-			}
-			if (WIFEXITED(status)) {
-				debug(LOG_DEBUG, "Process PID %d exited normally, status %d", (int)rc, WEXITSTATUS(status));
-				retval = (WEXITSTATUS(status));
-			}
-			if (WIFSIGNALED(status)) {
-				debug(LOG_DEBUG, "Process PID %d exited due to signal %d", (int)rc, WTERMSIG(status));
-				retval = -1;
-			}
-		} while (!WIFEXITED(status) && !WIFSIGNALED(status));
-
-		debug(LOG_DEBUG, "Restoring previous SIGCHLD handler");
-		if (sigaction(SIGCHLD, &oldsa, NULL) == -1) {
-			debug(LOG_ERR, "sigaction() failed to restore SIGCHLD handler! Error %s", strerror(errno));
-		}
-
-		if(msg != NULL && msg_len > 0) {
-			fgets(msg, msg_len, stdin);
-			fclose(stdin);
-		}
-
-		fclose(stdin);
-		return retval;
+	fp = popen(cmd, "r");
+	if (fp == NULL) {
+		debug(LOG_ERR, "popen(): %s", strerror(errno));
+		rc = -1;
+		goto abort;
 	}
+
+	if (msg && msg_len > 0) {
+		fgets(msg, msg_len - 1, fp);
+	}
+
+	rc = pclose(fp);
+
+	if (WIFSIGNALED(rc) != 0) {
+		debug(LOG_WARNING, "Command process exited due to signal %d", WTERMSIG(rc));
+	}
+
+	rc = WEXITSTATUS(rc);
+
+abort:
+
+	/* Restore signal handler */
+	if (sigaction(SIGCHLD, &oldsa, NULL) == -1) {
+		debug(LOG_ERR, "sigaction() failed to restore SIGCHLD handler! Error %s", strerror(errno));
+	}
+
+	return rc;
+}
+
+int execute(const char fmt[], ...)
+{
+	char cmd[512];
+	va_list vlist;
+	int rc;
+
+	va_start(vlist, fmt);
+	rc = vsnprintf(cmd, sizeof(cmd), fmt, vlist);
+	va_end(vlist);
+
+	if (rc < 0 || rc >= sizeof(cmd)) {
+		debug(LOG_ERR, "Format string too small or encoding error.");
+		return -1;
+	}
+
+	return _execute_ret(NULL, 0, cmd);
+}
+
+int execute_ret(char* msg, int msg_len, const char fmt[], ...)
+{
+	char cmd[512];
+	va_list vlist;
+	int rc;
+
+	va_start(vlist, fmt);
+	rc = vsnprintf(cmd, sizeof(cmd), fmt, vlist);
+	va_end(vlist);
+
+	if (rc < 0 || rc >= sizeof(cmd)) {
+		debug(LOG_ERR, "Format string too small or encoding error.");
+		return -1;
+	}
+
+	return _execute_ret(msg, msg_len, cmd);
 }
 
 struct in_addr *

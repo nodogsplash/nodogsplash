@@ -8,73 +8,48 @@ BinVoucher Option
 This feature offers an alphanumeric token for the end user to authenticate
 against custom services. The services are called via script or tool.
 
-There are two information passed to a script/tool as command-line parameters.
+Example calls by Nodogsplash when binvoucher is set to `/etc/nds_auth.sh`.
+Client enters a voucher `A7SU5`:
+```
+/etc/nds_auth.sh client_auth 12:34:56:78:90 A7SU5
+```
+For the authentication to be successfull, the exit code of the script must be 0 and the output to stdout must be the number of seconds > 0. The maximum number of upload and download bytes can also be given, but the traffic shaping feature uses the imq queue, which is not prsent anymore in modern Linux kernels.
 
-**Parameters:**
+Client is deauthenticated due to inactivity when the session is 632 seconds old:
+```
+/etc/nds_auth.sh timeout_deauth 12:34:56:78:90 A7SU5 623
+```
 
-1) METHOD ( auth_verify | auth_update )
-2) MAC ( 00:00:00:00:00 )
-3) VOUCHER ( example: A7SU5 )
-4) REMAINING_DURATION ( 3600 ) in seconds
+Client is deauthenticated due to the session limit when the session is 3600 seconds old:
+```
+/etc/nds_auth.sh session_deauth 12:34:56:78:90 A7SU5 623
+``
 
 **Example script:**
 
-.. code-block:: bash
+.. code-block:: sh
 
-    #!/bin/bash
+    #!/bin/sh
 
-    FAILED_UPDATES_FILE="/tmp/nodogsplash.failed"
-    DOMAIN="foo.com"
-    KIOSK_MAC=$(cat /sys/class/net/eth1/address)
-    CURL=$(which curl)
-    METHOD="${1}"
-    MAC="${2}"
-    VOUCHER="${3}"
-    REMAINING_DURATION="${4}"
+    METHOD="$1"
+    MAC="$2"
+    VOUCHER="$3"
+    DURATION="$4"
 
-    function check_failed_updates() {
-      while IFS='' read -r line || [[ -n "${line}" ]]; do
-      auth_update "${line}"
-      done < "${FAILED_UPDATES_FILE}"
-    }
+    case "$METHOD" in
+      "client_auth")
+        if [ "$VOUCHER" = "abc" ]; then
+          # Allow client to access the Internet for one hour (3600 seconds)
+          # Further values are upload and download limit in bytes (0 for none).
+          echo 3600 0 0
+        fi
+        ;;
+      "timeout_deauth")
+        # The client was deauthenticated after $DURATION seconds because of inactivity
+        ;;
+      "session_deauth")
+        # The client was deauthenticated after $DURATION seconds because of the session ended
+        ;;
+    esac
 
-    function auth_verify() {
-      local url="http://${DOMAIN}/${KIOSK_MAC}/${VOUCHER}/verify_code"
-      local json=$(${CURL} -s ${url})
-      local state=$(echo ${json} | jsonfilter -e '@.success')
-
-      if ${state}; then
-        check_failed_updates
-        return $(echo ${json} | jsonfilter -e '@.duration_remaining')
-      else
-        return 0
-      fi
-    }
-
-    function auth_update() {
-      local url="http://${DOMAIN}/${KIOSK_MAC}/${1}/update_duration"
-      local json=$(${CURL} -s ${url})
-      local state=$(echo ${json} | jsonfilter -e '@.success')
-
-      if ${state}; then
-        exit 0
-      else
-        echo "${1} ${2}" >> "${FAILED_UPDATES_FILE}"
-        exit 1
-      fi
-    }
-
-    if [ "$#" -lt 3 ]; then
-      exit 1
-    fi
-
-    touch "${FAILED_UPDATES_FILE}"
-
-    if [ "${METHOD}" == "auth_verify" ]; then
-      auth_verify
-      printf "%i 0 0" "${?}"
-    elif [ "${METHOD}" == "auth_update" ]; then
-      auth_update "${VOUCHER}" "${REMAINING_DURATION}"
-    fi
-
-    exit 0
+exit 0

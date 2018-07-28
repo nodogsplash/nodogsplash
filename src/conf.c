@@ -34,6 +34,7 @@
 
 #include <string.h>
 #include <ctype.h>
+#include <sys/stat.h>
 
 #include "common.h"
 #include "safe.h"
@@ -654,6 +655,7 @@ config_read(const char *filename)
 	FILE *fd;
 	char line[MAX_BUF], *s, *p1, *p2;
 	int linenum = 0, opcode, value;
+	struct stat sb;
 
 	debug(LOG_INFO, "Reading configuration file '%s'", filename);
 

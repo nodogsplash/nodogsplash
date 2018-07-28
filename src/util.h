@@ -26,10 +26,10 @@
 #ifndef _UTIL_H_
 #define _UTIL_H_
 
-/** @brief Execute a shell command
- */
- int execute_simple(const char cmd_line[], int quiet);
- int execute(const char cmd_line[], int quiet, char *msg, size_t msg_len);
+/* @brief Execute a shell command */
+int execute(const char fmt[], ...);
+int execute_ret(char* msg, int msg_len, const char fmt[], ...);
+
 struct in_addr *wd_gethostbyname(const char name[]);
 
 /* @brief Get IP address of an interface */

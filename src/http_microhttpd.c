@@ -48,7 +48,8 @@
 static t_client *add_client(const char *ip_addr);
 static int authenticated(struct MHD_Connection *connection, const char *ip_addr, const char *mac, const char *url, t_client *client);
 static int preauthenticated(struct MHD_Connection *connection, const char *ip_addr, const char *mac, const char *url, t_client *client);
-static int authenticate_client(struct MHD_Connection *connection, const char *ip_addr, const char *mac, const char *url, t_client *client);
+static int authenticate_client_voucher(struct MHD_Connection *connection, const char *ip_addr, const char *mac, const char *redirect_url, t_client *client);
+static int authenticate_client(struct MHD_Connection *connection, const char *ip_addr, const char *mac, const char *redirect_url, t_client *client);
 static int get_host_value_callback(void *cls, enum MHD_ValueKind kind, const char *key, const char *value);
 static int serve_file(struct MHD_Connection *connection, t_client *client, const char *url);
 static int show_splashpage(struct MHD_Connection *connection, t_client *client);
@@ -90,16 +91,19 @@ static int get_voucher_data(const char *buff, t_client *client)
 	/* We require at least one value */
 	if (sscanf(buff, "%d %d %d", &seconds, &upload, &download) < 1)
 		goto err;
+
 	if (seconds < 1 || upload < 0 || download < 0)
 		goto err;
 
 	client->download_limit = download;
 	client->upload_limit = upload;
+
 	return seconds;
 
 err:
 	client->download_limit = 0;
 	client->upload_limit = 0;
+
 	return 0;
 }
 
@@ -472,6 +476,51 @@ static int authenticated(struct MHD_Connection *connection,
 	return serve_file(connection, client, url);
 }
 
+static int authenticate_client_voucher(
+		struct MHD_Connection *connection,
+		const char *ip_addr,
+		const char *mac,
+		const char *redirect_url,
+		t_client *client)
+{
+	char msg[255] = {0};
+	s_config *config = config_get_config();
+
+	if (client->voucher) {
+		free(client->voucher);
+		client->voucher = NULL;
+	}
+
+	const char *voucher = get_voucher(connection);
+
+	if (!voucher || !is_alphanum(voucher)) {
+		return encode_and_redirect_to_splashpage(connection, redirect_url);
+	}
+
+	int ret = execute_ret(msg, sizeof(msg) - 1, "%s client_auth %s %s", config->bin_voucher, mac, voucher);
+
+	if (ret != 0) {
+		return encode_and_redirect_to_splashpage(connection, redirect_url);
+	}
+
+	int seconds = get_voucher_data(msg, client);
+	if (seconds < 1) {
+		return encode_and_redirect_to_splashpage(connection, redirect_url);
+	}
+
+	// Make sure client->voucher is set to voucher
+	if (!client->voucher || strcmp(client->voucher, voucher)) {
+		free(client->voucher);
+		client->voucher = safe_strdup(voucher);
+	}
+
+	debug(LOG_NOTICE, "Remote auth data: client [%s, %s] authenticated for %d seconds", mac, client->ip, seconds);
+
+	client->until_time = time(NULL) + seconds;
+
+	return authenticate_client(connection, ip_addr, mac, redirect_url, client);
+}
+
 /**
  * @brief preauthenticated - called for all request of a client in this state.
  * @param connection
@@ -505,49 +554,27 @@ static int preauthenticated(struct MHD_Connection *connection,
 	/* request is directed to us */
 	/* check if client wants to be authenticated */
 	if (check_authdir_match(url, config->authdir)) {
-
 		/* Only the first request will redirected to config->redirectURL.
 		 * When the client reloads a page when it's authenticated, it should be redirected
 		 * to their origin url
 		 */
-		if (config->redirectURL)
+		if (config->redirectURL) {
 			redirect_url = config->redirectURL;
-		else
-			redirect_url = get_redirect_url(connection);
-
-		if (try_to_authenticate(connection, client, host, url)) {
-			if (config->bin_voucher) {
-				client->voucher = safe_strdup(get_voucher(connection));
-
-				if(is_alphanum(client->voucher)) {
-					int ret;
-					char *cmd = NULL;
-					char msg[255];
-
-					safe_asprintf(&cmd,"%s auth_verify %s %s", config->bin_voucher, mac, client->voucher);
-					ret = execute(cmd , 1, msg, sizeof(msg) - 1);
-
-					if(ret > 0) {
-						return encode_and_redirect_to_splashpage(connection, redirect_url);
-					} else {
-						int seconds = get_voucher_data(msg, client);
-						if(seconds <= 1) {
-							return encode_and_redirect_to_splashpage(connection, redirect_url);
-						} else {
-							debug(LOG_NOTICE, "Remote auth data: client [%s, %s] authenticated for %d seconds", mac, client->ip, seconds);
-							client->added_time = time(NULL) - (config->checkinterval * config->clientforceout) + seconds;
-							return authenticate_client(connection, ip_addr, mac, redirect_url, client);
-						}
-					}
-				} else {
-					return encode_and_redirect_to_splashpage(connection, redirect_url);
-				}
-			} else {
-				return authenticate_client(connection, ip_addr, mac, redirect_url, client);
-			}
 		} else {
+			redirect_url = get_redirect_url(connection);
+		}
+
+		if (!try_to_authenticate(connection, client, host, url)) {
 			/* user used an invalid token, redirect to splashpage but hold query "redir" intact */
 			return encode_and_redirect_to_splashpage(connection, redirect_url);
+		}
+
+		if (config->bin_voucher) {
+			return authenticate_client_voucher(connection, ip_addr, mac, redirect_url, client);
+		} else {
+			// odd placement
+			client->until_time = time(NULL) + (config->checkinterval * config->clientforceout);
+			return authenticate_client(connection, ip_addr, mac, redirect_url, client);
 		}
 	}
 
