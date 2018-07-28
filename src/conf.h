@@ -64,9 +64,6 @@
 #define DEFAULT_AUTHDIR "nodogsplash_auth"
 #define DEFAULT_DENYDIR "nodogsplash_deny"
 #define DEFAULT_MACMECHANISM MAC_BLOCK
-#define DEFAULT_PASSWORD_AUTH 0
-#define DEFAULT_USERNAME_AUTH 0
-#define DEFAULT_PASSWORD_ATTEMPTS 5
 #define DEFAULT_AUTHENTICATE_IMMEDIATELY 0
 #define DEFAULT_SET_MSS 1
 #define DEFAULT_MSS_VALUE 0
@@ -151,10 +148,6 @@ typedef struct {
 	char *gw_address;		/**< @brief Internal IP address for our web server */
 	char *gw_mac;			/**< @brief MAC address of the interface we manage */
 	unsigned int gw_port;		/**< @brief Port the webserver will run on */
-	char *remote_auth_action;	/**< @brief Path for remote auth */
-	char enable_preauth;  		/**< @brief enable pre-authentication support */
-	char *bin_voucher;		/**< @brief enable voucher support */
-	char force_voucher;		/**< @brief force voucher */
 	char *webroot;			/**< @brief Directory containing splash pages, etc. */
 	char *splashpage;		/**< @brief Name of main splash page */
 	char *infoskelpage;		/**< @brief Name of info skeleton page */
@@ -163,11 +156,6 @@ typedef struct {
 	char *redirectURL;		/**< @brief URL to direct client to after authentication */
 	char *authdir;			/**< @brief Notional relative dir for authentication URL */
 	char *denydir;			/**< @brief Notional relative dir for denial URL */
-	int passwordauth;		/**< @brief boolean, whether to use password authentication */
-	int usernameauth;		/**< @brief boolean, whether to use username authentication */
-	char *username;			/**< @brief Username for username authentication */
-	char *password;			/**< @brief Password for password authentication */
-	int passwordattempts;		/**< @brief Number of attempted password authentications allowed */
 	int clienttimeout;		/**< @brief How many CheckIntervals before an inactive client must be re-authenticated */
 	int clientforceout;		/**< @brief How many CheckIntervals before a client must be re-authenticated */
 	int checkinterval;		/**< @brief Period the the client timeout check thread will run, in seconds */
@@ -240,8 +228,6 @@ int check_mac_format(const char[]);
 
 /** config API, used in commandline.c */
 int set_log_level(int);
-int set_password(const char[]);
-int set_username(const char[]);
 
 #define LOCK_CONFIG() do { \
 	debug(LOG_DEBUG, "Locking config"); \

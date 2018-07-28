@@ -71,8 +71,6 @@ static void ndsctl_untrust(FILE *fp, char *arg);
 static void ndsctl_auth(FILE *fp, char *arg);
 static void ndsctl_deauth(FILE *fp, char *arg);
 static void ndsctl_loglevel(FILE *fp, char *arg);
-static void ndsctl_password(FILE *fp, char *arg);
-static void ndsctl_username(FILE *fp, char *arg);
 
 static int socket_set_non_blocking(int sockfd);
 
@@ -275,10 +273,6 @@ ndsctl_handler(int fd)
 		ndsctl_deauth(fp, (request + 7));
 	} else if (strncmp(request, "loglevel", 8) == 0) {
 		ndsctl_loglevel(fp, (request + 9));
-	} else if (strncmp(request, "password", 8) == 0) {
-		ndsctl_password(fp, (request + 9));
-	} else if (strncmp(request, "username", 8) == 0) {
-		ndsctl_username(fp, (request + 9));
 	}
 
 	if (!done) {
@@ -506,48 +500,6 @@ ndsctl_loglevel(FILE *fp, char *arg)
 	UNLOCK_CONFIG();
 
 	debug(LOG_DEBUG, "Exiting ndsctl_loglevel.");
-}
-
-static void
-ndsctl_password(FILE *fp, char *arg)
-{
-	debug(LOG_DEBUG, "Entering ndsctl_password...");
-
-	LOCK_CONFIG();
-	debug(LOG_DEBUG, "Argument: [%s]", arg);
-
-
-	if (!set_password(arg)) {
-		fprintf(fp, "Yes");
-		debug(LOG_NOTICE, "Set password to %s.", arg);
-	} else {
-		fprintf(fp, "No");
-	}
-
-	UNLOCK_CONFIG();
-
-	debug(LOG_DEBUG, "Exiting ndsctl_password.");
-}
-
-static void
-ndsctl_username(FILE *fp, char *arg)
-{
-	debug(LOG_DEBUG, "Entering ndsctl_username...");
-
-	LOCK_CONFIG();
-	debug(LOG_DEBUG, "Argument: [%s]", arg);
-
-
-	if (!set_username(arg)) {
-		fprintf(fp, "Yes");
-		debug(LOG_NOTICE, "Set username to %s.", arg);
-	} else {
-		fprintf(fp, "No");
-	}
-
-	UNLOCK_CONFIG();
-
-	debug(LOG_DEBUG, "Exiting ndsctl_username.");
 }
 
 static int

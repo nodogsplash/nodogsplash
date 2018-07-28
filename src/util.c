@@ -415,14 +415,6 @@ ndsctl_status(FILE *fp)
 		fprintf(fp, "Redirect URL: %s\n", config->redirectURL);
 	}
 
-	if (config->passwordauth) {
-		fprintf(fp, "Gateway password: %s\n", config->password);
-	}
-
-	if (config->usernameauth) {
-		fprintf(fp, "Gateway username: %s\n", config->username);
-	}
-
 	fprintf(fp, "Traffic control: %s\n", config->traffic_control ? "yes" : "no");
 
 	if (config->traffic_control) {

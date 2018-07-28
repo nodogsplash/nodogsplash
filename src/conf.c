@@ -71,15 +71,6 @@ typedef enum {
 	oGatewayIPRange,
 	oGatewayAddress,
 	oGatewayPort,
-	oRemoteAuthenticatorAction,
-	oEnablePreAuth,
-	oBinVoucher,
-	oForceVoucher,
-	oPasswordAuthentication,
-	oUsernameAuthentication,
-	oPasswordAttempts,
-	oUsername,
-	oPassword,
 	oHTTPDMaxConn,
 	oWebRoot,
 	oSplashPage,
@@ -128,15 +119,6 @@ static const struct {
 	{ "gatewayiprange", oGatewayIPRange },
 	{ "gatewayaddress", oGatewayAddress },
 	{ "gatewayport", oGatewayPort },
-	{ "remoteauthenticatoraction", oRemoteAuthenticatorAction },
-	{ "enablepreauth", oEnablePreAuth },
-	{ "binvoucher", oBinVoucher },
-	{ "forcevoucher", oForceVoucher },
-	{ "passwordauthentication", oPasswordAuthentication },
-	{ "usernameauthentication", oUsernameAuthentication },
-	{ "passwordattempts", oPasswordAttempts },
-	{ "username", oUsername },
-	{ "password", oPassword },
 	{ "webroot", oWebRoot },
 	{ "splashpage", oSplashPage },
 	{ "imagesdir", oImagesDir },
@@ -207,7 +189,6 @@ config_init(void)
 	config.gw_iprange = safe_strdup(DEFAULT_GATEWAY_IPRANGE);
 	config.gw_address = NULL;
 	config.gw_port = DEFAULT_GATEWAYPORT;
-	config.remote_auth_action = NULL;
 	config.webroot = safe_strdup(DEFAULT_WEBROOT);
 	config.splashpage = safe_strdup(DEFAULT_SPLASHPAGE);
 	config.infoskelpage = safe_strdup(DEFAULT_INFOSKELPAGE);
@@ -220,11 +201,6 @@ config_init(void)
 	config.clientforceout = DEFAULT_CLIENTFORCEOUT;
 	config.checkinterval = DEFAULT_CHECKINTERVAL;
 	config.daemon = -1;
-	config.passwordauth = DEFAULT_PASSWORD_AUTH;
-	config.usernameauth = DEFAULT_USERNAME_AUTH;
-	config.passwordattempts = DEFAULT_PASSWORD_ATTEMPTS;
-	config.username = NULL;
-	config.password = NULL;
 	config.authenticate_immediately = DEFAULT_AUTHENTICATE_IMMEDIATELY;
 	config.set_mss = DEFAULT_SET_MSS;
 	config.mss_value = DEFAULT_MSS_VALUE;
@@ -758,22 +734,6 @@ config_read(const char *filename)
 				exit(-1);
 			}
 			break;
-		case oRemoteAuthenticatorAction:
-			config.remote_auth_action = safe_strdup(p1);
-			break;
-		case oEnablePreAuth:
-			value = parse_boolean_value(p1);
-			if (value != - 1)
-				config.enable_preauth = value;
-			break;
-		case oBinVoucher:
-			config.bin_voucher = safe_strdup(p1);
-			break;
-		case oForceVoucher:
-			value = parse_boolean_value(p1);
-			if (value != - 1)
-				config.force_voucher = value;
-			break;
 		case oFirewallRuleSet:
 			parse_firewall_ruleset(p1, fd, filename, &linenum);
 			break;
@@ -832,37 +792,6 @@ config_read(const char *filename)
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);
 			}
-			break;
-		case oPasswordAuthentication:
-			if ((value = parse_boolean_value(p1)) != -1) {
-				config.passwordauth = value;
-			} else {
-				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
-				debug(LOG_ERR, "Exiting...");
-				exit(-1);
-			}
-			break;
-		case oUsernameAuthentication:
-			if ((value = parse_boolean_value(p1)) != -1) {
-				config.usernameauth = value;
-			} else {
-				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
-				debug(LOG_ERR, "Exiting...");
-				exit(-1);
-			}
-			break;
-		case oPasswordAttempts:
-			if (sscanf(p1, "%d", &config.passwordattempts) < 1) {
-				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
-				debug(LOG_ERR, "Exiting...");
-				exit(-1);
-			}
-			break;
-		case oUsername:
-			set_username(p1);
-			break;
-		case oPassword:
-			set_password(p1);
 			break;
 		case oSetMSS:
 			if ((value = parse_boolean_value(p1)) != -1) {
@@ -1361,34 +1290,6 @@ int set_log_level(int level)
 {
 	config.debuglevel = level;
 	return 0;
-}
-
-/** Set the gateway password.
- *  Return 0 on success.
- */
-int set_password(const char s[])
-{
-	char *old = config.password;
-	if (s) {
-		config.password = safe_strdup(s);
-		if (old) free(old);
-		return 0;
-	}
-	return 1;
-}
-
-/** Set the gateway username.
- *  Return 0 on success.
- */
-int set_username(const char s[])
-{
-	char *old = config.username;
-	if (s) {
-		config.username = safe_strdup(s);
-		if (old) free(old);
-		return 0;
-	}
-	return 1;
 }
 
 /** Verifies if the configuration is complete and valid.  Terminates the program if it isn't */

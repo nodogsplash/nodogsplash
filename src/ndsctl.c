@@ -64,8 +64,6 @@ static void ndsctl_untrust(void);
 static void ndsctl_auth(void);
 static void ndsctl_deauth(void);
 static void ndsctl_loglevel(void);
-static void ndsctl_username(void);
-static void ndsctl_password(void);
 
 /** @internal
  * @brief Print usage
@@ -96,8 +94,6 @@ usage(void)
 		"  trust mac           Trust the given MAC address\n"
 		"  untrust mac         Untrust the given MAC address\n"
 		"  loglevel n          Set logging level to n\n"
-		"  password pass       Set gateway password\n"
-		"  username name       Set gateway username\n"
 		"\n"
 	);
 }
@@ -225,22 +221,6 @@ parse_commandline(int argc, char **argv)
 		config.command = NDSCTL_LOGLEVEL;
 		if ((argc - (optind + 1)) <= 0) {
 			fprintf(stderr, "ndsctl: Error: You must specify an integer loglevel to loglevel\n");
-			usage();
-			exit(1);
-		}
-		config.param = strdup(*(argv + optind + 1));
-	} else if (strcmp(*(argv + optind), "password") == 0) {
-		config.command = NDSCTL_PASSWORD;
-		if ((argc - (optind + 1)) <= 0) {
-			fprintf(stderr, "ndsctl: Error: You must specify a password\n");
-			usage();
-			exit(1);
-		}
-		config.param = strdup(*(argv + optind + 1));
-	} else if (strcmp(*(argv + optind), "username") == 0) {
-		config.command = NDSCTL_USERNAME;
-		if ((argc - (optind + 1)) <= 0) {
-			fprintf(stderr, "ndsctl: Error: You must specify a username\n");
 			usage();
 			exit(1);
 		}
@@ -397,22 +377,6 @@ ndsctl_loglevel(void)
 }
 
 void
-ndsctl_password(void)
-{
-	ndsctl_action("password",
-				"Password set to %s.\n",
-				"Failed to set password to %s.\n");
-}
-
-void
-ndsctl_username(void)
-{
-	ndsctl_action("username",
-				"Username set to %s.\n",
-				"Failed to set username to %s.\n");
-}
-
-void
 ndsctl_deauth(void)
 {
 	ndsctl_action("deauth",
@@ -534,14 +498,6 @@ main(int argc, char **argv)
 
 	case NDSCTL_LOGLEVEL:
 		ndsctl_loglevel();
-		break;
-
-	case NDSCTL_PASSWORD:
-		ndsctl_password();
-		break;
-
-	case NDSCTL_USERNAME:
-		ndsctl_username();
 		break;
 
 	default:
