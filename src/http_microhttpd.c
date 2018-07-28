@@ -67,9 +67,9 @@ static const char *lookup_mimetype(const char *filename);
 
 static int is_alphanum(const char *str)
 {
-	size_t i;
+	int i;
 
-	if(!str) {
+	if (!str) {
 		return 0;
 	}
 
@@ -82,6 +82,7 @@ static int is_alphanum(const char *str)
 	return 1;
 }
 
+/* Get client settings from bin_voucher */
 static int get_voucher_data(const char *buff, t_client *client)
 {
 	int seconds = 0;
@@ -111,31 +112,6 @@ struct collect_query {
 	int i;
 	char **elements;
 };
-
-struct collect_query_key {
-	const char *key;
-	const char *value;
-};
-
-static int collect_query_key(void *cls, enum MHD_ValueKind kind, const char *key, const char *value)
-{
-	struct collect_query_key *query_key = cls;
-	query_key->value = NULL;
-
-	if (!query_key)
-		return MHD_NO;
-
-	if (!key) {
-		return MHD_YES;
-	}
-
-	if (!strcmp(key, query_key->key)) {
-		query_key->value = value;
-		/* stop execution of iterator */
-		return MHD_NO;
-	}
-	return MHD_YES;
-}
 
 static int collect_query_string(void *cls, enum MHD_ValueKind kind, const char *key, const char * value)
 {
@@ -320,6 +296,7 @@ libmicrohttpd_cb(void *cls,
 			return ret;
 		}
 	}
+
 	ret = preauthenticated(connection, ip_addr, mac, url, client);
 	free(mac);
 	free(ip_addr);
@@ -349,23 +326,11 @@ static int check_authdir_match(const char *url, const char *authdir)
 static int check_token_is_valid(struct MHD_Connection *connection, t_client *client)
 {
 	/* token check */
-	struct collect_query_key token_key = { .key = "token" };
-	struct collect_query_key tok_key = { .key = "tok" };
+	const char *token = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "token");
+	const char *tok = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "tok");
 
-	MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, &collect_query_key, &token_key);
-	MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, &collect_query_key, &tok_key);
-
-	/* token not found in query string */
-	if (!token_key.value && !tok_key.value)
-		return 0;
-
-	if (token_key.value && !strcmp(client->token, token_key.value))
-		return 1;
-
-	if (tok_key.value && !strcmp(client->token, tok_key.value))
-		return 1;
-
-	return 0;
+	/* return true if token or tok match client->token */
+	return ((token && !strcmp(client->token, token))) || (tok && !strcmp(client->token, tok));
 }
 
 
@@ -389,13 +354,16 @@ static int try_to_authenticate(struct MHD_Connection *connection, t_client *clie
 	if (check_authdir_match(url, config->authdir)) {
 		/* matched to authdir */
 		if (check_token_is_valid(connection, client)) {
-			return 1; /* valid token */
+			return 1;
 		}
-	} else if (check_authdir_match(url, config->denydir)) {
-		/* matched to deauth */
-		/* TODO: do we need denydir? */
+	}
+
+/*	//TODO: do we need denydir?
+	if (check_authdir_match(url, config->denydir)) {
+		// matched to deauth
 		return 0;
 	}
+*/
 
 	return 0;
 }
@@ -416,10 +384,11 @@ static int authenticate_client(struct MHD_Connection *connection,
 {
 	/* TODO: handle redirect_url == NULL */
 	auth_client_action(ip_addr, mac, AUTH_MAKE_AUTHENTICATED);
-	if (redirect_url)
+	if (redirect_url) {
 		return send_redirect_temp(connection, redirect_url);
-	else
+	} else {
 		return send_error(connection, 200);
+	}
 }
 
 /**
@@ -431,7 +400,7 @@ static int authenticate_client(struct MHD_Connection *connection,
  * @param client
  * @return
  *
- * It's unsual to received request from clients which are already authed.
+ * It's unsual to received request from clients which are already authenticated.
  * Happens when the user:
  * - clicked in multiple windows on "accept" -> redirect to origin - no checking
  * - when the user reloaded a splashpage -> redirect to origin
@@ -450,14 +419,15 @@ static int authenticated(struct MHD_Connection *connection,
 
 	MHD_get_connection_values(connection, MHD_HEADER_KIND, get_host_value_callback, &host);
 
-	if (is_splashpage(host, url) ||
-			check_authdir_match(url, config->authdir)) {
+	if (is_splashpage(host, url) || check_authdir_match(url, config->authdir)) {
 		redirect_url = get_redirect_url(connection);
 		/* TODO: what should we do when we get such request? */
-		if (redirect_url == NULL || strlen(redirect_url) == 0)
+		if (redirect_url == NULL || strlen(redirect_url) == 0) {
 			return show_splashpage(connection, client);
-		else
+		} else {
+			//hm, set client->until_time again?
 			return authenticate_client(connection, ip_addr, mac, redirect_url, client);
+		}
 	} else if (check_authdir_match(url, config->denydir)) {
 		auth_client_action(ip_addr, mac, AUTH_MAKE_DEAUTHENTICATED);
 		snprintf(redirect_to_us, 128, "http://%s:%u/", config->gw_address, config->gw_port);
@@ -609,15 +579,19 @@ static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, 
 		}
 	}
 
-	if (encoded[0])
-		safe_asprintf(&splashpageurl, "http://%s:%u/%s?redir=%s", config->gw_address , config->gw_port, config->splashpage, encoded);
-	else
-		safe_asprintf(&splashpageurl, "http://%s:%u/%s", config->gw_address , config->gw_port, config->splashpage);
+	if (encoded[0]) {
+		safe_asprintf(&splashpageurl, "http://%s:%u/%s?redir=%s",
+			config->gw_address, config->gw_port, config->splashpage, encoded);
+	} else {
+		safe_asprintf(&splashpageurl, "http://%s:%u/%s",
+			config->gw_address, config->gw_port, config->splashpage);
+	}
 
 	debug(LOG_DEBUG, "splashpageurl: %s", splashpageurl);
 
 	ret = send_redirect_temp(connection, splashpageurl);
 	free(splashpageurl);
+
 	return ret;
 }
 
@@ -699,26 +673,12 @@ int send_redirect_temp(struct MHD_Connection *connection, const char *url)
  */
 static const char *get_redirect_url(struct MHD_Connection *connection)
 {
-	struct collect_query_key query_key = { .key = "redir" };
-
-	MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, &collect_query_key, &query_key);
-
-	if (!query_key.value)
-			return NULL;
-
-	return query_key.value;
+	return MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "redir");
 }
 
 static const char *get_voucher(struct MHD_Connection *connection)
 {
-	struct collect_query_key query_key = { .key = "voucher" };
-
-	MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, &collect_query_key, &query_key);
-
-	if (!query_key.value)
-		return NULL;
-
-	return query_key.value;
+	return MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "voucher");
 }
 
 /* save the query or empty string into **query.
@@ -900,7 +860,7 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client)
 	char *splashpage_result;
 	char *splashpage_tmpl;
 
-	snprintf(filename, PATH_MAX, "%s/%s", config->webroot ,config->splashpage);
+	snprintf(filename, PATH_MAX, "%s/%s", config->webroot, config->splashpage);
 
 	splashpage_fd = open(filename, O_RDONLY);
 	if (splashpage_fd < 0)
@@ -918,6 +878,7 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client)
 		close(splashpage_fd);
 		return send_error(connection, 503);
 	}
+
 	splashpage_result = calloc(1, size + TMPLVAR_SIZE);
 	if (splashpage_result == NULL) {
 		close(splashpage_fd);
@@ -926,7 +887,7 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client)
 	}
 
 	while (bytes < size) {
-		ret = read(splashpage_fd, splashpage_tmpl+bytes, size-bytes);
+		ret = read(splashpage_fd, splashpage_tmpl + bytes, size - bytes);
 		if (ret < 0) {
 			free(splashpage_result);
 			free(splashpage_tmpl);
@@ -949,6 +910,7 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client)
 
 	memset(redirect_url_encoded, 0, sizeof(redirect_url_encoded));
 	redirect_url = get_redirect_url(connection);
+
 	if (redirect_url) {
 		uh_urlencode(redirect_url_encoded, sizeof(redirect_url_encoded), redirect_url, strlen(redirect_url));
 	}

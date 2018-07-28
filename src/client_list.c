@@ -133,8 +133,10 @@ _client_list_append(const char ip[], const char mac[], const char token[])
 	client->mac = safe_strdup(mac);
 	client->token = token ? safe_strdup(token) : NULL;
 	client->fw_connection_state = FW_MARK_PREAUTHENTICATED;
-	client->counters.incoming = client->counters.incoming_history = 0;
-	client->counters.outgoing = client->counters.outgoing_history = 0;
+	client->counters.incoming = 0;
+	client->counters.incoming_history = 0;
+	client->counters.outgoing = 0;
+	client->counters.outgoing_history = 0;
 	last_client_time = time(NULL);
 	client->counters.last_updated = last_client_time;
 	client->from_time = last_client_time;
@@ -304,15 +306,15 @@ client_list_find_by_token(const char token[])
  * @param client Points to the client to be freed
  */
 void
-_client_list_free_node(t_client * client)
+_client_list_free_node(t_client *client)
 {
-	if (client->mac != NULL)
+	if (client->mac)
 		free(client->mac);
 
-	if (client->ip != NULL)
+	if (client->ip)
 		free(client->ip);
 
-	if (client->token != NULL)
+	if (client->token)
 		free(client->token);
 
 	if (client->voucher)
@@ -332,7 +334,7 @@ _client_list_free_node(t_client * client)
  * @param client Points to the client to be deleted
  */
 void
-client_list_delete(t_client * client)
+client_list_delete(t_client *client)
 {
 	t_client *ptr;
 

@@ -31,7 +31,9 @@
 #include <unistd.h>
 #include <signal.h>
 
+#include "util.h"
 #include "conf.h"
+
 
 /** @internal
 Do not use directly, use the debug macro */
@@ -53,13 +55,13 @@ _debug(const char filename[], int line, int level, const char *format, ...)
 		sigprocmask(SIG_BLOCK, &block_chld, NULL);
 
 		if (level <= LOG_WARNING) {
-			fprintf(stderr, "[%d][%.24s][%u](%s:%d) ", level, ctime_r(&ts, buf), getpid(), filename, line);
+			fprintf(stderr, "[%d][%.24s][%u](%s:%d) ", level, format_time(&ts, buf), getpid(), filename, line);
 			va_start(vlist, format);
 			vfprintf(stderr, format, vlist);
 			va_end(vlist);
 			fputc('\n', stderr);
 		} else if (!config->daemon) {
-			fprintf(stdout, "[%d][%.24s][%u](%s:%d) ", level, ctime_r(&ts, buf), getpid(), filename, line);
+			fprintf(stdout, "[%d][%.24s][%u](%s:%d) ", level, format_time(&ts, buf), getpid(), filename, line);
 			va_start(vlist, format);
 			vfprintf(stdout, format, vlist);
 			va_end(vlist);

@@ -35,6 +35,8 @@
 #include <string.h>
 #include <ctype.h>
 #include <sys/stat.h>
+#include <arpa/inet.h>
+#include <netinet/ether.h>
 
 #include "common.h"
 #include "safe.h"
@@ -242,7 +244,9 @@ config_init(void)
 void
 config_init_override(void)
 {
-	if (config.daemon == -1) config.daemon = DEFAULT_DAEMON;
+	if (config.daemon == -1) {
+		config.daemon = DEFAULT_DAEMON;
+	}
 }
 
 /** @internal
@@ -253,9 +257,11 @@ config_parse_opcode(const char *cp, const char *filename, int linenum)
 {
 	int i;
 
-	for (i = 0; keywords[i].name; i++)
-		if (strcasecmp(cp, keywords[i].name) == 0)
+	for (i = 0; keywords[i].name; i++) {
+		if (strcasecmp(cp, keywords[i].name) == 0) {
 			return keywords[i].opcode;
+		}
+	}
 
 	debug(LOG_ERR, "%s: line %d: Bad configuration option: %s", filename, linenum, cp);
 	return oBadOption;
@@ -309,7 +315,6 @@ add_ruleset(const char rulesetname[])
 
 	return ruleset;
 }
-
 
 /** @internal
 Parses an empty ruleset policy directive
@@ -929,21 +934,14 @@ parse_boolean_value(char *line)
 /* Parse a string to see if it is valid decimal dotted quad IP V4 format */
 int check_ip_format(const char *possibleip)
 {
-	unsigned int a1,a2,a3,a4;
-
-	return (sscanf(possibleip,"%u.%u.%u.%u",&a1,&a2,&a3,&a4) == 4
-			&& a1 < 256 && a2 < 256 && a3 < 256 && a4 < 256);
+	unsigned char buf[sizeof(struct in6_addr)];
+	return inet_pton(AF_INET, possibleip, buf) > 0;
 }
-
 
 /* Parse a string to see if it is valid MAC address format */
 int check_mac_format(const char possiblemac[])
 {
-	char hex2[3];
-	return
-		sscanf(possiblemac,
-			   "%2[A-Fa-f0-9]:%2[A-Fa-f0-9]:%2[A-Fa-f0-9]:%2[A-Fa-f0-9]:%2[A-Fa-f0-9]:%2[A-Fa-f0-9]",
-			   hex2,hex2,hex2,hex2,hex2,hex2) == 6;
+	return ether_aton(possiblemac) != NULL;
 }
 
 int add_to_trusted_mac_list(const char possiblemac[])
@@ -963,7 +961,7 @@ int add_to_trusted_mac_list(const char possiblemac[])
 
 	/* See if MAC is already on the list; don't add duplicates */
 	for (p = config.trustedmaclist; p != NULL; p = p->next) {
-		if (!strcasecmp(p->mac,mac)) {
+		if (!strcasecmp(p->mac, mac)) {
 			debug(LOG_INFO, "MAC address [%s] already on trusted list", mac);
 			free(mac);
 			return 1;
@@ -1041,7 +1039,9 @@ void parse_trusted_mac_list(const char ptr[])
 	ptrcopyptr = ptrcopy = safe_strdup(ptr);
 
 	while ((possiblemac = strsep(&ptrcopy, ", \t"))) {
-		if (strlen(possiblemac)>0) add_to_trusted_mac_list(possiblemac);
+		if (strlen(possiblemac) > 0) {
+			add_to_trusted_mac_list(possiblemac);
+		}
 	}
 
 	free(ptrcopyptr);
@@ -1158,7 +1158,9 @@ void parse_blocked_mac_list(const char ptr[])
 	ptrcopyptr = ptrcopy = safe_strdup(ptr);
 
 	while ((possiblemac = strsep(&ptrcopy, ", \t"))) {
-		if (strlen(possiblemac)>0) add_to_blocked_mac_list(possiblemac);
+		if (strlen(possiblemac) > 0) {
+			add_to_blocked_mac_list(possiblemac);
+		}
 	}
 
 	free(ptrcopyptr);
@@ -1190,7 +1192,7 @@ int add_to_allowed_mac_list(const char possiblemac[])
 
 	/* See if MAC is already on the list; don't add duplicates */
 	for (p = config.allowedmaclist; p != NULL; p = p->next) {
-		if (!strcasecmp(p->mac,mac)) {
+		if (!strcasecmp(p->mac, mac)) {
 			debug(LOG_INFO, "MAC address [%s] already on allowed list", mac);
 			free(mac);
 			return 1;

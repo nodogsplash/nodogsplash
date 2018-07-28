@@ -42,8 +42,8 @@ typedef struct _t_counters {
 typedef struct _t_client {
 	struct _t_client *next;	/**< @brief Pointer to the next client */
 	char *ip;				/**< @brief Client IP address */
-	char *mac;			/**< @brief Client MAC address */
-	char *token;			/**< @brief Client token */
+	char *mac;				/**< @brief Client MAC address */
+	char *token;		/**< @brief Client token */
 	unsigned int fw_connection_state;	/**< @brief Connection state in the firewall */
 	time_t from_time;		/**< @brief Time the client was authenticated */
 	time_t until_time;		/**< @brief Time until client will be deauthenticated */

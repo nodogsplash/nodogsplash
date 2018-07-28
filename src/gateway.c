@@ -125,7 +125,7 @@ sigchld_handler(int s)
 void
 termination_handler(int s)
 {
-	static	pthread_mutex_t	sigterm_mutex = PTHREAD_MUTEX_INITIALIZER;
+	static pthread_mutex_t sigterm_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 	debug(LOG_NOTICE, "Handler for termination caught signal %d", s);
 
