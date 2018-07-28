@@ -359,13 +359,18 @@ get_ext_iface(void)
 }
 
 char *
-format_duration(long long int secs, char buf[64])
+format_duration(time_t from, time_t to, char buf[64])
 {
 	int days, hours, minutes, seconds;
+	long long int secs;
 
-	// make duration positive
-	if (secs < 0) {
-		secs = -secs;
+	if (from <= to) {
+		secs = to - from;
+	} else {
+		secs = from - to;
+		// Prepend minus sign
+		buf[0] = '-';
+		buf += 1;
 	}
 
 	days = secs / (24 * 60 * 60);
@@ -401,7 +406,7 @@ char *
 get_uptime_string()
 {
 	char *buf = malloc(64);
-	return format_duration(time(NULL) - started_time, buf);
+	return format_duration(started_time, time(NULL), buf);
 }
 
 void
@@ -427,14 +432,16 @@ ndsctl_status(FILE *fp)
 
 	fprintf(fp, "Version: " VERSION "\n");
 
-	format_duration(uptimesecs, durationbuf);
+	format_duration(started_time, now, durationbuf);
 	fprintf(fp, "Uptime: %s\n", durationbuf);
 
 	fprintf(fp, "Gateway Name: %s\n", config->gw_name);
 	fprintf(fp, "Managed interface: %s\n", config->gw_interface);
 	fprintf(fp, "Managed IP range: %s\n", config->gw_iprange);
 	fprintf(fp, "Server listening: %s:%d\n", config->gw_address, config->gw_port);
-	fprintf(fp, "Splashpage: %s/%s\n", config->webroot, config->splashpage);
+	fprintf(fp, "Client Check Interval: %ds\n", config->checkinterval);
+	fprintf(fp, "Preauth Idle Timeout: %ds\n", config->preauth_idle_timeout);
+	fprintf(fp, "Authed Idle Timeout: %ds\n", config->authed_idle_timeout);
 
 	if (config->redirectURL) {
 		fprintf(fp, "Redirect URL: %s\n", config->redirectURL);
@@ -456,11 +463,11 @@ ndsctl_status(FILE *fp)
 	}
 
 	download_bytes = iptables_fw_total_download();
-	fprintf(fp, "Total download: %llu kByte", download_bytes/1000);
+	fprintf(fp, "Total download: %llu kByte", download_bytes / 1000);
 	fprintf(fp, "; avg: %.2f kbit/s\n", ((double) download_bytes) / 125 / uptimesecs);
 
 	upload_bytes = iptables_fw_total_upload();
-	fprintf(fp, "Total upload: %llu kByte", upload_bytes/1000);
+	fprintf(fp, "Total upload: %llu kByte", upload_bytes / 1000);
 	fprintf(fp, "; avg: %.2f kbit/s\n", ((double) upload_bytes) / 125 / uptimesecs);
 	fprintf(fp, "====\n");
 	fprintf(fp, "Client authentications since start: %u\n", authenticated_since_start);
@@ -484,20 +491,24 @@ ndsctl_status(FILE *fp)
 		fprintf(fp, "  IP: %s MAC: %s\n", client->ip, client->mac);
 
 		format_time(&client->counters.last_updated, timebuf);
-		format_duration(now - client->counters.last_updated, durationbuf);
-		fprintf(fp, "  Last:  %s (%s ago)\n", timebuf, durationbuf);
+		format_duration(client->counters.last_updated, now, durationbuf);
+		fprintf(fp, "  Last Activity: %s (%s ago)\n", timebuf, durationbuf);
 
 		if (client->fw_connection_state == FW_MARK_AUTHENTICATED) {
-			format_time(&client->from_time, timebuf);
-			format_duration(now - client->from_time, durationbuf);
-			fprintf(fp, "  From:  %s (%s ago)\n", timebuf, durationbuf);
+			format_time(&client->session_start, timebuf);
+			format_duration(client->session_start, now, durationbuf);
+			fprintf(fp, "  Session Start: %s (%s ago)\n", timebuf, durationbuf);
 
-			format_time(&client->until_time, timebuf);
-			format_duration(client->until_time - now, durationbuf);
-			fprintf(fp, "  Until: %s (%s remaining)\n", timebuf, durationbuf);
+			if (client->session_end == 0) {
+				fprintf(fp, "  Session End:   -\n");
+			} else {
+				format_time(&client->session_end, timebuf);
+				format_duration(now, client->session_end, durationbuf);
+				fprintf(fp, "  Session End:   %s (%s left)\n", timebuf, durationbuf);
+			}
 		} else {
-			fprintf(fp, "  From:  -\n");
-			fprintf(fp, "  Until: -\n");
+			fprintf(fp, "  Session Start: -\n");
+			fprintf(fp, "  Session End:   -\n");
 		}
 
 		fprintf(fp, "  Token: %s\n", client->token ? client->token : "none");
@@ -506,7 +517,7 @@ ndsctl_status(FILE *fp)
 
 		download_bytes = client->counters.incoming;
 		upload_bytes = client->counters.outgoing;
-		durationsecs = now - client->from_time;
+		durationsecs = now - client->session_start;
 
 		// prevent divison by 0
 		if (durationsecs < 1) {
@@ -591,13 +602,13 @@ ndsctl_clients(FILE *fp)
 	while (client != NULL) {
 		fprintf(fp, "client_id=%d\n", indx);
 		fprintf(fp, "ip=%s\nmac=%s\n", client->ip, client->mac);
-		fprintf(fp, "added=%lld\n", (long long) client->from_time);
+		fprintf(fp, "added=%lld\n", (long long) client->session_start);
 		fprintf(fp, "active=%lld\n", (long long) client->counters.last_updated);
-		fprintf(fp, "duration=%lu\n", now - client->from_time);
+		fprintf(fp, "duration=%lu\n", now - client->session_start);
 		fprintf(fp, "token=%s\n", client->token ? client->token : "none");
 		fprintf(fp, "state=%s\n", fw_connection_state_as_string(client->fw_connection_state));
 
-		durationsecs = now - client->from_time;
+		durationsecs = now - client->session_start;
 		download_bytes = client->counters.incoming;
 		upload_bytes = client->counters.outgoing;
 
@@ -639,13 +650,13 @@ ndsctl_json(FILE *fp)
 		fprintf(fp, "\"%s\":{\n", client->mac);
 		fprintf(fp, "\"client_id\":%d,\n", indx);
 		fprintf(fp, "\"ip\":\"%s\",\n\"mac\":\"%s\",\n", client->ip, client->mac);
-		fprintf(fp, "\"added\":%lld,\n", (long long) client->from_time);
+		fprintf(fp, "\"added\":%lld,\n", (long long) client->session_start);
 		fprintf(fp, "\"active\":%lld,\n", (long long) client->counters.last_updated);
-		fprintf(fp, "\"duration\":%lu,\n", now - client->from_time);
+		fprintf(fp, "\"duration\":%lu,\n", now - client->session_start);
 		fprintf(fp, "\"token\":\"%s\",\n", client->token ? client->token : "none");
 		fprintf(fp, "\"state\":\"%s\",\n", fw_connection_state_as_string(client->fw_connection_state));
 
-		durationsecs = now - client->from_time;
+		durationsecs = now - client->session_start;
 		download_bytes = client->counters.incoming;
 		upload_bytes = client->counters.outgoing;
 

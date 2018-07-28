@@ -139,8 +139,8 @@ _client_list_append(const char ip[], const char mac[], const char token[])
 	client->counters.outgoing_history = 0;
 	last_client_time = time(NULL);
 	client->counters.last_updated = last_client_time;
-	client->from_time = last_client_time;
-	client->until_time = 0;
+	client->session_start = last_client_time;
+	client->session_end = 0; /* @brief Session never ends by default */
 
 	for (i = 0; i < maxclients; i++) {
 		if (client_arr[i])
@@ -316,9 +316,6 @@ _client_list_free_node(t_client *client)
 
 	if (client->token)
 		free(client->token);
-
-	if (client->voucher)
-		free(client->voucher);
 
 	if (client_arr[client->idx] == client)
 		client_arr[client->idx] = NULL;

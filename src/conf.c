@@ -80,8 +80,8 @@ typedef enum {
 	oImagesDir,
 	oPagesDir,
 	oRedirectURL,
-	oClientIdleTimeout,
-	oClientForceTimeout,
+	oPreauthIdleTimeout,
+	oAuthedIdleTimeout,
 	oCheckInterval,
 	oSetMSS,
 	oMSSValue,
@@ -104,7 +104,8 @@ typedef enum {
 	oAllowedMACList,
 	oFWMarkAuthenticated,
 	oFWMarkTrusted,
-	oFWMarkBlocked
+	oFWMarkBlocked,
+	oBinAuth
 } OpCodes;
 
 /** @internal
@@ -127,8 +128,8 @@ static const struct {
 	{ "imagesdir", oImagesDir },
 	{ "pagesdir", oPagesDir },
 	{ "redirectURL", oRedirectURL },
-	{ "clientidletimeout", oClientIdleTimeout },
-	{ "clientforcetimeout", oClientForceTimeout },
+	{ "preauthidletimeout", oPreauthIdleTimeout },
+	{ "authedidletimeout", oAuthedIdleTimeout },
 	{ "checkinterval", oCheckInterval },
 	{ "setmss", oSetMSS },
 	{ "mssvalue", oMSSValue },
@@ -152,6 +153,7 @@ static const struct {
 	{ "FW_MARK_AUTHENTICATED", oFWMarkAuthenticated },
 	{ "FW_MARK_TRUSTED", oFWMarkTrusted },
 	{ "FW_MARK_BLOCKED", oFWMarkBlocked },
+	{ "binauth", oBinAuth },
 	{ NULL, oBadOption },
 };
 
@@ -200,8 +202,8 @@ config_init(void)
 	config.authdir = safe_strdup(DEFAULT_AUTHDIR);
 	config.denydir = safe_strdup(DEFAULT_DENYDIR);
 	config.redirectURL = NULL;
-	config.clienttimeout = DEFAULT_CLIENTTIMEOUT;
-	config.clientforceout = DEFAULT_CLIENTFORCEOUT;
+	config.preauth_idle_timeout = DEFAULT_PREAUTH_IDLE_TIMEOUT,
+	config.authed_idle_timeout = DEFAULT_AUTHED_IDLE_TIMEOUT,
 	config.checkinterval = DEFAULT_CHECKINTERVAL;
 	config.daemon = -1;
 	config.set_mss = DEFAULT_SET_MSS;
@@ -224,6 +226,7 @@ config_init(void)
 	config.FW_MARK_TRUSTED = DEFAULT_FW_MARK_TRUSTED;
 	config.FW_MARK_BLOCKED = DEFAULT_FW_MARK_BLOCKED;
 	config.ip6 = DEFAULT_IP6;
+	config.bin_auth = NULL;
 
 	/* Set up default FirewallRuleSets, and their empty ruleset policies */
 	rs = add_ruleset("trusted-users");
@@ -740,6 +743,14 @@ config_read(const char *filename)
 				exit(-1);
 			}
 			break;
+		case oBinAuth:
+			config.bin_auth = safe_strdup(p1);
+			if (!((stat(p1, &sb) == 0) && S_ISREG(sb.st_mode) && (sb.st_mode & S_IXUSR))) {
+				debug(LOG_ERR, "binauth program does not exist or is not executeable: %s", p1);
+				debug(LOG_ERR, "Exiting...");
+				exit(-1);
+			}
+			break;
 		case oFirewallRuleSet:
 			parse_firewall_ruleset(p1, fd, filename, &linenum);
 			break;
@@ -781,23 +792,23 @@ config_read(const char *filename)
 		case oRedirectURL:
 			config.redirectURL = safe_strdup(p1);
 			break;
+		case oAuthedIdleTimeout:
+			if (sscanf(p1, "%d", &config.authed_idle_timeout) < 1) {
+				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
+				debug(LOG_ERR, "Exiting...");
+				exit(-1);
+			}
+			break;
+		case oPreauthIdleTimeout:
+			if (sscanf(p1, "%d", &config.preauth_idle_timeout) < 1) {
+				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
+				debug(LOG_ERR, "Exiting...");
+				exit(-1);
+			}
+			break;
 		case oNdsctlSocket:
 			free(config.ndsctl_sock);
 			config.ndsctl_sock = safe_strdup(p1);
-			break;
-		case oClientIdleTimeout:
-			if (sscanf(p1, "%d", &config.clienttimeout) < 1) {
-				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
-				debug(LOG_ERR, "Exiting...");
-				exit(-1);
-			}
-			break;
-		case oClientForceTimeout:
-			if (sscanf(p1, "%d", &config.clientforceout) < 1) {
-				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
-				debug(LOG_ERR, "Exiting...");
-				exit(-1);
-			}
 			break;
 		case oSetMSS:
 			if ((value = parse_boolean_value(p1)) != -1) {
@@ -1303,6 +1314,18 @@ config_validate(void)
 
 	if (missing_parms) {
 		debug(LOG_ERR, "Configuration is not complete, exiting...");
+		exit(-1);
+	}
+
+	if (config.checkinterval >= config.preauth_idle_timeout / 2) {
+		debug(LOG_ERR, "Setting checkinterval (%ds) must be smaller than half of preauth_idle_timeout (%ds)",
+			config.checkinterval, config.preauth_idle_timeout);
+		exit(-1);
+	}
+
+	if (config.checkinterval >= config.authed_idle_timeout / 2) {
+		debug(LOG_ERR, "Setting checkinterval (%ds) must be smaller than half of authed_idle_timeout (%ds)",
+			config.checkinterval, config.authed_idle_timeout);
 		exit(-1);
 	}
 }

@@ -143,8 +143,8 @@ fw_refresh_client_list(void)
 {
 	t_client *cp1, *cp2;
 	s_config *config = config_get_config();
-	const int checkinterval = config->checkinterval;
-	const int clienttimeout = config->clienttimeout;
+	const int preauth_idle_timeout = config->preauth_idle_timeout;
+	const int authed_idle_timeout = config->authed_idle_timeout;
 	const time_t now = time(NULL);
 
 	/* Update all the counters */
@@ -163,39 +163,55 @@ fw_refresh_client_list(void)
 			continue;
 		}
 
-		if ((clienttimeout > 0) && (cp1->counters.last_updated + (checkinterval * clienttimeout) <= now)) {
-			/* Timeout inactive user */
-			debug(LOG_NOTICE, "Timeout inactive user: %s %s inactive %d secs. kB in: %llu  kB out: %llu",
-				cp1->ip, cp1->mac, checkinterval * clienttimeout,
+		int conn_state = cp1->fw_connection_state;
+		int last_updated = cp1->counters.last_updated;
+
+		if (cp1->session_end > 0 && cp1->session_end <= now) {
+			/* Session ended (only > 0 for FW_MARK_AUTHENTICATED by binauth) */
+			debug(LOG_NOTICE, "Force out user: %s %s, connected: %ds, in: %llukB, out: %llukB",
+				cp1->ip, cp1->mac, now - cp1->session_end,
 				cp1->counters.incoming / 1000, cp1->counters.outgoing / 1000);
 
-			if (cp1->fw_connection_state == FW_MARK_AUTHENTICATED) {
-				if (config->bin_voucher) {
-					// client will be deauthenticated...
-					execute("%s timeout_deauth %s %d %s",
-						config->bin_voucher,
+			if (conn_state == FW_MARK_AUTHENTICATED) {
+				if (config->bin_auth) {
+					// Client will be deauthenticated...
+					execute("%s session_end %s %llu %llu %d",
+						config->bin_auth,
 						cp1->mac,
-						cp1->voucher,
-						now - (cp1->counters.last_updated + (checkinterval * clienttimeout))
+						cp1->counters.incoming,
+						cp1->counters.outgoing,
+						now - cp1->session_start
 					);
 				}
 				iptables_fw_access(AUTH_MAKE_DEAUTHENTICATED, cp1);
 			}
 			client_list_delete(cp1);
-		} else if (cp1->until_time > 0 && cp1->until_time <= now) {
-			/* Force session timeout */
-			debug(LOG_NOTICE, "Force out user: %s %s connected %d secs. kB in: %llu kB out: %llu",
-				cp1->ip, cp1->mac, now - cp1->until_time,
+		} else if (preauth_idle_timeout > 0
+				&& conn_state == FW_MARK_PREAUTHENTICATED
+				&& (last_updated + preauth_idle_timeout) <= now) {
+			/* Timeout inactive user */
+			debug(LOG_NOTICE, "Timeout preauthenticated idle user: %s %s, inactive: %ds, in: %llukB, out: %llukB",
+				cp1->ip, cp1->mac, now - last_updated,
 				cp1->counters.incoming / 1000, cp1->counters.outgoing / 1000);
 
-			if (cp1->fw_connection_state == FW_MARK_AUTHENTICATED) {
-				if (config->bin_voucher) {
-					// client will be deauthenticated...
-					execute("%s session_deauth %s %d %s",
-						config->bin_voucher,
+			client_list_delete(cp1);
+		} else if (authed_idle_timeout > 0
+				&& conn_state == FW_MARK_AUTHENTICATED
+				&& (last_updated + authed_idle_timeout) <= now) {
+			/* Timeout inactive user */
+			debug(LOG_NOTICE, "Timeout authenticated idle user: %s %s, inactive: %ds, in: %llukB, out: %llukB",
+				cp1->ip, cp1->mac, now - last_updated,
+				cp1->counters.incoming / 1000, cp1->counters.outgoing / 1000);
+
+			if (conn_state == FW_MARK_AUTHENTICATED) {
+				if (config->bin_auth) {
+					// Client will be deauthenticated...
+					execute("%s idle_timeout %s %llu %llu %d",
+						config->bin_auth,
 						cp1->mac,
-						cp1->voucher,
-						now - cp1->until_time
+						cp1->counters.incoming,
+						cp1->counters.outgoing,
+						now - cp1->session_start
 					);
 				}
 				iptables_fw_access(AUTH_MAKE_DEAUTHENTICATED, cp1);

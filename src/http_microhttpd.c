@@ -48,7 +48,7 @@
 static t_client *add_client(const char *ip_addr);
 static int authenticated(struct MHD_Connection *connection, const char *ip_addr, const char *mac, const char *url, t_client *client);
 static int preauthenticated(struct MHD_Connection *connection, const char *ip_addr, const char *mac, const char *url, t_client *client);
-static int authenticate_client_voucher(struct MHD_Connection *connection, const char *ip_addr, const char *mac, const char *redirect_url, t_client *client);
+static int authenticate_client_binauth(struct MHD_Connection *connection, const char *ip_addr, const char *mac, const char *redirect_url, t_client *client);
 static int authenticate_client(struct MHD_Connection *connection, const char *ip_addr, const char *mac, const char *redirect_url, t_client *client);
 static int get_host_value_callback(void *cls, enum MHD_ValueKind kind, const char *key, const char *value);
 static int serve_file(struct MHD_Connection *connection, t_client *client, const char *url);
@@ -62,35 +62,18 @@ static int is_foreign_hosts(struct MHD_Connection *connection, const char *host)
 static int is_splashpage(const char *host, const char *url);
 static int get_query(struct MHD_Connection *connection, char **collect_query);
 static const char *get_redirect_url(struct MHD_Connection *connection);
-static const char *get_voucher(struct MHD_Connection *connection);
 static const char *lookup_mimetype(const char *filename);
 
-static int is_alphanum(const char *str)
-{
-	int i;
 
-	if (!str) {
-		return 0;
-	}
-
-	for (i = 0; i < strlen(str); ++i) {
-		const char c = str[i];
-		if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')))
-			return 0;
-	}
-
-	return 1;
-}
-
-/* Get client settings from bin_voucher */
-static int get_voucher_data(const char *buff, t_client *client)
+/* Get client settings from binauth */
+static int parse_binauth_data(const char *buf, t_client *client)
 {
 	int seconds = 0;
 	int upload = 0;
 	int download = 0;
 
 	/* We require at least one value */
-	if (sscanf(buff, "%d %d %d", &seconds, &upload, &download) < 1)
+	if (sscanf(buf, "%d %d %d", &seconds, &upload, &download) < 1)
 		goto err;
 
 	if (seconds < 1 || upload < 0 || download < 0)
@@ -98,12 +81,14 @@ static int get_voucher_data(const char *buff, t_client *client)
 
 	client->download_limit = download;
 	client->upload_limit = upload;
+	client->session_end = time(NULL) + seconds;
 
 	return seconds;
 
 err:
 	client->download_limit = 0;
 	client->upload_limit = 0;
+	client->session_end = 0;
 
 	return 0;
 }
@@ -425,7 +410,6 @@ static int authenticated(struct MHD_Connection *connection,
 		if (redirect_url == NULL || strlen(redirect_url) == 0) {
 			return show_splashpage(connection, client);
 		} else {
-			//hm, set client->until_time again?
 			return authenticate_client(connection, ip_addr, mac, redirect_url, client);
 		}
 	} else if (check_authdir_match(url, config->denydir)) {
@@ -446,47 +430,43 @@ static int authenticated(struct MHD_Connection *connection,
 	return serve_file(connection, client, url);
 }
 
-static int authenticate_client_voucher(
+static int authenticate_client_binauth(
 		struct MHD_Connection *connection,
 		const char *ip_addr,
 		const char *mac,
 		const char *redirect_url,
 		t_client *client)
 {
+	char username_enc[64] = {0};
+	char password_enc[64] = {0};
 	char msg[255] = {0};
+	int seconds;
+	int rc;
+
 	s_config *config = config_get_config();
 
-	if (client->voucher) {
-		free(client->voucher);
-		client->voucher = NULL;
-	}
+	const char *username = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "username");
+	const char *password = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "password");
 
-	const char *voucher = get_voucher(connection);
-
-	if (!voucher || !is_alphanum(voucher)) {
+	if ((username && uh_urlencode(username_enc, sizeof(username_enc), username, strlen(username)) == -1)
+		|| (password && uh_urlencode(password_enc, sizeof(password_enc), password, strlen(password)) == -1)) {
+		debug(LOG_ERR, "Failed to encode username and password for binauth");
 		return encode_and_redirect_to_splashpage(connection, redirect_url);
 	}
 
-	int ret = execute_ret(msg, sizeof(msg) - 1, "%s client_auth %s %s", config->bin_voucher, mac, voucher);
+	rc = execute_ret(msg, sizeof(msg) - 1, "%s client_auth '%s' '%s' '%s'",
+		config->bin_auth, mac, username_enc, password_enc);
 
-	if (ret != 0) {
+	if (rc != 0) {
 		return encode_and_redirect_to_splashpage(connection, redirect_url);
 	}
 
-	int seconds = get_voucher_data(msg, client);
-	if (seconds < 1) {
+	seconds = parse_binauth_data(msg, client);
+	if (seconds == 0) {
 		return encode_and_redirect_to_splashpage(connection, redirect_url);
-	}
-
-	// Make sure client->voucher is set to voucher
-	if (!client->voucher || strcmp(client->voucher, voucher)) {
-		free(client->voucher);
-		client->voucher = safe_strdup(voucher);
 	}
 
 	debug(LOG_NOTICE, "Remote auth data: client [%s, %s] authenticated for %d seconds", mac, client->ip, seconds);
-
-	client->until_time = time(NULL) + seconds;
 
 	return authenticate_client(connection, ip_addr, mac, redirect_url, client);
 }
@@ -539,11 +519,9 @@ static int preauthenticated(struct MHD_Connection *connection,
 			return encode_and_redirect_to_splashpage(connection, redirect_url);
 		}
 
-		if (config->bin_voucher) {
-			return authenticate_client_voucher(connection, ip_addr, mac, redirect_url, client);
+		if (config->bin_auth) {
+			return authenticate_client_binauth(connection, ip_addr, mac, redirect_url, client);
 		} else {
-			// odd placement
-			client->until_time = time(NULL) + (config->checkinterval * config->clientforceout);
 			return authenticate_client(connection, ip_addr, mac, redirect_url, client);
 		}
 	}
@@ -674,11 +652,6 @@ int send_redirect_temp(struct MHD_Connection *connection, const char *url)
 static const char *get_redirect_url(struct MHD_Connection *connection)
 {
 	return MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "redir");
-}
-
-static const char *get_voucher(struct MHD_Connection *connection)
-{
-	return MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "voucher");
 }
 
 /* save the query or empty string into **query.
