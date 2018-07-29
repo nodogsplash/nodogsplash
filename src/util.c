@@ -448,11 +448,6 @@ ndsctl_status(FILE *fp)
 	fprintf(fp, "====\n");
 	fprintf(fp, "Client authentications since start: %u\n", authenticated_since_start);
 
-	if (config->decongest_httpd_threads) {
-		fprintf(fp, "Httpd thread decongest threshold: %d threads\n", config->httpd_thread_threshold);
-		fprintf(fp, "Httpd thread decongest delay: %d ms\n", config->httpd_thread_delay_ms);
-	}
-
 	/* Update the client's counters so info is current */
 	iptables_fw_counters_update();
 
