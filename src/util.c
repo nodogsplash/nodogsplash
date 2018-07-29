@@ -404,12 +404,7 @@ ndsctl_status(FILE *fp)
 	fprintf(fp, "Managed interface: %s\n", config->gw_interface);
 	fprintf(fp, "Managed IP range: %s\n", config->gw_iprange);
 	fprintf(fp, "Server listening: %s:%d\n", config->gw_address, config->gw_port);
-
-	if (config->authenticate_immediately) {
-		fprintf(fp, "Authenticate immediately: yes\n");
-	} else {
-		fprintf(fp, "Splashpage: %s/%s\n", config->webroot, config->splashpage);
-	}
+	fprintf(fp, "Splashpage: %s/%s\n", config->webroot, config->splashpage);
 
 	if (config->redirectURL) {
 		fprintf(fp, "Redirect URL: %s\n", config->redirectURL);

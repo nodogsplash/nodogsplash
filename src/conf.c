@@ -201,7 +201,6 @@ config_init(void)
 	config.clientforceout = DEFAULT_CLIENTFORCEOUT;
 	config.checkinterval = DEFAULT_CHECKINTERVAL;
 	config.daemon = -1;
-	config.authenticate_immediately = DEFAULT_AUTHENTICATE_IMMEDIATELY;
 	config.set_mss = DEFAULT_SET_MSS;
 	config.mss_value = DEFAULT_MSS_VALUE;
 	config.traffic_control = DEFAULT_TRAFFIC_CONTROL;

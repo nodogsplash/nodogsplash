@@ -64,7 +64,6 @@
 #define DEFAULT_AUTHDIR "nodogsplash_auth"
 #define DEFAULT_DENYDIR "nodogsplash_deny"
 #define DEFAULT_MACMECHANISM MAC_BLOCK
-#define DEFAULT_AUTHENTICATE_IMMEDIATELY 0
 #define DEFAULT_SET_MSS 1
 #define DEFAULT_MSS_VALUE 0
 #define DEFAULT_TRAFFIC_CONTROL 0
@@ -159,7 +158,6 @@ typedef struct {
 	int clienttimeout;		/**< @brief How many CheckIntervals before an inactive client must be re-authenticated */
 	int clientforceout;		/**< @brief How many CheckIntervals before a client must be re-authenticated */
 	int checkinterval;		/**< @brief Period the the client timeout check thread will run, in seconds */
-	int authenticate_immediately;	/**< @brief boolean, whether to auth noninteractively */
 	int set_mss;			/**< @brief boolean, whether to set mss */
 	int mss_value;			/**< @brief int, mss value; <= 0 clamp to pmtu */
 	int traffic_control;		/**< @brief boolean, whether to do tc */
