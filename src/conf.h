@@ -1,22 +1,22 @@
-/********************************************************************\
- * This program is free software; you can redistribute it and/or    *
- * modify it under the terms of the GNU General Public License as   *
- * published by the Free Software Foundation; either version 2 of   *
- * the License, or (at your option) any later version.              *
- *                                                                  *
- * This program is distributed in the hope that it will be useful,  *
- * but WITHOUT ANY WARRANTY; without even the implied warranty of   *
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the    *
- * GNU General Public License for more details.                     *
- *                                                                  *
- * You should have received a copy of the GNU General Public License*
- * along with this program; if not, contact:                        *
- *                                                                  *
- * Free Software Foundation           Voice:  +1-617-542-5942       *
- * 59 Temple Place - Suite 330        Fax:    +1-617-542-2652       *
- * Boston, MA  02111-1307,  USA       gnu@gnu.org                   *
- *                                                                  *
-\********************************************************************/
+/*********************************************************************\
+ * This program is free software; you can redistribute it and/or     *
+ * modify it under the terms of the GNU General Public License as    *
+ * published by the Free Software Foundation; either version 2 of    *
+ * the License, or (at your option) any later version.               *
+ *                                                                   *
+ * This program is distributed in the hope that it will be useful,   *
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of    *
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the     *
+ * GNU General Public License for more details.                      *
+ *                                                                   *
+ * You should have received a copy of the GNU General Public License *
+ * along with this program; if not, contact:                         *
+ *                                                                   *
+ * Free Software Foundation           Voice:  +1-617-542-5942        *
+ * 59 Temple Place - Suite 330        Fax:    +1-617-542-2652        *
+ * Boston, MA  02111-1307,  USA       gnu@gnu.org                    *
+ *                                                                   *
+\*********************************************************************/
 
 /** @file conf.h
     @brief Config file parsing
@@ -53,7 +53,8 @@
 #define DEFAULT_GATEWAYNAME "NoDogSplash"
 #define DEFAULT_GATEWAYPORT 2050
 #define DEFAULT_FORWARDINGPORT "2051"
-#define DEFAULT_METAREDIRECT "1"
+#define DEFAULT_FORWARDINGPATH "/"
+#define DEFAULT_FORWARDINGENABLE "0"
 #define DEFAULT_REMOTE_AUTH_PORT 80
 #define DEFAULT_CHECKINTERVAL 60
 #define DEFAULT_CLIENTTIMEOUT 10
@@ -150,8 +151,11 @@ typedef struct {
 	char *gw_mac;			/**< @brief MAC address of the interface we manage */
 	unsigned int gw_port;		/**< @brief Port the webserver will run on */
 	char *fw_port;			/**< @brief Port the forwarding server will run on */
+	char *fw_path;			/**< @brief Path to the authentication script on the forwarding server */
 	char *config_str;		/**< @brief Config string to be passed to splash page */
 	char *meta_redirect;		/**< @brief enable meta redirect string for splash page */
+	char *content;			/**< @brief Content to be passed to splash page */
+	char *forwarding_enable;	/**< @brief enable meta redirect string for splash page */
 	char *webroot;			/**< @brief Directory containing splash pages, etc. */
 	char *splashpage;		/**< @brief Name of main splash page */
 	char *infoskelpage;		/**< @brief Name of info skeleton page */

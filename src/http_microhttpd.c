@@ -1,4 +1,4 @@
-/********************************************************************\
+/************************************************************************\
  * This program is free software; you can redistribute it and/or	*
  * modify it under the terms of the GNU General Public License as	*
  * published by the Free:Software Foundation; either version 2 of	*
@@ -7,7 +7,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of	*
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	See the		*
  * GNU General Public License for more details.				*
-\********************************************************************/
+\************************************************************************/
 
 /** @internal
  * @file http_microhttpd.c
@@ -841,7 +841,9 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client)
 	char *imagesdir = NULL;
 	char *pagesdir = NULL;
 	char *config_str = NULL;
+	char *content = NULL;
 	char *fw_port = NULL;
+	char *fw_path = NULL;
 	char *gw_name = NULL;
 	char *meta_redirect = NULL;
 	char *auth_button = NULL;
@@ -855,22 +857,46 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client)
 
 	safe_asprintf(&nclients, "%d", get_client_list_length());
 	safe_asprintf(&maxclients, "%d", config->maxclients);
-	safe_asprintf(&denyaction, "http://%s:%d/%s/", config->gw_address, config->gw_port, config->denydir);
-	safe_asprintf(&authaction, "http://%s:%d/%s/", config->gw_address, config->gw_port, config->authdir);
-	safe_asprintf(&authtarget, "http://%s:%d/%s/?token=%s&redir=%s", config->gw_address, config->gw_port, config->authdir, client->token, redirect_url_encoded);
+	safe_asprintf(&denyaction, "http://%s:%d/%s/",
+		config->gw_address,
+		config->gw_port,
+		config->denydir);
+	safe_asprintf(&authaction, "http://%s:%d/%s/",
+		config->gw_address,
+		config->gw_port,
+		config->authdir);
+	safe_asprintf(&authtarget, "http://%s:%d/%s/?token=%s&amp;redir=%s",
+		config->gw_address,
+		config->gw_port,
+		config->authdir,
+		client->token,
+		redirect_url);
 	safe_asprintf(&pagesdir, "/%s", config->pagesdir);
 	safe_asprintf(&imagesdir, "/%s", config->imagesdir);
 	safe_asprintf(&config_str, "%s", config->config_str);
+	safe_asprintf(&content, "%s", config->content);
 	safe_asprintf(&fw_port, "%s", config->fw_port);
+	safe_asprintf(&fw_path, "%s", config->fw_path);
 	safe_asprintf(&gw_name, "%s", config->gw_name);
 
-	if(config->meta_redirect == "1"){
-		safe_asprintf(&meta_redirect, "<meta http-equiv=\"refresh\" content=\"10;URL='http://%s:%s/?redir=%s'\" />\"", config->gw_address, fw_port, redirect_url);
-		&auth_button = "";
-	}
-	else{
-		&meta_redirect = "";
-		safe_asprintf(&auth_button, "<form method=\"get\" action=\"%s\"><input type=\"submit\" value=\"Continue\"></form>\"", authtarget);
+	if (strcmp(config->forwarding_enable, "1") == 0){
+		safe_asprintf(&meta_redirect,
+			"<meta http-equiv=\"refresh\" content=\"0;URL='http://%s:%s%s?redir=%s'\" />", 
+			config->gw_address,
+			fw_port,
+			fw_path,
+			redirect_url);
+		auth_button = "<b style=\"color:black; font-style:italic;\">Redirecting to the login page......</b><br>";
+	} else {
+		meta_redirect = "";
+		safe_asprintf(&auth_button,
+			"<form method=\"get\" action=\"%s\">\n"
+			"<input type='hidden' name='tok' value='%s'>\n"
+			"<input type='hidden' name='redir' value='%s'>\n"
+			"<input type=\"submit\" value=\"Continue\">\n</form>\n",
+			authaction,
+			client->token,
+			redirect_url);
 	}
 
 	tmpl_init_templor(&templor);
@@ -885,8 +911,11 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client)
 	tmpl_set_variable(&templor, "gatewayname", gw_name);
 	tmpl_set_variable(&templor, "gatewayaddress", config->gw_address);
 
+	tmpl_set_variable(&templor, "forwarding_enable", config->forwarding_enable);
 	tmpl_set_variable(&templor, "forwardingport", fw_port);
+	tmpl_set_variable(&templor, "forwardingpath", fw_path);
 	tmpl_set_variable(&templor, "configstring", config_str);
+	tmpl_set_variable(&templor, "content", content);
 	tmpl_set_variable(&templor, "metaredirect", meta_redirect);
 	tmpl_set_variable(&templor, "authbutton", auth_button);
 
@@ -913,6 +942,8 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client)
 	free(pagesdir);
 	free(imagesdir);
 	free(config_str);
+	free(content);
+	free(fw_path);
 	free(fw_port);
 	free(gw_name);
 	free(meta_redirect);

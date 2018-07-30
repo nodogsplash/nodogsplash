@@ -1,22 +1,22 @@
-/********************************************************************\
- * This program is free software; you can redistribute it and/or    *
- * modify it under the terms of the GNU General Public License as   *
- * published by the Free Software Foundation; either version 2 of   *
- * the License, or (at your option) any later version.              *
- *                                                                  *
- * This program is distributed in the hope that it will be useful,  *
- * but WITHOUT ANY WARRANTY; without even the implied warranty of   *
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the    *
- * GNU General Public License for more details.                     *
- *                                                                  *
- * You should have received a copy of the GNU General Public License*
- * along with this program; if not, contact:                        *
- *                                                                  *
- * Free Software Foundation           Voice:  +1-617-542-5942       *
- * 59 Temple Place - Suite 330        Fax:    +1-617-542-2652       *
- * Boston, MA  02111-1307,  USA       gnu@gnu.org                   *
- *                                                                  *
- \********************************************************************/
+/*********************************************************************\
+ * This program is free software; you can redistribute it and/or     *
+ * modify it under the terms of the GNU General Public License as    *
+ * published by the Free Software Foundation; either version 2 of    *
+ * the License, or (at your option) any later version.               *
+ *                                                                   *
+ * This program is distributed in the hope that it will be useful,   *
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of    *
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the     *
+ * GNU General Public License for more details.                      *
+ *                                                                   *
+ * You should have received a copy of the GNU General Public License *
+ * along with this program; if not, contact:                         *
+ *                                                                   *
+ * Free Software Foundation           Voice:  +1-617-542-5942        *
+ * 59 Temple Place - Suite 330        Fax:    +1-617-542-2652        *
+ * Boston, MA  02111-1307,  USA       gnu@gnu.org                    *
+ *                                                                   *
+\*********************************************************************/
 
 /** @internal
   @file fw_iptables.c
@@ -330,6 +330,9 @@ iptables_fw_init(void)
 	char *gw_interface = NULL;
 	char *gw_address = NULL;
 	char *gw_iprange = NULL;
+	char *fw_port;
+	char *ptr;
+	int fw_port_i = 2051;
 	int gw_port = 0;
 	int traffic_control;
 	int set_mss, mss_value;
@@ -345,6 +348,7 @@ iptables_fw_init(void)
 	gw_address = safe_strdup(config->gw_address);    /* must free */
 	gw_iprange = safe_strdup(config->gw_iprange);    /* must free */
 	gw_port = config->gw_port;
+	fw_port = config->fw_port;
 	pt = config->trustedmaclist;
 	pb = config->blockedmaclist;
 	pa = config->allowedmaclist;
@@ -483,6 +487,11 @@ iptables_fw_init(void)
 
 	// CHAIN_TO_ROUTER, packets to HTTP listening on gw_port on router ACCEPT
 	rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -p tcp --dport %d -j ACCEPT", gw_port);
+
+	// CHAIN_TO_ROUTER, packets to HTTP listening on fw_port on router ACCEPT
+	fw_port_i = strtol(fw_port, &ptr, 10);
+	rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -p tcp --dport %d -j ACCEPT", fw_port_i);
+
 
 	// CHAIN_TO_ROUTER, packets marked TRUSTED:
 

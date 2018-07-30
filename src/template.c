@@ -11,7 +11,7 @@
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #endif
 
-const char *variable_names[22] = {
+const char *variable_names[26] = {
 	"authaction",
 	"authtarget",
 	"clientip",
@@ -21,8 +21,12 @@ const char *variable_names[22] = {
 	"gatewaymac",
 	"gatewayname",
 	"gatewayaddress",
+	"forwarding_enable",
 	"forwardingport",
+	"forwardingpath",
 	"configstring",
+	"metaredirect",
+	"authbutton",
 	"imagesdir",
 	"maxclients",
 	"nclients",
@@ -51,7 +55,7 @@ static int get_variable_index(const char *name)
 /* This is compatible with the old nodogsplash templater.
  * Variable names starts with an '$'.
  * Variable ending is detected if when first non-alphanumeric char is shown - except underline ('_').
- */
+*/
 int tmpl_parse(struct templater *templor, char *dst, size_t dst_len, const char *src, size_t src_len)
 {
 	int src_i = 0; /* track input buffer position */
