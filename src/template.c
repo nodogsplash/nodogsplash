@@ -16,6 +16,7 @@ const char *variable_names[26] = {
 	"authtarget",
 	"clientip",
 	"clientmac",
+	"content",
 	"denyaction",
 	"error_msg",
 	"gatewaymac",
