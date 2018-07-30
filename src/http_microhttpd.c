@@ -1,14 +1,14 @@
-/********************************************************************\
- * This program is free software; you can redistribute it and/or		*
- * modify it under the terms of the GNU General Public License as	 *
- * published by the Free:Software Foundation; either version 2 of	 *
- * the License, or (at your option) any later version.							*
- *																																	*
+/************************************************************************\
+ * This program is free software; you can redistribute it and/or	*
+ * modify it under the terms of the GNU General Public License as	*
+ * published by the Free:Software Foundation; either version 2 of	*
+ * the License, or (at your option) any later version.			*
+ *									*
  * This program is distributed in the hope that it will be useful,	*
- * but WITHOUT ANY WARRANTY; without even the implied warranty of	 *
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of	*
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	See the		*
- * GNU General Public License for more details.										 *
-\********************************************************************/
+ * GNU General Public License for more details.				*
+\************************************************************************/
 
 /** @internal
  * @file http_microhttpd.c
@@ -844,15 +844,12 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client)
 
 	memset(redirect_url_encoded, 0, sizeof(redirect_url_encoded));
 	redirect_url = get_redirect_url(connection);
-	if (redirect_url) {
-		uh_urlencode(redirect_url_encoded, sizeof(redirect_url_encoded), redirect_url, strlen(redirect_url));
-	}
 
 	safe_asprintf(&nclients, "%d", get_client_list_length());
 	safe_asprintf(&maxclients, "%d", config->maxclients);
 	safe_asprintf(&denyaction, "http://%s:%d/%s/", config->gw_address, config->gw_port, config->denydir);
 	safe_asprintf(&authaction, "http://%s:%d/%s/", config->gw_address, config->gw_port, config->authdir);
-	safe_asprintf(&authtarget, "http://%s:%d/%s/?token=%s&redir=%s", config->gw_address, config->gw_port, config->authdir, client->token, redirect_url_encoded);
+	safe_asprintf(&authtarget, "http://%s:%d/%s/?token=%s&amp;redir=%s", config->gw_address, config->gw_port, config->authdir, client->token, redirect_url);
 	safe_asprintf(&pagesdir, "/%s", config->pagesdir);
 	safe_asprintf(&imagesdir, "/%s", config->imagesdir);
 
