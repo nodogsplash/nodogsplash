@@ -838,11 +838,9 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client)
 	char *authaction = NULL;
 	char *authtarget = NULL;
 	const char *redirect_url = NULL;
-	char redirect_url_encoded[2048];
 	char *imagesdir = NULL;
 	char *pagesdir = NULL;
 
-	memset(redirect_url_encoded, 0, sizeof(redirect_url_encoded));
 	redirect_url = get_redirect_url(connection);
 
 	safe_asprintf(&nclients, "%d", get_client_list_length());
