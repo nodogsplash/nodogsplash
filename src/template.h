@@ -5,11 +5,12 @@
 
 /**
  * @brief holds all valid variable names
+ *
  */
-extern const char *variable_names[19];
+extern const char *variable_names[26];
 
 struct templater {
-	const char *variables[19]; /* must have the same size of variable_names */
+	const char *variables[26]; /* must have the same size of variable_names */
 };
 
 /**

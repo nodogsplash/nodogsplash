@@ -16,7 +16,7 @@
  * 59 Temple Place - Suite 330        Fax:    +1-617-542-2652       *
  * Boston, MA  02111-1307,  USA       gnu@gnu.org                   *
  *                                                                  *
- \********************************************************************/
+\********************************************************************/
 
 /** @file conf.c
   @brief Config file parsing
@@ -71,6 +71,11 @@ typedef enum {
 	oGatewayIPRange,
 	oGatewayAddress,
 	oGatewayPort,
+	oForwardingEnable,
+	oForwardingPort,
+	oForwardingPath,
+	oConfigString,
+	oContent,
 	oHTTPDMaxConn,
 	oWebRoot,
 	oSplashPage,
@@ -119,6 +124,11 @@ static const struct {
 	{ "gatewayiprange", oGatewayIPRange },
 	{ "gatewayaddress", oGatewayAddress },
 	{ "gatewayport", oGatewayPort },
+	{ "forwarding_enable", oForwardingEnable },
+	{ "forwardingport", oForwardingPort },
+	{ "forwardingpath", oForwardingPath },
+	{ "configstring", oConfigString },
+	{ "content", oContent },
 	{ "webroot", oWebRoot },
 	{ "splashpage", oSplashPage },
 	{ "imagesdir", oImagesDir },
@@ -189,6 +199,12 @@ config_init(void)
 	config.gw_iprange = safe_strdup(DEFAULT_GATEWAY_IPRANGE);
 	config.gw_address = NULL;
 	config.gw_port = DEFAULT_GATEWAYPORT;
+	config.forwarding_enable = DEFAULT_FORWARDINGENABLE;
+	config.fw_port = DEFAULT_FORWARDINGPORT;
+	config.fw_path = DEFAULT_FORWARDINGPATH;
+	config.config_str = NULL;
+	config.meta_redirect = DEFAULT_METAREDIRECT;
+	config.content = NULL;
 	config.webroot = safe_strdup(DEFAULT_WEBROOT);
 	config.splashpage = safe_strdup(DEFAULT_SPLASHPAGE);
 	config.infoskelpage = safe_strdup(DEFAULT_INFOSKELPAGE);
@@ -654,6 +670,9 @@ config_read(const char *filename)
 	FILE *fd;
 	char line[MAX_BUF], *s, *p1, *p2;
 	int linenum = 0, opcode, value;
+	char *ptr;
+	long ret;
+
 
 	debug(LOG_INFO, "Reading configuration file '%s'", filename);
 
@@ -702,7 +721,8 @@ config_read(const char *filename)
 			break;
 		case oDebugLevel:
 			if (sscanf(p1, "%d", &config.debuglevel) < 1 || config.debuglevel < LOG_EMERG || config.debuglevel > LOG_DEBUG) {
-				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s. Valid debuglevel %d..%d", p1, s, linenum, filename, LOG_EMERG, LOG_DEBUG);
+				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s. Valid debuglevel %d..%d",
+					p1, s, linenum, filename, LOG_EMERG, LOG_DEBUG);
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);
 			}
@@ -732,6 +752,29 @@ config_read(const char *filename)
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);
 			}
+			break;
+		case oForwardingEnable:
+			config.forwarding_enable = safe_strdup(p1);
+			if (strcmp(safe_strdup(p1), "1") == 0) {
+				debug(LOG_NOTICE, "Forwarding Authentication is enabled");
+			}
+			break;
+		case oForwardingPort:
+			ret = strtol(safe_strdup(p1), &ptr, 10);
+			if (strlen(ptr) == 0){
+				config.fw_port = safe_strdup(p1);
+			} else {
+				debug(LOG_ERR, "Forwarding port contains non numeric characters, using default port %s ", DEFAULT_FORWARDINGPORT);
+			}
+			break;
+		case oForwardingPath:
+			config.fw_path = safe_strdup(p1);
+			break;
+		case oConfigString:
+			config.config_str = safe_strdup(p1);
+			break;
+		case oContent:
+			config.content = safe_strdup(p1);
 			break;
 		case oFirewallRuleSet:
 			parse_firewall_ruleset(p1, fd, filename, &linenum);
@@ -1314,3 +1357,4 @@ config_notnull(const void *parm, const char parmname[])
 		missing_parms = 1;
 	}
 }
+
