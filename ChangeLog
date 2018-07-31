@@ -1,3 +1,16 @@
+nodogsplash (3.0.0)
+
+  * Removed settings without implementation due to the change of the http library:
+      DecongestHttpdThreads, HttpdThreadthreshold, HttpdThreaddelayms
+      AuthenticateImmediately, RemoteAuthenticatorAction, EnablePreAuth,
+      BinVoucher, ForceVoucher, PasswordAuthentication, UsernameAuthentication,
+      PasswordAttempts, Username, Password
+  * Add binauth feature as a replacement for the old binvoucher feature
+    * call a script with username/password to decide the authentication
+  * Replace ClientTimeout/ClientForceTimeout settings with PreauthIdleTimeout and AuthedIdleTimeout
+
+ -- Moritz Warning <moritzwarning@web.de>  Tue, 31 July 2018 19:19:00 +0000
+
 nodogsplash (2.1.1)
 
   * Update nodogsplash.conf for non-OpenWrt builds
