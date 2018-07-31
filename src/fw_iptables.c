@@ -153,8 +153,9 @@ int
 iptables_do_command(const char *format, ...)
 {
 	va_list vlist;
-	char *fmt_cmd = NULL, *cmd = NULL;
+	char *fmt_cmd = NULL;
 	s_config *config;
+	char *iptables;
 	int rc;
 	int i;
 
@@ -164,18 +165,15 @@ iptables_do_command(const char *format, ...)
 
 	config = config_get_config();
 
-	if (config->ip6) {
-		safe_asprintf(&cmd, "ip6tables --wait %s", fmt_cmd);
-	} else {
-		safe_asprintf(&cmd, "iptables --wait %s", fmt_cmd);
-	}
-
-	free(fmt_cmd);
-
-	debug(LOG_DEBUG, "Executing command: %s", cmd);
+	iptables = config->ip6 ? "ip6tables" : "iptables";
 
 	for (i = 0; i < 5; i++) {
-		rc = execute(cmd, fw_quiet);
+		if (fw_quiet) {
+			rc = execute("%s --wait %s &> /dev/null", iptables, fmt_cmd);
+		} else {
+			rc = execute("%s --wait %s", iptables, fmt_cmd);
+		}
+
 		if (rc == 4) {
 			/* iptables error code 4 indicates a resource problem that might
 			 * be temporary. So we retry to insert the rule a few times. (Mitar) */
@@ -184,11 +182,8 @@ iptables_do_command(const char *format, ...)
 			break;
 		}
 	}
-	if (!fw_quiet && rc != 0) {
-		debug(LOG_ERR, "Nonzero exit status %d from command: %s", rc, cmd);
-	}
 
-	free(cmd);
+	free(fmt_cmd);
 
 	return rc;
 }
@@ -228,7 +223,7 @@ _iptables_compile(const char table[], const char chain[], t_firewall_rule *rule)
 		break;
 	}
 
-	snprintf(command, sizeof(command),  "-t %s -A %s ",table, chain);
+	snprintf(command, sizeof(command),  "-t %s -A %s ", table, chain);
 	if (rule->mask != NULL) {
 		snprintf((command + strlen(command)),
 				 (sizeof(command) - strlen(command)),
@@ -631,11 +626,7 @@ iptables_fw_destroy(void)
 
 	debug(LOG_DEBUG, "Destroying our iptables entries");
 
-	/*
-	 *
-	 * Everything in the mangle table
-	 *
-	 */
+	/* Everything in the mangle table */
 	debug(LOG_DEBUG, "Destroying chains in the MANGLE table");
 	iptables_fw_destroy_mention("mangle", "PREROUTING", CHAIN_TRUSTED);
 	iptables_fw_destroy_mention("mangle", "PREROUTING", CHAIN_BLOCKED);
@@ -653,22 +644,14 @@ iptables_fw_destroy(void)
 	iptables_do_command("-t mangle -X " CHAIN_OUTGOING);
 	iptables_do_command("-t mangle -X " CHAIN_INCOMING);
 
-	/*
-	 *
-	 * Everything in the nat table
-	 *
-	 */
+	/* Everything in the nat table */
 
 	debug(LOG_DEBUG, "Destroying chains in the NAT table");
 	iptables_fw_destroy_mention("nat", "PREROUTING", CHAIN_OUTGOING);
 	iptables_do_command("-t nat -F " CHAIN_OUTGOING);
 	iptables_do_command("-t nat -X " CHAIN_OUTGOING);
 
-	/*
-	 *
-	 * Everything in the filter table
-	 *
-	 */
+	/* Everything in the filter table */
 
 	debug(LOG_DEBUG, "Destroying chains in the FILTER table");
 	iptables_fw_destroy_mention("filter", "INPUT", CHAIN_TO_ROUTER);
@@ -683,6 +666,8 @@ iptables_fw_destroy(void)
 	iptables_do_command("-t filter -X " CHAIN_AUTHENTICATED);
 	iptables_do_command("-t filter -X " CHAIN_TRUSTED);
 	iptables_do_command("-t filter -X " CHAIN_TRUSTED_TO_ROUTER);
+
+	fw_quiet = 0;
 
 	return 0;
 }
@@ -752,13 +737,14 @@ iptables_fw_access(t_authaction action, t_client *client)
 {
 	int rc = 0, download_limit, upload_limit, traffic_control;
 	s_config *config;
-	char *download_imqname, *upload_imqname;
+	char download_imqname[16];
+	char upload_imqname[16];
 
 	fw_quiet = 0;
 
 	config = config_get_config();
-	safe_asprintf(&download_imqname,"imq%d",config->download_imq); /* must free */
-	safe_asprintf(&upload_imqname,"imq%d",config->upload_imq);  /* must free */
+	sprintf(download_imqname, "imq%d", config->download_imq);
+	sprintf(upload_imqname, "imq%d", config->upload_imq);
 
 	LOCK_CONFIG();
 	traffic_control = config->traffic_control;
@@ -798,8 +784,6 @@ iptables_fw_access(t_authaction action, t_client *client)
 		break;
 	}
 
-	free(upload_imqname);
-	free(download_imqname);
 	return rc;
 }
 

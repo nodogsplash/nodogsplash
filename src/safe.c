@@ -41,7 +41,7 @@ void * safe_malloc (size_t size)
 	void * retval = NULL;
 	retval = malloc(size);
 	if (!retval) {
-		debug(LOG_CRIT, "Failed to malloc %d bytes of memory: %s.  Bailing out", size, strerror(errno));
+		debug(LOG_CRIT, "Failed to malloc %d bytes of memory: %s. Bailing out.", size, strerror(errno));
 		exit(1);
 	}
 	return (retval);
@@ -51,12 +51,12 @@ char * safe_strdup(const char s[])
 {
 	char * retval = NULL;
 	if (!s) {
-		debug(LOG_CRIT, "safe_strdup called with NULL which would have crashed strdup. Bailing out");
+		debug(LOG_CRIT, "safe_strdup called with NULL which would have crashed strdup. Bailing out.");
 		exit(1);
 	}
 	retval = strdup(s);
 	if (!retval) {
-		debug(LOG_CRIT, "Failed to duplicate a string: %s.  Bailing out", strerror(errno));
+		debug(LOG_CRIT, "Failed to duplicate a string: %s. Bailing out.", strerror(errno));
 		exit(1);
 	}
 	return (retval);
@@ -84,6 +84,7 @@ int safe_vasprintf(char **strp, const char *fmt, va_list ap)
 		debug(LOG_CRIT, "Failed to vasprintf: %s.  Bailing out", strerror(errno));
 		exit (1);
 	}
+
 	return (retval);
 }
 

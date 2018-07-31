@@ -48,7 +48,8 @@
 static t_client *add_client(const char *ip_addr);
 static int authenticated(struct MHD_Connection *connection, const char *ip_addr, const char *mac, const char *url, t_client *client);
 static int preauthenticated(struct MHD_Connection *connection, const char *ip_addr, const char *mac, const char *url, t_client *client);
-static int authenticate_client(struct MHD_Connection *connection, const char *ip_addr, const char *mac, const char *url, t_client *client);
+static int authenticate_client_binauth(struct MHD_Connection *connection, const char *ip_addr, const char *mac, const char *redirect_url, t_client *client);
+static int authenticate_client(struct MHD_Connection *connection, const char *ip_addr, const char *mac, const char *redirect_url, t_client *client);
 static int get_host_value_callback(void *cls, enum MHD_ValueKind kind, const char *key, const char *value);
 static int serve_file(struct MHD_Connection *connection, t_client *client, const char *url);
 static int show_splashpage(struct MHD_Connection *connection, t_client *client);
@@ -61,39 +62,41 @@ static int is_foreign_hosts(struct MHD_Connection *connection, const char *host)
 static int is_splashpage(const char *host, const char *url);
 static int get_query(struct MHD_Connection *connection, char **collect_query);
 static const char *get_redirect_url(struct MHD_Connection *connection);
-
 static const char *lookup_mimetype(const char *filename);
 
+
+/* Get client settings from binauth */
+static int parse_binauth_data(const char *buf, t_client *client)
+{
+	int seconds = 0;
+	int upload = 0;
+	int download = 0;
+
+	/* We require at least one value */
+	if (sscanf(buf, "%d %d %d", &seconds, &upload, &download) < 1)
+		goto err;
+
+	if (seconds < 1 || upload < 0 || download < 0)
+		goto err;
+
+	client->download_limit = download;
+	client->upload_limit = upload;
+	client->session_end = time(NULL) + seconds;
+
+	return seconds;
+
+err:
+	client->download_limit = 0;
+	client->upload_limit = 0;
+	client->session_end = 0;
+
+	return 0;
+}
 
 struct collect_query {
 	int i;
 	char **elements;
 };
-
-struct collect_query_key {
-	const char *key;
-	const char *value;
-};
-
-static int collect_query_key(void *cls, enum MHD_ValueKind kind, const char *key, const char *value)
-{
-	struct collect_query_key *query_key = cls;
-	query_key->value = NULL;
-
-	if (!query_key)
-		return MHD_NO;
-
-	if (!key) {
-		return MHD_YES;
-	}
-
-	if (!strcmp(key, query_key->key)) {
-		query_key->value = value;
-		/* stop execution of iterator */
-		return MHD_NO;
-	}
-	return MHD_YES;
-}
 
 static int collect_query_string(void *cls, enum MHD_ValueKind kind, const char *key, const char * value)
 {
@@ -278,6 +281,7 @@ libmicrohttpd_cb(void *cls,
 			return ret;
 		}
 	}
+
 	ret = preauthenticated(connection, ip_addr, mac, url, client);
 	free(mac);
 	free(ip_addr);
@@ -307,23 +311,11 @@ static int check_authdir_match(const char *url, const char *authdir)
 static int check_token_is_valid(struct MHD_Connection *connection, t_client *client)
 {
 	/* token check */
-	struct collect_query_key token_key = { .key = "token" };
-	struct collect_query_key tok_key = { .key = "tok" };
+	const char *token = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "token");
+	const char *tok = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "tok");
 
-	MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, &collect_query_key, &token_key);
-	MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, &collect_query_key, &tok_key);
-
-	/* token not found in query string */
-	if (!token_key.value && !tok_key.value)
-		return 0;
-
-	if (token_key.value && !strcmp(client->token, token_key.value))
-		return 1;
-
-	if (tok_key.value && !strcmp(client->token, tok_key.value))
-		return 1;
-
-	return 0;
+	/* return true if token or tok match client->token */
+	return ((token && !strcmp(client->token, token))) || (tok && !strcmp(client->token, tok));
 }
 
 
@@ -347,13 +339,16 @@ static int try_to_authenticate(struct MHD_Connection *connection, t_client *clie
 	if (check_authdir_match(url, config->authdir)) {
 		/* matched to authdir */
 		if (check_token_is_valid(connection, client)) {
-			return 1; /* valid token */
+			return 1;
 		}
-	} else if (check_authdir_match(url, config->denydir)) {
-		/* matched to deauth */
-		/* TODO: do we need denydir? */
+	}
+
+/*	//TODO: do we need denydir?
+	if (check_authdir_match(url, config->denydir)) {
+		// matched to deauth
 		return 0;
 	}
+*/
 
 	return 0;
 }
@@ -374,10 +369,11 @@ static int authenticate_client(struct MHD_Connection *connection,
 {
 	/* TODO: handle redirect_url == NULL */
 	auth_client_action(ip_addr, mac, AUTH_MAKE_AUTHENTICATED);
-	if (redirect_url)
+	if (redirect_url) {
 		return send_redirect_temp(connection, redirect_url);
-	else
+	} else {
 		return send_error(connection, 200);
+	}
 }
 
 /**
@@ -389,7 +385,7 @@ static int authenticate_client(struct MHD_Connection *connection,
  * @param client
  * @return
  *
- * It's unsual to received request from clients which are already authed.
+ * It's unsual to received request from clients which are already authenticated.
  * Happens when the user:
  * - clicked in multiple windows on "accept" -> redirect to origin - no checking
  * - when the user reloaded a splashpage -> redirect to origin
@@ -408,14 +404,14 @@ static int authenticated(struct MHD_Connection *connection,
 
 	MHD_get_connection_values(connection, MHD_HEADER_KIND, get_host_value_callback, &host);
 
-	if (is_splashpage(host, url) ||
-			check_authdir_match(url, config->authdir)) {
+	if (is_splashpage(host, url) || check_authdir_match(url, config->authdir)) {
 		redirect_url = get_redirect_url(connection);
 		/* TODO: what should we do when we get such request? */
-		if (redirect_url == NULL || strlen(redirect_url) == 0)
+		if (redirect_url == NULL || strlen(redirect_url) == 0) {
 			return show_splashpage(connection, client);
-		else
+		} else {
 			return authenticate_client(connection, ip_addr, mac, redirect_url, client);
+		}
 	} else if (check_authdir_match(url, config->denydir)) {
 		auth_client_action(ip_addr, mac, AUTH_MAKE_DEAUTHENTICATED);
 		snprintf(redirect_to_us, 128, "http://%s:%u/", config->gw_address, config->gw_port);
@@ -432,6 +428,47 @@ static int authenticated(struct MHD_Connection *connection,
 
 	/* user doesn't wants the splashpage or tried to auth itself */
 	return serve_file(connection, client, url);
+}
+
+static int authenticate_client_binauth(
+		struct MHD_Connection *connection,
+		const char *ip_addr,
+		const char *mac,
+		const char *redirect_url,
+		t_client *client)
+{
+	char username_enc[64] = {0};
+	char password_enc[64] = {0};
+	char msg[255] = {0};
+	int seconds;
+	int rc;
+
+	s_config *config = config_get_config();
+
+	const char *username = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "username");
+	const char *password = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "password");
+
+	if ((username && uh_urlencode(username_enc, sizeof(username_enc), username, strlen(username)) == -1)
+		|| (password && uh_urlencode(password_enc, sizeof(password_enc), password, strlen(password)) == -1)) {
+		debug(LOG_ERR, "Failed to encode username and password for binauth");
+		return encode_and_redirect_to_splashpage(connection, redirect_url);
+	}
+
+	rc = execute_ret(msg, sizeof(msg) - 1, "%s client_auth '%s' '%s' '%s'",
+		config->bin_auth, mac, username_enc, password_enc);
+
+	if (rc != 0) {
+		return encode_and_redirect_to_splashpage(connection, redirect_url);
+	}
+
+	seconds = parse_binauth_data(msg, client);
+	if (seconds == 0) {
+		return encode_and_redirect_to_splashpage(connection, redirect_url);
+	}
+
+	debug(LOG_NOTICE, "Remote auth data: client [%s, %s] authenticated for %d seconds", mac, client->ip, seconds);
+
+	return authenticate_client(connection, ip_addr, mac, redirect_url, client);
 }
 
 /**
@@ -467,21 +504,25 @@ static int preauthenticated(struct MHD_Connection *connection,
 	/* request is directed to us */
 	/* check if client wants to be authenticated */
 	if (check_authdir_match(url, config->authdir)) {
-
 		/* Only the first request will redirected to config->redirectURL.
 		 * When the client reloads a page when it's authenticated, it should be redirected
 		 * to their origin url
 		 */
-		if (config->redirectURL)
+		if (config->redirectURL) {
 			redirect_url = config->redirectURL;
-		else
-			redirect_url = get_redirect_url(connection);
-
-		if (try_to_authenticate(connection, client, host, url)) {
-			return authenticate_client(connection, ip_addr, mac, redirect_url, client);
 		} else {
+			redirect_url = get_redirect_url(connection);
+		}
+
+		if (!try_to_authenticate(connection, client, host, url)) {
 			/* user used an invalid token, redirect to splashpage but hold query "redir" intact */
 			return encode_and_redirect_to_splashpage(connection, redirect_url);
+		}
+
+		if (config->bin_auth) {
+			return authenticate_client_binauth(connection, ip_addr, mac, redirect_url, client);
+		} else {
+			return authenticate_client(connection, ip_addr, mac, redirect_url, client);
 		}
 	}
 
@@ -516,15 +557,19 @@ static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, 
 		}
 	}
 
-	if (encoded[0])
-		safe_asprintf(&splashpageurl, "http://%s:%u/%s?redir=%s", config->gw_address , config->gw_port, config->splashpage, encoded);
-	else
-		safe_asprintf(&splashpageurl, "http://%s:%u/%s", config->gw_address , config->gw_port, config->splashpage);
+	if (encoded[0]) {
+		safe_asprintf(&splashpageurl, "http://%s:%u/%s?redir=%s",
+			config->gw_address, config->gw_port, config->splashpage, encoded);
+	} else {
+		safe_asprintf(&splashpageurl, "http://%s:%u/%s",
+			config->gw_address, config->gw_port, config->splashpage);
+	}
 
 	debug(LOG_DEBUG, "splashpageurl: %s", splashpageurl);
 
 	ret = send_redirect_temp(connection, splashpageurl);
 	free(splashpageurl);
+
 	return ret;
 }
 
@@ -606,14 +651,7 @@ int send_redirect_temp(struct MHD_Connection *connection, const char *url)
  */
 static const char *get_redirect_url(struct MHD_Connection *connection)
 {
-	struct collect_query_key query_key = { .key = "redir" };
-
-	MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, &collect_query_key, &query_key);
-
-	if (!query_key.value)
-		return NULL;
-
-	return query_key.value;
+	return MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "redir");
 }
 
 /* save the query or empty string into **query.
@@ -795,7 +833,7 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client)
 	char *splashpage_result;
 	char *splashpage_tmpl;
 
-	snprintf(filename, PATH_MAX, "%s/%s", config->webroot ,config->splashpage);
+	snprintf(filename, PATH_MAX, "%s/%s", config->webroot, config->splashpage);
 
 	splashpage_fd = open(filename, O_RDONLY);
 	if (splashpage_fd < 0)
@@ -813,6 +851,7 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client)
 		close(splashpage_fd);
 		return send_error(connection, 503);
 	}
+
 	splashpage_result = calloc(1, size + TMPLVAR_SIZE);
 	if (splashpage_result == NULL) {
 		close(splashpage_fd);
@@ -821,7 +860,7 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client)
 	}
 
 	while (bytes < size) {
-		ret = read(splashpage_fd, splashpage_tmpl+bytes, size-bytes);
+		ret = read(splashpage_fd, splashpage_tmpl + bytes, size - bytes);
 		if (ret < 0) {
 			free(splashpage_result);
 			free(splashpage_tmpl);

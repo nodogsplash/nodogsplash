@@ -95,7 +95,7 @@ auth_client_action(const char ip[], const char mac[], t_authaction action)
 
 	LOCK_CLIENT_LIST();
 
-	client = client_list_find(ip,mac);
+	client = client_list_find(ip, mac);
 
 	/* Client should already have hit the server and be on the client list */
 	if (client == NULL) {
@@ -124,8 +124,8 @@ auth_client_action(const char ip[], const char mac[], t_authaction action)
 		break;
 
 	default:
-		debug(LOG_ERR, "Unknown auth action: %d",action);
+		debug(LOG_ERR, "Unknown auth action: %d", action);
 	}
+
 	UNLOCK_CLIENT_LIST();
-	return;
 }

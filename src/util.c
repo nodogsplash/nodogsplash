@@ -84,25 +84,15 @@ extern int created_httpd_threads;
 extern int current_httpd_threads;
 
 
-/** Fork a child and execute a shell command.
- * The parent process waits for the child to return,
- * and returns the child's exit() value.
- * @return Return code of the command
- */
-int
-execute(const char cmd_line[], int quiet)
+static int _execute_ret(char* msg, int msg_len, const char *cmd)
 {
-	int status, retval;
-	pid_t pid, rc;
 	struct sigaction sa, oldsa;
-	const char *new_argv[4];
-	new_argv[0] = "/bin/sh";
-	new_argv[1] = "-c";
-	new_argv[2] = cmd_line;
-	new_argv[3] = NULL;
+	FILE *fp;
+	int rc;
 
-	/* Temporarily get rid of SIGCHLD handler (see gateway.c), until child exits.
-	 * Will handle SIGCHLD here with waitpid() in the parent. */
+	debug(LOG_DEBUG, "Executing command: %s", cmd);
+
+	/* Temporarily get rid of SIGCHLD handler (see gateway.c), until child exits. */
 	debug(LOG_DEBUG,"Setting default SIGCHLD handler SIG_DFL");
 	sa.sa_handler = SIG_DFL;
 	sigemptyset(&sa.sa_mask);
@@ -111,48 +101,69 @@ execute(const char cmd_line[], int quiet)
 		debug(LOG_ERR, "sigaction() failed to set default SIGCHLD handler: %s", strerror(errno));
 	}
 
-	pid = safe_fork();
-
-	if (pid == 0) {    /* for the child process:         */
-		if (quiet) close(2); /* Close stderr if quiet flag is on */
-		if (execvp("/bin/sh", (char *const *)new_argv) == -1) {    /* execute the command  */
-			debug(LOG_ERR, "execvp(): %s", strerror(errno));
-		} else {
-			debug(LOG_ERR, "execvp() failed");
-		}
-		exit(1);
-
-	} else {        /* for the parent:      */
-		debug(LOG_DEBUG, "Waiting for PID %d to exit", (int)pid);
-		do {
-			rc = waitpid(pid, &status, 0);
-			if (rc == -1) {
-				if (errno == ECHILD) {
-					debug(LOG_DEBUG, "waitpid(): No child exists now. Assuming normal exit for PID %d", (int)pid);
-					retval = 0;
-				} else {
-					debug(LOG_ERR, "Error waiting for child (waitpid() returned -1): %s", strerror(errno));
-					retval = -1;
-				}
-				break;
-			}
-			if (WIFEXITED(status)) {
-				debug(LOG_DEBUG, "Process PID %d exited normally, status %d", (int)rc, WEXITSTATUS(status));
-				retval = (WEXITSTATUS(status));
-			}
-			if (WIFSIGNALED(status)) {
-				debug(LOG_DEBUG, "Process PID %d exited due to signal %d", (int)rc, WTERMSIG(status));
-				retval = -1;
-			}
-		} while (!WIFEXITED(status) && !WIFSIGNALED(status));
-
-		debug(LOG_DEBUG, "Restoring previous SIGCHLD handler");
-		if (sigaction(SIGCHLD, &oldsa, NULL) == -1) {
-			debug(LOG_ERR, "sigaction() failed to restore SIGCHLD handler! Error %s", strerror(errno));
-		}
-
-		return retval;
+	fp = popen(cmd, "r");
+	if (fp == NULL) {
+		debug(LOG_ERR, "popen(): %s", strerror(errno));
+		rc = -1;
+		goto abort;
 	}
+
+	if (msg && msg_len > 0) {
+		fgets(msg, msg_len - 1, fp);
+	}
+
+	rc = pclose(fp);
+
+	if (WIFSIGNALED(rc) != 0) {
+		debug(LOG_WARNING, "Command process exited due to signal %d", WTERMSIG(rc));
+	}
+
+	rc = WEXITSTATUS(rc);
+
+abort:
+
+	/* Restore signal handler */
+	if (sigaction(SIGCHLD, &oldsa, NULL) == -1) {
+		debug(LOG_ERR, "sigaction() failed to restore SIGCHLD handler! Error %s", strerror(errno));
+	}
+
+	return rc;
+}
+
+int execute(const char fmt[], ...)
+{
+	char cmd[512];
+	va_list vlist;
+	int rc;
+
+	va_start(vlist, fmt);
+	rc = vsnprintf(cmd, sizeof(cmd), fmt, vlist);
+	va_end(vlist);
+
+	if (rc < 0 || rc >= sizeof(cmd)) {
+		debug(LOG_ERR, "Format string too small or encoding error.");
+		return -1;
+	}
+
+	return _execute_ret(NULL, 0, cmd);
+}
+
+int execute_ret(char* msg, int msg_len, const char fmt[], ...)
+{
+	char cmd[512];
+	va_list vlist;
+	int rc;
+
+	va_start(vlist, fmt);
+	rc = vsnprintf(cmd, sizeof(cmd), fmt, vlist);
+	va_end(vlist);
+
+	if (rc < 0 || rc >= sizeof(cmd)) {
+		debug(LOG_ERR, "Format string too small or encoding error.");
+		return -1;
+	}
+
+	return _execute_ret(msg, msg_len, cmd);
 }
 
 struct in_addr *
@@ -297,7 +308,7 @@ out:
  *  Caller must free.
  */
 char *
-get_ext_iface (void)
+get_ext_iface(void)
 {
 #ifdef __linux__
 	FILE *input;
@@ -347,12 +358,20 @@ get_ext_iface (void)
 	return NULL;
 }
 
-/* Malloc's */
 char *
-format_time(unsigned long int secs)
+format_duration(time_t from, time_t to, char buf[64])
 {
-	unsigned int days, hours, minutes, seconds;
-	char *str = NULL;
+	int days, hours, minutes, seconds;
+	long long int secs;
+
+	if (from <= to) {
+		secs = to - from;
+	} else {
+		secs = from - to;
+		// Prepend minus sign
+		buf[0] = '-';
+		buf += 1;
+	}
 
 	days = secs / (24 * 60 * 60);
 	secs -= days * (24 * 60 * 60);
@@ -362,22 +381,39 @@ format_time(unsigned long int secs)
 	secs -= minutes * 60;
 	seconds = secs;
 
-	safe_asprintf(&str,"%ud %uh %um %us", days, hours, minutes, seconds);
-	return str;
+	if (days > 0) {
+		sprintf(buf, "%dd %dh %dm %ds", days, hours, minutes, seconds);
+	} else if (hours > 0) {
+		sprintf(buf, "%dh %dm %ds", hours, minutes, seconds);
+	} else if (minutes > 0) {
+		sprintf(buf, "%dm %ds", minutes, seconds);
+	} else {
+		sprintf(buf, "%ds", seconds);
+	}
+
+	return buf;
+}
+
+char *
+format_time(time_t *time, char buf[64])
+{
+	strftime(buf, 64, "%a %b %d %H:%M:%S %Y", localtime(time));
+	return buf;
 }
 
 /* Caller must free. */
 char *
 get_uptime_string()
 {
-	return format_time(time(NULL)-started_time);
+	char *buf = malloc(64);
+	return format_duration(started_time, time(NULL), buf);
 }
 
 void
 ndsctl_status(FILE *fp)
 {
 	char timebuf[32];
-	char *str;
+	char durationbuf[128];
 	s_config *config;
 	t_client *client;
 	int indx;
@@ -396,15 +432,16 @@ ndsctl_status(FILE *fp)
 
 	fprintf(fp, "Version: " VERSION "\n");
 
-	str = format_time(uptimesecs);
-	fprintf(fp, "Uptime: %s\n", str);
-	free(str);
+	format_duration(started_time, now, durationbuf);
+	fprintf(fp, "Uptime: %s\n", durationbuf);
 
 	fprintf(fp, "Gateway Name: %s\n", config->gw_name);
 	fprintf(fp, "Managed interface: %s\n", config->gw_interface);
 	fprintf(fp, "Managed IP range: %s\n", config->gw_iprange);
 	fprintf(fp, "Server listening: %s:%d\n", config->gw_address, config->gw_port);
-	fprintf(fp, "Splashpage: %s/%s\n", config->webroot, config->splashpage);
+	fprintf(fp, "Client Check Interval: %ds\n", config->checkinterval);
+	fprintf(fp, "Preauth Idle Timeout: %ds\n", config->preauth_idle_timeout);
+	fprintf(fp, "Authed Idle Timeout: %ds\n", config->authed_idle_timeout);
 
 	if (config->redirectURL) {
 		fprintf(fp, "Redirect URL: %s\n", config->redirectURL);
@@ -426,12 +463,12 @@ ndsctl_status(FILE *fp)
 	}
 
 	download_bytes = iptables_fw_total_download();
-	fprintf(fp, "Total download: %llu kByte", download_bytes/1000);
-	fprintf(fp, "; avg: %.6g kbit/s\n", ((double) download_bytes) / 125 / uptimesecs);
+	fprintf(fp, "Total download: %llu kByte", download_bytes / 1000);
+	fprintf(fp, "; avg: %.2f kbit/s\n", ((double) download_bytes) / 125 / uptimesecs);
 
 	upload_bytes = iptables_fw_total_upload();
-	fprintf(fp, "Total upload: %llu kByte", upload_bytes/1000);
-	fprintf(fp, "; avg: %.6g kbit/s\n", ((double) upload_bytes) / 125 / uptimesecs);
+	fprintf(fp, "Total upload: %llu kByte", upload_bytes / 1000);
+	fprintf(fp, "; avg: %.2f kbit/s\n", ((double) upload_bytes) / 125 / uptimesecs);
 	fprintf(fp, "====\n");
 	fprintf(fp, "Client authentications since start: %u\n", authenticated_since_start);
 
@@ -453,26 +490,26 @@ ndsctl_status(FILE *fp)
 
 		fprintf(fp, "  IP: %s MAC: %s\n", client->ip, client->mac);
 
-		ctime_r(&(client->added_time),timebuf);
-		fprintf(fp, "  Added:   %s", timebuf);
+		format_time(&client->counters.last_updated, timebuf);
+		format_duration(client->counters.last_updated, now, durationbuf);
+		fprintf(fp, "  Last Activity: %s (%s ago)\n", timebuf, durationbuf);
 
-		ctime_r(&(client->counters.last_updated),timebuf);
-		fprintf(fp, "  Active:  %s", timebuf);
+		if (client->fw_connection_state == FW_MARK_AUTHENTICATED) {
+			format_time(&client->session_start, timebuf);
+			format_duration(client->session_start, now, durationbuf);
+			fprintf(fp, "  Session Start: %s (%s ago)\n", timebuf, durationbuf);
 
-		str = format_time(client->counters.last_updated - client->added_time);
-		fprintf(fp, "  Active duration: %s\n", str);
-		free(str);
-
-		if (now > client->added_time) {
-			durationsecs = now - client->added_time;
+			if (client->session_end == 0) {
+				fprintf(fp, "  Session End:   -\n");
+			} else {
+				format_time(&client->session_end, timebuf);
+				format_duration(now, client->session_end, durationbuf);
+				fprintf(fp, "  Session End:   %s (%s left)\n", timebuf, durationbuf);
+			}
 		} else {
-			// prevent divison by 0 later
-			durationsecs = 1;
+			fprintf(fp, "  Session Start: -\n");
+			fprintf(fp, "  Session End:   -\n");
 		}
-
-		str = format_time(durationsecs);
-		fprintf(fp, "  Added duration:  %s\n", str);
-		free(str);
 
 		fprintf(fp, "  Token: %s\n", client->token ? client->token : "none");
 
@@ -480,10 +517,16 @@ ndsctl_status(FILE *fp)
 
 		download_bytes = client->counters.incoming;
 		upload_bytes = client->counters.outgoing;
+		durationsecs = now - client->session_start;
 
-		fprintf(fp, "  Download: %llu kByte; avg: %.6g kbit/s\n  Upload:   %llu kByte; avg: %.6g kbit/s\n\n",
-				download_bytes/1000, ((double)download_bytes)/125/durationsecs,
-				upload_bytes/1000, ((double)upload_bytes)/125/durationsecs);
+		// prevent divison by 0
+		if (durationsecs < 1) {
+			durationsecs = 1;
+		}
+
+		fprintf(fp, "  Download: %llu kByte; avg: %.2f kbit/s\n  Upload:   %llu kByte; avg: %.2f kbit/s\n\n",
+				download_bytes / 1000, ((double)download_bytes) / 125 / durationsecs,
+				upload_bytes / 1000, ((double)upload_bytes) / 125 / durationsecs);
 
 		indx++;
 		client = client->next;
@@ -559,19 +602,20 @@ ndsctl_clients(FILE *fp)
 	while (client != NULL) {
 		fprintf(fp, "client_id=%d\n", indx);
 		fprintf(fp, "ip=%s\nmac=%s\n", client->ip, client->mac);
-		fprintf(fp, "added=%lld\n", (long long) client->added_time);
+		fprintf(fp, "added=%lld\n", (long long) client->session_start);
 		fprintf(fp, "active=%lld\n", (long long) client->counters.last_updated);
-		fprintf(fp, "duration=%lu\n", now - client->added_time);
+		fprintf(fp, "duration=%lu\n", now - client->session_start);
 		fprintf(fp, "token=%s\n", client->token ? client->token : "none");
 		fprintf(fp, "state=%s\n", fw_connection_state_as_string(client->fw_connection_state));
 
-		durationsecs = now - client->added_time;
+		durationsecs = now - client->session_start;
 		download_bytes = client->counters.incoming;
 		upload_bytes = client->counters.outgoing;
 
-		fprintf(fp, "downloaded=%llu\navg_down_speed=%.6g\nuploaded=%llu\navg_up_speed=%.6g\n\n",
-				download_bytes/1000, ((double)download_bytes)/125/durationsecs,
-				upload_bytes/1000, ((double)upload_bytes)/125/durationsecs);
+		fprintf(fp, "downloaded=%llu\n", download_bytes/1000);
+		fprintf(fp, "avg_down_speed=%.2f\n", ((double)download_bytes) / 125 / durationsecs);
+		fprintf(fp, "uploaded=%llu\n", upload_bytes/1000);
+		fprintf(fp, "avg_up_speed=%.2f\n\n", ((double)upload_bytes) / 125 / durationsecs);
 
 		indx++;
 		client = client->next;
@@ -606,19 +650,20 @@ ndsctl_json(FILE *fp)
 		fprintf(fp, "\"%s\":{\n", client->mac);
 		fprintf(fp, "\"client_id\":%d,\n", indx);
 		fprintf(fp, "\"ip\":\"%s\",\n\"mac\":\"%s\",\n", client->ip, client->mac);
-		fprintf(fp, "\"added\":%lld,\n", (long long) client->added_time);
+		fprintf(fp, "\"added\":%lld,\n", (long long) client->session_start);
 		fprintf(fp, "\"active\":%lld,\n", (long long) client->counters.last_updated);
-		fprintf(fp, "\"duration\":%lu,\n", now - client->added_time);
+		fprintf(fp, "\"duration\":%lu,\n", now - client->session_start);
 		fprintf(fp, "\"token\":\"%s\",\n", client->token ? client->token : "none");
 		fprintf(fp, "\"state\":\"%s\",\n", fw_connection_state_as_string(client->fw_connection_state));
 
-		durationsecs = now - client->added_time;
+		durationsecs = now - client->session_start;
 		download_bytes = client->counters.incoming;
 		upload_bytes = client->counters.outgoing;
 
-		fprintf(fp, "\"downloaded\":\"%llu\",\n\"avg_down_speed\":\"%.6g\",\n\"uploaded\":\"%llu\",\n\"avg_up_speed\":\"%.6g\"\n",
-			download_bytes/1000, ((double)download_bytes)/125/durationsecs,
-			upload_bytes/1000, ((double)upload_bytes)/125/durationsecs);
+		fprintf(fp, "\"downloaded\":\"%llu\",\n", download_bytes / 1000);
+		fprintf(fp, "\"avg_down_speed\":\"%.2f\",\n", ((double)download_bytes) / 125 / durationsecs);
+		fprintf(fp, "\"uploaded\":\"%llu\",\n", upload_bytes / 1000);
+		fprintf(fp, "\"avg_up_speed\":\"%.2f\"\n", ((double)upload_bytes)/ 125 / durationsecs);
 
 		indx++;
 		client = client->next;

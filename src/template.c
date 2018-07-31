@@ -36,7 +36,7 @@ static int get_variable_index(const char *name)
 {
 	int j;
 
-	for(j=0; j < ARRAY_SIZE(variable_names); j++) {
+	for (j = 0; j < ARRAY_SIZE(variable_names); j++) {
 		if (strcmp(name, variable_names[j]) == 0) {
 			return j;
 		}
@@ -60,7 +60,7 @@ int tmpl_parse(struct templater *templor, char *dst, size_t dst_len, const char 
 	int varidx; /* the position of the variable in variable_names */
 
 	memset(dst, 0x0, dst_len);
-	while((src_i < src_len) && (dst_i < dst_len)) {
+	while ((src_i < src_len) && (dst_i < dst_len)) {
 		if (src[src_i] != '$') {
 			dst[dst_i] = src[src_i];
 			dst_i++;
@@ -73,7 +73,7 @@ int tmpl_parse(struct templater *templor, char *dst, size_t dst_len, const char 
 
 		/* read the whole variable name */
 		varnameptr = src + src_i;
-		for(varlen=0; (varlen < (src_len-src_i)) &&
+		for (varlen = 0; (varlen < (src_len-src_i)) &&
 				(isalnum(varnameptr[varlen]) || varnameptr[varlen] == '_')
 				; varlen++)
 			;
@@ -143,5 +143,6 @@ void tmpl_init_templor(struct templater *templor)
 {
 	if (!templor)
 		return;
+
 	memset(templor, 0x0, sizeof(*templor));
 }

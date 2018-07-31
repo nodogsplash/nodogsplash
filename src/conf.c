@@ -34,6 +34,9 @@
 
 #include <string.h>
 #include <ctype.h>
+#include <sys/stat.h>
+#include <arpa/inet.h>
+#include <netinet/ether.h>
 
 #include "common.h"
 #include "safe.h"
@@ -77,8 +80,8 @@ typedef enum {
 	oImagesDir,
 	oPagesDir,
 	oRedirectURL,
-	oClientIdleTimeout,
-	oClientForceTimeout,
+	oPreauthIdleTimeout,
+	oAuthedIdleTimeout,
 	oCheckInterval,
 	oSetMSS,
 	oMSSValue,
@@ -101,7 +104,8 @@ typedef enum {
 	oAllowedMACList,
 	oFWMarkAuthenticated,
 	oFWMarkTrusted,
-	oFWMarkBlocked
+	oFWMarkBlocked,
+	oBinAuth
 } OpCodes;
 
 /** @internal
@@ -124,8 +128,8 @@ static const struct {
 	{ "imagesdir", oImagesDir },
 	{ "pagesdir", oPagesDir },
 	{ "redirectURL", oRedirectURL },
-	{ "clientidletimeout", oClientIdleTimeout },
-	{ "clientforcetimeout", oClientForceTimeout },
+	{ "preauthidletimeout", oPreauthIdleTimeout },
+	{ "authedidletimeout", oAuthedIdleTimeout },
 	{ "checkinterval", oCheckInterval },
 	{ "setmss", oSetMSS },
 	{ "mssvalue", oMSSValue },
@@ -149,6 +153,7 @@ static const struct {
 	{ "FW_MARK_AUTHENTICATED", oFWMarkAuthenticated },
 	{ "FW_MARK_TRUSTED", oFWMarkTrusted },
 	{ "FW_MARK_BLOCKED", oFWMarkBlocked },
+	{ "binauth", oBinAuth },
 	{ NULL, oBadOption },
 };
 
@@ -197,8 +202,8 @@ config_init(void)
 	config.authdir = safe_strdup(DEFAULT_AUTHDIR);
 	config.denydir = safe_strdup(DEFAULT_DENYDIR);
 	config.redirectURL = NULL;
-	config.clienttimeout = DEFAULT_CLIENTTIMEOUT;
-	config.clientforceout = DEFAULT_CLIENTFORCEOUT;
+	config.preauth_idle_timeout = DEFAULT_PREAUTH_IDLE_TIMEOUT,
+	config.authed_idle_timeout = DEFAULT_AUTHED_IDLE_TIMEOUT,
 	config.checkinterval = DEFAULT_CHECKINTERVAL;
 	config.daemon = -1;
 	config.set_mss = DEFAULT_SET_MSS;
@@ -221,6 +226,7 @@ config_init(void)
 	config.FW_MARK_TRUSTED = DEFAULT_FW_MARK_TRUSTED;
 	config.FW_MARK_BLOCKED = DEFAULT_FW_MARK_BLOCKED;
 	config.ip6 = DEFAULT_IP6;
+	config.bin_auth = NULL;
 
 	/* Set up default FirewallRuleSets, and their empty ruleset policies */
 	rs = add_ruleset("trusted-users");
@@ -241,7 +247,9 @@ config_init(void)
 void
 config_init_override(void)
 {
-	if (config.daemon == -1) config.daemon = DEFAULT_DAEMON;
+	if (config.daemon == -1) {
+		config.daemon = DEFAULT_DAEMON;
+	}
 }
 
 /** @internal
@@ -252,9 +260,11 @@ config_parse_opcode(const char *cp, const char *filename, int linenum)
 {
 	int i;
 
-	for (i = 0; keywords[i].name; i++)
-		if (strcasecmp(cp, keywords[i].name) == 0)
+	for (i = 0; keywords[i].name; i++) {
+		if (strcasecmp(cp, keywords[i].name) == 0) {
 			return keywords[i].opcode;
+		}
+	}
 
 	debug(LOG_ERR, "%s: line %d: Bad configuration option: %s", filename, linenum, cp);
 	return oBadOption;
@@ -308,7 +318,6 @@ add_ruleset(const char rulesetname[])
 
 	return ruleset;
 }
-
 
 /** @internal
 Parses an empty ruleset policy directive
@@ -654,6 +663,7 @@ config_read(const char *filename)
 	FILE *fd;
 	char line[MAX_BUF], *s, *p1, *p2;
 	int linenum = 0, opcode, value;
+	struct stat sb;
 
 	debug(LOG_INFO, "Reading configuration file '%s'", filename);
 
@@ -733,6 +743,14 @@ config_read(const char *filename)
 				exit(-1);
 			}
 			break;
+		case oBinAuth:
+			config.bin_auth = safe_strdup(p1);
+			if (!((stat(p1, &sb) == 0) && S_ISREG(sb.st_mode) && (sb.st_mode & S_IXUSR))) {
+				debug(LOG_ERR, "binauth program does not exist or is not executeable: %s", p1);
+				debug(LOG_ERR, "Exiting...");
+				exit(-1);
+			}
+			break;
 		case oFirewallRuleSet:
 			parse_firewall_ruleset(p1, fd, filename, &linenum);
 			break;
@@ -774,23 +792,23 @@ config_read(const char *filename)
 		case oRedirectURL:
 			config.redirectURL = safe_strdup(p1);
 			break;
+		case oAuthedIdleTimeout:
+			if (sscanf(p1, "%d", &config.authed_idle_timeout) < 1) {
+				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
+				debug(LOG_ERR, "Exiting...");
+				exit(-1);
+			}
+			break;
+		case oPreauthIdleTimeout:
+			if (sscanf(p1, "%d", &config.preauth_idle_timeout) < 1) {
+				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
+				debug(LOG_ERR, "Exiting...");
+				exit(-1);
+			}
+			break;
 		case oNdsctlSocket:
 			free(config.ndsctl_sock);
 			config.ndsctl_sock = safe_strdup(p1);
-			break;
-		case oClientIdleTimeout:
-			if (sscanf(p1, "%d", &config.clienttimeout) < 1) {
-				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
-				debug(LOG_ERR, "Exiting...");
-				exit(-1);
-			}
-			break;
-		case oClientForceTimeout:
-			if (sscanf(p1, "%d", &config.clientforceout) < 1) {
-				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
-				debug(LOG_ERR, "Exiting...");
-				exit(-1);
-			}
 			break;
 		case oSetMSS:
 			if ((value = parse_boolean_value(p1)) != -1) {
@@ -927,21 +945,14 @@ parse_boolean_value(char *line)
 /* Parse a string to see if it is valid decimal dotted quad IP V4 format */
 int check_ip_format(const char *possibleip)
 {
-	unsigned int a1,a2,a3,a4;
-
-	return (sscanf(possibleip,"%u.%u.%u.%u",&a1,&a2,&a3,&a4) == 4
-			&& a1 < 256 && a2 < 256 && a3 < 256 && a4 < 256);
+	unsigned char buf[sizeof(struct in6_addr)];
+	return inet_pton(AF_INET, possibleip, buf) > 0;
 }
-
 
 /* Parse a string to see if it is valid MAC address format */
 int check_mac_format(const char possiblemac[])
 {
-	char hex2[3];
-	return
-		sscanf(possiblemac,
-			   "%2[A-Fa-f0-9]:%2[A-Fa-f0-9]:%2[A-Fa-f0-9]:%2[A-Fa-f0-9]:%2[A-Fa-f0-9]:%2[A-Fa-f0-9]",
-			   hex2,hex2,hex2,hex2,hex2,hex2) == 6;
+	return ether_aton(possiblemac) != NULL;
 }
 
 int add_to_trusted_mac_list(const char possiblemac[])
@@ -961,7 +972,7 @@ int add_to_trusted_mac_list(const char possiblemac[])
 
 	/* See if MAC is already on the list; don't add duplicates */
 	for (p = config.trustedmaclist; p != NULL; p = p->next) {
-		if (!strcasecmp(p->mac,mac)) {
+		if (!strcasecmp(p->mac, mac)) {
 			debug(LOG_INFO, "MAC address [%s] already on trusted list", mac);
 			free(mac);
 			return 1;
@@ -1039,7 +1050,9 @@ void parse_trusted_mac_list(const char ptr[])
 	ptrcopyptr = ptrcopy = safe_strdup(ptr);
 
 	while ((possiblemac = strsep(&ptrcopy, ", \t"))) {
-		if (strlen(possiblemac)>0) add_to_trusted_mac_list(possiblemac);
+		if (strlen(possiblemac) > 0) {
+			add_to_trusted_mac_list(possiblemac);
+		}
 	}
 
 	free(ptrcopyptr);
@@ -1156,7 +1169,9 @@ void parse_blocked_mac_list(const char ptr[])
 	ptrcopyptr = ptrcopy = safe_strdup(ptr);
 
 	while ((possiblemac = strsep(&ptrcopy, ", \t"))) {
-		if (strlen(possiblemac)>0) add_to_blocked_mac_list(possiblemac);
+		if (strlen(possiblemac) > 0) {
+			add_to_blocked_mac_list(possiblemac);
+		}
 	}
 
 	free(ptrcopyptr);
@@ -1188,7 +1203,7 @@ int add_to_allowed_mac_list(const char possiblemac[])
 
 	/* See if MAC is already on the list; don't add duplicates */
 	for (p = config.allowedmaclist; p != NULL; p = p->next) {
-		if (!strcasecmp(p->mac,mac)) {
+		if (!strcasecmp(p->mac, mac)) {
 			debug(LOG_INFO, "MAC address [%s] already on allowed list", mac);
 			free(mac);
 			return 1;
@@ -1299,6 +1314,18 @@ config_validate(void)
 
 	if (missing_parms) {
 		debug(LOG_ERR, "Configuration is not complete, exiting...");
+		exit(-1);
+	}
+
+	if (config.checkinterval >= config.preauth_idle_timeout / 2) {
+		debug(LOG_ERR, "Setting checkinterval (%ds) must be smaller than half of preauth_idle_timeout (%ds)",
+			config.checkinterval, config.preauth_idle_timeout);
+		exit(-1);
+	}
+
+	if (config.checkinterval >= config.authed_idle_timeout / 2) {
+		debug(LOG_ERR, "Setting checkinterval (%ds) must be smaller than half of authed_idle_timeout (%ds)",
+			config.checkinterval, config.authed_idle_timeout);
 		exit(-1);
 	}
 }
