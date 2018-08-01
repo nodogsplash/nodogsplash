@@ -72,7 +72,7 @@ Client is deauthenticated due to the session end:
         INGOING_BYTES="$3"
         OUTGOING_BYTES="$4"
         DURATION_SECONDS="$5"
-        # The client was deauthenticated after DURATION_SECONDS seconds because of the session ended
+        # The client was deauthenticated after DURATION_SECONDS seconds because the session ended
         ;;
     esac
 
