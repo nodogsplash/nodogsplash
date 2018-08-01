@@ -1,16 +1,29 @@
-BinVoucher Option
+BinAuth Option
 =================
 
 **Key: BinAuth**
 
 **Value: /path/to/executable/script**
 
-Authenticate a client by using an external program that get passed username and password, if supplied.
-The exit code and output values decide if a client is to be authenticated.
+Authenticate a client by using an external program that get passed the optional username and password value.
+The exit code and output values of the program decide if a client is to be authenticated.
 
-For the following examples, setting `binauth` is set to `/etc/nds_auth.sh`.
+For the following examples, setting `binauth` in nodogsplash.conf is set to `/etc/nds_auth.sh`.
+The splash.html page contains the following code:
 
-Client enters a username 'Bill' and password 'tms':
+.. code::
+
+   <form method='GET' action='$authaction'>
+   <input type='hidden' name='tok' value='$tok'>
+   <input type='hidden' name='redir' value='$redir'>
+   username: <input type='text' name='username' value='' size='12' maxlength='12'>
+   <br>
+   password: <input type='password' name='password' value='' size='12' maxlength='10'>
+   <br>
+   <input type='submit' value='Enter'>
+   </form>
+
+If a client enters a username 'Bill' and password 'tms', then the configured `binauth` script is executed:
 
 .. code::
 

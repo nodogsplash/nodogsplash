@@ -1,33 +1,8 @@
-Authentication
-##############
+Forwarding Authentication Service (FAS)
+#######################################
 
-Nodogsplash v1 -Site-wide username and password
-*******************************
-
-Nodogsplash v1 and earlier can be configured to require a username and/or password to be
-entered on the splash page as part of the authentication process. Since the
-username and password are site-wide (not per user), and they are sent in the
-clear using HTTP GET, this is not a secure mechanism.
-To enable this, edit *nodogsplash.conf* to set parameters *PasswordAuthentication*,
-*UsernameAuthentication*, *Password*, *Username*, and *PasswordAttempts* as desired.
-Then the splash page must use a GET-method HTML form to send user-entered
-username and/or password as values of variables *nodoguser* and *nodogpass*
-respectively, along with others as required, to the server. For example:
-
-.. code::
-
-   <form method='GET' action='$authaction'>
-   <input type='hidden' name='tok' value='$tok'>
-   <input type='hidden' name='redir' value='$redir'>
-   username: <input type='text' name='nodoguser' value='' size='12' maxlength='12'>
-   <br>
-   password: <input type='password' name='nodogpass' value='' size='12' maxlength='10'>
-   <br>
-   <input type='submit' value='Enter'>
-   </form>
-
-Nodogsplash ALL versions -Forwarding Authentication Service (FAS)
-***************************************
+Overview
+********
 
 Nodogsplash (NDS) can support external (to NDS) authentication.
 The BinVoucher process was derived to support this and has been called Forwarding Authentication. This is a non trivial function and although partially implemented in early versions, is not implemented at all in version 2, at the time of writing.
