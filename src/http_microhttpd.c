@@ -66,31 +66,45 @@ static const char *lookup_mimetype(const char *filename);
 
 
 /* Get client settings from binauth */
-static int parse_binauth_data(const char *buf, t_client *client)
+static int set_binauth_data(const char *buf, s_config *config, t_client *client)
 {
-	int seconds = 0;
+	int seconds = config->session_timeout;
 	int upload = 0;
 	int download = 0;
+	int rc;
 
-	/* We require at least one value */
-	if (sscanf(buf, "%d %d %d", &seconds, &upload, &download) < 1)
-		goto err;
+	rc = sscanf(buf, "%d %d %d", &seconds, &upload, &download);
 
-	if (seconds < 1 || upload < 0 || download < 0)
-		goto err;
+	switch (rc) {
+		case 3:
+			if (download < 0)
+				goto err;
+		case 2:
+			if (upload < 0)
+				goto err;
+		case 1:
+			if (seconds < 0)
+				goto err;
+		case 0:
+			break;
+		default:
+			goto err;
+	}
 
 	client->download_limit = download;
 	client->upload_limit = upload;
-	client->session_end = time(NULL) + seconds;
+	client->session_start = time(NULL);
 
-	return seconds;
-
-err:
-	client->download_limit = 0;
-	client->upload_limit = 0;
-	client->session_end = 0;
+	if (seconds) {
+		client->session_end = client->session_start + seconds;
+	} else {
+		client->session_end = 0;
+	}
 
 	return 0;
+
+err:
+	return 1;
 }
 
 struct collect_query {
@@ -440,7 +454,6 @@ static int authenticate_client_binauth(
 	char username_enc[64] = {0};
 	char password_enc[64] = {0};
 	char msg[255] = {0};
-	int seconds;
 	int rc;
 
 	s_config *config = config_get_config();
@@ -461,12 +474,13 @@ static int authenticate_client_binauth(
 		return encode_and_redirect_to_splashpage(connection, redirect_url);
 	}
 
-	seconds = parse_binauth_data(msg, client);
-	if (seconds == 0) {
+	rc = set_binauth_data(msg, config, client);
+
+	if (rc != 0) {
 		return encode_and_redirect_to_splashpage(connection, redirect_url);
 	}
 
-	debug(LOG_NOTICE, "Remote auth data: client [%s, %s] authenticated for %d seconds", mac, client->ip, seconds);
+	debug(LOG_NOTICE, "Remote auth data: client [%s, %s] authenticated", mac, client->ip);
 
 	return authenticate_client(connection, ip_addr, mac, redirect_url, client);
 }
@@ -522,6 +536,15 @@ static int preauthenticated(struct MHD_Connection *connection,
 		if (config->bin_auth) {
 			return authenticate_client_binauth(connection, ip_addr, mac, redirect_url, client);
 		} else {
+			client->session_start = time(NULL);
+
+			if (config->session_timeout) {
+				client->session_end = client->session_start + config->session_timeout;
+			} else {
+				/* Session has no end */
+				client->session_end = 0;
+			}
+
 			return authenticate_client(connection, ip_addr, mac, redirect_url, client);
 		}
 	}

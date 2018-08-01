@@ -139,8 +139,9 @@ _client_list_append(const char ip[], const char mac[], const char token[])
 	client->counters.outgoing_history = 0;
 	last_client_time = time(NULL);
 	client->counters.last_updated = last_client_time;
-	client->session_start = last_client_time;
-	client->session_end = 0; /* @brief Session never ends by default */
+	/* Session has not started and not ended yet */
+	client->session_start = 0;
+	client->session_end = 0;
 
 	for (i = 0; i < maxclients; i++) {
 		if (client_arr[i])
