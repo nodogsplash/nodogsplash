@@ -54,6 +54,7 @@
 #define DEFAULT_GATEWAYPORT 2050
 #define DEFAULT_REMOTE_AUTH_PORT 80
 #define DEFAULT_CHECKINTERVAL 30
+#define DEFAULT_SESSION_TIMEOUT 0
 #define DEFAULT_PREAUTH_IDLE_TIMEOUT (5 * 60)
 #define DEFAULT_AUTHED_IDLE_TIMEOUT (2 * 60 * 60)
 #define DEFAULT_WEBROOT "/etc/nodogsplash/htdocs"
@@ -155,6 +156,7 @@ typedef struct {
 	char *redirectURL;		/**< @brief URL to direct client to after authentication */
 	char *authdir;			/**< @brief Notional relative dir for authentication URL */
 	char *denydir;			/**< @brief Notional relative dir for denial URL */
+	int session_timeout;		/**< @brief Seconds of the default session length */
 	int preauth_idle_timeout;	/**< @brief Seconds a preauthenticated client will be kept in the system */
 	int authed_idle_timeout;	/**< @brief Seconds a authenticated client will be kept in the system */
 	int checkinterval;		/**< @brief Period the the client timeout check thread will run, in seconds */

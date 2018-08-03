@@ -172,6 +172,7 @@ fw_refresh_client_list(void)
 				cp1->ip, cp1->mac, now - cp1->session_end,
 				cp1->counters.incoming / 1000, cp1->counters.outgoing / 1000);
 
+			/* All client here should be authenticated anyway */
 			if (conn_state == FW_MARK_AUTHENTICATED) {
 				if (config->bin_auth) {
 					// Client will be deauthenticated...
@@ -203,6 +204,7 @@ fw_refresh_client_list(void)
 				cp1->ip, cp1->mac, now - last_updated,
 				cp1->counters.incoming / 1000, cp1->counters.outgoing / 1000);
 
+			/* All clients here should be authenticated for sure */
 			if (conn_state == FW_MARK_AUTHENTICATED) {
 				if (config->bin_auth) {
 					// Client will be deauthenticated...
