@@ -70,8 +70,7 @@
 #define DEFAULT_TRAFFIC_CONTROL 0
 #define DEFAULT_UPLOAD_LIMIT 0
 #define DEFAULT_DOWNLOAD_LIMIT 0
-#define DEFAULT_DOWNLOAD_IMQ 0
-#define DEFAULT_UPLOAD_IMQ 1
+#define DEFAULT_UPLOAD_IFB 0
 #define DEFAULT_LOG_SYSLOG 0
 #define DEFAULT_SYSLOG_FACILITY LOG_DAEMON
 #define DEFAULT_NDSCTL_SOCK "/tmp/ndsctl.sock"
@@ -165,8 +164,7 @@ typedef struct {
 	int traffic_control;		/**< @brief boolean, whether to do tc */
 	int download_limit;		/**< @brief Download limit, kb/s */
 	int upload_limit;		/**< @brief Upload limit, kb/s */
-	int download_imq;		/**< @brief Number of IMQ handling download */
-	int upload_imq;			/**< @brief Number of IMQ handling upload */
+	int upload_ifb;		/**< @brief Number of IFB handling upload */
 	int log_syslog;			/**< @brief boolean, whether to log to syslog */
 	int syslog_facility;		/**< @brief facility to use when using syslog for logging */
 	int macmechanism; 		/**< @brief mechanism wrt MAC addrs */

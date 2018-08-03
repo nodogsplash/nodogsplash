@@ -46,88 +46,140 @@
 
 
 int
-tc_attach_client(const char down_dev[], int download_limit, const char up_dev[], int upload_limit, int idx, int fw_mark)
+tc_attach_client(const char down_dev[], int download_limit, const char up_dev[], int upload_limit, int idx, const char ip[])
 {
-	int burst;
-	int mtu = MTU + 40;
 	int rc = 0;
+	s_config *config = config_get_config();
+	int dlimit = (download_limit < config->download_limit ? download_limit : config->download_limit);
+	int ulimit = (upload_limit < config->upload_limit ? upload_limit : config->upload_limit);
+	int id = 3 * idx + 10;
 
-	burst = download_limit * 1000 / 8 / HZ; /* burst (buffer size) in bytes */
-	burst = burst < mtu ? mtu : burst; /* but burst should be at least mtu */
+	if (dlimit > 0) {
+		/* guarantee 20% bandwidth, upper limit 100% */
+		rc |= execute("tc class add dev %s parent 1:1 classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
+						down_dev, id, dlimit / 5, dlimit);
+		/* low latency class for DNS and ICMP */
+		rc |= execute("tc class add dev %s parent 1:%d classid 1:%d hfsc rt m1 %dkbit d 25ms m2 %dkbit ls m1 %dkbit d 25ms m2 %dkbit ul rate %dkbit",
+						down_dev, id, id + 1, (dlimit / 5) * 4, dlimit / 20, dlimit / 10, dlimit / 10, dlimit);
+		rc |= excute("tc filter add dev %s protocol ip parent 1: prio %d u32 match ip dst %s match ip protocol %d 0xff flowid 1:%d",
+						down_dev, id, ip, 1, id + 1);
+		rc |= excute("tc filter add dev %s protocol ip parent 1: prio %d u32 match ip dst %s match ip sport %d 0xffff flowid 1:%d",
+						down_dev, id + 1, ip, 53, id + 1);
+		/* bulk traffic class */
+		rc |= execute("tc class add dev %s parent 1:%d classid 1:%d hfsc ls m1 0kbit d 100ms m2 %dkbit ul rate %dkbit",
+						down_dev, id, id + 2, dlimit / 5, dlimit);
+		rc |= execute("tc filter add dev %s protocol ip parent 1: prio %d u32 match ip dst %s flowid 1:%d",
+						down_dev, id + 2, ip, id + 2);
+		/* codel for each leaf class */
+		rc |= execute("tc qdisc add dev %s parent 1:%d handle %d: fq_codel limit 800 quantum 300 ecn",
+						down_dev, id + 1, id + 1);
+		rc |= execute("tc qdisc add dev %s parent 1:%d handle %d: fq_codel limit 800 quantum 300 ecn",
+						down_dev, id + 2, id + 2);
+	}
+	if (ulimit > 0) {
+		/* guarantee 20% bandwidth, upper limit 100% */
+		rc |= execute("tc class add dev %s parent 1:1 classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
+						up_dev, id, ulimit / 5, ulimit);
+		/* low latency class for DNS and ICMP */
+		rc |= execute("tc class add dev %s parent 1:%d classid 1:%d hfsc rt m1 %dkbit d 25ms m2 %dkbit ls m1 %dkbit d 25ms m2 %dkbit ul rate %dkbit",
+						up_dev, id, id + 1, (ulimit / 5) * 4, ulimit / 20, ulimit / 10, ulimit / 10, ulimit);
+		rc |= execute("tc filter add dev %s protocol ip parent 1: prio %d u32 match ip src %s match ip protocol %d 0xff flowid 1:%d",
+						up_dev, id, ip, 1, id + 1);
+		rc |= execite("tc filter add dev %s protocol ip parent 1: prio %d u32 match ip src %s match ip dport %d 0xffff flowid 1:%d",
+						up_dev, id + 1, ip, 53, id + 1);
+		/* bulk traffic class */
+		rc |= execute("tc class add dev %s parent 1:%d classid 1:%d hfsc ls m1 0kbit d 100ms m2 %dkbit ul rate %dkbit",
+						up_dev, id, id + 2, ulimit / 5, ulimit);
+		rc |= execute("tc filter add dev %s protocol ip parent 1: prio %d u32 match ip src %s flowid 1:%d",
+						up_dev, id + 2, ip, id + 2);
+		/* codel for each leaf class */
+		rc |= execute("tc qdisc add dev %s parent 1:%d handle %d: fq_codel limit 800 quantum 300 ecn",
+						up_dev, id + 1, id + 1);
+		rc |= execute("tc qdisc add dev %s parent 1:%d handle %d: fq_codel limit 800 quantum 300 ecn",
+						up_dev, id + 2, id + 2);
+	}
 
-	rc |= execute("tc class add dev %s parent 1:1 classid 1:%i htb rate %dkbit ceil %dkbit burst %d cburst %d mtu %d prio 1",
-						down_dev, idx + 10, download_limit, download_limit, burst*10, burst, mtu);
-	rc |= execute("tc filter add dev %s protocol ip parent 1: handle 0x%x%x fw flowid 1:%i",
-						down_dev, idx + 10, fw_mark, idx + 10);
-
-	burst = upload_limit * 1000 / 8 / HZ; /* burst (buffer size) in bytes */
-	burst = burst < mtu ? mtu : burst; /* but burst should be at least mtu */
-
-	rc |= execute("tc class add dev %s parent 1:1 classid 1:%i htb rate %dkbit ceil %dkbit burst %d cburst %d mtu %d prio 1",
-						up_dev, idx + 10, upload_limit, upload_limit, burst*10, burst, mtu);
-	rc |= execute("tc filter add dev %s protocol ip parent 1: handle 0x%x%x fw flowid 1:%i",
-						up_dev, idx + 10, fw_mark, idx + 10);
 	return rc;
-
 }
 
 int
-tc_detach_client(const char down_dev[], const char up_dev[], int idx)
+tc_detach_client(const char down_dev[], int download_limit, const char up_dev[], int upload_limit, int idx)
 {
-	int rc = 0;
+	int rc = 0, n;
+	int id = 3 * idx + 10;
 
-	rc |= execute("tc class del dev %s parent 1: classid 1:%i", down_dev, idx + 10);
-	rc |= execute("tc class del dev %s parent 1: classid 1:%i", up_dev, idx + 10);
+	if (download_limit > 0) {
+		for (n = 2; n >= 0; n--)
+			rc |= execute("filter del dev %s parent 1: prio %d", down_dev, id + n);
+		for (n = 2; n >= 1; n--)
+			rc |= execute("qdisc del dev %s parent 1:%d", down_dev, id + n);
+		for (n = 2; n >= 0; n--)
+			rc |= execute("class del dev %s parent 1: classid 1:%d", down_dev, id + n);
+	}
+
+	if (upload_limit > 0) {
+		for (n = 2; n >= 0; n--)
+			rc |= execute("filter del dev %s parent 1: prio %d", up_dev, id + n);
+		for (n = 2;n >= 1; n--)
+			rc |= execute("qdisc del dev %s parent 1:%d", up_dev, id + n);
+		for (n = 2; n >= 0; n--)
+			rc |= execute("class del dev %s parent 1: classid 1:%d", up_dev, id + n);
+	}
 
 	return rc;
 }
 
-/* Use HTB as a upload qdisc.
- * dev is name of device to attach qdisc to (typically an IMQ)
+/*
+ * dev is name of device to attach qdisc to (typically an IFB)
  * upload_limit is in kbits/s
  * Some ideas here from Rudy's qos-scripts
  * http://forum.openwrt.org/viewtopic.php?id=4112&p=1
  */
 static int
-tc_attach_upload_qdisc(const char dev[], int upload_limit)
+tc_attach_upload_qdisc(const char dev[], const char ifb_dev[], int upload_limit)
 {
 	int rc = 0;
-	int burst;
-	int mtu = MTU + 40;
 
-	burst = upload_limit * 1000 / 8 / HZ; /* burst (buffer size) in bytes */
-	burst = burst < mtu ? mtu : burst; /* but burst should be at least mtu */
+	/* clear rules just in case */
+	execute("tc qdisc del dev %s root", ifb_dev);
+	execute("tc qdisc del dev %s ingress", dev);
 
-	rc |= execute("tc qdisc add dev %s root handle 1: htb default 2 r2q %d", dev, 1700);
-	rc |= execute("tc class add dev %s parent 1: classid 1:1 htb rate 100Mbps ceil 100Mbps burst %d cburst %d mtu %d",
-		dev, burst*10, burst, mtu);
-	rc |= execute("tc class add dev %s parent 1:1 classid 1:2 htb rate %dkbit ceil %dkbit burst %d cburst %d mtu %d prio 1",
-		dev, upload_limit, upload_limit, burst*10, burst, mtu);
+	/* main upload qdisc */
+	rc |= execute("tc qdisc add dev %s root handle 1: hfsc default 2", ifb_dev);
+	rc |= execute("tc class add dev %s parent 1: classid 1:1 hfsc sc rate %dkbit ul rate %dkbit",
+						ifb_dev, upload_limit, upload_limit);
+	/* default class used for preauth clients */
+	rc |= execute("tc class add dev %s parent 1:1 classid 1:2 hfsc sc rate %dkbit ul rate %dkbit",
+						ifb_dev, upload_limit / 10, upload_limit / 10);
+	/* redirect ingress from main interface to ifb interface */
+	rc |= execute("tc qdisc add dev %s ingress", dev);
+	rc |= execute("tc filter add dev %s parent ffff: protocol ip prio 1 u32 match u32 0 0 flowid 1:1 action connmark action mirred egress redirect dev %s",
+						dev, ifb_dev);
 
 	return rc;
 }
 
-/* Use HTB as a download qdisc.
- * dev is name of device to attach qdisc to (typically an IMQ)
+/*
+ * dev is name of device to attach qdisc to
  * download_limit is in kbits/s
  * Some ideas here from Rudy's qos-scripts
  * http://forum.openwrt.org/viewtopic.php?id=4112&p=1
  */
 static int
-tc_attach_download_qdisc(const char dev[], int download_limit)
+tc_attach_download_qdisc(const char dev[], const char ifb_dev[], int download_limit)
 {
 	int rc = 0;
-	int burst;
-	int mtu = MTU + 40;
 
-	burst = download_limit * 1000 / 8 / HZ; /* burst (buffer size) in bytes */
-	burst = burst < mtu ? mtu : burst; /* but burst should be at least mtu */
+	/* clear rules just in case */
+	execute("tc qdisc del dev %s root", dev);
 
-	rc |= execute("tc qdisc add dev %s root handle 1: htb default 2 r2q %d", dev, 1700);
-	rc |= execute("tc class add dev %s parent 1: classid 1:1 htb rate 100Mbps ceil 100Mbps burst %d cburst %d mtu %d",
-		dev, burst*10, burst, mtu);
-	rc |= execute("tc class add dev %s parent 1:1 classid 1:2 htb rate %dkbit ceil %dkbit burst %d cburst %d mtu %d prio 1",
-		dev, download_limit, download_limit, burst*10, burst, mtu);
+	/* main download qdisc */
+	rc |= execute("tc qdisc add dev %s root handle 1: hfsc default 2", dev);
+	rc |= execute("tc class add dev %s parent 1: classid 1:1 hfsc sc rate %dkbit ul rate %dkbit",
+						dev, download_limit, download_limit);
+	/* default class used for preauth clients */
+	rc |= execute("tc class add dev %s parent 1:1 classid 1:2 hfsc sc rate %dkbit ul rate %dkbit",
+						dev, download_limit / 10, download_limit / 10);
 
 	return rc;
 }
@@ -141,9 +193,8 @@ int
 tc_init_tc()
 {
 	int upload_limit, download_limit;
-	int upload_imq, download_imq;
-	char *download_imqname = NULL;
-	char *upload_imqname = NULL;
+	int upload_ifb, download_ifb;
+	char *upload_ifbname, *cmd;
 	s_config *config;
 	int rc = 0;
 	int ret = 0;
@@ -151,62 +202,49 @@ tc_init_tc()
 	config = config_get_config();
 	download_limit = config->download_limit;
 	upload_limit = config->upload_limit;
-	download_imq = config->download_imq;
-	upload_imq = config->upload_imq;
+	upload_ifb = config->upload_ifb;
 
-	safe_asprintf(&download_imqname,"imq%d", download_imq); /* must free */
-	safe_asprintf(&upload_imqname,"imq%d", upload_imq);  /* must free */
+	safe_asprintf(&upload_ifbname,"ifb%d",upload_ifb);  /* must free */
 
-	if (download_limit > 0) {
-		ret = execute("ip link set %s up", download_imqname);
-		if (ret != 0) {
-			debug(LOG_ERR, "Could not set %s up. Download limiting will not work", download_imqname);
-		} else {
-			/* jump to the imq in mangle CHAIN_INCOMING */
-			rc |= iptables_do_command("-t mangle -A " CHAIN_INCOMING " -j IMQ --todev %d ", download_imq);
-			/* attach download shaping qdisc to this imq */
-			rc |= tc_attach_download_qdisc(download_imqname, download_limit);
-		}
+	tc_quiet = 0;
+
+	if(download_limit > 0) {
+		rc |= tc_attach_download_qdisc(config->gw_interface,NULL,download_limit);
 	}
-
-	if (upload_limit > 0) {
-		ret = execute("ip link set %s up", upload_imqname);
-		if (ret != 0) {
-			debug(LOG_ERR, "Could not set %s up. Upload limiting will not work", upload_imqname);
+	if(upload_limit > 0) {
+		safe_asprintf(&cmd,"ip link set %s up", upload_ifbname);
+		ret = execute(cmd ,tc_quiet);
+		free(cmd);
+		if( ret != 0 ) {
+			debug(LOG_ERR, "Could not set %s up. Upload limiting will not work",
+				  upload_ifbname);
 			rc = -1;
 		} else {
-			/* jump to the imq in mangle CHAIN_OUTGOING */
-			rc |= iptables_do_command("-t mangle -A " CHAIN_OUTGOING " -j IMQ --todev %d ", upload_imq);
-			/* attach upload shaping qdisc to this imq */
-			rc |= tc_attach_upload_qdisc(upload_imqname, upload_limit);
+			rc |= tc_attach_upload_qdisc(config->gw_interface,upload_ifbname,upload_limit);
 		}
 	}
-
-	free(download_imqname);
-	free(upload_imqname);
+	free(upload_ifbname);
 
 	return rc;
 }
 
-
 /**
- * Remove qdiscs from intermediate queueing devices, and bring IMQ's down
+ * Remove qdiscs from intermediate queueing devices, and bring IFB's down
  */
 int
 tc_destroy_tc()
 {
 	s_config *config;
-	int rc = 0;
+	char upload_ifbname[16];
 
 	config = config_get_config();
+	sprintf(&upload_ifbname, "ifb%d", config->upload_ifb);
 
-	/* remove qdiscs from imq's */
-	rc |= execute("tc qdisc del dev imq%d root &> /dev/null", config->download_imq);
-	rc |= execute("tc qdisc del dev imq%d root &> /dev/null", config->upload_imq);
-
-	/* bring down imq's */
-	rc |= execute("ip link set imq%d down &> /dev/null", config->download_imq);
-	rc |= execute("ip link set imq%d down &> /dev/null", config->upload_imq);
+	/* remove qdiscs from ifb's */
+	rc |= execute("tc qdisc del dev %s root &> /dev/null", config->gw_interface);
+	rc |= execute("tc qdisc del dev %s root &> /dev/null", upload_ifbname);
+	/* bring down ifb's */
+	rc |= execute("ip link set %s down", upload_ifbname);
 
 	return rc;
 }

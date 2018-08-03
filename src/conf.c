@@ -89,8 +89,7 @@ typedef enum {
 	oTrafficControl,
 	oDownloadLimit,
 	oUploadLimit,
-	oDownloadIMQ,
-	oUploadIMQ,
+	oUploadIFB,
 	oNdsctlSocket,
 	oSyslogFacility,
 	oFirewallRule,
@@ -135,8 +134,7 @@ static const struct {
 	{ "trafficcontrol",	oTrafficControl },
 	{ "downloadlimit", oDownloadLimit },
 	{ "uploadlimit", oUploadLimit },
-	{ "downloadimq", oDownloadIMQ },
-	{ "uploadimq", oUploadIMQ },
+	{ "ifb", oUploadIFB },
 	{ "syslogfacility", oSyslogFacility },
 	{ "ndsctlsocket", oNdsctlSocket },
 	{ "firewallruleset", oFirewallRuleSet },
@@ -208,8 +206,7 @@ config_init(void)
 	config.traffic_control = DEFAULT_TRAFFIC_CONTROL;
 	config.upload_limit =  DEFAULT_UPLOAD_LIMIT;
 	config.download_limit = DEFAULT_DOWNLOAD_LIMIT;
-	config.upload_imq =  DEFAULT_UPLOAD_IMQ;
-	config.download_imq = DEFAULT_DOWNLOAD_IMQ;
+	config.upload_ifb =  DEFAULT_UPLOAD_IFB;
 	config.syslog_facility = DEFAULT_SYSLOG_FACILITY;
 	config.log_syslog = DEFAULT_LOG_SYSLOG;
 	config.ndsctl_sock = safe_strdup(DEFAULT_NDSCTL_SOCK);
@@ -853,15 +850,8 @@ config_read(const char *filename)
 				exit(-1);
 			}
 			break;
-		case oDownloadIMQ:
-			if (sscanf(p1, "%d", &config.download_imq) < 1) {
-				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
-				debug(LOG_ERR, "Exiting...");
-				exit(-1);
-			}
-			break;
-		case oUploadIMQ:
-			if (sscanf(p1, "%d", &config.upload_imq) < 1) {
+		case oUploadIFB:
+			if(sscanf(p1, "%d", &config.upload_ifb) < 1) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);

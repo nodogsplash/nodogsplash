@@ -737,14 +737,10 @@ iptables_fw_access(t_authaction action, t_client *client)
 {
 	int rc = 0, download_limit, upload_limit, traffic_control;
 	s_config *config;
-	char download_imqname[16];
-	char upload_imqname[16];
-
-	fw_quiet = 0;
+	char upload_ifbname[16];
 
 	config = config_get_config();
-	sprintf(download_imqname, "imq%d", config->download_imq);
-	sprintf(upload_imqname, "imq%d", config->upload_imq);
+	safe_asprintf(upload_ifbname, "ifb%d" , config->upload_ifb);
 
 	LOCK_CONFIG();
 	traffic_control = config->traffic_control;
@@ -761,22 +757,24 @@ iptables_fw_access(t_authaction action, t_client *client)
 	case AUTH_MAKE_AUTHENTICATED:
 		debug(LOG_NOTICE, "Authenticating %s %s", client->ip, client->mac);
 		/* This rule is for marking upload (outgoing) packets, and for upload byte counting */
-		rc |= iptables_do_command("-t mangle -A " CHAIN_OUTGOING " -s %s -m mac --mac-source %s -j MARK %s 0x%x%x", client->ip, client->mac, markop, client->idx + 10, FW_MARK_AUTHENTICATED);
-		rc |= iptables_do_command("-t mangle -A " CHAIN_INCOMING " -d %s -j MARK %s 0x%x%x", client->ip, markop, client->idx + 10, FW_MARK_AUTHENTICATED);
+		rc |= iptables_do_command("-t mangle -A " CHAIN_OUTGOING " -s %s -m mac --mac-source %s -j MARK %s 0x%x", client->ip, client->mac, markop, FW_MARK_AUTHENTICATED);
+		rc |= iptables_do_command("-t mangle -A " CHAIN_INCOMING " -d %s -j MARK %s 0x%x", client->ip, markop, FW_MARK_AUTHENTICATED);
 		/* This rule is just for download (incoming) byte counting, see iptables_fw_counters_update() */
 		rc |= iptables_do_command("-t mangle -A " CHAIN_INCOMING " -d %s -j ACCEPT", client->ip);
-		if (traffic_control) {
-			rc |= tc_attach_client(download_imqname, download_limit, upload_imqname, upload_limit, client->idx, FW_MARK_AUTHENTICATED);
+
+		if(traffic_control) {
+			rc |= tc_attach_client(config->gw_interface, download_limit, upload_ifbname, upload_limit, client->idx, client->ip);
 		}
 		break;
 	case AUTH_MAKE_DEAUTHENTICATED:
 		/* Remove the authentication rules. */
 		debug(LOG_NOTICE, "Deauthenticating %s %s", client->ip, client->mac);
-		rc |= iptables_do_command("-t mangle -D " CHAIN_OUTGOING " -s %s -m mac --mac-source %s -j MARK %s 0x%x%x", client->ip, client->mac, markop, client->idx + 10, FW_MARK_AUTHENTICATED);
-		rc |= iptables_do_command("-t mangle -D " CHAIN_INCOMING " -d %s -j MARK %s 0x%x%x", client->ip, markop, client->idx + 10, FW_MARK_AUTHENTICATED);
+		rc |= iptables_do_command("-t mangle -D " CHAIN_OUTGOING " -s %s -m mac --mac-source %s -j MARK %s 0x%x", client->ip, client->mac, markop, FW_MARK_AUTHENTICATED);
+		rc |= iptables_do_command("-t mangle -D " CHAIN_INCOMING " -d %s -j MARK %s 0x%x", client->ip, markop, FW_MARK_AUTHENTICATED);
 		rc |= iptables_do_command("-t mangle -D " CHAIN_INCOMING " -d %s -j ACCEPT", client->ip);
-		if (traffic_control) {
-			rc |= tc_detach_client(download_imqname, upload_imqname, client->idx);
+
+		if(traffic_control) {
+			rc |= tc_detach_client(config->gw_interface, download_limit, upload_ifbname, upload_limit, client->idx);
 		}
 		break;
 	default:
