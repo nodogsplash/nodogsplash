@@ -26,9 +26,10 @@
 #ifndef _UTIL_H_
 #define _UTIL_H_
 
-/** @brief Execute a shell command
- */
-int execute(const char cmd_line[], int quiet);
+/* @brief Execute a shell command */
+int execute(const char fmt[], ...);
+int execute_ret(char* msg, int msg_len, const char fmt[], ...);
+
 struct in_addr *wd_gethostbyname(const char name[]);
 
 /* @brief Get IP address of an interface */
@@ -54,6 +55,9 @@ void mark_auth_offline();
 /* @brief Returns a guess (true or false) on whether we're an auth server is online or not based on previous calls to mark_auth_online and mark_auth_offline */
 int is_auth_online();
 
+/* @brief Format a time_t value to 'Fri Jul 27 18:52:22 2018' */
+char *format_time(time_t *time, char buf[64]);
+
 /*
  * @brief Mallocs and returns nodogsplash uptime string
  */
@@ -61,16 +65,16 @@ char *get_uptime_string();
 /*
  * @brief Writes a human-readable paragraph of the status of the nodogsplash process
  */
-void ndsctl_status(int fd);
+void ndsctl_status(FILE *fp);
 /*
  * @brief Writes a machine-readable dump of currently connected clients
  */
-void ndsctl_clients(int fd);
+void ndsctl_clients(FILE *fp);
 
 /*
  * @brief Writes a machine-readable json of currently connected clients
  */
-void ndsctl_json(int fd);
+void ndsctl_json(FILE *fp);
 
 /** @brief cheap random */
 unsigned short rand16(void);

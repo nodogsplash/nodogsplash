@@ -28,7 +28,8 @@ Contents:
    compile
    faq
    howitworks
-   authentication
+   fas
+   binauth
    ndsctl
    customize
    debug

@@ -26,6 +26,8 @@
   @author Copyright (C) 2008 Paul Kube <nodogsplash@kokoro.ucsd.edu>
  */
 
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -61,6 +63,11 @@
 
 #include <microhttpd.h>
 
+// Check for libmicrohttp version >= 0.9.51
+#if MHD_VERSION < 0x00095100
+#error libmicrohttp version >= 0.9.51 required
+#endif
+
 /** XXX Ugly hack
  * We need to remember the thread IDs of threads that simulate wait with pthread_cond_timedwait
  * so we can explicitly kill them in the termination handler
@@ -72,15 +79,6 @@ struct MHD_Daemon * webserver = NULL;
 
 /* Time when nodogsplash started  */
 time_t started_time = 0;
-
-
-/* Avoid race condition of folloing variables */
-pthread_mutex_t httpd_mutex = PTHREAD_MUTEX_INITIALIZER;
-/* Total number of httpd request handling threads started */
-int created_httpd_threads;
-/* Number of current httpd request handling threads */
-int current_httpd_threads;
-
 
 /**@internal
  * @brief Handles SIGCHLD signals to avoid zombie processes
@@ -99,8 +97,8 @@ sigchld_handler(int s)
 
 	rc = waitpid(-1, &status, WNOHANG | WUNTRACED);
 
-	if(rc == -1) {
-		if(errno == ECHILD) {
+	if (rc == -1) {
+		if (errno == ECHILD) {
 			debug(LOG_DEBUG, "SIGCHLD handler: waitpid(): No child exists now.");
 		} else {
 			debug(LOG_ERR, "SIGCHLD handler: Error reaping child (waitpid() returned -1): %s", strerror(errno));
@@ -108,12 +106,12 @@ sigchld_handler(int s)
 		return;
 	}
 
-	if(WIFEXITED(status)) {
+	if (WIFEXITED(status)) {
 		debug(LOG_DEBUG, "SIGCHLD handler: Process PID %d exited normally, status %d", (int)rc, WEXITSTATUS(status));
 		return;
 	}
 
-	if(WIFSIGNALED(status)) {
+	if (WIFSIGNALED(status)) {
 		debug(LOG_DEBUG, "SIGCHLD handler: Process PID %d exited due to signal %d", (int)rc, WTERMSIG(status));
 		return;
 	}
@@ -127,7 +125,7 @@ sigchld_handler(int s)
 void
 termination_handler(int s)
 {
-	static	pthread_mutex_t	sigterm_mutex = PTHREAD_MUTEX_INITIALIZER;
+	static pthread_mutex_t sigterm_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 	debug(LOG_NOTICE, "Handler for termination caught signal %d", s);
 
@@ -218,7 +216,7 @@ static void
 main_loop(void)
 {
 	int result = 0;
-	pthread_t	tid;
+	pthread_t tid;
 	s_config *config;
 
 	config = config_get_config();
@@ -248,13 +246,13 @@ main_loop(void)
 
 	/* Initializes the web server */
 	if ((webserver = MHD_start_daemon(
-						 MHD_USE_EPOLL_INTERNALLY,
-						 config->gw_port,
-						 NULL, NULL,
-						 libmicrohttpd_cb, NULL,
-						 MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 120,
-						 MHD_OPTION_LISTENING_ADDRESS_REUSE, 1,
-						 MHD_OPTION_END)) == NULL) {
+						MHD_USE_EPOLL_INTERNALLY | MHD_USE_TCP_FASTOPEN,
+						config->gw_port,
+						NULL, NULL,
+						libmicrohttpd_cb, NULL,
+						MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 120,
+						MHD_OPTION_LISTENING_ADDRESS_REUSE, 1,
+						MHD_OPTION_END)) == NULL) {
 		debug(LOG_ERR, "Could not create web server: %s", strerror(errno));
 		exit(1);
 	}
@@ -271,7 +269,7 @@ main_loop(void)
 	fw_destroy();
 	/* Then initialize it */
 	debug(LOG_NOTICE, "Initializing firewall rules");
-	if( fw_init() != 0 ) {
+	if (fw_init() != 0) {
 		debug(LOG_ERR, "Error initializing firewall rules! Cleaning up");
 		fw_destroy();
 		debug(LOG_ERR, "Exiting because of error initializing firewall rules");
@@ -287,7 +285,7 @@ main_loop(void)
 	pthread_detach(tid_client_check);
 
 	/* Start control thread */
-	result = pthread_create(&tid, NULL, thread_ndsctl, (void *)safe_strdup(config->ndsctl_sock));
+	result = pthread_create(&tid, NULL, thread_ndsctl, (void *)(config->ndsctl_sock));
 	if (result != 0) {
 		debug(LOG_ERR, "FATAL: Failed to create thread_ndsctl - exiting");
 		termination_handler(1);
@@ -316,11 +314,11 @@ int main(int argc, char **argv)
 	config_read(config->configfile);
 	config_validate();
 
-	/* Initializes the linked list of connected clients */
+	// Initializes the linked list of connected clients
 	client_list_init();
 
-	/* Init the signals to catch chld/quit/etc */
-	debug(LOG_NOTICE,"Initializing signal handlers");
+	// Init the signals to catch chld/quit/etc
+	debug(LOG_NOTICE, "Initializing signal handlers");
 	init_signals();
 
 	if (config->daemon) {
@@ -328,12 +326,12 @@ int main(int argc, char **argv)
 		debug(LOG_NOTICE, "Starting as daemon, forking to background");
 
 		switch(safe_fork()) {
-		case 0: /* child */
+		case 0: // child
 			setsid();
 			main_loop();
 			break;
 
-		default: /* parent */
+		default: // parent
 			exit(0);
 			break;
 		}
@@ -341,5 +339,5 @@ int main(int argc, char **argv)
 		main_loop();
 	}
 
-	return(0); /* never reached */
+	return(0); // never reached
 }

@@ -45,38 +45,6 @@
 #include "tc.h"
 
 
-/**
- * Make this nonzero to supress the error output during destruction.
- */
-static int tc_quiet = 0;
-
-
-/** @internal */
-static int
-tc_do_command(const char format[], ...)
-{
-	va_list vlist;
-	char *fmt_cmd;
-	char *cmd;
-	int rc;
-
-	va_start(vlist, format);
-	safe_vasprintf(&fmt_cmd, format, vlist);
-	va_end(vlist);
-
-	safe_asprintf(&cmd, "tc %s", fmt_cmd);
-
-	free(fmt_cmd);
-
-	debug(LOG_DEBUG, "Executing command: %s", cmd);
-
-	rc = execute(cmd, tc_quiet);
-
-	free(cmd);
-
-	return rc;
-}
-
 int
 tc_attach_client(const char down_dev[], int download_limit, const char up_dev[], int upload_limit, int idx, const char ip[])
 {
@@ -88,46 +56,46 @@ tc_attach_client(const char down_dev[], int download_limit, const char up_dev[],
 
 	if (dlimit > 0) {
 		/* guarantee 20% bandwidth, upper limit 100% */
-		rc |= tc_do_command("class add dev %s parent 1:1 classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
+		rc |= execute("tc class add dev %s parent 1:1 classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
 						down_dev, id, dlimit / 5, dlimit);
 		/* low latency class for DNS and ICMP */
-		rc |= tc_do_command("class add dev %s parent 1:%d classid 1:%d hfsc rt m1 %dkbit d 25ms m2 %dkbit ls m1 %dkbit d 25ms m2 %dkbit ul rate %dkbit",
+		rc |= execute("tc class add dev %s parent 1:%d classid 1:%d hfsc rt m1 %dkbit d 25ms m2 %dkbit ls m1 %dkbit d 25ms m2 %dkbit ul rate %dkbit",
 						down_dev, id, id + 1, (dlimit / 5) * 4, dlimit / 20, dlimit / 10, dlimit / 10, dlimit);
-		rc |= tc_do_command("filter add dev %s protocol ip parent 1: prio %d u32 match ip dst %s match ip protocol %d 0xff flowid 1:%d",
+		rc |= excute("tc filter add dev %s protocol ip parent 1: prio %d u32 match ip dst %s match ip protocol %d 0xff flowid 1:%d",
 						down_dev, id, ip, 1, id + 1);
-		rc |= tc_do_command("filter add dev %s protocol ip parent 1: prio %d u32 match ip dst %s match ip sport %d 0xffff flowid 1:%d",
+		rc |= excute("tc filter add dev %s protocol ip parent 1: prio %d u32 match ip dst %s match ip sport %d 0xffff flowid 1:%d",
 						down_dev, id + 1, ip, 53, id + 1);
 		/* bulk traffic class */
-		rc |= tc_do_command("class add dev %s parent 1:%d classid 1:%d hfsc ls m1 0kbit d 100ms m2 %dkbit ul rate %dkbit",
+		rc |= execute("tc class add dev %s parent 1:%d classid 1:%d hfsc ls m1 0kbit d 100ms m2 %dkbit ul rate %dkbit",
 						down_dev, id, id + 2, dlimit / 5, dlimit);
-		rc |= tc_do_command("filter add dev %s protocol ip parent 1: prio %d u32 match ip dst %s flowid 1:%d",
+		rc |= execute("tc filter add dev %s protocol ip parent 1: prio %d u32 match ip dst %s flowid 1:%d",
 						down_dev, id + 2, ip, id + 2);
 		/* codel for each leaf class */
-		rc |= tc_do_command("qdisc add dev %s parent 1:%d handle %d: fq_codel limit 800 quantum 300 ecn",
+		rc |= execute("tc qdisc add dev %s parent 1:%d handle %d: fq_codel limit 800 quantum 300 ecn",
 						down_dev, id + 1, id + 1);
-		rc |= tc_do_command("qdisc add dev %s parent 1:%d handle %d: fq_codel limit 800 quantum 300 ecn",
+		rc |= execute("tc qdisc add dev %s parent 1:%d handle %d: fq_codel limit 800 quantum 300 ecn",
 						down_dev, id + 2, id + 2);
 	}
 	if (ulimit > 0) {
 		/* guarantee 20% bandwidth, upper limit 100% */
-		rc |= tc_do_command("class add dev %s parent 1:1 classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
+		rc |= execute("tc class add dev %s parent 1:1 classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
 						up_dev, id, ulimit / 5, ulimit);
 		/* low latency class for DNS and ICMP */
-		rc |= tc_do_command("class add dev %s parent 1:%d classid 1:%d hfsc rt m1 %dkbit d 25ms m2 %dkbit ls m1 %dkbit d 25ms m2 %dkbit ul rate %dkbit",
+		rc |= execute("tc class add dev %s parent 1:%d classid 1:%d hfsc rt m1 %dkbit d 25ms m2 %dkbit ls m1 %dkbit d 25ms m2 %dkbit ul rate %dkbit",
 						up_dev, id, id + 1, (ulimit / 5) * 4, ulimit / 20, ulimit / 10, ulimit / 10, ulimit);
-		rc |= tc_do_command("filter add dev %s protocol ip parent 1: prio %d u32 match ip src %s match ip protocol %d 0xff flowid 1:%d",
+		rc |= execute("tc filter add dev %s protocol ip parent 1: prio %d u32 match ip src %s match ip protocol %d 0xff flowid 1:%d",
 						up_dev, id, ip, 1, id + 1);
-		rc |= tc_do_command("filter add dev %s protocol ip parent 1: prio %d u32 match ip src %s match ip dport %d 0xffff flowid 1:%d",
+		rc |= execite("tc filter add dev %s protocol ip parent 1: prio %d u32 match ip src %s match ip dport %d 0xffff flowid 1:%d",
 						up_dev, id + 1, ip, 53, id + 1);
 		/* bulk traffic class */
-		rc |= tc_do_command("class add dev %s parent 1:%d classid 1:%d hfsc ls m1 0kbit d 100ms m2 %dkbit ul rate %dkbit",
+		rc |= execute("tc class add dev %s parent 1:%d classid 1:%d hfsc ls m1 0kbit d 100ms m2 %dkbit ul rate %dkbit",
 						up_dev, id, id + 2, ulimit / 5, ulimit);
-		rc |= tc_do_command("filter add dev %s protocol ip parent 1: prio %d u32 match ip src %s flowid 1:%d",
+		rc |= execute("tc filter add dev %s protocol ip parent 1: prio %d u32 match ip src %s flowid 1:%d",
 						up_dev, id + 2, ip, id + 2);
 		/* codel for each leaf class */
-		rc |= tc_do_command("qdisc add dev %s parent 1:%d handle %d: fq_codel limit 800 quantum 300 ecn",
+		rc |= execute("tc qdisc add dev %s parent 1:%d handle %d: fq_codel limit 800 quantum 300 ecn",
 						up_dev, id + 1, id + 1);
-		rc |= tc_do_command("qdisc add dev %s parent 1:%d handle %d: fq_codel limit 800 quantum 300 ecn",
+		rc |= execute("tc qdisc add dev %s parent 1:%d handle %d: fq_codel limit 800 quantum 300 ecn",
 						up_dev, id + 2, id + 2);
 	}
 
@@ -141,20 +109,21 @@ tc_detach_client(const char down_dev[], int download_limit, const char up_dev[],
 	int id = 3 * idx + 10;
 
 	if (download_limit > 0) {
-		for (n=2;n>=0;n--)
-			rc |= tc_do_command("filter del dev %s parent 1: prio %d", down_dev, id + n);
-		for (n=2;n>=1;n--)
-			rc |= tc_do_command("qdisc del dev %s parent 1:%d", down_dev, id + n);
-		for (n=2;n>=0;n--)
-			rc |= tc_do_command("class del dev %s parent 1: classid 1:%d", down_dev, id + n);
+		for (n = 2; n >= 0; n--)
+			rc |= execute("filter del dev %s parent 1: prio %d", down_dev, id + n);
+		for (n = 2; n >= 1; n--)
+			rc |= execute("qdisc del dev %s parent 1:%d", down_dev, id + n);
+		for (n = 2; n >= 0; n--)
+			rc |= execute("class del dev %s parent 1: classid 1:%d", down_dev, id + n);
 	}
+
 	if (upload_limit > 0) {
-		for (n=2;n>=0;n--)
-			rc |= tc_do_command("filter del dev %s parent 1: prio %d", up_dev, id + n);
-		for (n=2;n>=1;n--)
-			rc |= tc_do_command("qdisc del dev %s parent 1:%d", up_dev, id + n);
-		for (n=2;n>=0;n--)
-			rc |= tc_do_command("class del dev %s parent 1: classid 1:%d", up_dev, id + n);
+		for (n = 2; n >= 0; n--)
+			rc |= execute("filter del dev %s parent 1: prio %d", up_dev, id + n);
+		for (n = 2;n >= 1; n--)
+			rc |= execute("qdisc del dev %s parent 1:%d", up_dev, id + n);
+		for (n = 2; n >= 0; n--)
+			rc |= execute("class del dev %s parent 1: classid 1:%d", up_dev, id + n);
 	}
 
 	return rc;
@@ -172,19 +141,19 @@ tc_attach_upload_qdisc(const char dev[], const char ifb_dev[], int upload_limit)
 	int rc = 0;
 
 	/* clear rules just in case */
-	tc_do_command("qdisc del dev %s root", ifb_dev);
-	tc_do_command("qdisc del dev %s ingress", dev);
+	execute("tc qdisc del dev %s root", ifb_dev);
+	execute("tc qdisc del dev %s ingress", dev);
 
 	/* main upload qdisc */
-	rc |= tc_do_command("qdisc add dev %s root handle 1: hfsc default 2", ifb_dev);
-	rc |= tc_do_command("class add dev %s parent 1: classid 1:1 hfsc sc rate %dkbit ul rate %dkbit",
+	rc |= execute("tc qdisc add dev %s root handle 1: hfsc default 2", ifb_dev);
+	rc |= execute("tc class add dev %s parent 1: classid 1:1 hfsc sc rate %dkbit ul rate %dkbit",
 						ifb_dev, upload_limit, upload_limit);
 	/* default class used for preauth clients */
-	rc |= tc_do_command("class add dev %s parent 1:1 classid 1:2 hfsc sc rate %dkbit ul rate %dkbit",
+	rc |= execute("tc class add dev %s parent 1:1 classid 1:2 hfsc sc rate %dkbit ul rate %dkbit",
 						ifb_dev, upload_limit / 10, upload_limit / 10);
 	/* redirect ingress from main interface to ifb interface */
-	rc |= tc_do_command("qdisc add dev %s ingress", dev);
-	rc |= tc_do_command("filter add dev %s parent ffff: protocol ip prio 1 u32 match u32 0 0 flowid 1:1 action connmark action mirred egress redirect dev %s",
+	rc |= execute("tc qdisc add dev %s ingress", dev);
+	rc |= execute("tc filter add dev %s parent ffff: protocol ip prio 1 u32 match u32 0 0 flowid 1:1 action connmark action mirred egress redirect dev %s",
 						dev, ifb_dev);
 
 	return rc;
@@ -202,16 +171,15 @@ tc_attach_download_qdisc(const char dev[], const char ifb_dev[], int download_li
 	int rc = 0;
 
 	/* clear rules just in case */
-	tc_do_command("qdisc del dev %s root", dev);
+	execute("tc qdisc del dev %s root", dev);
 
 	/* main download qdisc */
-	rc |= tc_do_command("qdisc add dev %s root handle 1: hfsc default 2", dev);
-	rc |= tc_do_command("class add dev %s parent 1: classid 1:1 hfsc sc rate %dkbit ul rate %dkbit",
+	rc |= execute("tc qdisc add dev %s root handle 1: hfsc default 2", dev);
+	rc |= execute("tc class add dev %s parent 1: classid 1:1 hfsc sc rate %dkbit ul rate %dkbit",
 						dev, download_limit, download_limit);
 	/* default class used for preauth clients */
-	rc |= tc_do_command("class add dev %s parent 1:1 classid 1:2 hfsc sc rate %dkbit ul rate %dkbit",
+	rc |= execute("tc class add dev %s parent 1:1 classid 1:2 hfsc sc rate %dkbit ul rate %dkbit",
 						dev, download_limit / 10, download_limit / 10);
-
 
 	return rc;
 }
@@ -228,7 +196,8 @@ tc_init_tc()
 	int upload_ifb, download_ifb;
 	char *upload_ifbname, *cmd;
 	s_config *config;
-	int rc = 0, ret = 0;
+	int rc = 0;
+	int ret = 0;
 
 	config = config_get_config();
 	download_limit = config->download_limit;
@@ -259,35 +228,23 @@ tc_init_tc()
 	return rc;
 }
 
-
 /**
  * Remove qdiscs from intermediate queueing devices, and bring IFB's down
  */
 int
 tc_destroy_tc()
 {
-	int rc = 0, old_tc_quiet;
-
-	old_tc_quiet = tc_quiet;
-	tc_quiet = 1;
 	s_config *config;
-	char *upload_ifbname, *cmd;
+	char upload_ifbname[16];
 
 	config = config_get_config();
-	safe_asprintf(&upload_ifbname,"ifb%d",config->upload_ifb);  /* must free */
+	sprintf(&upload_ifbname, "ifb%d", config->upload_ifb);
 
 	/* remove qdiscs from ifb's */
-	rc |= tc_do_command("qdisc del dev %s root",config->gw_interface);
-	rc |= tc_do_command("qdisc del dev %s root",upload_ifbname);
+	rc |= execute("tc qdisc del dev %s root &> /dev/null", config->gw_interface);
+	rc |= execute("tc qdisc del dev %s root &> /dev/null", upload_ifbname);
 	/* bring down ifb's */
-	safe_asprintf(&cmd,"ip link set %s down", upload_ifbname);
-	debug(LOG_DEBUG, "Executing command: %s", cmd);
-	rc |= execute(cmd,tc_quiet);
-	free(cmd);
-
-	free(upload_ifbname);
-
-	tc_quiet = old_tc_quiet;
+	rc |= execute("ip link set %s down", upload_ifbname);
 
 	return rc;
 }

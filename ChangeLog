@@ -1,3 +1,43 @@
+nodogsplash (3.0.0)
+
+  * Removed settings without implementation due to the change of the http library:
+      DecongestHttpdThreads, HttpdThreadthreshold, HttpdThreaddelayms
+      AuthenticateImmediately, RemoteAuthenticatorAction, EnablePreAuth,
+      BinVoucher, ForceVoucher, PasswordAuthentication, UsernameAuthentication,
+      PasswordAttempts, Username, Password
+  * Add binauth feature as a replacement for the old binvoucher feature
+    * call a script with username/password to decide the authentication
+  * Replace ClientForceTimeout setting with SessionTimeout
+  * Replace ClientTimeout settings with PreauthIdleTimeout and AuthedIdleTimeout
+
+ -- Moritz Warning <moritzwarning@web.de>  Tue, 31 July 2018 19:19:00 +0000
+
+nodogsplash (2.1.1)
+
+  * Update nodogsplash.conf for non-OpenWrt builds
+  * Minor cosmetic changes
+  
+ -- Rob White <dot@blue-wave.net> Sat, 12 May 2018 10:03:00 +0000
+
+nodogsplash (2.1.0) 
+
+  * Allow firewall rule chaining, PR #231 [bluewavenet]
+  * OpenWrt: Add hook to allow firewall to restart nodogsplash after configuring additional rules, PR https://github.com/openwrt-routing/packages/pull/369 [bluewavenet]
+  * OpenWrt: Add support for mwan3(v2) and sqm-scripts, PR https://github.com/openwrt-routing/packages/pull/359 [bluewavenet]
+  * Update documentation [bluewavenet]
+  * Enable TCP Fast Open, PR #237 [blogcin]
+  * Avoid continuous thread creation for control interface, PR #238 [blogcin]
+  * Fix possible memory corruption for long config file path, PR #240 [blogcin]
+
+ -- Moritz Warning <moritzwarning@web.de>  Tue, 08 May 2018 19:19:00 +0000
+
+nodogsplash (2.0.1)
+
+  * Added Forwarding Authentication Service (FAS). [bluewavenet]
+  * Support for external (to NDS) authentication without using Binvoucher. [bluewavenet]
+  * Fix crash when mimetype is not found. [azsde]
+
+ -- Rob White <dot@blue-wave.net>  Thu, 28 Dec 2017 11:36:10 +0000
 
 nodogsplash (2.0.0)
 
@@ -13,8 +53,11 @@ nodogsplash (2.0.0)
   * add debian support including systemd [efernandesng]
   * fix file descriptor leak [sfstudio]
   * fix uncomplete console output [mwarning]
+  * update splash.html (#152) [bluewavenet]
+  * fw_iptables: fix iptables syntax for 1.6.1 [mwarning]
+  * fix CheckInterval option (#168) [zaolin]
 
- -- Alexander Couzens <lynxis@fe80.eu> Thu, 10 Nov 2016 12:23:42 +0100
+ -- Alexander Couzens <lynxis@fe80.eu>  Mon, 29 May 2017 12:23:42 +0100
 
 nodogsplash (1.0.0)
 

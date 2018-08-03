@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+<!--
+	The nodogsplash server may signal an exception by serving
+	this page to the user, with variables title and content
+	intended to indicate the category and detailed message
+	corresponding to the exception.
+Available variables:
+	gatewayname: $gatewayname
+	version: $version
+	title: $title
+	content: $content
+	imagesdir: $imagesdir
+	pagesdir: $pagesdir
+	userurl: $redir
+-->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Something Went Wrong.</title>
+<style>
+body
+{
+background-color:lightgrey;
+color:black;
+margin-left: 5%;
+margin-right: 5%;
+text-align: left;
+}
+input[type=button]
+{
+color:black;
+margin-left: 0%; margin-right: 5%;
+text-align:left;   
+font-size: 1.0em; line-height: 2.5em;
+font-weight: bold;
+border: 1px solid;
+}
+</style>
+</head>
+<body>
+
+<p><b>$gatewayname Hotspot Gateway.</b>
+<br><br><b>
+<span style="color:red; font-style:normal;">
+Sorry! Something seems to have gone wrong.
+</span>
+</b></p>
+<hr><b>The most likely cause is that your connection timed out.<br>
+Please click the button to try again.</b><br><br>
+
+<form>
+<input type="button" value="Continue" onClick="window.location.href='http://detectportal.firefox.com/'">
+</form>
+<hr>
+
+<b>Received Error: $content<br>Software version: $version</b>
+	
+	<hr>Copyright (C) 2004-2016.  This software is released under the GNU GPL license.
+
+</body>
+</html>
+

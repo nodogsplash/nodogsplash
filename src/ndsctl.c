@@ -64,8 +64,6 @@ static void ndsctl_untrust(void);
 static void ndsctl_auth(void);
 static void ndsctl_deauth(void);
 static void ndsctl_loglevel(void);
-static void ndsctl_username(void);
-static void ndsctl_password(void);
 
 /** @internal
  * @brief Print usage
@@ -75,29 +73,29 @@ static void ndsctl_password(void);
 static void
 usage(void)
 {
-	printf("Usage: ndsctl [options] command [arguments]\n");
-	printf("\n");
-	printf("options:\n");
-	printf("  -s <path>           Path to the socket\n");
-	printf("  -h                  Print usage\n");
-	printf("\n");
-	printf("commands:\n");
-	printf("  status              View the status of nodogsplash\n");
-	printf("  clients             Display machine-readable client list\n");
-	printf("  json             	  Display machine-readable client list in json format\n");
-	printf("  stop                Stop the running nodogsplash\n");
-	printf("  auth mac|ip|token   Authenticate user with specified mac, ip or token\n");
-	printf("  deauth mac|ip|token Deauthenticate user with specified mac, ip or token\n");
-	printf("  block mac           Block the given MAC address\n");
-	printf("  unblock mac         Unblock the given MAC address\n");
-	printf("  allow mac           Allow the given MAC address\n");
-	printf("  unallow mac         Unallow the given MAC address\n");
-	printf("  trust mac           Trust the given MAC address\n");
-	printf("  untrust mac         Untrust the given MAC address\n");
-	printf("  loglevel n          Set logging level to n\n");
-	printf("  password pass       Set gateway password\n");
-	printf("  username name       Set gateway username\n");
-	printf("\n");
+	printf(
+		"Usage: ndsctl [options] command [arguments]\n"
+		"\n"
+		"options:\n"
+		"  -s <path>           Path to the socket\n"
+		"  -h                  Print usage\n"
+		"\n"
+		"commands:\n"
+		"  status              View the status of nodogsplash\n"
+		"  clients             Display machine-readable client list\n"
+		"  json                Display machine-readable client list in json format\n"
+		"  stop                Stop the running nodogsplash\n"
+		"  auth mac|ip|token   Authenticate user with specified mac, ip or token\n"
+		"  deauth mac|ip|token Deauthenticate user with specified mac, ip or token\n"
+		"  block mac           Block the given MAC address\n"
+		"  unblock mac         Unblock the given MAC address\n"
+		"  allow mac           Allow the given MAC address\n"
+		"  unallow mac         Unallow the given MAC address\n"
+		"  trust mac           Trust the given MAC address\n"
+		"  untrust mac         Untrust the given MAC address\n"
+		"  loglevel n          Set logging level to n\n"
+		"\n"
+	);
 }
 
 /** @internal
@@ -153,15 +151,12 @@ parse_commandline(int argc, char **argv)
 		config.command = NDSCTL_CLIENTS;
 	} else if (strcmp(*(argv + optind), "json") == 0) {
 		config.command = NDSCTL_JSON;
-	}
-
-	else if (strcmp(*(argv + optind), "stop") == 0) {
+	} else if (strcmp(*(argv + optind), "stop") == 0) {
 		config.command = NDSCTL_STOP;
 	} else if (strcmp(*(argv + optind), "block") == 0) {
 		config.command = NDSCTL_BLOCK;
 		if ((argc - (optind + 1)) <= 0) {
-			fprintf(stderr, "ndsctl: Error: You must specify a "
-					"MAC address to block\n");
+			fprintf(stderr, "ndsctl: Error: You must specify a MAC address to block\n");
 			usage();
 			exit(1);
 		}
@@ -169,8 +164,7 @@ parse_commandline(int argc, char **argv)
 	} else if (strcmp(*(argv + optind), "unblock") == 0) {
 		config.command = NDSCTL_UNBLOCK;
 		if ((argc - (optind + 1)) <= 0) {
-			fprintf(stderr, "ndsctl: Error: You must specify a "
-					"MAC address to unblock\n");
+			fprintf(stderr, "ndsctl: Error: You must specify a MAC address to unblock\n");
 			usage();
 			exit(1);
 		}
@@ -178,8 +172,7 @@ parse_commandline(int argc, char **argv)
 	} else if (strcmp(*(argv + optind), "allow") == 0) {
 		config.command = NDSCTL_ALLOW;
 		if ((argc - (optind + 1)) <= 0) {
-			fprintf(stderr, "ndsctl: Error: You must specify a "
-					"MAC address to allow\n");
+			fprintf(stderr, "ndsctl: Error: You must specify a MAC address to allow\n");
 			usage();
 			exit(1);
 		}
@@ -187,8 +180,7 @@ parse_commandline(int argc, char **argv)
 	} else if (strcmp(*(argv + optind), "unallow") == 0) {
 		config.command = NDSCTL_UNALLOW;
 		if ((argc - (optind + 1)) <= 0) {
-			fprintf(stderr, "ndsctl: Error: You must specify a "
-					"MAC address to unallow\n");
+			fprintf(stderr, "ndsctl: Error: You must specify a MAC address to unallow\n");
 			usage();
 			exit(1);
 		}
@@ -196,8 +188,7 @@ parse_commandline(int argc, char **argv)
 	} else if (strcmp(*(argv + optind), "trust") == 0) {
 		config.command = NDSCTL_TRUST;
 		if ((argc - (optind + 1)) <= 0) {
-			fprintf(stderr, "ndsctl: Error: You must specify a "
-					"MAC address to trust\n");
+			fprintf(stderr, "ndsctl: Error: You must specify a MAC address to trust\n");
 			usage();
 			exit(1);
 		}
@@ -205,8 +196,7 @@ parse_commandline(int argc, char **argv)
 	} else if (strcmp(*(argv + optind), "untrust") == 0) {
 		config.command = NDSCTL_UNTRUST;
 		if ((argc - (optind + 1)) <= 0) {
-			fprintf(stderr, "ndsctl: Error: You must specify a "
-					"MAC address to untrust\n");
+			fprintf(stderr, "ndsctl: Error: You must specify a MAC address to untrust\n");
 			usage();
 			exit(1);
 		}
@@ -214,8 +204,7 @@ parse_commandline(int argc, char **argv)
 	} else if (strcmp(*(argv + optind), "auth") == 0) {
 		config.command = NDSCTL_AUTH;
 		if ((argc - (optind + 1)) <= 0) {
-			fprintf(stderr, "ndsctl: Error: You must specify an IP "
-					"address to auth\n");
+			fprintf(stderr, "ndsctl: Error: You must specify an IP address to auth\n");
 			usage();
 			exit(1);
 		}
@@ -223,8 +212,7 @@ parse_commandline(int argc, char **argv)
 	} else if (strcmp(*(argv + optind), "deauth") == 0) {
 		config.command = NDSCTL_DEAUTH;
 		if ((argc - (optind + 1)) <= 0) {
-			fprintf(stderr, "ndsctl: Error: You must specify an IP "
-					"or a Mac address to deauth\n");
+			fprintf(stderr, "ndsctl: Error: You must specify an IP or a MAC address to deauth\n");
 			usage();
 			exit(1);
 		}
@@ -232,24 +220,7 @@ parse_commandline(int argc, char **argv)
 	} else if (strcmp(*(argv + optind), "loglevel") == 0) {
 		config.command = NDSCTL_LOGLEVEL;
 		if ((argc - (optind + 1)) <= 0) {
-			fprintf(stderr, "ndsctl: Error: You must specify an integer "
-					"loglevel to loglevel\n");
-			usage();
-			exit(1);
-		}
-		config.param = strdup(*(argv + optind + 1));
-	} else if (strcmp(*(argv + optind), "password") == 0) {
-		config.command = NDSCTL_PASSWORD;
-		if ((argc - (optind + 1)) <= 0) {
-			fprintf(stderr, "ndsctl: Error: You must specify a password\n");
-			usage();
-			exit(1);
-		}
-		config.param = strdup(*(argv + optind + 1));
-	} else if (strcmp(*(argv + optind), "username") == 0) {
-		config.command = NDSCTL_USERNAME;
-		if ((argc - (optind + 1)) <= 0) {
-			fprintf(stderr, "ndsctl: Error: You must specify a username\n");
+			fprintf(stderr, "ndsctl: Error: You must specify an integer loglevel to loglevel\n");
 			usage();
 			exit(1);
 		}
@@ -265,7 +236,7 @@ static int
 connect_to_server(const char sock_name[])
 {
 	int sock;
-	struct sockaddr_un	sa_un;
+	struct sockaddr_un sa_un;
 
 	/* Connect to socket */
 	sock = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -273,8 +244,7 @@ connect_to_server(const char sock_name[])
 	sa_un.sun_family = AF_UNIX;
 	strncpy(sa_un.sun_path, sock_name, (sizeof(sa_un.sun_path) - 1));
 
-	if (connect(sock, (struct sockaddr *)&sa_un,
-				strlen(sa_un.sun_path) + sizeof(sa_un.sun_family))) {
+	if (connect(sock, (struct sockaddr *)&sa_un, strlen(sa_un.sun_path) + sizeof(sa_un.sun_family))) {
 		fprintf(stderr, "ndsctl: nodogsplash probably not started (Error: %s)\n", strerror(errno));
 		exit(1);
 	}
@@ -285,14 +255,13 @@ connect_to_server(const char sock_name[])
 static int
 send_request(int sock, const char request[])
 {
-	ssize_t	len, written;
+	ssize_t len, written;
 
 	len = 0;
 	while (len != strlen(request)) {
 		written = write(sock, (request + len), strlen(request) - len);
 		if (written == -1) {
-			fprintf(stderr, "Write to nodogsplash failed: %s\n",
-					strerror(errno));
+			fprintf(stderr, "Write to nodogsplash failed: %s\n", strerror(errno));
 			exit(1);
 		}
 		len += written;
@@ -316,8 +285,7 @@ ndsctl_action(const char cmd[], const char ifyes[], const char ifno[])
 
 	sock = connect_to_server(config.socket);
 
-	snprintf(request, sizeof(request)-strlen(NDSCTL_TERMINATOR),
-			 "%s %s", cmd, config.param);
+	snprintf(request, sizeof(request)-strlen(NDSCTL_TERMINATOR), "%s %s", cmd, config.param);
 	strcat(request, NDSCTL_TERMINATOR);
 
 	len = send_request(sock, request);
@@ -325,11 +293,11 @@ ndsctl_action(const char cmd[], const char ifyes[], const char ifno[])
 	len = 0;
 	memset(buffer, 0, sizeof(buffer));
 	while ((len < sizeof(buffer)) && ((rlen = read(sock, (buffer + len),
-									   (sizeof(buffer) - len))) > 0)) {
+		(sizeof(buffer) - len))) > 0)) {
 		len += rlen;
 	}
 
-	if(rlen<0) {
+	if (rlen < 0) {
 		fprintf(stderr, "ndsctl: Error reading socket: %s\n", strerror(errno));
 	}
 
@@ -338,8 +306,7 @@ ndsctl_action(const char cmd[], const char ifyes[], const char ifno[])
 	} else if (strcmp(buffer, "No") == 0) {
 		printf(ifno, config.param);
 	} else {
-		fprintf(stderr, "ndsctl: Error: nodogsplash sent an abnormal "
-				"reply.\n");
+		fprintf(stderr, "ndsctl: Error: nodogsplash sent an abnormal reply.\n");
 	}
 
 	shutdown(sock, 2);
@@ -359,7 +326,7 @@ ndsctl_print(const char cmd[])
 
 	sock = connect_to_server(config.socket);
 
-	snprintf(request, sizeof(request)-strlen(NDSCTL_TERMINATOR), "%s", cmd);
+	snprintf(request, sizeof(request) - strlen(NDSCTL_TERMINATOR), "%s", cmd);
 	strcat(request, NDSCTL_TERMINATOR);
 
 	len = send_request(sock, request);
@@ -369,7 +336,7 @@ ndsctl_print(const char cmd[])
 		printf("%s", buffer);
 	}
 
-	if(len<0) {
+	if (len < 0) {
 		fprintf(stderr, "ndsctl: Error reading socket: %s\n", strerror(errno));
 	}
 
@@ -405,88 +372,72 @@ void
 ndsctl_loglevel(void)
 {
 	ndsctl_action("loglevel",
-				  "Log level set to %s.\n",
-				  "Failed to set log level to %s.\n");
-}
-
-void
-ndsctl_password(void)
-{
-	ndsctl_action("password",
-				  "Password set to %s.\n",
-				  "Failed to set password to %s.\n");
-}
-
-void
-ndsctl_username(void)
-{
-	ndsctl_action("username",
-				  "Username set to %s.\n",
-				  "Failed to set username to %s.\n");
+				"Log level set to %s.\n",
+				"Failed to set log level to %s.\n");
 }
 
 void
 ndsctl_deauth(void)
 {
 	ndsctl_action("deauth",
-				  "Client %s deauthenticated.\n",
-				  "Client %s not found.\n");
+				"Client %s deauthenticated.\n",
+				"Client %s not found.\n");
 }
 
 void
 ndsctl_auth(void)
 {
 	ndsctl_action("auth",
-				  "Client %s authenticated.\n",
-				  "Failed to authenticate client %s.\n");
+				"Client %s authenticated.\n",
+				"Failed to authenticate client %s.\n");
 }
 
 void
 ndsctl_block(void)
 {
 	ndsctl_action("block",
-				  "MAC %s blocked.\n",
-				  "Failed to block MAC %s.\n");
+				"MAC %s blocked.\n",
+				"Failed to block MAC %s.\n");
 }
 
 void
 ndsctl_unblock(void)
 {
 	ndsctl_action("unblock",
-				  "MAC %s unblocked.\n",
-				  "Failed to unblock MAC %s.\n");
+				"MAC %s unblocked.\n",
+				"Failed to unblock MAC %s.\n");
 }
 
 void
 ndsctl_allow(void)
 {
 	ndsctl_action("allow",
-				  "MAC %s allowed.\n",
-				  "Failed to allow MAC %s.\n");
+				"MAC %s allowed.\n",
+				"Failed to allow MAC %s.\n");
 }
 
 void
 ndsctl_unallow(void)
 {
 	ndsctl_action("unallow",
-				  "MAC %s unallowed.\n",
-				  "Failed to unallow MAC %s.\n");
+				"MAC %s unallowed.\n",
+				"Failed to unallow MAC %s.\n");
 }
 
 void
 ndsctl_trust(void)
 {
 	ndsctl_action("trust",
-				  "MAC %s trusted.\n",
-				  "Failed to trust MAC %s.\n");
+				"MAC %s trusted.\n",
+				"Failed to trust MAC %s.\n");
 }
 
 void
 ndsctl_untrust(void)
 {
 	ndsctl_action("untrust",
-				  "MAC %s untrusted.\n",
-				  "Failed to untrust MAC %s.\n");
+				"MAC %s untrusted.\n",
+				"Failed to untrust MAC %s.\n");
 }
 
 int
@@ -549,19 +500,11 @@ main(int argc, char **argv)
 		ndsctl_loglevel();
 		break;
 
-	case NDSCTL_PASSWORD:
-		ndsctl_password();
-		break;
-
-	case NDSCTL_USERNAME:
-		ndsctl_username();
-		break;
-
 	default:
 		/* XXX NEVER REACHED */
 		fprintf(stderr, "Unknown opcode: %d\n", config.command);
-		exit(1);
-		break;
+		return 1;
 	}
-	exit(0);
+
+	return 0;
 }

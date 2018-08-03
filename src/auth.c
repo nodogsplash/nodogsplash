@@ -46,7 +46,7 @@
 
 
 /* Defined in clientlist.c */
-extern pthread_mutex_t	client_list_mutex;
+extern pthread_mutex_t client_list_mutex;
 
 /* Count number of authentications */
 unsigned int authenticated_since_start = 0;
@@ -61,7 +61,7 @@ thread_client_timeout_check(void *arg)
 {
 	pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 	pthread_mutex_t cond_mutex = PTHREAD_MUTEX_INITIALIZER;
-	struct	timespec	timeout;
+	struct timespec timeout;
 
 	while (1) {
 		debug(LOG_DEBUG, "Running fw_refresh_client_list()");
@@ -95,12 +95,11 @@ auth_client_action(const char ip[], const char mac[], t_authaction action)
 
 	LOCK_CLIENT_LIST();
 
-	client = client_list_find(ip,mac);
+	client = client_list_find(ip, mac);
 
 	/* Client should already have hit the server and be on the client list */
 	if (client == NULL) {
-		debug(LOG_ERR, "Client %s %s action %d is not on client list",
-			  ip, mac, action);
+		debug(LOG_ERR, "Client %s %s action %d is not on client list", ip, mac, action);
 		UNLOCK_CLIENT_LIST();
 		return;
 	}
@@ -108,7 +107,7 @@ auth_client_action(const char ip[], const char mac[], t_authaction action)
 	switch(action) {
 
 	case AUTH_MAKE_AUTHENTICATED:
-		if(client->fw_connection_state != FW_MARK_AUTHENTICATED) {
+		if (client->fw_connection_state != FW_MARK_AUTHENTICATED) {
 			client->fw_connection_state = FW_MARK_AUTHENTICATED;
 			iptables_fw_access(AUTH_MAKE_AUTHENTICATED, client);
 			authenticated_since_start++;
@@ -118,15 +117,15 @@ auth_client_action(const char ip[], const char mac[], t_authaction action)
 		break;
 
 	case AUTH_MAKE_DEAUTHENTICATED:
-		if(client->fw_connection_state == FW_MARK_AUTHENTICATED) {
+		if (client->fw_connection_state == FW_MARK_AUTHENTICATED) {
 			iptables_fw_access(AUTH_MAKE_DEAUTHENTICATED, client);
 		}
 		client_list_delete(client);
 		break;
 
 	default:
-		debug(LOG_ERR, "Unknown auth action: %d",action);
+		debug(LOG_ERR, "Unknown auth action: %d", action);
 	}
+
 	UNLOCK_CLIENT_LIST();
-	return;
 }

@@ -1,0 +1,6 @@
+Forwarding Authentication Service (FAS)
+
+Author: Rob White @bluewavenet - BlueWave Projects and Services
+Copyright (C) 2015-2017 BlueWave Projects and Services. This software is released under the GNU GPL license.
+
+Nodogsplash (NDS) can support external (to NDS) authentication without using the Binvoucher functionality.

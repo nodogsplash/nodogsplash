@@ -44,16 +44,17 @@ static void usage(void);
 static void
 usage(void)
 {
-	printf("Usage: nodogsplash [options]\n");
-	printf("\n");
-	printf("  -c [filename] Use this config file\n");
-	printf("  -f            Run in foreground\n");
-	printf("  -d <level>    Debug level\n");
-	printf("  -s            Log to syslog\n");
-	printf("  -w <path>     Ndsctl socket path\n");
-	printf("  -h            Print usage\n");
-	printf("  -v            Print version information\n");
-	printf("\n");
+	printf("Usage: nodogsplash [options]\n"
+		"\n"
+		"  -c [filename] Use this config file\n"
+		"  -f            Run in foreground\n"
+		"  -d <level>    Debug level\n"
+		"  -s            Log to syslog\n"
+		"  -w <path>     Ndsctl socket path\n"
+		"  -h            Print usage\n"
+		"  -v            Print version information\n"
+		"\n"
+	);
 }
 
 /** Uses getopt() to parse the command line and set configuration values
@@ -75,7 +76,7 @@ void parse_commandline(int argc, char **argv)
 
 		case 'c':
 			if (optarg) {
-				strncpy(config->configfile, optarg, sizeof(config->configfile));
+				strncpy(config->configfile, optarg, sizeof(config->configfile)-1);
 			}
 			break;
 
@@ -101,7 +102,7 @@ void parse_commandline(int argc, char **argv)
 			break;
 
 		case 'v':
-			printf("This is nodogsplash version " VERSION "\n");
+			printf("This is Nodogsplash version " VERSION "\n");
 			exit(1);
 			break;
 

@@ -27,7 +27,7 @@
 #ifndef _NDSCTL_H_
 #define _NDSCTL_H_
 
-#define DEFAULT_SOCK	"/tmp/ndsctl.sock"
+#define DEFAULT_SOCK "/tmp/ndsctl.sock"
 
 #define NDSCTL_TERMINATOR	"\r\n\r\n"
 
@@ -45,16 +45,14 @@
 #define NDSCTL_AUTH		11
 #define NDSCTL_DEAUTH		12
 #define NDSCTL_LOGLEVEL		13
-#define NDSCTL_PASSWORD		14
-#define NDSCTL_USERNAME		15
 #define NDSCTL_CLIENTS 		16
 #define NDSCTL_JSON 		17
 
 
 typedef struct {
-	char	*socket;
-	int	command;
-	char	*param;
+	char *socket;
+	int command;
+	char *param;
 } s_config;
 
 
