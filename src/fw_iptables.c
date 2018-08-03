@@ -740,7 +740,7 @@ iptables_fw_access(t_authaction action, t_client *client)
 	char upload_ifbname[16];
 
 	config = config_get_config();
-	safe_asprintf(upload_ifbname, "ifb%d" , config->upload_ifb);
+	sprintf(upload_ifbname, "ifb%d", config->upload_ifb);
 
 	LOCK_CONFIG();
 	traffic_control = config->traffic_control;

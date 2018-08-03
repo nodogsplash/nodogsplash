@@ -61,9 +61,9 @@ tc_attach_client(const char down_dev[], int download_limit, const char up_dev[],
 		/* low latency class for DNS and ICMP */
 		rc |= execute("tc class add dev %s parent 1:%d classid 1:%d hfsc rt m1 %dkbit d 25ms m2 %dkbit ls m1 %dkbit d 25ms m2 %dkbit ul rate %dkbit",
 						down_dev, id, id + 1, (dlimit / 5) * 4, dlimit / 20, dlimit / 10, dlimit / 10, dlimit);
-		rc |= excute("tc filter add dev %s protocol ip parent 1: prio %d u32 match ip dst %s match ip protocol %d 0xff flowid 1:%d",
+		rc |= execute("tc filter add dev %s protocol ip parent 1: prio %d u32 match ip dst %s match ip protocol %d 0xff flowid 1:%d",
 						down_dev, id, ip, 1, id + 1);
-		rc |= excute("tc filter add dev %s protocol ip parent 1: prio %d u32 match ip dst %s match ip sport %d 0xffff flowid 1:%d",
+		rc |= execute("tc filter add dev %s protocol ip parent 1: prio %d u32 match ip dst %s match ip sport %d 0xffff flowid 1:%d",
 						down_dev, id + 1, ip, 53, id + 1);
 		/* bulk traffic class */
 		rc |= execute("tc class add dev %s parent 1:%d classid 1:%d hfsc ls m1 0kbit d 100ms m2 %dkbit ul rate %dkbit",
@@ -85,7 +85,7 @@ tc_attach_client(const char down_dev[], int download_limit, const char up_dev[],
 						up_dev, id, id + 1, (ulimit / 5) * 4, ulimit / 20, ulimit / 10, ulimit / 10, ulimit);
 		rc |= execute("tc filter add dev %s protocol ip parent 1: prio %d u32 match ip src %s match ip protocol %d 0xff flowid 1:%d",
 						up_dev, id, ip, 1, id + 1);
-		rc |= execite("tc filter add dev %s protocol ip parent 1: prio %d u32 match ip src %s match ip dport %d 0xffff flowid 1:%d",
+		rc |= execute("tc filter add dev %s protocol ip parent 1: prio %d u32 match ip src %s match ip dport %d 0xffff flowid 1:%d",
 						up_dev, id + 1, ip, 53, id + 1);
 		/* bulk traffic class */
 		rc |= execute("tc class add dev %s parent 1:%d classid 1:%d hfsc ls m1 0kbit d 100ms m2 %dkbit ul rate %dkbit",
@@ -193,8 +193,8 @@ int
 tc_init_tc()
 {
 	int upload_limit, download_limit;
-	int upload_ifb, download_ifb;
-	char *upload_ifbname, *cmd;
+	int upload_ifb /*, download_ifb*/;
+	char upload_ifbname[16];
 	s_config *config;
 	int rc = 0;
 	int ret = 0;
@@ -204,18 +204,15 @@ tc_init_tc()
 	upload_limit = config->upload_limit;
 	upload_ifb = config->upload_ifb;
 
-	safe_asprintf(&upload_ifbname,"ifb%d",upload_ifb);  /* must free */
+	sprintf(upload_ifbname, "ifb%d", upload_ifb);
 
-	tc_quiet = 0;
-
-	if(download_limit > 0) {
+	if (download_limit > 0) {
 		rc |= tc_attach_download_qdisc(config->gw_interface,NULL,download_limit);
 	}
-	if(upload_limit > 0) {
-		safe_asprintf(&cmd,"ip link set %s up", upload_ifbname);
-		ret = execute(cmd ,tc_quiet);
-		free(cmd);
-		if( ret != 0 ) {
+
+	if (upload_limit > 0) {
+		ret = execute("ip link set %s up", upload_ifbname);
+		if (ret != 0) {
 			debug(LOG_ERR, "Could not set %s up. Upload limiting will not work",
 				  upload_ifbname);
 			rc = -1;
@@ -223,7 +220,6 @@ tc_init_tc()
 			rc |= tc_attach_upload_qdisc(config->gw_interface,upload_ifbname,upload_limit);
 		}
 	}
-	free(upload_ifbname);
 
 	return rc;
 }
@@ -236,9 +232,10 @@ tc_destroy_tc()
 {
 	s_config *config;
 	char upload_ifbname[16];
+	int rc = 0;
 
 	config = config_get_config();
-	sprintf(&upload_ifbname, "ifb%d", config->upload_ifb);
+	sprintf(upload_ifbname, "ifb%d", config->upload_ifb);
 
 	/* remove qdiscs from ifb's */
 	rc |= execute("tc qdisc del dev %s root &> /dev/null", config->gw_interface);
