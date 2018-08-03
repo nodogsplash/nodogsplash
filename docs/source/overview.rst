@@ -1,7 +1,7 @@
 Overview
 ########
 
-Nodogsplash offers a solution to this problem: You want to provide controlled
+Nodogsplash (NDS) offers a solution to this problem: You want to provide controlled
 and reasonably secure public access to an internet connection; and while you
 want to require users to give some acknowledgment of the service you are
 providing, you don't need or want the complexity of user account names and
@@ -18,3 +18,9 @@ you don't want to grant all of your available upload or download bandwidth.
 Specific features of Nodogsplash are configurable, by editing the configuration
 file and the splash page. The default installed configuration may be all you
 need, though.
+
+Nodogsplash supports multiple means of authentication:
+
+- hit the submit button (default)
+- call an external script that may accept username/password
+- forwarding authentication to an external service

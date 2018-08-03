@@ -1,37 +1,14 @@
-BinVoucher Option
+BinAuth Option
 =================
 
 **Key: BinAuth**
 
 **Value: /path/to/executable/script**
 
-Authenticate a client by using an external program that get passed username and password, if supplied.
-The exit code and output values decide if a client is to be authenticated.
+Authenticate a client using an external program that get passed the (optional) username and password value.
+The exit code and output values of the program decide if and how a client is to be authenticated.
 
-For the following examples, setting `binauth` is set to `/etc/nds_auth.sh`.
-
-Client enters a username 'Bill' and password 'tms':
-
-.. code::
-
-   /etc/nds_auth.sh client_auth 12:34:56:78:90 'Bill' 'tms'
-
-The values of username and password passed to the script may be empty.
-For the authentication to be successful, the exit code of the script must be 0. Up to three return values are accepted; the number of seconds the session should last, the maximum number of upload bytes and the number of download bytes. If no seconds are given, setting SessionTimeout will be used. Upload and download bytes have no effect right now.
-
-Client is deauthenticated due to inactivity:
-
-.. code::
-
-   /etc/nds_auth.sh idle_timeout <mac> <incoming_bytes> <outgoing_bytes> <duration_seconds>
-
-Client is deauthenticated due to the session end:
-
-.. code::
-
-   /etc/nds_auth.sh session_end <mac> <incoming_bytes> <outgoing_bytes> <duration_seconds>
-
-**Example script:**
+For the following examples, setting `binauth` in nodogsplash.conf is set to `/etc/nds_auth.sh`:
 
 .. code-block:: sh
 
@@ -60,8 +37,45 @@ Client is deauthenticated due to the session end:
         INGOING_BYTES="$3"
         OUTGOING_BYTES="$4"
         DURATION_SECONDS="$5"
-        # The client was deauthenticated after DURATION_SECONDS seconds because of the session ended
+        # The client was deauthenticated after DURATION_SECONDS seconds because the session ended
         ;;
     esac
 
     exit 0
+
+
+The splash.html page contains the following code:
+
+.. code-block:: html
+
+    <form method='GET' action='$authaction'>
+    <input type='hidden' name='tok' value='$tok'>
+    <input type='hidden' name='redir' value='$redir'>
+    username: <input type='text' name='username' value='' size='12' maxlength='12'>
+    <br>
+    password: <input type='password' name='password' value='' size='12' maxlength='10'>
+    <br>
+    <input type='submit' value='Enter'>
+    </form>
+
+If a client enters a username 'Bill' and password 'tms', then the configured `binauth` script is executed:
+
+.. code::
+
+   /etc/nds_auth.sh client_auth 12:34:56:78:90 'Bill' 'tms'
+
+For the authentication to be successful, the exit code of the script must be 0. The output can be up to three values. First the number of seconds the client is to authenticated, second and third the maximum number of upload and download bytes. Values not given to NDS will resort to default values. Note that the traffic shaping feature does not work right now.
+
+Nodogsplash will also call the script when the client is deathenticated.
+
+Client is deauthenticated due to inactivity:
+
+.. code::
+
+   /etc/nds_auth.sh idle_timeout <mac> <incoming_bytes> <outgoing_bytes> <duration_seconds>
+
+Client is deauthenticated due to the session end:
+
+.. code::
+
+   /etc/nds_auth.sh session_end <mac> <incoming_bytes> <outgoing_bytes> <duration_seconds>
