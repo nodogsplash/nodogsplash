@@ -16,7 +16,8 @@ Client enters a username 'Bill' and password 'tms':
 
    /etc/nds_auth.sh client_auth 12:34:56:78:90 'Bill' 'tms'
 
-For the authentication to be successful, the exit code of the script must be 0 and the output to stdout must be the number of seconds. The maximum number of upload and download bytes can also be given, but the traffic shaping feature uses the imq queue, which is not present anymore in modern Linux kernels. Both username and password may be empty.
+The values of username and password passed to the script may be empty.
+For the authentication to be successful, the exit code of the script must be 0. Up to three return values are accepted; the number of seconds the session should last, the maximum number of upload bytes and the number of download bytes. If no seconds are given, setting SessionTimeout will be used. Upload and download bytes have no effect right now.
 
 Client is deauthenticated due to inactivity:
 

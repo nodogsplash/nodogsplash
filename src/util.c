@@ -494,20 +494,19 @@ ndsctl_status(FILE *fp)
 		format_duration(client->counters.last_updated, now, durationbuf);
 		fprintf(fp, "  Last Activity: %s (%s ago)\n", timebuf, durationbuf);
 
-		if (client->fw_connection_state == FW_MARK_AUTHENTICATED) {
+		if (client->session_start) {
 			format_time(&client->session_start, timebuf);
 			format_duration(client->session_start, now, durationbuf);
 			fprintf(fp, "  Session Start: %s (%s ago)\n", timebuf, durationbuf);
-
-			if (client->session_end == 0) {
-				fprintf(fp, "  Session End:   -\n");
-			} else {
-				format_time(&client->session_end, timebuf);
-				format_duration(now, client->session_end, durationbuf);
-				fprintf(fp, "  Session End:   %s (%s left)\n", timebuf, durationbuf);
-			}
 		} else {
 			fprintf(fp, "  Session Start: -\n");
+		}
+
+		if (client->session_end) {
+			format_time(&client->session_end, timebuf);
+			format_duration(now, client->session_end, durationbuf);
+			fprintf(fp, "  Session End:   %s (%s left)\n", timebuf, durationbuf);
+		} else {
 			fprintf(fp, "  Session End:   -\n");
 		}
 

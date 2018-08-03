@@ -66,6 +66,7 @@ static int missing_parms;
  The different configuration options */
 typedef enum {
 	oBadOption,
+	oSessionTimeout,
 	oDaemon,
 	oDebugLevel,
 	oMaxClients,
@@ -112,6 +113,7 @@ static const struct {
 	OpCodes opcode;
 	int required;
 } keywords[] = {
+	{ "sessiontimeout", oSessionTimeout },
 	{ "daemon", oDaemon },
 	{ "debuglevel", oDebugLevel },
 	{ "maxclients", oMaxClients },
@@ -181,6 +183,7 @@ config_init(void)
 
 	debug(LOG_DEBUG, "Setting default config parameters");
 	strncpy(config.configfile, DEFAULT_CONFIGFILE, sizeof(config.configfile)-1);
+	config.session_timeout = DEFAULT_SESSION_TIMEOUT;
 	config.debuglevel = DEFAULT_DEBUGLEVEL;
 	config.maxclients = DEFAULT_MAXCLIENTS;
 	config.gw_name = safe_strdup(DEFAULT_GATEWAYNAME);
@@ -699,6 +702,13 @@ config_read(const char *filename)
 		opcode = config_parse_opcode(s, filename, linenum);
 
 		switch(opcode) {
+		case oSessionTimeout:
+			if (sscanf(p1, "%d", &config.session_timeout) < 0) {
+				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
+				debug(LOG_ERR, "Exiting...");
+				exit(-1);
+			}
+			break;
 		case oDaemon:
 			if (config.daemon == -1 && ((value = parse_boolean_value(p1)) != -1)) {
 				config.daemon = value;
