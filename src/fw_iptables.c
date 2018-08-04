@@ -46,7 +46,6 @@
 #include "auth.h"
 #include "client_list.h"
 #include "fw_iptables.h"
-#include "firewall.h"
 #include "debug.h"
 #include "util.h"
 #include "tc.h"
@@ -54,6 +53,13 @@
 static char *_iptables_compile(const char[], const char[], t_firewall_rule *);
 static int _iptables_append_ruleset(const char[], const char[], const char[]);
 static int _iptables_init_marks(void);
+
+/** Used to mark packets, and characterize client state.  Unmarked packets are considered 'preauthenticated' */
+unsigned int FW_MARK_PREAUTHENTICATED; /**< @brief 0: Actually not used as a packet mark */
+unsigned int FW_MARK_AUTHENTICATED;    /**< @brief The client is authenticated */
+unsigned int FW_MARK_BLOCKED;          /**< @brief The client is blocked */
+unsigned int FW_MARK_TRUSTED;          /**< @brief The client is trusted */
+unsigned int FW_MARK_MASK;             /**< @brief Iptables mask: bitwise or of the others */
 
 extern pthread_mutex_t client_list_mutex;
 extern pthread_mutex_t config_mutex;
@@ -73,6 +79,21 @@ static const char* markop = "--set-mark";
  */
 static const char* markmask = "";
 
+
+/** Return a string representing a connection state */
+const char *
+fw_connection_state_as_string(int mark)
+{
+	if (mark == FW_MARK_PREAUTHENTICATED)
+		return "Preauthenticated";
+	if (mark == FW_MARK_AUTHENTICATED)
+		return "Authenticated";
+	if (mark == FW_MARK_TRUSTED)
+		return "Trusted";
+	if (mark == FW_MARK_BLOCKED)
+		return "Blocked";
+	return "ERROR: unrecognized mark";
+}
 
 /** @internal */
 int
@@ -733,7 +754,7 @@ iptables_fw_destroy_mention(
 /** Insert or delete firewall mangle rules marking a client's packets.
  */
 int
-iptables_fw_access(t_authaction action, t_client *client)
+iptables_fw_authenticate(t_client *client)
 {
 	int rc = 0, download_limit, upload_limit, traffic_control;
 	s_config *config;
@@ -753,33 +774,50 @@ iptables_fw_access(t_authaction action, t_client *client)
 		upload_limit = client->upload_limit;
 	}
 
-	switch(action) {
-	case AUTH_MAKE_AUTHENTICATED:
-		debug(LOG_NOTICE, "Authenticating %s %s", client->ip, client->mac);
-		/* This rule is for marking upload (outgoing) packets, and for upload byte counting */
-		rc |= iptables_do_command("-t mangle -A " CHAIN_OUTGOING " -s %s -m mac --mac-source %s -j MARK %s 0x%x", client->ip, client->mac, markop, FW_MARK_AUTHENTICATED);
-		rc |= iptables_do_command("-t mangle -A " CHAIN_INCOMING " -d %s -j MARK %s 0x%x", client->ip, markop, FW_MARK_AUTHENTICATED);
-		/* This rule is just for download (incoming) byte counting, see iptables_fw_counters_update() */
-		rc |= iptables_do_command("-t mangle -A " CHAIN_INCOMING " -d %s -j ACCEPT", client->ip);
+	debug(LOG_NOTICE, "Authenticating %s %s", client->ip, client->mac);
+	/* This rule is for marking upload (outgoing) packets, and for upload byte counting */
+	rc |= iptables_do_command("-t mangle -A " CHAIN_OUTGOING " -s %s -m mac --mac-source %s -j MARK %s 0x%x", client->ip, client->mac, markop, FW_MARK_AUTHENTICATED);
+	rc |= iptables_do_command("-t mangle -A " CHAIN_INCOMING " -d %s -j MARK %s 0x%x", client->ip, markop, FW_MARK_AUTHENTICATED);
+	/* This rule is just for download (incoming) byte counting, see iptables_fw_counters_update() */
+	rc |= iptables_do_command("-t mangle -A " CHAIN_INCOMING " -d %s -j ACCEPT", client->ip);
 
-		if(traffic_control) {
-			rc |= tc_attach_client(config->gw_interface, download_limit, upload_ifbname, upload_limit, client->idx, client->ip);
-		}
-		break;
-	case AUTH_MAKE_DEAUTHENTICATED:
-		/* Remove the authentication rules. */
-		debug(LOG_NOTICE, "Deauthenticating %s %s", client->ip, client->mac);
-		rc |= iptables_do_command("-t mangle -D " CHAIN_OUTGOING " -s %s -m mac --mac-source %s -j MARK %s 0x%x", client->ip, client->mac, markop, FW_MARK_AUTHENTICATED);
-		rc |= iptables_do_command("-t mangle -D " CHAIN_INCOMING " -d %s -j MARK %s 0x%x", client->ip, markop, FW_MARK_AUTHENTICATED);
-		rc |= iptables_do_command("-t mangle -D " CHAIN_INCOMING " -d %s -j ACCEPT", client->ip);
+	if (traffic_control) {
+		rc |= tc_attach_client(config->gw_interface, download_limit, upload_ifbname, upload_limit, client->idx, client->ip);
+	}
 
-		if(traffic_control) {
-			rc |= tc_detach_client(config->gw_interface, download_limit, upload_ifbname, upload_limit, client->idx);
-		}
-		break;
-	default:
-		rc = -1;
-		break;
+	return rc;
+}
+
+int
+iptables_fw_deauthenticate(t_client *client)
+{
+	int download_limit, upload_limit, traffic_control;
+	s_config *config;
+	char upload_ifbname[16];
+	int rc = 0;
+
+	config = config_get_config();
+	sprintf(upload_ifbname, "ifb%d", config->upload_ifb);
+
+	LOCK_CONFIG();
+	traffic_control = config->traffic_control;
+	download_limit = config->download_limit;
+	upload_limit = config->upload_limit;
+	UNLOCK_CONFIG();
+
+	if ((client->download_limit > 0) && (client->upload_limit > 0)) {
+		download_limit = client->download_limit;
+		upload_limit = client->upload_limit;
+	}
+
+	/* Remove the authentication rules. */
+	debug(LOG_NOTICE, "Deauthenticating %s %s", client->ip, client->mac);
+	rc |= iptables_do_command("-t mangle -D " CHAIN_OUTGOING " -s %s -m mac --mac-source %s -j MARK %s 0x%x", client->ip, client->mac, markop, FW_MARK_AUTHENTICATED);
+	rc |= iptables_do_command("-t mangle -D " CHAIN_INCOMING " -d %s -j MARK %s 0x%x", client->ip, markop, FW_MARK_AUTHENTICATED);
+	rc |= iptables_do_command("-t mangle -D " CHAIN_INCOMING " -d %s -j ACCEPT", client->ip);
+
+	if (traffic_control) {
+		rc |= tc_detach_client(config->gw_interface, download_limit, upload_ifbname, upload_limit, client->idx);
 	}
 
 	return rc;

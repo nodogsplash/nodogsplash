@@ -40,8 +40,10 @@
 #include "debug.h"
 #include "conf.h"
 #include "client_list.h"
-#include "firewall.h"
+#include "http_microhttpd.h"
+#include "fw_iptables.h"
 #include "util.h"
+
 
 /** Client counter */
 static int client_count = 0;

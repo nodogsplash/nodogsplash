@@ -63,7 +63,6 @@
 #include "util.h"
 #include "conf.h"
 #include "debug.h"
-#include "firewall.h"
 #include "fw_iptables.h"
 
 

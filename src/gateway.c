@@ -54,11 +54,11 @@
 #include "debug.h"
 #include "conf.h"
 #include "gateway.h"
-#include "firewall.h"
 #include "commandline.h"
 #include "auth.h"
 #include "client_list.h"
 #include "ndsctl_thread.h"
+#include "fw_iptables.h"
 #include "util.h"
 
 #include <microhttpd.h>
@@ -129,7 +129,7 @@ termination_handler(int s)
 
 	debug(LOG_NOTICE, "Handler for termination caught signal %d", s);
 
-	/* Makes sure we only call fw_destroy() once. */
+	/* Makes sure we only call iptables_fw_destroy() once. */
 	if (pthread_mutex_trylock(&sigterm_mutex)) {
 		debug(LOG_INFO, "Another thread already began global termination handler. I'm exiting");
 		pthread_exit(NULL);
@@ -138,7 +138,7 @@ termination_handler(int s)
 	}
 
 	debug(LOG_INFO, "Flushing firewall rules...");
-	fw_destroy();
+	iptables_fw_destroy();
 
 	/* XXX Hack
 	 * Aparently pthread_cond_timedwait under openwrt prevents signals (and therefore
@@ -266,12 +266,12 @@ main_loop(void)
 	*/
 	/* Reset the firewall (cleans it, in case we are restarting after nodogsplash crash) */
 
-	fw_destroy();
+	iptables_fw_destroy();
 	/* Then initialize it */
 	debug(LOG_NOTICE, "Initializing firewall rules");
-	if (fw_init() != 0) {
+	if (iptables_fw_init() != 0) {
 		debug(LOG_ERR, "Error initializing firewall rules! Cleaning up");
-		fw_destroy();
+		iptables_fw_destroy();
 		debug(LOG_ERR, "Exiting because of error initializing firewall rules");
 		exit(1);
 	}

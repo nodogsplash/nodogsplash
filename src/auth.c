@@ -40,7 +40,6 @@
 #include "debug.h"
 #include "auth.h"
 #include "fw_iptables.h"
-#include "firewall.h"
 #include "client_list.h"
 #include "util.h"
 
@@ -51,6 +50,96 @@ extern pthread_mutex_t client_list_mutex;
 /* Count number of authentications */
 unsigned int authenticated_since_start = 0;
 
+
+/** See if they are still active,
+ *  refresh their traffic counters,
+ *  remove and deny them if timed out
+ */
+static void
+fw_refresh_client_list(void)
+{
+	t_client *cp1, *cp2;
+	s_config *config = config_get_config();
+	const int preauth_idle_timeout = config->preauth_idle_timeout;
+	const int authed_idle_timeout = config->authed_idle_timeout;
+	const time_t now = time(NULL);
+
+	/* Update all the counters */
+	if (-1 == iptables_fw_counters_update()) {
+		debug(LOG_ERR, "Could not get counters from firewall!");
+		return;
+	}
+
+	LOCK_CLIENT_LIST();
+
+	for (cp1 = cp2 = client_get_first_client(); NULL != cp1; cp1 = cp2) {
+		cp2 = cp1->next;
+
+		if (!(cp1 = client_list_find(cp1->ip, cp1->mac))) {
+			debug(LOG_ERR, "Client was freed while being re-validated!");
+			continue;
+		}
+
+		int conn_state = cp1->fw_connection_state;
+		int last_updated = cp1->counters.last_updated;
+
+		if (cp1->session_end > 0 && cp1->session_end <= now) {
+			/* Session ended (only > 0 for FW_MARK_AUTHENTICATED by binauth) */
+			debug(LOG_NOTICE, "Force out user: %s %s, connected: %ds, in: %llukB, out: %llukB",
+				cp1->ip, cp1->mac, now - cp1->session_end,
+				cp1->counters.incoming / 1000, cp1->counters.outgoing / 1000);
+
+			/* All client here should be authenticated anyway */
+			if (conn_state == FW_MARK_AUTHENTICATED) {
+				if (config->bin_auth) {
+					// Client will be deauthenticated...
+					execute("%s session_end %s %llu %llu %d",
+						config->bin_auth,
+						cp1->mac,
+						cp1->counters.incoming,
+						cp1->counters.outgoing,
+						now - cp1->session_start
+					);
+				}
+				iptables_fw_deauthenticate(cp1);
+			}
+			client_list_delete(cp1);
+		} else if (preauth_idle_timeout > 0
+				&& conn_state == FW_MARK_PREAUTHENTICATED
+				&& (last_updated + preauth_idle_timeout) <= now) {
+			/* Timeout inactive user */
+			debug(LOG_NOTICE, "Timeout preauthenticated idle user: %s %s, inactive: %ds, in: %llukB, out: %llukB",
+				cp1->ip, cp1->mac, now - last_updated,
+				cp1->counters.incoming / 1000, cp1->counters.outgoing / 1000);
+
+			client_list_delete(cp1);
+		} else if (authed_idle_timeout > 0
+				&& conn_state == FW_MARK_AUTHENTICATED
+				&& (last_updated + authed_idle_timeout) <= now) {
+			/* Timeout inactive user */
+			debug(LOG_NOTICE, "Timeout authenticated idle user: %s %s, inactive: %ds, in: %llukB, out: %llukB",
+				cp1->ip, cp1->mac, now - last_updated,
+				cp1->counters.incoming / 1000, cp1->counters.outgoing / 1000);
+
+			/* All clients here should be authenticated for sure */
+			if (conn_state == FW_MARK_AUTHENTICATED) {
+				if (config->bin_auth) {
+					// Client will be deauthenticated...
+					execute("%s idle_timeout %s %llu %llu %d",
+						config->bin_auth,
+						cp1->mac,
+						cp1->counters.incoming,
+						cp1->counters.outgoing,
+						now - cp1->session_start
+					);
+				}
+				iptables_fw_deauthenticate(cp1);
+			}
+			client_list_delete(cp1);
+		}
+	}
+	UNLOCK_CLIENT_LIST();
+}
 
 /** Launched in its own thread.
  *  This just wakes up every config.checkinterval seconds, and calls fw_refresh_client_list()
@@ -92,10 +181,12 @@ void
 auth_client_action(const char ip[], const char mac[], t_authaction action)
 {
 	t_client *client;
+	s_config *config;
 
 	LOCK_CLIENT_LIST();
 
 	client = client_list_find(ip, mac);
+	config = config_get_config();
 
 	/* Client should already have hit the server and be on the client list */
 	if (client == NULL) {
@@ -109,7 +200,13 @@ auth_client_action(const char ip[], const char mac[], t_authaction action)
 	case AUTH_MAKE_AUTHENTICATED:
 		if (client->fw_connection_state != FW_MARK_AUTHENTICATED) {
 			client->fw_connection_state = FW_MARK_AUTHENTICATED;
-			iptables_fw_access(AUTH_MAKE_AUTHENTICATED, client);
+			client->session_start = time(NULL);
+			if (config->session_timeout) {
+				client->session_end = time(NULL) + config->session_timeout;
+			} else {
+				client->session_end = 0;
+			}
+			iptables_fw_authenticate(client);
 			authenticated_since_start++;
 		} else {
 			debug(LOG_INFO, "Nothing to do, %s %s already authenticated", client->ip, client->mac);
@@ -118,7 +215,9 @@ auth_client_action(const char ip[], const char mac[], t_authaction action)
 
 	case AUTH_MAKE_DEAUTHENTICATED:
 		if (client->fw_connection_state == FW_MARK_AUTHENTICATED) {
-			iptables_fw_access(AUTH_MAKE_DEAUTHENTICATED, client);
+			iptables_fw_deauthenticate(client);
+			client->session_start = 0;
+			client->session_end = 0;
 		}
 		client_list_delete(client);
 		break;

@@ -43,8 +43,6 @@
 #include "debug.h"
 #include "conf.h"
 #include "auth.h"
-#include "firewall.h"
-
 #include "util.h"
 
 

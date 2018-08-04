@@ -31,10 +31,10 @@
 #include "client_list.h"
 #include "conf.h"
 #include "debug.h"
-#include "firewall.h"
 #include "auth.h"
 #include "http_microhttpd.h"
 #include "http_microhttpd_utils.h"
+#include "fw_iptables.h"
 #include "mimetypes.h"
 #include "safe.h"
 #include "template.h"
@@ -189,6 +189,40 @@ static int is_splashpage(const char *host, const char *url)
 	}
 	/* doesnt hit one of our rules - this isn't the splashpage */
 	return 0;
+}
+
+/**
+ * Get an IP's MAC address from the ARP cache.
+ * Go through all the entries in /proc/net/arp until we find the requested
+ * IP address and return the MAC address bound to it.
+ * @todo Make this function portable (using shell scripts?)
+ */
+int
+arp_get(char mac[18], const char req_ip[])
+{
+	FILE *proc;
+	char ip_tmp[INET6_ADDRSTRLEN+1];
+	char mac_tmp[18];
+
+	if (!(proc = fopen("/proc/net/arp", "r"))) {
+		return -1;
+	}
+
+	/* Skip first line */
+	while (!feof(proc) && fgetc(proc) != '\n');
+
+	/* Find ip, copy mac in reply */
+	while (!feof(proc) && (fscanf(proc, " %15[0-9.] %*s %*s %17[A-Fa-f0-9:] %*s %*s", ip_tmp, mac_tmp) == 2)) {
+		if (strcmp(ip_tmp, req_ip) == 0) {
+			fclose(proc);
+			strcpy(mac, mac_tmp);
+			return 0;
+		}
+	}
+
+	fclose(proc);
+
+	return -1;
 }
 
 /**
@@ -413,7 +447,7 @@ static int authenticated(struct MHD_Connection *connection,
 		if (redirect_url == NULL || strlen(redirect_url) == 0) {
 			return show_splashpage(connection, client);
 		} else {
-			return authenticate_client(connection, ip_addr, mac, redirect_url, client);
+			//return authenticate_client(connection, ip_addr, mac, redirect_url, client);
 		}
 	} else if (check_authdir_match(url, config->denydir)) {
 		auth_client_action(ip_addr, mac, AUTH_MAKE_DEAUTHENTICATED);

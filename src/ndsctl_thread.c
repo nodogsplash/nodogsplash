@@ -49,7 +49,6 @@
 #include "safe.h"
 #include "client_list.h"
 #include "fw_iptables.h"
-#include "firewall.h"
 #include "gateway.h"
 
 #include "ndsctl_thread.h"

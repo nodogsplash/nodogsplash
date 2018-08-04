@@ -38,7 +38,6 @@
 #include "client_list.h"
 #include "auth.h"
 #include "fw_iptables.h"
-#include "firewall.h"
 #include "debug.h"
 #include "util.h"
 
