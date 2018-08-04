@@ -726,29 +726,30 @@ static int get_query(struct MHD_Connection *connection, char **query)
 	// static int get_host_value_callback(void *cls, enum MHD_ValueKind kind, const char *key, const char *value) {
 	MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, collect_query_string, &collect_query);
 
-	for(i=0; i<element_counter; i++) {
+	for (i = 0; i<element_counter; i++) {
 		if (!elements[i])
 			continue;
 		length += strlen(elements[i]);
 
-		if (i >0) /* q=foo&o=bar the '&' need also some space */
+		if (i > 0) /* q=foo&o=bar the '&' need also some space */
 			length++;
 	}
 
 	/* don't miss the zero terminator */
-	*query = calloc(1, length+1);
+	*query = calloc(1, length + 1);
 	if (*query == NULL) {
-		for(i=0; i < element_counter; i++) {
+		for (i = 0; i < element_counter; i++) {
 			free(elements[i]);
 		}
 		free(elements);
 		return 0;
 	}
 
-	for(i=0, j=0; i<element_counter; i++) {
-		if (!elements[i])
+	for (i = 0, j = 0; i<element_counter; i++) {
+		if (!elements[i]) {
 			continue;
-		strncpy(*query + j, elements[i], length-j);
+		}
+		strncpy(*query + j, elements[i], length - j);
 		free(elements[i]);
 	}
 
