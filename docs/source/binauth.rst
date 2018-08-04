@@ -18,7 +18,7 @@ For the following examples, setting `binauth` in nodogsplash.conf is set to `/et
     MAC="$2"
 
     case "$METHOD" in
-      "client_auth")
+      client_auth)
         USERNAME="$3"
         PASSWORD="$4"
         if [ "$USERNAME" = "Bill" -a "$PASSWORD" = "tms" ]; then
@@ -27,17 +27,14 @@ For the following examples, setting `binauth` in nodogsplash.conf is set to `/et
           echo 3600 0 0
         fi
         ;;
-      "idle_timeout")
+      idle_timeout|session_end|manual_auth|manual_deauth)
         INGOING_BYTES="$3"
         OUTGOING_BYTES="$4"
         DURATION_SECONDS="$5"
-        # The client was deauthenticated after DURATION_SECONDS seconds because of inactivity
-        ;;
-      "session_end")
-        INGOING_BYTES="$3"
-        OUTGOING_BYTES="$4"
-        DURATION_SECONDS="$5"
-        # The client was deauthenticated after DURATION_SECONDS seconds because the session ended
+        # idle_timeout: Client was deauthenticated because of inactivity.
+        # session_end: Client was deauthenticated because the session timed out.
+        # manual_auth: Client was authenticated manually by the ndsctl tool. Values are likely all zero.
+        # manual_deauth: Client was deauthenticated by the ndsctl tool, client trigger, or on Nodogsplash termination.
         ;;
     esac
 
@@ -80,11 +77,11 @@ Client is deauthenticated due to the session end:
 
    /etc/nds_auth.sh session_end <mac> <incoming_bytes> <outgoing_bytes> <duration_seconds>
 
-Manual authentication can be triggered by the `ndsctl` tool. In/Out bytes are very likely to be zero.
+Manual authentication can be triggered by the `ndsctl` tool. Additional arguments are very likely to be zero.
 
 .. code::
 
-   /etc/nds_auth.sh manual_auth <mac> <incoming_bytes> <outgoing_bytes=0> <duration_seconds=0>
+   /etc/nds_auth.sh manual_auth <mac> <incoming_bytes=0> <outgoing_bytes=0> <duration_seconds=0>
 
 Manual deauthentication can be triggered by the `ndsctl` tool, client trigger, or on Nodogsplash termination.
 
