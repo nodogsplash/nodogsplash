@@ -866,6 +866,8 @@ static int show_templated_page(struct MHD_Connection *connection, t_client *clie
 	char filename[PATH_MAX];
 	const char *mimetype;
 	int size = 0, bytes = 0;
+	char nclients[12];
+	char maxclients[12];
 	char upload_bytes[20];
 	char download_bytes[20];
 	int page_fd;
@@ -910,8 +912,6 @@ static int show_templated_page(struct MHD_Connection *connection, t_client *clie
 	}
 
 	char *uptime = get_uptime_string();
-	char *nclients = NULL;
-	char *maxclients = NULL;
 	char *denyaction = NULL;
 	char *authaction = NULL;
 	char *authtarget = NULL;
@@ -923,8 +923,8 @@ static int show_templated_page(struct MHD_Connection *connection, t_client *clie
 
 	redirect_url = get_redirect_url(connection);
 
-	safe_asprintf(&nclients, "%d", get_client_list_length());
-	safe_asprintf(&maxclients, "%d", config->maxclients);
+	sprintf(nclients, "%d", get_client_list_length());
+	sprintf(maxclients, "%d", config->maxclients);
 	safe_asprintf(&denyaction, "http://%s:%d/%s/", config->gw_address, config->gw_port, config->denydir);
 	safe_asprintf(&authaction, "http://%s:%d/%s/", config->gw_address, config->gw_port, config->authdir);
 	safe_asprintf(&authtarget, "http://%s:%d/%s/?token=%s&amp;redir=%s", config->gw_address, config->gw_port, config->authdir, client->token, redirect_url);
@@ -959,8 +959,6 @@ static int show_templated_page(struct MHD_Connection *connection, t_client *clie
 	tmpl_parse(&templor, page_result, size + TMPLVAR_SIZE, page_tmpl, size);
 	free(page_tmpl);
 	free(uptime);
-	free(nclients);
-	free(maxclients);
 	free(denyaction);
 	free(authaction);
 	free(authtarget);
