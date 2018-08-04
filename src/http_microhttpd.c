@@ -447,7 +447,7 @@ static int authenticated(struct MHD_Connection *connection,
 		if (redirect_url == NULL || strlen(redirect_url) == 0) {
 			return show_splashpage(connection, client);
 		} else {
-			//return authenticate_client(connection, ip_addr, mac, redirect_url, client);
+			return authenticate_client(connection, ip_addr, mac, redirect_url, client);
 		}
 	} else if (check_authdir_match(url, config->denydir)) {
 		auth_client_action(ip_addr, mac, AUTH_MAKE_DEAUTHENTICATED);
