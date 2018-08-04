@@ -905,7 +905,7 @@ iptables_fw_counters_update(void)
 {
 	FILE *output;
 	char *script;
-	char ip[INET6_ADDRSTRLEN];
+	char ip[INET6_ADDRSTRLEN+1];
 	char target[MAX_BUF];
 	int rc;
 	int af;

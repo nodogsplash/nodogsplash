@@ -40,6 +40,7 @@
 #include <errno.h>
 #include <sys/epoll.h>
 #include <fcntl.h>
+#include <arpa/inet.h>
 
 #include "common.h"
 #include "util.h"
@@ -296,10 +297,12 @@ static void
 ndsctl_auth(FILE *fp, char *arg)
 {
 	t_client *client;
-	char *ip, *mac;
+	char ip[INET6_ADDRSTRLEN+1];
+	char mac[18];
 	debug(LOG_DEBUG, "Entering ndsctl_auth...");
 
 	LOCK_CLIENT_LIST();
+
 	/* arg can be IP or MAC address of client */
 	debug(LOG_DEBUG, "Argument: %s (@%x)", arg, arg);
 
@@ -314,15 +317,10 @@ ndsctl_auth(FILE *fp, char *arg)
 		return;
 	}
 
-	/* We have a client.  Get both ip and mac address and authenticate */
-	ip = safe_strdup(client->ip);
-	mac = safe_strdup(client->mac);
 	UNLOCK_CLIENT_LIST();
 
 	auth_client_action(ip, mac, AUTH_MAKE_AUTHENTICATED);
 
-	free(ip);
-	free(mac);
 	fprintf(fp, "Yes");
 
 	debug(LOG_DEBUG, "Exiting ndsctl_auth...");
@@ -332,10 +330,13 @@ static void
 ndsctl_deauth(FILE *fp, char *arg)
 {
 	t_client *client;
-	char *ip, *mac;
+	char ip[INET6_ADDRSTRLEN+1];
+	char mac[18];
+
 	debug(LOG_DEBUG, "Entering ndsctl_deauth...");
 
 	LOCK_CLIENT_LIST();
+
 	/* arg can be IP or MAC address of client */
 	debug(LOG_DEBUG, "Argument: %s (@%x)", arg, arg);
 
@@ -350,15 +351,10 @@ ndsctl_deauth(FILE *fp, char *arg)
 		return;
 	}
 
-	/* We have the client.  Get both ip and mac address and deauthenticate */
-	ip = safe_strdup(client->ip);
-	mac = safe_strdup(client->mac);
 	UNLOCK_CLIENT_LIST();
 
 	auth_client_action(ip, mac, AUTH_MAKE_DEAUTHENTICATED);
 
-	free(ip);
-	free(mac);
 	fprintf(fp, "Yes");
 
 	debug(LOG_DEBUG, "Exiting ndsctl_deauth...");
