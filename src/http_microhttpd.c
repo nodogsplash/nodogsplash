@@ -196,16 +196,16 @@ static int is_splashpage(const char *host, const char *url)
  * @param connection
  * @return ip address - must be freed by caller
  */
-static char *
-get_ip(struct MHD_Connection *connection)
+static int
+get_ip(char ip_addr[INET6_ADDRSTRLEN+1], struct MHD_Connection *connection)
 {
 	const union MHD_ConnectionInfo *connection_info;
-	char *ip_addr = NULL;
 	const struct sockaddr *client_addr;
 	const struct sockaddr_in *addrin;
 	const struct sockaddr_in6 *addrin6;
+
 	if (!(connection_info = MHD_get_connection_info(connection, MHD_CONNECTION_INFO_CLIENT_ADDRESS))) {
-		return NULL;
+		return -1;
 	}
 
 	/* cast required for legacy MHD API < 0.9.6*/
@@ -215,29 +215,19 @@ get_ip(struct MHD_Connection *connection)
 
 	switch(client_addr->sa_family) {
 	case AF_INET:
-		ip_addr = calloc(1, INET_ADDRSTRLEN+1);
-		if (ip_addr == NULL) {
-			return NULL;
-		}
-		if (!inet_ntop(addrin->sin_family, &(addrin->sin_addr), ip_addr, sizeof(struct sockaddr_in))) {
-			free(ip_addr);
-			return NULL;
+		if (inet_ntop(addrin->sin_family, &(addrin->sin_addr), ip_addr, sizeof(struct sockaddr_in))) {
+			return 0;
 		}
 		break;
 
 	case AF_INET6:
-		ip_addr = calloc(1, INET6_ADDRSTRLEN+1);
-		if (ip_addr == NULL) {
-			return NULL;
-		}
-		if (!inet_ntop(addrin6->sin6_family, &(addrin6->sin6_addr), ip_addr, sizeof(struct sockaddr_in6))) {
-			free(ip_addr);
-			return NULL;
+		if (inet_ntop(addrin6->sin6_family, &(addrin6->sin6_addr), ip_addr, sizeof(struct sockaddr_in6))) {
+			return 0;
 		}
 		break;
 	}
 
-	return ip_addr;
+	return -1;
 }
 
 /**
@@ -262,9 +252,9 @@ libmicrohttpd_cb(void *cls,
 {
 
 	t_client *client;
-	char *ip_addr;
-	char *mac;
-	int ret;
+	char ip[INET6_ADDRSTRLEN+1];
+	char mac[18];
+	int rc = 0;
 
 	debug(LOG_DEBUG, "access: %s %s", method, url);
 
@@ -281,25 +271,24 @@ libmicrohttpd_cb(void *cls,
 	 * should all requests redirected? even those to .css, .js, ... or respond with 404/503/...
 	 */
 
-	ip_addr = get_ip(connection);
-	mac = arp_get(ip_addr);
-
-	client = client_list_find(ip_addr, mac);
-	if (client) {
-		if (client->fw_connection_state == FW_MARK_AUTHENTICATED ||
-				client->fw_connection_state == FW_MARK_TRUSTED) {
-			/* client already authed - dangerous!!! This should never happen */
-			ret = authenticated(connection, ip_addr, mac, url, client);
-			free(mac);
-			free(ip_addr);
-			return ret;
-		}
+	rc = get_ip(ip, connection);
+	if (rc != 0) {
+		return send_error(connection, 503);
 	}
 
-	ret = preauthenticated(connection, ip_addr, mac, url, client);
-	free(mac);
-	free(ip_addr);
-	return ret;
+	rc = arp_get(mac, ip);
+	if (rc != 0) {
+		return send_error(connection, 503);
+	}
+
+	client = client_list_find(ip, mac);
+	if (client && (client->fw_connection_state == FW_MARK_AUTHENTICATED ||
+			client->fw_connection_state == FW_MARK_TRUSTED)) {
+		/* client already authed - dangerous!!! This should never happen */
+		return authenticated(connection, ip, mac, url, client);
+	}
+
+	return preauthenticated(connection, ip, mac, url, client);
 }
 
 /**

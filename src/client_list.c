@@ -192,7 +192,8 @@ t_client *
 client_list_add_client(const char ip[])
 {
 	t_client *client;
-	char *mac, *token;
+	char *token;
+	char mac[18];
 
 	if (!check_ip_format(ip)) {
 		/* Inappropriate format in IP address */
@@ -200,7 +201,7 @@ client_list_add_client(const char ip[])
 		return NULL;
 	}
 
-	if (!(mac = arp_get(ip))) {
+	if (arp_get(mac, ip) != 0) {
 		/* We could not get their MAC address */
 		debug(LOG_NOTICE, "Could not arp MAC address for %s", ip);
 		return NULL;
@@ -213,7 +214,7 @@ client_list_add_client(const char ip[])
 	} else {
 		debug(LOG_INFO, "Client %s %s token %s already on client list", ip, mac, client->token);
 	}
-	free(mac);
+
 	return client;
 }
 

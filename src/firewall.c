@@ -84,33 +84,32 @@ unsigned int FW_MARK_MASK;             /**< @brief Iptables mask: bitwise or of 
  * IP address and return the MAC address bound to it.
  * @todo Make this function portable (using shell scripts?)
  */
-char *
-arp_get(const char req_ip[])
+int
+arp_get(char mac[18], const char req_ip[])
 {
 	FILE *proc;
-	char ip[INET6_ADDRSTRLEN];
-	char mac[18];
-	char *reply = NULL;
+	char ip_tmp[INET6_ADDRSTRLEN+1];
+	char mac_tmp[18];
 
 	if (!(proc = fopen("/proc/net/arp", "r"))) {
-		return NULL;
+		return -1;
 	}
 
 	/* Skip first line */
 	while (!feof(proc) && fgetc(proc) != '\n');
 
 	/* Find ip, copy mac in reply */
-	reply = NULL;
-	while (!feof(proc) && (fscanf(proc, " %15[0-9.] %*s %*s %17[A-Fa-f0-9:] %*s %*s", ip, mac) == 2)) {
-		if (strcmp(ip, req_ip) == 0) {
-			reply = safe_strdup(mac);
-			break;
+	while (!feof(proc) && (fscanf(proc, " %15[0-9.] %*s %*s %17[A-Fa-f0-9:] %*s %*s", ip_tmp, mac_tmp) == 2)) {
+		if (strcmp(ip_tmp, req_ip) == 0) {
+			fclose(proc);
+			strcpy(mac, mac_tmp);
+			return 0;
 		}
 	}
 
 	fclose(proc);
 
-	return reply;
+	return -1;
 }
 
 /** Initialize the firewall rules
