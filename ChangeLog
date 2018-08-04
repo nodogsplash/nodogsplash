@@ -9,6 +9,7 @@ nodogsplash (3.0.0)
     * call a script with username/password to decide the authentication
   * Replace ClientForceTimeout setting with SessionTimeout
   * Replace ClientTimeout settings with PreauthIdleTimeout and AuthedIdleTimeout
+  * Replace infoskel with a templated StatusPage (default is status.html)
 
  -- Moritz Warning <moritzwarning@web.de>  Tue, 31 July 2018 19:19:00 +0000
 

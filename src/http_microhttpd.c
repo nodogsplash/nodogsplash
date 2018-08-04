@@ -53,6 +53,7 @@ static int authenticate_client(struct MHD_Connection *connection, const char *ip
 static int get_host_value_callback(void *cls, enum MHD_ValueKind kind, const char *key, const char *value);
 static int serve_file(struct MHD_Connection *connection, t_client *client, const char *url);
 static int show_splashpage(struct MHD_Connection *connection, t_client *client);
+static int show_statuspage(struct MHD_Connection *connection, t_client *client);
 static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, const char *originurl);
 static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *client, const char *host, const char *url);
 static int send_error(struct MHD_Connection *connection, int error);
@@ -435,32 +436,26 @@ static int authenticated(struct MHD_Connection *connection,
 						t_client *client)
 {
 	s_config *config = config_get_config();
-	const char *redirect_url;
 	const char *host = NULL;
 	char redirect_to_us[128];
 
 	MHD_get_connection_values(connection, MHD_HEADER_KIND, get_host_value_callback, &host);
-
-	if (is_splashpage(host, url) || check_authdir_match(url, config->authdir)) {
-		redirect_url = get_redirect_url(connection);
-		/* TODO: what should we do when we get such request? */
-		if (redirect_url == NULL || strlen(redirect_url) == 0) {
-			return show_splashpage(connection, client);
-		} else {
-			return authenticate_client(connection, ip_addr, mac, redirect_url, client);
-		}
-	} else if (check_authdir_match(url, config->denydir)) {
-		auth_client_action(ip_addr, mac, AUTH_MAKE_DEAUTHENTICATED);
-		snprintf(redirect_to_us, 128, "http://%s:%u/", config->gw_address, config->gw_port);
-		return send_redirect_temp(connection, redirect_to_us);
-	}
-
 
 	/* check if this is an late request meaning the user tries to get the internet, but ended up here,
 	 * because the iptables rule came to late */
 	if (is_foreign_hosts(connection, host)) {
 		/* might happen if the firewall rule isn't yet installed */
 		return send_refresh(connection);
+	}
+
+	if (check_authdir_match(url, config->denydir)) {
+		auth_client_action(ip_addr, mac, AUTH_MAKE_DEAUTHENTICATED);
+		snprintf(redirect_to_us, 128, "http://%s:%u/", config->gw_address, config->gw_port);
+		return send_redirect_temp(connection, redirect_to_us);
+	}
+
+	if (check_authdir_match(url, config->authdir)) {
+		return show_statuspage(connection, client);
 	}
 
 	/* user doesn't wants the splashpage or tried to auth itself */
@@ -527,8 +522,9 @@ static int preauthenticated(struct MHD_Connection *connection,
 
 	if (!client) {
 		client = add_client(ip_addr);
-		if (!client)
+		if (!client) {
 			return send_error(connection, 503);
+		}
 	}
 
 	MHD_get_connection_values(connection, MHD_HEADER_KIND, get_host_value_callback, &host);
@@ -745,7 +741,7 @@ static int get_query(struct MHD_Connection *connection, char **query)
 		return 0;
 	}
 
-	for (i = 0, j = 0; i<element_counter; i++) {
+	for (i = 0, j = 0; i < element_counter; i++) {
 		if (!elements[i]) {
 			continue;
 		}
@@ -861,13 +857,7 @@ static int get_host_value_callback(void *cls, enum MHD_ValueKind kind, const cha
 	return MHD_YES;
 }
 
-/**
- * @brief show_splashpage is called when the client clicked on Ok as well when the client doesn't know us yet.
- * @param connection
- * @param client
- * @return
- */
-static int show_splashpage(struct MHD_Connection *connection, t_client *client)
+static int show_templated_page(struct MHD_Connection *connection, t_client *client, char *page)
 {
 	struct MHD_Response *response;
 	struct templater templor;
@@ -876,42 +866,44 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client)
 	char filename[PATH_MAX];
 	const char *mimetype;
 	int size = 0, bytes = 0;
-	int splashpage_fd;
-	char *splashpage_result;
-	char *splashpage_tmpl;
+	char upload_bytes[20];
+	char download_bytes[20];
+	int page_fd;
+	char *page_result;
+	char *page_tmpl;
 
-	snprintf(filename, PATH_MAX, "%s/%s", config->webroot, config->splashpage);
+	snprintf(filename, PATH_MAX, "%s/%s", config->webroot, page);
 
-	splashpage_fd = open(filename, O_RDONLY);
-	if (splashpage_fd < 0)
+	page_fd = open(filename, O_RDONLY);
+	if (page_fd < 0)
 		return send_error(connection, 404);
 
 	mimetype = lookup_mimetype(filename);
 
 	/* input size */
-	size = lseek(splashpage_fd, 0, SEEK_END);
-	lseek(splashpage_fd, 0, SEEK_SET);
+	size = lseek(page_fd, 0, SEEK_END);
+	lseek(page_fd, 0, SEEK_SET);
 
 	/* we TMPLVAR_SIZE for template variables */
-	splashpage_tmpl = calloc(1, size);
-	if (splashpage_tmpl == NULL) {
-		close(splashpage_fd);
+	page_tmpl = calloc(1, size);
+	if (page_tmpl == NULL) {
+		close(page_fd);
 		return send_error(connection, 503);
 	}
 
-	splashpage_result = calloc(1, size + TMPLVAR_SIZE);
-	if (splashpage_result == NULL) {
-		close(splashpage_fd);
-		free(splashpage_tmpl);
+	page_result = calloc(1, size + TMPLVAR_SIZE);
+	if (page_result == NULL) {
+		close(page_fd);
+		free(page_tmpl);
 		return send_error(connection, 503);
 	}
 
 	while (bytes < size) {
-		ret = read(splashpage_fd, splashpage_tmpl + bytes, size - bytes);
+		ret = read(page_fd, page_tmpl + bytes, size - bytes);
 		if (ret < 0) {
-			free(splashpage_result);
-			free(splashpage_tmpl);
-			close(splashpage_fd);
+			free(page_result);
+			free(page_tmpl);
+			close(page_fd);
 			return send_error(connection, 503);
 		}
 		bytes += ret;
@@ -926,6 +918,8 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client)
 	const char *redirect_url = NULL;
 	char *imagesdir = NULL;
 	char *pagesdir = NULL;
+	sprintf(upload_bytes, "%llu", client->counters.outgoing);
+	sprintf(download_bytes, "%llu", client->counters.incoming);
 
 	redirect_url = get_redirect_url(connection);
 
@@ -943,13 +937,15 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client)
 	tmpl_set_variable(&templor, "clientip", client->ip);
 	tmpl_set_variable(&templor, "clientmac", client->mac);
 	tmpl_set_variable(&templor, "denyaction", denyaction);
-	tmpl_set_variable(&templor, "error_msg", "");
 
 	tmpl_set_variable(&templor, "gatewaymac", config->gw_mac);
 	tmpl_set_variable(&templor, "gatewayname", config->gw_name);
 
 	tmpl_set_variable(&templor, "imagesdir", imagesdir);
 	tmpl_set_variable(&templor, "pagesdir", pagesdir);
+
+	tmpl_set_variable(&templor, "uploadbytes", upload_bytes);
+	tmpl_set_variable(&templor, "uploadbytes", download_bytes);
 
 	tmpl_set_variable(&templor, "maxclients", maxclients);
 	tmpl_set_variable(&templor, "nclients", nclients);
@@ -960,8 +956,8 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client)
 	tmpl_set_variable(&templor, "uptime", uptime);
 	tmpl_set_variable(&templor, "version", VERSION);
 
-	tmpl_parse(&templor, splashpage_result, size + TMPLVAR_SIZE, splashpage_tmpl, size);
-	free(splashpage_tmpl);
+	tmpl_parse(&templor, page_result, size + TMPLVAR_SIZE, page_tmpl, size);
+	free(page_tmpl);
 	free(uptime);
 	free(nclients);
 	free(maxclients);
@@ -971,9 +967,9 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client)
 	free(pagesdir);
 	free(imagesdir);
 
-	response = MHD_create_response_from_buffer(strlen(splashpage_result), (void *)splashpage_result, MHD_RESPMEM_MUST_FREE);
+	response = MHD_create_response_from_buffer(strlen(page_result), (void *)page_result, MHD_RESPMEM_MUST_FREE);
 	if (!response) {
-		close(splashpage_fd);
+		close(page_fd);
 		return send_error(connection, 503);
 	}
 
@@ -981,9 +977,33 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client)
 	ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
 	MHD_destroy_response(response);
 
-	close(splashpage_fd);
+	close(page_fd);
 
 	return ret;
+}
+
+/**
+ * @brief show_splashpage is called when the client clicked on Ok as well when the client doesn't know us yet.
+ * @param connection
+ * @param client
+ * @return
+ */
+static int show_splashpage(struct MHD_Connection *connection, t_client *client)
+{
+	s_config *config = config_get_config();
+	return show_templated_page(connection, client, config->splashpage);
+}
+
+/**
+ * @brief show_statuspage is called when the client is already authenticated but still accesses the captive portal
+ * @param connection
+ * @param client
+ * @return
+ */
+static int show_statuspage(struct MHD_Connection *connection, t_client *client)
+{
+	s_config *config = config_get_config();
+	return show_templated_page(connection, client, config->statuspage);
 }
 
 /**

@@ -76,6 +76,7 @@ typedef enum {
 	oHTTPDMaxConn,
 	oWebRoot,
 	oSplashPage,
+	oStatusPage,
 	oImagesDir,
 	oPagesDir,
 	oRedirectURL,
@@ -121,6 +122,7 @@ static const struct {
 	{ "gatewayport", oGatewayPort },
 	{ "webroot", oWebRoot },
 	{ "splashpage", oSplashPage },
+	{ "statuspage", oStatusPage },
 	{ "imagesdir", oImagesDir },
 	{ "pagesdir", oPagesDir },
 	{ "redirectURL", oRedirectURL },
@@ -189,7 +191,7 @@ config_init(void)
 	config.gw_port = DEFAULT_GATEWAYPORT;
 	config.webroot = safe_strdup(DEFAULT_WEBROOT);
 	config.splashpage = safe_strdup(DEFAULT_SPLASHPAGE);
-	config.infoskelpage = safe_strdup(DEFAULT_INFOSKELPAGE);
+	config.statuspage = safe_strdup(DEFAULT_STATUSPAGE);
 	config.imagesdir = safe_strdup(DEFAULT_IMAGESDIR);
 	config.pagesdir = safe_strdup(DEFAULT_PAGESDIR);
 	config.authdir = safe_strdup(DEFAULT_AUTHDIR);
@@ -781,6 +783,9 @@ config_read(const char *filename)
 			break;
 		case oSplashPage:
 			config.splashpage = safe_strdup(p1);
+			break;
+		case oStatusPage:
+			config.statuspage = safe_strdup(p1);
 			break;
 		case oImagesDir:
 			config.imagesdir = safe_strdup(p1);

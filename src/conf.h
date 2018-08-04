@@ -59,7 +59,7 @@
 #define DEFAULT_AUTHED_IDLE_TIMEOUT (2 * 60 * 60)
 #define DEFAULT_WEBROOT "/etc/nodogsplash/htdocs"
 #define DEFAULT_SPLASHPAGE "splash.html"
-#define DEFAULT_INFOSKELPAGE "infoskel.html"
+#define DEFAULT_STATUSPAGE "status.html"
 #define DEFAULT_IMAGESDIR "images"
 #define DEFAULT_PAGESDIR "pages"
 #define DEFAULT_AUTHDIR "nodogsplash_auth"
@@ -149,7 +149,7 @@ typedef struct {
 	unsigned int gw_port;		/**< @brief Port the webserver will run on */
 	char *webroot;			/**< @brief Directory containing splash pages, etc. */
 	char *splashpage;		/**< @brief Name of main splash page */
-	char *infoskelpage;		/**< @brief Name of info skeleton page */
+	char *statuspage;		/**< @brief Name of info status page */
 	char *imagesdir;		/**< @brief Subdir of webroot containing .png .gif files etc */
 	char *pagesdir;			/**< @brief Subdir of webroot containing other .html files */
 	char *redirectURL;		/**< @brief URL to direct client to after authentication */
