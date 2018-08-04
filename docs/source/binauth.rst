@@ -79,3 +79,11 @@ Client is deauthenticated due to the session end:
 .. code::
 
    /etc/nds_auth.sh session_end <mac> <incoming_bytes> <outgoing_bytes> <duration_seconds>
+
+.. code::
+
+   /etc/nds_auth.sh manual_auth <mac> <incoming_bytes> <outgoing_bytes=0> <duration_seconds=0>
+
+.. code::
+
+   /etc/nds_auth.sh manual_deauth <mac> <incoming_bytes> <outgoing_bytes> <duration_seconds>

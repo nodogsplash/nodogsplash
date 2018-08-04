@@ -182,6 +182,7 @@ auth_client_action(const char ip[], const char mac[], t_authaction action)
 {
 	t_client *client;
 	s_config *config;
+	time_t now = time(NULL);
 
 	LOCK_CLIENT_LIST();
 
@@ -198,26 +199,50 @@ auth_client_action(const char ip[], const char mac[], t_authaction action)
 	switch(action) {
 
 	case AUTH_MAKE_AUTHENTICATED:
-		if (client->fw_connection_state != FW_MARK_AUTHENTICATED) {
-			client->fw_connection_state = FW_MARK_AUTHENTICATED;
-			client->session_start = time(NULL);
-			if (config->session_timeout) {
-				client->session_end = time(NULL) + config->session_timeout;
-			} else {
-				client->session_end = 0;
-			}
-			iptables_fw_authenticate(client);
-			authenticated_since_start++;
-		} else {
+		if (client->fw_connection_state == FW_MARK_AUTHENTICATED) {
 			debug(LOG_INFO, "Nothing to do, %s %s already authenticated", client->ip, client->mac);
+			break;
+		}
+
+		client->fw_connection_state = FW_MARK_AUTHENTICATED;
+		client->session_start = now;
+		if (config->session_timeout) {
+			client->session_end = now + config->session_timeout;
+		} else {
+			client->session_end = 0;
+		}
+
+		iptables_fw_authenticate(client);
+		authenticated_since_start++;
+
+		if (config->bin_auth) {
+			// Client will be authenticated...
+			execute("%s manual_auth %s %llu %llu %d",
+				config->bin_auth,
+				client->mac,
+				client->counters.incoming,
+				client->counters.outgoing,
+				now - client->session_start
+			);
 		}
 		break;
 
 	case AUTH_MAKE_DEAUTHENTICATED:
-		if (client->fw_connection_state == FW_MARK_AUTHENTICATED) {
-			iptables_fw_deauthenticate(client);
-			client->session_start = 0;
-			client->session_end = 0;
+		if (client->fw_connection_state != FW_MARK_AUTHENTICATED) {
+			debug(LOG_INFO, "Nothing to do, %s %s not authenticated", client->ip, client->mac);
+			break;
+		}
+		iptables_fw_deauthenticate(client);
+
+		if (config->bin_auth) {
+			// Client will be deauthenticated...
+			execute("%s manual_deauth %s %llu %llu %d",
+				config->bin_auth,
+				client->mac,
+				client->counters.incoming,
+				client->counters.outgoing,
+				now - client->session_start
+			);
 		}
 		client_list_delete(client);
 		break;
