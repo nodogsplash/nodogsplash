@@ -137,6 +137,8 @@ termination_handler(int s)
 		debug(LOG_INFO, "Cleaning up and exiting");
 	}
 
+	auth_client_deauth_all();
+
 	debug(LOG_INFO, "Flushing firewall rules...");
 	iptables_fw_destroy();
 

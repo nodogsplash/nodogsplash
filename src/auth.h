@@ -40,4 +40,7 @@ void auth_client_action(const char ip[], const char mac[], t_authaction action);
 /** @brief Periodically check if connections expired */
 void *thread_client_timeout_check(void *arg);
 
+/** @brief Deauth all authenticated clients */
+void auth_client_deauth_all();
+
 #endif

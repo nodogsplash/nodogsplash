@@ -253,3 +253,44 @@ auth_client_action(const char ip[], const char mac[], t_authaction action)
 
 	UNLOCK_CLIENT_LIST();
 }
+
+void
+auth_client_deauth_all()
+{
+	t_client *cp1, *cp2;
+	s_config *config;
+	time_t now;
+
+	LOCK_CLIENT_LIST();
+
+	now = time(NULL);
+	config = config_get_config();
+
+	for (cp1 = cp2 = client_get_first_client(); NULL != cp1; cp1 = cp2) {
+		cp2 = cp1->next;
+
+		if (!(cp1 = client_list_find(cp1->ip, cp1->mac))) {
+			debug(LOG_ERR, "Client was freed while being re-validated!");
+			continue;
+		}
+
+		if (cp1->fw_connection_state == FW_MARK_AUTHENTICATED) {
+			iptables_fw_deauthenticate(cp1);
+
+			if (config->bin_auth) {
+				// Client will be deauthenticated...
+				execute("%s manual_deauth %s %llu %llu %d",
+					config->bin_auth,
+					cp1->mac,
+					cp1->counters.incoming,
+					cp1->counters.outgoing,
+					now - cp1->session_start
+				);
+			}
+
+			client_list_delete(cp1);
+		}
+	}
+
+	UNLOCK_CLIENT_LIST();
+}

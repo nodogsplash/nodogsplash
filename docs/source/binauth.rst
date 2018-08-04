@@ -80,9 +80,13 @@ Client is deauthenticated due to the session end:
 
    /etc/nds_auth.sh session_end <mac> <incoming_bytes> <outgoing_bytes> <duration_seconds>
 
+Manual authencation can be triggered by the `ndsctl` tool.
+
 .. code::
 
    /etc/nds_auth.sh manual_auth <mac> <incoming_bytes> <outgoing_bytes=0> <duration_seconds=0>
+
+Manual deauthencation can be triggered by the `ndsctl` tool, client trigger, or on Nodogsplash termination.
 
 .. code::
 
