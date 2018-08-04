@@ -40,7 +40,7 @@ install:
 	mkdir -p $(DESTDIR)/etc/nodogsplash/htdocs/images
 	cp resources/nodogsplash.conf $(DESTDIR)/etc/nodogsplash/
 	cp resources/splash.html $(DESTDIR)/etc/nodogsplash/htdocs/
-	cp resources/infoskel.html $(DESTDIR)/etc/nodogsplash/htdocs/
+	cp resources/status.html $(DESTDIR)/etc/nodogsplash/htdocs/
 	cp resources/splash.jpg $(DESTDIR)/etc/nodogsplash/htdocs/images/
 
 checkastyle:
