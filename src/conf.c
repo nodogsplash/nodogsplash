@@ -949,7 +949,7 @@ int check_mac_format(const char possiblemac[])
 
 int add_to_trusted_mac_list(const char possiblemac[])
 {
-	char *mac = NULL;
+	char mac[18];
 	t_MAC *p = NULL;
 
 	/* check for valid format */
@@ -958,15 +958,12 @@ int add_to_trusted_mac_list(const char possiblemac[])
 		return -1;
 	}
 
-	mac = safe_malloc(18);
-
 	sscanf(possiblemac, "%17[A-Fa-f0-9:]", mac);
 
 	/* See if MAC is already on the list; don't add duplicates */
 	for (p = config.trustedmaclist; p != NULL; p = p->next) {
 		if (!strcasecmp(p->mac, mac)) {
 			debug(LOG_INFO, "MAC address [%s] already on trusted list", mac);
-			free(mac);
 			return 1;
 		}
 	}
@@ -977,7 +974,6 @@ int add_to_trusted_mac_list(const char possiblemac[])
 	p->next = config.trustedmaclist;
 	config.trustedmaclist = p;
 	debug(LOG_INFO, "Added MAC address [%s] to trusted list", mac);
-	free(mac);
 	return 0;
 }
 
@@ -987,7 +983,7 @@ int add_to_trusted_mac_list(const char possiblemac[])
  */
 int remove_from_trusted_mac_list(const char possiblemac[])
 {
-	char *mac = NULL;
+	char mac[18];
 	t_MAC **p = NULL;
 	t_MAC *del = NULL;
 
@@ -997,33 +993,28 @@ int remove_from_trusted_mac_list(const char possiblemac[])
 		return -1;
 	}
 
-	mac = safe_malloc(18);
-
 	sscanf(possiblemac, "%17[A-Fa-f0-9:]", mac);
 
 	/* If empty list, nothing to do */
 	if (config.trustedmaclist == NULL) {
 		debug(LOG_INFO, "MAC address [%s] not on empty trusted list", mac);
-		free(mac);
 		return -1;
 	}
 
 	/* Find MAC on the list, remove it */
 	for (p = &(config.trustedmaclist); *p != NULL; p = &((*p)->next)) {
-		if (!strcasecmp((*p)->mac,mac)) {
+		if (!strcasecmp((*p)->mac, mac)) {
 			/* found it */
 			del = *p;
 			*p = del->next;
 			debug(LOG_INFO, "Removed MAC address [%s] from trusted list", mac);
 			free(del);
-			free(mac);
 			return 0;
 		}
 	}
 
 	/* MAC was not on list */
 	debug(LOG_INFO, "MAC address [%s] not on  trusted list", mac);
-	free(mac);
 	return -1;
 }
 
@@ -1056,7 +1047,7 @@ void parse_trusted_mac_list(const char ptr[])
  */
 int add_to_blocked_mac_list(const char possiblemac[])
 {
-	char *mac = NULL;
+	char mac[18];
 	t_MAC *p = NULL;
 
 	/* check for valid format */
@@ -1071,15 +1062,12 @@ int add_to_blocked_mac_list(const char possiblemac[])
 		return -1;
 	}
 
-	mac = safe_malloc(18);
-
 	sscanf(possiblemac, "%17[A-Fa-f0-9:]", mac);
 
 	/* See if MAC is already on the list; don't add duplicates */
 	for (p = config.blockedmaclist; p != NULL; p = p->next) {
 		if (!strcasecmp(p->mac,mac)) {
 			debug(LOG_INFO, "MAC address [%s] already on blocked list", mac);
-			free(mac);
 			return 1;
 		}
 	}
@@ -1090,7 +1078,6 @@ int add_to_blocked_mac_list(const char possiblemac[])
 	p->next = config.blockedmaclist;
 	config.blockedmaclist = p;
 	debug(LOG_INFO, "Added MAC address [%s] to blocked list", mac);
-	free(mac);
 	return 0;
 }
 
@@ -1100,7 +1087,7 @@ int add_to_blocked_mac_list(const char possiblemac[])
  */
 int remove_from_blocked_mac_list(const char possiblemac[])
 {
-	char *mac = NULL;
+	char mac[18];
 	t_MAC **p = NULL;
 	t_MAC *del = NULL;
 
@@ -1116,14 +1103,11 @@ int remove_from_blocked_mac_list(const char possiblemac[])
 		return -1;
 	}
 
-	mac = safe_malloc(18);
-
 	sscanf(possiblemac, "%17[A-Fa-f0-9:]", mac);
 
 	/* If empty list, nothing to do */
 	if (config.blockedmaclist == NULL) {
 		debug(LOG_INFO, "MAC address [%s] not on empty blocked list", mac);
-		free(mac);
 		return -1;
 	}
 
@@ -1135,14 +1119,12 @@ int remove_from_blocked_mac_list(const char possiblemac[])
 			*p = del->next;
 			debug(LOG_INFO, "Removed MAC address [%s] from blocked list", mac);
 			free(del);
-			free(mac);
 			return 0;
 		}
 	}
 
 	/* MAC was not on list */
 	debug(LOG_INFO, "MAC address [%s] not on  blocked list", mac);
-	free(mac);
 	return -1;
 }
 
@@ -1174,7 +1156,7 @@ void parse_blocked_mac_list(const char ptr[])
  */
 int add_to_allowed_mac_list(const char possiblemac[])
 {
-	char *mac = NULL;
+	char mac[18];
 	t_MAC *p = NULL;
 
 	/* check for valid format */
@@ -1189,15 +1171,12 @@ int add_to_allowed_mac_list(const char possiblemac[])
 		return -1;
 	}
 
-	mac = safe_malloc(18);
-
 	sscanf(possiblemac, "%17[A-Fa-f0-9:]", mac);
 
 	/* See if MAC is already on the list; don't add duplicates */
 	for (p = config.allowedmaclist; p != NULL; p = p->next) {
 		if (!strcasecmp(p->mac, mac)) {
 			debug(LOG_INFO, "MAC address [%s] already on allowed list", mac);
-			free(mac);
 			return 1;
 		}
 	}
@@ -1208,7 +1187,6 @@ int add_to_allowed_mac_list(const char possiblemac[])
 	p->next = config.allowedmaclist;
 	config.allowedmaclist = p;
 	debug(LOG_INFO, "Added MAC address [%s] to allowed list", mac);
-	free(mac);
 	return 0;
 }
 
@@ -1218,7 +1196,7 @@ int add_to_allowed_mac_list(const char possiblemac[])
  */
 int remove_from_allowed_mac_list(const char possiblemac[])
 {
-	char *mac = NULL;
+	char mac[18];
 	t_MAC **p = NULL;
 	t_MAC *del = NULL;
 
@@ -1234,33 +1212,28 @@ int remove_from_allowed_mac_list(const char possiblemac[])
 		return -1;
 	}
 
-	mac = safe_malloc(18);
-
 	sscanf(possiblemac, "%17[A-Fa-f0-9:]", mac);
 
 	/* If empty list, nothing to do */
 	if (config.allowedmaclist == NULL) {
 		debug(LOG_INFO, "MAC address [%s] not on empty allowed list", mac);
-		free(mac);
 		return -1;
 	}
 
 	/* Find MAC on the list, remove it */
 	for (p = &(config.allowedmaclist); *p != NULL; p = &((*p)->next)) {
-		if (!strcasecmp((*p)->mac,mac)) {
+		if (!strcasecmp((*p)->mac, mac)) {
 			/* found it */
 			del = *p;
 			*p = del->next;
 			debug(LOG_INFO, "Removed MAC address [%s] from allowed list", mac);
 			free(del);
-			free(mac);
 			return 0;
 		}
 	}
 
 	/* MAC was not on list */
 	debug(LOG_INFO, "MAC address [%s] not on  allowed list", mac);
-	free(mac);
 	return -1;
 }
 
