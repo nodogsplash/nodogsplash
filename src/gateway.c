@@ -266,9 +266,10 @@ main_loop(void)
 		httpdAddCWildcardContent(webserver, config->denydir, NULL, http_nodogsplash_callback_deny);
 		httpdAddC404Content(webserver, http_nodogsplash_callback_404);
 	*/
-	/* Reset the firewall (cleans it, in case we are restarting after nodogsplash crash) */
 
+	/* Reset the firewall (cleans it, in case we are restarting after nodogsplash crash) */
 	iptables_fw_destroy();
+
 	/* Then initialize it */
 	debug(LOG_NOTICE, "Initializing firewall rules");
 	if (iptables_fw_init() != 0) {

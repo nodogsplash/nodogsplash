@@ -658,6 +658,7 @@ add_client(const char *ip_addr)
 	LOCK_CLIENT_LIST();
 	client = client_list_add_client(ip_addr);
 	UNLOCK_CLIENT_LIST();
+
 	return client;
 }
 
@@ -671,8 +672,9 @@ int send_redirect_temp(struct MHD_Connection *connection, const char *url)
 	safe_asprintf(&redirect, redirect_body, url, url);
 
 	response = MHD_create_response_from_buffer(strlen(redirect), redirect, MHD_RESPMEM_MUST_FREE);
-	if (!response)
+	if (!response) {
 		return send_error(connection, 503);
+	}
 
 	// MHD_set_response_options(response, MHD_RF_HTTP_VERSION_1_0_ONLY, MHD_RO_END);
 	MHD_add_response_header(response, "Location", url);
@@ -722,7 +724,7 @@ static int get_query(struct MHD_Connection *connection, char **query)
 	// static int get_host_value_callback(void *cls, enum MHD_ValueKind kind, const char *key, const char *value) {
 	MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, collect_query_string, &collect_query);
 
-	for (i = 0; i<element_counter; i++) {
+	for (i = 0; i < element_counter; i++) {
 		if (!elements[i])
 			continue;
 		length += strlen(elements[i]);
@@ -873,12 +875,16 @@ static int show_templated_page(struct MHD_Connection *connection, t_client *clie
 	int page_fd;
 	char *page_result;
 	char *page_tmpl;
+printf("show_templated_page\n");
 
 	snprintf(filename, PATH_MAX, "%s/%s", config->webroot, page);
 
+printf("filename: %s\n", filename);
+
 	page_fd = open(filename, O_RDONLY);
-	if (page_fd < 0)
+	if (page_fd < 0) {
 		return send_error(connection, 404);
+	}
 
 	mimetype = lookup_mimetype(filename);
 
