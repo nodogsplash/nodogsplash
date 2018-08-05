@@ -93,12 +93,13 @@ fw_refresh_client_list(void)
 			if (conn_state == FW_MARK_AUTHENTICATED) {
 				if (config->bin_auth) {
 					// Client will be deauthenticated...
-					execute("%s session_end %s %llu %llu %d",
+					execute("%s session_end %s %llu %llu %llu %llu",
 						config->bin_auth,
 						cp1->mac,
 						cp1->counters.incoming,
 						cp1->counters.outgoing,
-						now - cp1->session_start
+						cp1->session_start,
+						cp1->session_end
 					);
 				}
 				iptables_fw_deauthenticate(cp1);
@@ -125,12 +126,13 @@ fw_refresh_client_list(void)
 			if (conn_state == FW_MARK_AUTHENTICATED) {
 				if (config->bin_auth) {
 					// Client will be deauthenticated...
-					execute("%s idle_timeout %s %llu %llu %d",
+					execute("%s idle_timeout %s %llu %llu %llu %llu",
 						config->bin_auth,
 						cp1->mac,
 						cp1->counters.incoming,
 						cp1->counters.outgoing,
-						now - cp1->session_start
+						cp1->session_start,
+						cp1->session_end
 					);
 				}
 				iptables_fw_deauthenticate(cp1);
@@ -178,79 +180,62 @@ thread_client_timeout_check(void *arg)
  * Alter the firewall rules and client list accordingly.
 */
 void
-auth_client_action(const char ip[], const char mac[], t_authaction action)
+auth_client_deauthenticate(const char ip[], const char mac[])
 {
 	t_client *client;
-	s_config *config;
-	time_t now = time(NULL);
+
+printf("auth_client_deauthenticate\n");
 
 	LOCK_CLIENT_LIST();
 
 	client = client_list_find(ip, mac);
-	config = config_get_config();
 
 	/* Client should already have hit the server and be on the client list */
 	if (client == NULL) {
-		debug(LOG_ERR, "Client %s %s action %d is not on client list", ip, mac, action);
-		UNLOCK_CLIENT_LIST();
-		return;
+		debug(LOG_ERR, "Client %s %s to deauthenticate is not on client list", ip, mac);
+		goto end;
 	}
 
-	switch(action) {
+	if (client->fw_connection_state != FW_MARK_AUTHENTICATED) {
+		debug(LOG_INFO, "Nothing to do, %s %s not authenticated", client->ip, client->mac);
+		goto end;
+	}
+	iptables_fw_deauthenticate(client);
 
-	case AUTH_MAKE_AUTHENTICATED:
-		if (client->fw_connection_state == FW_MARK_AUTHENTICATED) {
-			debug(LOG_INFO, "Nothing to do, %s %s already authenticated", client->ip, client->mac);
-			break;
-		}
+	client_list_delete(client);
 
-		client->fw_connection_state = FW_MARK_AUTHENTICATED;
-		client->session_start = now;
-		if (config->session_timeout) {
-			client->session_end = now + config->session_timeout;
-		} else {
-			client->session_end = 0;
-		}
+end:
+	UNLOCK_CLIENT_LIST();
+}
 
-		iptables_fw_authenticate(client);
-		authenticated_since_start++;
+void
+auth_client_authenticate(const char ip[], const char mac[])
+{
+	t_client *client;
 
-		if (config->bin_auth) {
-			// Client will be authenticated...
-			execute("%s manual_auth %s %llu %llu %d",
-				config->bin_auth,
-				client->mac,
-				client->counters.incoming,
-				client->counters.outgoing,
-				now - client->session_start
-			);
-		}
-		break;
+printf("auth_client_authenticate\n");
 
-	case AUTH_MAKE_DEAUTHENTICATED:
-		if (client->fw_connection_state != FW_MARK_AUTHENTICATED) {
-			debug(LOG_INFO, "Nothing to do, %s %s not authenticated", client->ip, client->mac);
-			break;
-		}
-		iptables_fw_deauthenticate(client);
+	LOCK_CLIENT_LIST();
 
-		if (config->bin_auth) {
-			// Client will be deauthenticated...
-			execute("%s manual_deauth %s %llu %llu %d",
-				config->bin_auth,
-				client->mac,
-				client->counters.incoming,
-				client->counters.outgoing,
-				now - client->session_start
-			);
-		}
-		client_list_delete(client);
-		break;
+	client = client_list_find(ip, mac);
 
-	default:
-		debug(LOG_ERR, "Unknown auth action: %d", action);
+	/* Client should already have hit the server and be on the client list */
+	if (client == NULL) {
+		debug(LOG_ERR, "Client %s %s to authenticate is not on client list", ip, mac);
+		goto end;
 	}
 
+	if (client->fw_connection_state == FW_MARK_AUTHENTICATED) {
+		debug(LOG_INFO, "Nothing to do, %s %s already authenticated", client->ip, client->mac);
+		goto end;
+	}
+
+	client->fw_connection_state = FW_MARK_AUTHENTICATED;
+
+	iptables_fw_authenticate(client);
+	authenticated_since_start++;
+
+end:
 	UNLOCK_CLIENT_LIST();
 }
 

@@ -286,6 +286,17 @@ ndsctl_handler(int fd)
 	fclose(fp);
 }
 
+static t_client *find_client(const char *arg)
+{
+	t_client *client;
+
+	if ((client = client_list_find_by_ip(arg)) != NULL);
+	else if ((client = client_list_find_by_mac(arg)) != NULL);
+	else if ((client = client_list_find_by_token(arg)) != NULL);
+
+	return client;
+}
+
 /** A bit of an hack, self kills.... */
 static void
 ndsctl_stop()
@@ -297,31 +308,46 @@ static void
 ndsctl_auth(FILE *fp, char *arg)
 {
 	t_client *client;
+	s_config *config;
 	char ip[INET6_ADDRSTRLEN+1];
 	char mac[18];
-	debug(LOG_DEBUG, "Entering ndsctl_auth...");
+
+	debug(LOG_DEBUG, "Entering ndsctl_auth [%s]", arg);
+	config = config_get_config();
 
 	LOCK_CLIENT_LIST();
+	client = find_client(arg);
 
-	/* arg can be IP or MAC address of client */
-	debug(LOG_DEBUG, "Argument: %s (@%x)", arg, arg);
+	if (client && client->fw_connection_state != FW_MARK_AUTHENTICATED) {
+		client->session_start = time(NULL);
+		if (config->session_timeout) {
+			client->session_end = client->session_start + config->session_timeout;
+		} else {
+			client->session_end = 0;
+		}
 
-	/* We get the client or return... */
-	if ((client = client_list_find_by_ip(arg)) != NULL);
-	else if ((client = client_list_find_by_mac(arg)) != NULL);
-	else if ((client = client_list_find_by_token(arg)) != NULL);
-	else {
-		debug(LOG_DEBUG, "Client not found.");
-		UNLOCK_CLIENT_LIST();
-		fprintf(fp, "No");
-		return;
+		if (client && config->bin_auth) {
+			// Client will be authenticated...
+			execute("%s manual_auth %s %llu %llu %llu",
+				config->bin_auth,
+				client->mac,
+				client->counters.incoming,
+				client->counters.outgoing,
+				client->session_start,
+				client->session_end
+			);
+		}
 	}
 
 	UNLOCK_CLIENT_LIST();
 
-	auth_client_action(ip, mac, AUTH_MAKE_AUTHENTICATED);
-
-	fprintf(fp, "Yes");
+	if (client) {
+		auth_client_authenticate(ip, mac);
+		fprintf(fp, "Yes");
+	} else {
+		debug(LOG_DEBUG, "Client not found.");
+		fprintf(fp, "No");
+	}
 
 	debug(LOG_DEBUG, "Exiting ndsctl_auth...");
 }
@@ -330,32 +356,36 @@ static void
 ndsctl_deauth(FILE *fp, char *arg)
 {
 	t_client *client;
+	s_config *config;
 	char ip[INET6_ADDRSTRLEN+1];
 	char mac[18];
 
-	debug(LOG_DEBUG, "Entering ndsctl_deauth...");
+	debug(LOG_DEBUG, "Entering ndsctl_deauth [%s]", arg);
+	config = config_get_config();
 
 	LOCK_CLIENT_LIST();
-
-	/* arg can be IP or MAC address of client */
-	debug(LOG_DEBUG, "Argument: %s (@%x)", arg, arg);
-
-	/* We get the client or return... */
-	if ((client = client_list_find_by_ip(arg)) != NULL);
-	else if ((client = client_list_find_by_mac(arg)) != NULL);
-	else if ((client = client_list_find_by_token(arg)) != NULL);
-	else {
-		debug(LOG_DEBUG, "Client not found.");
-		UNLOCK_CLIENT_LIST();
-		fprintf(fp, "No");
-		return;
-	}
-
+	client = find_client(arg);
 	UNLOCK_CLIENT_LIST();
 
-	auth_client_action(ip, mac, AUTH_MAKE_DEAUTHENTICATED);
+	if (client && config->bin_auth) {
+		// Client will be deauthenticated...
+		execute("%s manual_deauth %s %llu %llu %llu %llu",
+			config->bin_auth,
+			client->mac,
+			client->counters.incoming,
+			client->counters.outgoing,
+			client->session_start,
+			client->session_end
+		);
+	}
 
-	fprintf(fp, "Yes");
+	if (client) {
+		auth_client_deauthenticate(ip, mac);
+		fprintf(fp, "Yes");
+	} else {
+		debug(LOG_DEBUG, "Client not found.");
+		fprintf(fp, "No");
+	}
 
 	debug(LOG_DEBUG, "Exiting ndsctl_deauth...");
 }
@@ -363,10 +393,9 @@ ndsctl_deauth(FILE *fp, char *arg)
 static void
 ndsctl_block(FILE *fp, char *arg)
 {
-	debug(LOG_DEBUG, "Entering ndsctl_block...");
+	debug(LOG_DEBUG, "Entering ndsctl_block [%s]", arg);
 
 	LOCK_CONFIG();
-	debug(LOG_DEBUG, "Argument: [%s]", arg);
 
 	if (!add_to_blocked_mac_list(arg) && !iptables_block_mac(arg)) {
 		fprintf(fp, "Yes");
@@ -382,10 +411,9 @@ ndsctl_block(FILE *fp, char *arg)
 static void
 ndsctl_unblock(FILE *fp, char *arg)
 {
-	debug(LOG_DEBUG, "Entering ndsctl_unblock...");
+	debug(LOG_DEBUG, "Entering ndsctl_unblock [%s]", arg);
 
 	LOCK_CONFIG();
-	debug(LOG_DEBUG, "Argument: [%s]", arg);
 
 	if (!remove_from_blocked_mac_list(arg) && !iptables_unblock_mac(arg)) {
 		fprintf(fp, "Yes");
@@ -401,10 +429,9 @@ ndsctl_unblock(FILE *fp, char *arg)
 static void
 ndsctl_allow(FILE *fp, char *arg)
 {
-	debug(LOG_DEBUG, "Entering ndsctl_allow...");
+	debug(LOG_DEBUG, "Entering ndsctl_allow [%s]", arg);
 
 	LOCK_CONFIG();
-	debug(LOG_DEBUG, "Argument: [%s]", arg);
 
 	if (!add_to_allowed_mac_list(arg) && !iptables_allow_mac(arg)) {
 		fprintf(fp, "Yes");
@@ -420,10 +447,9 @@ ndsctl_allow(FILE *fp, char *arg)
 static void
 ndsctl_unallow(FILE *fp, char *arg)
 {
-	debug(LOG_DEBUG, "Entering ndsctl_unallow...");
+	debug(LOG_DEBUG, "Entering ndsctl_unallow [%s]", arg);
 
 	LOCK_CONFIG();
-	debug(LOG_DEBUG, "Argument: [%s]", arg);
 
 	if (!remove_from_allowed_mac_list(arg) && !iptables_unallow_mac(arg)) {
 		fprintf(fp, "Yes");
@@ -439,10 +465,9 @@ ndsctl_unallow(FILE *fp, char *arg)
 static void
 ndsctl_trust(FILE *fp, char *arg)
 {
-	debug(LOG_DEBUG, "Entering ndsctl_trust...");
+	debug(LOG_DEBUG, "Entering ndsctl_trust [%s]", arg);
 
 	LOCK_CONFIG();
-	debug(LOG_DEBUG, "Argument: [%s]", arg);
 
 	if (!add_to_trusted_mac_list(arg) && !iptables_trust_mac(arg)) {
 		fprintf(fp, "Yes");
@@ -458,10 +483,9 @@ ndsctl_trust(FILE *fp, char *arg)
 static void
 ndsctl_untrust(FILE *fp, char *arg)
 {
-	debug(LOG_DEBUG, "Entering ndsctl_untrust...");
+	debug(LOG_DEBUG, "Entering ndsctl_untrust [%s]", arg);
 
 	LOCK_CONFIG();
-	debug(LOG_DEBUG, "Argument: [%s]", arg);
 
 	if (!remove_from_trusted_mac_list(arg) && !iptables_untrust_mac(arg)) {
 		fprintf(fp, "Yes");
@@ -479,11 +503,9 @@ ndsctl_loglevel(FILE *fp, char *arg)
 {
 	int level = atoi(arg);
 
-	debug(LOG_DEBUG, "Entering ndsctl_loglevel...");
+	debug(LOG_DEBUG, "Entering ndsctl_loglevel [%s]", arg);
 
 	LOCK_CONFIG();
-	debug(LOG_DEBUG, "Argument: [%s]", arg);
-
 
 	if (!set_log_level(level)) {
 		fprintf(fp, "Yes");

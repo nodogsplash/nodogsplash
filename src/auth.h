@@ -26,16 +26,9 @@
 #ifndef _AUTH_H_
 #define _AUTH_H_
 
-/**
- * @brief Actions to take on clients.
- */
-typedef enum {
-	AUTH_MAKE_DEAUTHENTICATED = 1, /**< To make client 'deauthenticated' */
-	AUTH_MAKE_AUTHENTICATED = 2 /**< To make client 'authenticated' */
-} t_authaction;
 
-/** @brief Take action on a single client */
-void auth_client_action(const char ip[], const char mac[], t_authaction action);
+void auth_client_deauthenticate(const char ip[], const char mac[]);
+void auth_client_authenticate(const char ip[], const char mac[]);
 
 /** @brief Periodically check if connections expired */
 void *thread_client_timeout_check(void *arg);

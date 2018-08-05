@@ -406,7 +406,7 @@ static int authenticate_client(struct MHD_Connection *connection,
 							t_client *client)
 {
 	/* TODO: handle redirect_url == NULL */
-	auth_client_action(ip_addr, mac, AUTH_MAKE_AUTHENTICATED);
+	auth_client_authenticate(ip_addr, mac);
 	if (redirect_url) {
 		return send_redirect_temp(connection, redirect_url);
 	} else {
@@ -449,7 +449,7 @@ static int authenticated(struct MHD_Connection *connection,
 	}
 
 	if (check_authdir_match(url, config->denydir)) {
-		auth_client_action(ip_addr, mac, AUTH_MAKE_DEAUTHENTICATED);
+		auth_client_deauthenticate(ip_addr, mac);
 		snprintf(redirect_to_us, 128, "http://%s:%u/", config->gw_address, config->gw_port);
 		return send_redirect_temp(connection, redirect_to_us);
 	}
@@ -498,7 +498,7 @@ static int authenticate_client_binauth(
 		return encode_and_redirect_to_splashpage(connection, redirect_url);
 	}
 
-	debug(LOG_NOTICE, "Remote auth data: client [%s, %s] authenticated", mac, client->ip);
+	debug(LOG_NOTICE, "Client [%s, %s] authenticated", mac, client->ip);
 
 	return authenticate_client(connection, ip_addr, mac, redirect_url, client);
 }
