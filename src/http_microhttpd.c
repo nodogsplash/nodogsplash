@@ -336,10 +336,10 @@ libmicrohttpd_cb(void *cls,
  */
 static int check_authdir_match(const char *url, const char *authdir)
 {
-	if (strlen(url) != strlen(authdir)+2)
+	if (strlen(url) != (2 + strlen(authdir)))
 		return 0;
 
-	if (strncmp(url+1, authdir, strlen(authdir)))
+	if (strncmp(url + 1, authdir, strlen(authdir)))
 		return 0;
 
 	/* match */
@@ -349,11 +349,12 @@ static int check_authdir_match(const char *url, const char *authdir)
 static int check_token_is_valid(struct MHD_Connection *connection, t_client *client)
 {
 	/* token check */
-	const char *token = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "token");
 	const char *tok = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "tok");
 
+	printf("check_token_is_valid: tok: '%s', client->token: '%s'\n", tok, client->token);
+
 	/* return true if token or tok match client->token */
-	return ((token && !strcmp(client->token, token))) || (tok && !strcmp(client->token, tok));
+	return (tok && !strcmp(client->token, tok));
 }
 
 
@@ -875,11 +876,8 @@ static int show_templated_page(struct MHD_Connection *connection, t_client *clie
 	int page_fd;
 	char *page_result;
 	char *page_tmpl;
-printf("show_templated_page\n");
 
 	snprintf(filename, PATH_MAX, "%s/%s", config->webroot, page);
-
-printf("filename: %s\n", filename);
 
 	page_fd = open(filename, O_RDONLY);
 	if (page_fd < 0) {
