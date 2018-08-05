@@ -4,12 +4,14 @@
 #include <stdlib.h>
 
 /**
- * @brief holds all valid variable names
+ * @brief holds all valid variable name/value pairs
  */
-extern const char *variable_names[19];
-
 struct templater {
-	const char *variables[19]; /* must have the same size of variable_names */
+	struct {
+		const char *name;
+		const char *value;
+	} variables[32]; /* must have enough space to hold all variables */
+	int var_count;
 };
 
 /**
