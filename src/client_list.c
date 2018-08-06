@@ -97,8 +97,8 @@ client_list_init(void)
  * @param token Token
  * @return Pointer to the client we just created
  */
-t_client *
-_client_list_append(const char ip[], const char mac[], const char token[])
+static t_client *
+_client_list_append(const char ip[], const char mac[])
 {
 	t_client *client, *prevclient;
 	s_config *config;
@@ -122,7 +122,7 @@ _client_list_append(const char ip[], const char mac[], const char token[])
 
 	client->ip = safe_strdup(ip);
 	client->mac = safe_strdup(mac);
-	client->token = token ? safe_strdup(token) : NULL;
+	client_renew_token(client);
 
 	if (is_blocked_mac(mac)) {
 		client->fw_connection_state = FW_MARK_BLOCKED;
@@ -159,19 +159,13 @@ _client_list_append(const char ip[], const char mac[], const char token[])
 }
 
 /** @internal
- *  Allocate and return an authentication token.
- *  Caller must free.
- *  We just generate a random string of 8 hex digits,
- *  independent of ip and mac.
+ *  Set a new client token.
+ *  We just generate a random string of 8 hex digits.
  */
-char *
-_client_list_make_auth_token(const char ip[], const char mac[])
+void client_renew_token(t_client *client)
 {
-	char *token = NULL;
-
-	safe_asprintf(&token,"%04hx%04hx", rand16(), rand16());
-
-	return token;
+	free(client->token);
+	safe_asprintf(&client->token, "%04hx%04hx", rand16(), rand16());
 }
 
 /**
@@ -184,7 +178,6 @@ t_client *
 client_list_add_client(const char ip[])
 {
 	t_client *client;
-	char *token;
 	char mac[18];
 
 	if (!check_ip_format(ip)) {
@@ -199,10 +192,9 @@ client_list_add_client(const char ip[])
 		return NULL;
 	}
 
-	if ((client = client_list_find(mac, ip)) == NULL) {
-		token = _client_list_make_auth_token(ip, mac);  /* get a new token */
-		client = _client_list_append(ip, mac, token);
-		free(token);
+	client = client_list_find(mac, ip);
+	if (!client) {
+		client = _client_list_append(ip, mac);
 	} else {
 		debug(LOG_INFO, "Client %s %s token %s already on client list", ip, mac, client->token);
 	}
