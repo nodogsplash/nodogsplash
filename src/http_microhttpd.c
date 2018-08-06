@@ -310,13 +310,13 @@ libmicrohttpd_cb(void *cls,
 	if (rc != 0) {
 		return send_error(connection, 503);
 	}
-
+printf("B\n");
 	rc = arp_get(mac, ip);
 	if (rc != 0) {
 		return send_error(connection, 503);
 	}
 
-	client = client_list_find(ip, mac);
+	client = client_list_find(mac, ip);
 	if (client && (client->fw_connection_state == FW_MARK_AUTHENTICATED ||
 			client->fw_connection_state == FW_MARK_TRUSTED)) {
 		/* client already authed - dangerous!!! This should never happen */

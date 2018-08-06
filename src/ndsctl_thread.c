@@ -286,17 +286,6 @@ ndsctl_handler(int fd)
 	fclose(fp);
 }
 
-static t_client *find_client(const char *arg)
-{
-	t_client *client;
-
-	if ((client = client_list_find_by_ip(arg)) != NULL);
-	else if ((client = client_list_find_by_mac(arg)) != NULL);
-	else if ((client = client_list_find_by_token(arg)) != NULL);
-
-	return client;
-}
-
 /** A bit of an hack, self kills.... */
 static void
 ndsctl_stop()
@@ -316,7 +305,11 @@ ndsctl_auth(FILE *fp, char *arg)
 	config = config_get_config();
 
 	LOCK_CLIENT_LIST();
-	client = find_client(arg);
+	client = client_list_find_by_any(arg, arg, arg);
+	if (client) {
+		strcpy(ip, client->ip);
+		strcpy(mac, client->mac);
+	}
 
 	if (client && client->fw_connection_state != FW_MARK_AUTHENTICATED) {
 		client->session_start = time(NULL);
@@ -364,7 +357,11 @@ ndsctl_deauth(FILE *fp, char *arg)
 	config = config_get_config();
 
 	LOCK_CLIENT_LIST();
-	client = find_client(arg);
+	client = client_list_find_by_any(arg, arg, arg);
+	if (client) {
+		strcpy(ip, client->ip);
+		strcpy(mac, client->mac);
+	}
 	UNLOCK_CLIENT_LIST();
 
 	if (client && config->bin_auth) {

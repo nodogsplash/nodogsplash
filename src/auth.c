@@ -75,7 +75,7 @@ fw_refresh_client_list(void)
 	for (cp1 = cp2 = client_get_first_client(); NULL != cp1; cp1 = cp2) {
 		cp2 = cp1->next;
 
-		if (!(cp1 = client_list_find(cp1->ip, cp1->mac))) {
+		if (!(cp1 = client_list_find(cp1->mac, cp1->ip))) {
 			debug(LOG_ERR, "Client was freed while being re-validated!");
 			continue;
 		}
@@ -188,7 +188,7 @@ printf("auth_client_deauthenticate\n");
 
 	LOCK_CLIENT_LIST();
 
-	client = client_list_find(ip, mac);
+	client = client_list_find(mac, ip);
 
 	/* Client should already have hit the server and be on the client list */
 	if (client == NULL) {
@@ -217,7 +217,7 @@ printf("auth_client_authenticate\n");
 
 	LOCK_CLIENT_LIST();
 
-	client = client_list_find(ip, mac);
+	client = client_list_find(mac, ip);
 
 	/* Client should already have hit the server and be on the client list */
 	if (client == NULL) {
@@ -254,7 +254,7 @@ auth_client_deauth_all()
 	for (cp1 = cp2 = client_get_first_client(); NULL != cp1; cp1 = cp2) {
 		cp2 = cp1->next;
 
-		if (!(cp1 = client_list_find(cp1->ip, cp1->mac))) {
+		if (!(cp1 = client_list_find(cp1->mac, cp1->ip))) {
 			debug(LOG_ERR, "Client was freed while being re-validated!");
 			continue;
 		}

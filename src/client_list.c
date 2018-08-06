@@ -209,8 +209,8 @@ client_list_add_client(const char ip[])
 		return NULL;
 	}
 
-	if ((client = client_list_find(ip, mac)) == NULL) {
-		token = _client_list_make_auth_token(ip,mac);  /* get a new token */
+	if ((client = client_list_find(mac, ip)) == NULL) {
+		token = _client_list_make_auth_token(ip, mac);  /* get a new token */
 		client = _client_list_append(ip, mac, token);
 		free(token);
 	} else {
@@ -220,32 +220,51 @@ client_list_add_client(const char ip[])
 	return client;
 }
 
-/** Finds a client by its IP and MAC, returns NULL if the client could not
- * be found
+/** Finds a client by its token, IP or MAC.
+ * A found client is guaranted to be unique.
  * @param ip IP we are looking for in the linked list
  * @param mac MAC we are looking for in the linked list
  * @return Pointer to the client, or NULL if not found
  */
 t_client *
-client_list_find(const char ip[], const char mac[])
+client_list_find_by_any(const char mac[], const char ip[], const char token[])
+{
+	t_client *client = NULL;
+
+	if (!client && token) {
+		client = client_list_find_by_token(token);
+	}
+
+	if (!client && ip) {
+		client = client_list_find_by_ip(ip);
+	}
+
+	if (!client && mac) {
+		client = client_list_find_by_mac(mac);
+	}
+
+	return client;
+}
+
+t_client *
+client_list_find(const char mac[], const char ip[])
 {
 	t_client *ptr;
 
 	ptr = firstclient;
-	while (NULL != ptr) {
-		if (!strcmp(ptr->ip, ip) && !strcmp(ptr->mac, mac))
+	while (ptr) {
+		if (!strcmp(ptr->mac, mac) && !strcmp(ptr->ip, ip)) {
 			return ptr;
+		}
 		ptr = ptr->next;
 	}
 
 	return NULL;
 }
 
-
 /**
- * Finds a  client by its IP, returns NULL if the client could not
- * be found
- * @param ip IP we are looking for in the linked list
+ * Finds a client by its IP address. Returns NULL if
+ * the client could not be found.
  * @return Pointer to the client, or NULL if not found
  */
 t_client *
@@ -254,9 +273,10 @@ client_list_find_by_ip(const char ip[])
 	t_client *ptr;
 
 	ptr = firstclient;
-	while (NULL != ptr) {
-		if (!strcmp(ptr->ip, ip))
+	while (ptr) {
+		if (!strcmp(ptr->ip, ip)) {
 			return ptr;
+		}
 		ptr = ptr->next;
 	}
 
@@ -264,9 +284,8 @@ client_list_find_by_ip(const char ip[])
 }
 
 /**
- * Finds a client by its MAC, returns NULL if the client could not
- * be found
- * @param mac MAC we are looking for in the linked list
+ * Finds a client by its MAC address. Returns NULL if
+ * the client could not be found.
  * @return Pointer to the client, or NULL if not found
  */
 t_client *
@@ -275,17 +294,19 @@ client_list_find_by_mac(const char mac[])
 	t_client *ptr;
 
 	ptr = firstclient;
-	while (NULL != ptr) {
-		if (!strcmp(ptr->mac, mac))
+	while (ptr) {
+		if (!strcmp(ptr->mac, mac)) {
 			return ptr;
+		}
 		ptr = ptr->next;
 	}
 
 	return NULL;
 }
 
-/** Finds a client by its token
- * @param token Token we are looking for in the linked list
+/**
+ * Finds a client by token. Returns NULL if
+ * the client could not be found.
  * @return Pointer to the client, or NULL if not found
  */
 t_client *
@@ -294,9 +315,10 @@ client_list_find_by_token(const char token[])
 	t_client *ptr;
 
 	ptr = firstclient;
-	while (NULL != ptr) {
-		if (!strcmp(ptr->token, token))
+	while (ptr) {
+		if (!strcmp(ptr->token, token)) {
 			return ptr;
+		}
 		ptr = ptr->next;
 	}
 
