@@ -244,11 +244,9 @@ auth_client_deauth_all()
 {
 	t_client *cp1, *cp2;
 	s_config *config;
-	time_t now;
 
 	LOCK_CLIENT_LIST();
 
-	now = time(NULL);
 	config = config_get_config();
 
 	for (cp1 = cp2 = client_get_first_client(); NULL != cp1; cp1 = cp2) {
