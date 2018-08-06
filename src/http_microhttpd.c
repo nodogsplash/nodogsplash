@@ -494,7 +494,7 @@ static int authenticate_client_binauth(
 		return encode_and_redirect_to_splashpage(connection, redirect_url);
 	}
 
-	debug(LOG_NOTICE, "Client [%s, %s] authenticated", mac, client->ip);
+	debug(LOG_NOTICE, "Client [%s, %s] authenticated", client->mac, client->ip);
 
 	return authenticate_client(connection, redirect_url, client);
 }
