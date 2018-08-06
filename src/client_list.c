@@ -47,7 +47,7 @@
 
 /** Client counter */
 static int client_count = 0;
-static t_client **client_arr;
+static int client_id = 1;
 
 /** Time last client added */
 static unsigned long int last_client_time = 0;
@@ -82,17 +82,8 @@ client_get_first_client(void)
 void
 client_list_init(void)
 {
-	s_config *config;
-	int i;
-
 	firstclient = NULL;
 	client_count = 0;
-
-	config = config_get_config();
-	client_arr = safe_malloc(config->maxclients * sizeof(t_client *));
-
-	for (i = 0; i < config->maxclients; i++)
-		client_arr[i] = NULL;
 }
 
 /** @internal
@@ -110,12 +101,10 @@ t_client *
 _client_list_append(const char ip[], const char mac[], const char token[])
 {
 	t_client *client, *prevclient;
-	int maxclients, i;
 	s_config *config;
 
 	config = config_get_config();
-	maxclients = config->maxclients;
-	if (client_count >= maxclients) {
+	if (client_count >= config->maxclients) {
 		debug(LOG_NOTICE, "Already list %d clients, cannot add %s %s", client_count, ip, mac);
 		return NULL;
 	}
@@ -144,15 +133,7 @@ _client_list_append(const char ip[], const char mac[], const char token[])
 	/* Session has not started and not ended yet */
 	client->session_start = 0;
 	client->session_end = 0;
-
-	for (i = 0; i < maxclients; i++) {
-		if (client_arr[i])
-			continue;
-		break;
-	}
-
-	client_arr[i] = client;
-	client->idx = i;
+	client->id = client_id;
 
 	debug(LOG_NOTICE, "Adding %s %s token %s to client list",
 		  client->ip, client->mac, client->token ? client->token : "none");
@@ -163,6 +144,7 @@ _client_list_append(const char ip[], const char mac[], const char token[])
 		prevclient->next = client;
 	}
 
+	client_id++;
 	client_count++;
 
 	return client;
@@ -268,6 +250,27 @@ client_list_find(const char mac[], const char ip[])
  * @return Pointer to the client, or NULL if not found
  */
 t_client *
+client_list_find_by_id(const unsigned id)
+{
+	t_client *ptr;
+
+	ptr = firstclient;
+	while (ptr) {
+		if (ptr->id == id) {
+			return ptr;
+		}
+		ptr = ptr->next;
+	}
+
+	return NULL;
+}
+
+/**
+ * Finds a client by its IP address. Returns NULL if
+ * the client could not be found.
+ * @return Pointer to the client, or NULL if not found
+ */
+t_client *
 client_list_find_by_ip(const char ip[])
 {
 	t_client *ptr;
@@ -331,7 +334,7 @@ client_list_find_by_token(const char token[])
  * proper order.
  * @param client Points to the client to be freed
  */
-void
+static void
 _client_list_free_node(t_client *client)
 {
 	if (client->mac)
@@ -342,9 +345,6 @@ _client_list_free_node(t_client *client)
 
 	if (client->token)
 		free(client->token);
-
-	if (client_arr[client->idx] == client)
-		client_arr[client->idx] = NULL;
 
 	free(client);
 }

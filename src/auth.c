@@ -75,7 +75,7 @@ fw_refresh_client_list(void)
 	for (cp1 = cp2 = client_get_first_client(); NULL != cp1; cp1 = cp2) {
 		cp2 = cp1->next;
 
-		if (!(cp1 = client_list_find(cp1->mac, cp1->ip))) {
+		if (!(cp1 = client_list_find_by_id(cp1->id))) {
 			debug(LOG_ERR, "Client was freed while being re-validated!");
 			continue;
 		}
@@ -180,19 +180,17 @@ thread_client_timeout_check(void *arg)
  * Alter the firewall rules and client list accordingly.
 */
 void
-auth_client_deauthenticate(const char ip[], const char mac[])
+auth_client_deauthenticate(const unsigned id)
 {
 	t_client *client;
 
-printf("auth_client_deauthenticate\n");
-
 	LOCK_CLIENT_LIST();
 
-	client = client_list_find(mac, ip);
+	client = client_list_find_by_id(id);
 
 	/* Client should already have hit the server and be on the client list */
 	if (client == NULL) {
-		debug(LOG_ERR, "Client %s %s to deauthenticate is not on client list", ip, mac);
+		debug(LOG_ERR, "Client %u to deauthenticate is not on client list", id);
 		goto end;
 	}
 
@@ -209,19 +207,17 @@ end:
 }
 
 void
-auth_client_authenticate(const char ip[], const char mac[])
+auth_client_authenticate(const unsigned id)
 {
 	t_client *client;
 
-printf("auth_client_authenticate\n");
-
 	LOCK_CLIENT_LIST();
 
-	client = client_list_find(mac, ip);
+	client = client_list_find_by_id(id);
 
 	/* Client should already have hit the server and be on the client list */
 	if (client == NULL) {
-		debug(LOG_ERR, "Client %s %s to authenticate is not on client list", ip, mac);
+		debug(LOG_ERR, "Client %u to authenticate is not on client list", id);
 		goto end;
 	}
 
@@ -252,7 +248,7 @@ auth_client_deauth_all()
 	for (cp1 = cp2 = client_get_first_client(); NULL != cp1; cp1 = cp2) {
 		cp2 = cp1->next;
 
-		if (!(cp1 = client_list_find(cp1->mac, cp1->ip))) {
+		if (!(cp1 = client_list_find_by_id(cp1->id))) {
 			debug(LOG_ERR, "Client was freed while being re-validated!");
 			continue;
 		}

@@ -27,8 +27,8 @@
 #define _AUTH_H_
 
 
-void auth_client_deauthenticate(const char ip[], const char mac[]);
-void auth_client_authenticate(const char ip[], const char mac[]);
+void auth_client_deauthenticate(unsigned id);
+void auth_client_authenticate(unsigned id);
 
 /** @brief Periodically check if connections expired */
 void *thread_client_timeout_check(void *arg);

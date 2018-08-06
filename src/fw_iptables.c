@@ -782,7 +782,7 @@ iptables_fw_authenticate(t_client *client)
 	rc |= iptables_do_command("-t mangle -A " CHAIN_INCOMING " -d %s -j ACCEPT", client->ip);
 
 	if (traffic_control) {
-		rc |= tc_attach_client(config->gw_interface, download_limit, upload_ifbname, upload_limit, client->idx, client->ip);
+		rc |= tc_attach_client(config->gw_interface, download_limit, upload_ifbname, upload_limit, client->id, client->ip);
 	}
 
 	return rc;
@@ -817,7 +817,7 @@ iptables_fw_deauthenticate(t_client *client)
 	rc |= iptables_do_command("-t mangle -D " CHAIN_INCOMING " -d %s -j ACCEPT", client->ip);
 
 	if (traffic_control) {
-		rc |= tc_detach_client(config->gw_interface, download_limit, upload_ifbname, upload_limit, client->idx);
+		rc |= tc_detach_client(config->gw_interface, download_limit, upload_ifbname, upload_limit, client->id);
 	}
 
 	return rc;

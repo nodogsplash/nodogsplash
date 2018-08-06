@@ -50,7 +50,7 @@ typedef struct _t_client {
 	t_counters counters;	/**< @brief Counters for input/output of the client. */
 	int download_limit;		/**< @brief Download limit, kb/s */
 	int upload_limit;		/**< @brief Upload limit, kb/s */
-	int idx;
+	unsigned id;
 } t_client;
 
 /** @brief Get the first element of the list of connected clients
@@ -71,6 +71,9 @@ t_client *client_list_find_by_any(const char mac[], const char ip[], const char 
 
 /** @brief Finds a client by its MAC and IP */
 t_client * client_list_find(const char mac[], const char ip[]);
+
+/** @brief Finds a client by its client id */
+t_client * client_list_find_by_id(const unsigned id);
 
 /** @brief Finds a client only by its IP */
 t_client *client_list_find_by_ip(const char ip[]); /* needed by fw_iptables.c, auth.c * and ndsctl_thread.c */

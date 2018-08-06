@@ -298,18 +298,14 @@ ndsctl_auth(FILE *fp, char *arg)
 {
 	t_client *client;
 	s_config *config;
-	char ip[INET6_ADDRSTRLEN+1];
-	char mac[18];
+	unsigned id;
 
 	debug(LOG_DEBUG, "Entering ndsctl_auth [%s]", arg);
 	config = config_get_config();
 
 	LOCK_CLIENT_LIST();
 	client = client_list_find_by_any(arg, arg, arg);
-	if (client) {
-		strcpy(ip, client->ip);
-		strcpy(mac, client->mac);
-	}
+	id = client ? client->id : 0;
 
 	if (client && client->fw_connection_state != FW_MARK_AUTHENTICATED) {
 		client->session_start = time(NULL);
@@ -334,8 +330,8 @@ ndsctl_auth(FILE *fp, char *arg)
 
 	UNLOCK_CLIENT_LIST();
 
-	if (client) {
-		auth_client_authenticate(ip, mac);
+	if (id) {
+		auth_client_authenticate(id);
 		fprintf(fp, "Yes");
 	} else {
 		debug(LOG_DEBUG, "Client not found.");
@@ -350,18 +346,14 @@ ndsctl_deauth(FILE *fp, char *arg)
 {
 	t_client *client;
 	s_config *config;
-	char ip[INET6_ADDRSTRLEN+1];
-	char mac[18];
+	unsigned id;
 
 	debug(LOG_DEBUG, "Entering ndsctl_deauth [%s]", arg);
 	config = config_get_config();
 
 	LOCK_CLIENT_LIST();
 	client = client_list_find_by_any(arg, arg, arg);
-	if (client) {
-		strcpy(ip, client->ip);
-		strcpy(mac, client->mac);
-	}
+	id = client ? client->id : 0;
 	UNLOCK_CLIENT_LIST();
 
 	if (client && config->bin_auth) {
@@ -376,8 +368,8 @@ ndsctl_deauth(FILE *fp, char *arg)
 		);
 	}
 
-	if (client) {
-		auth_client_deauthenticate(ip, mac);
+	if (id) {
+		auth_client_deauthenticate(id);
 		fprintf(fp, "Yes");
 	} else {
 		debug(LOG_DEBUG, "Client not found.");

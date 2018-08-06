@@ -46,10 +46,10 @@
 #define TMPLVAR_SIZE 4096
 
 static t_client *add_client(const char *ip_addr);
-static int authenticated(struct MHD_Connection *connection, const char *ip_addr, const char *mac, const char *url, t_client *client);
-static int preauthenticated(struct MHD_Connection *connection, const char *ip_addr, const char *mac, const char *url, t_client *client);
-static int authenticate_client_binauth(struct MHD_Connection *connection, const char *ip_addr, const char *mac, const char *redirect_url, t_client *client);
-static int authenticate_client(struct MHD_Connection *connection, const char *ip_addr, const char *mac, const char *redirect_url, t_client *client);
+static int authenticated(struct MHD_Connection *connection, const char *url, t_client *client);
+static int preauthenticated(struct MHD_Connection *connection, const char *url, t_client *client);
+static int authenticate_client_binauth(struct MHD_Connection *connection, const char *redirect_url, t_client *client);
+static int authenticate_client(struct MHD_Connection *connection, const char *redirect_url, t_client *client);
 static int get_host_value_callback(void *cls, enum MHD_ValueKind kind, const char *key, const char *value);
 static int serve_file(struct MHD_Connection *connection, t_client *client, const char *url);
 static int show_splashpage(struct MHD_Connection *connection, t_client *client);
@@ -310,20 +310,27 @@ libmicrohttpd_cb(void *cls,
 	if (rc != 0) {
 		return send_error(connection, 503);
 	}
-printf("B\n");
+
 	rc = arp_get(mac, ip);
 	if (rc != 0) {
 		return send_error(connection, 503);
 	}
 
 	client = client_list_find(mac, ip);
+	if (!client) {
+		client = add_client(ip);
+		if (!client) {
+			return send_error(connection, 503);
+		}
+	}
+
 	if (client && (client->fw_connection_state == FW_MARK_AUTHENTICATED ||
 			client->fw_connection_state == FW_MARK_TRUSTED)) {
 		/* client already authed - dangerous!!! This should never happen */
-		return authenticated(connection, ip, mac, url, client);
+		return authenticated(connection, url, client);
 	}
 
-	return preauthenticated(connection, ip, mac, url, client);
+	return preauthenticated(connection, url, client);
 }
 
 /**
@@ -346,18 +353,6 @@ static int check_authdir_match(const char *url, const char *authdir)
 	return 1;
 }
 
-static int check_token_is_valid(struct MHD_Connection *connection, t_client *client)
-{
-	/* token check */
-	const char *tok = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "tok");
-
-	printf("check_token_is_valid: tok: '%s', client->token: '%s'\n", tok, client->token);
-
-	/* return true if token or tok match client->token */
-	return (tok && !strcmp(client->token, tok));
-}
-
-
 /**
  * @brief try_to_authenticate
  * @param connection
@@ -368,16 +363,21 @@ static int check_token_is_valid(struct MHD_Connection *connection, t_client *cli
  */
 static int try_to_authenticate(struct MHD_Connection *connection, t_client *client, const char *host, const char *url)
 {
+	s_config *config;
+	const char *tok;
+
 	/* a successful auth looks like
 	 * http://192.168.42.1:2050/nodogsplash_auth/?redir=http%3A%2F%2Fberlin.freifunk.net%2F&tok=94c4cdd2
 	 * when authaction -> http://192.168.42.1:2050/nodogsplash_auth/
 	 */
-	s_config *config = config_get_config();
+	config = config_get_config();
 
 	/* we are checking here for the second '/' of /denydir/ */
 	if (check_authdir_match(url, config->authdir)) {
-		/* matched to authdir */
-		if (check_token_is_valid(connection, client)) {
+		tok = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "tok");
+
+		if (tok && !strcmp(client->token, tok)) {
+			/* Token is valid */
 			return 1;
 		}
 	}
@@ -401,13 +401,11 @@ static int try_to_authenticate(struct MHD_Connection *connection, t_client *clie
  * @return
  */
 static int authenticate_client(struct MHD_Connection *connection,
-							const char *ip,
-							const char *mac,
 							const char *redirect_url,
 							t_client *client)
 {
 	/* TODO: handle redirect_url == NULL */
-	auth_client_authenticate(ip, mac);
+	auth_client_authenticate(client->id);
 
 	if (redirect_url) {
 		return send_redirect_temp(connection, redirect_url);
@@ -432,8 +430,6 @@ static int authenticate_client(struct MHD_Connection *connection,
  * - when a user calls deny url -> deauth it
  */
 static int authenticated(struct MHD_Connection *connection,
-						const char *ip_addr,
-						const char *mac,
 						const char *url,
 						t_client *client)
 {
@@ -451,7 +447,7 @@ static int authenticated(struct MHD_Connection *connection,
 	}
 
 	if (check_authdir_match(url, config->denydir)) {
-		auth_client_deauthenticate(ip_addr, mac);
+		auth_client_deauthenticate(client->id);
 		snprintf(redirect_to_us, 128, "http://%s:%u/", config->gw_address, config->gw_port);
 		return send_redirect_temp(connection, redirect_to_us);
 	}
@@ -466,8 +462,6 @@ static int authenticated(struct MHD_Connection *connection,
 
 static int authenticate_client_binauth(
 		struct MHD_Connection *connection,
-		const char *ip_addr,
-		const char *mac,
 		const char *redirect_url,
 		t_client *client)
 {
@@ -487,8 +481,8 @@ static int authenticate_client_binauth(
 		return encode_and_redirect_to_splashpage(connection, redirect_url);
 	}
 
-	rc = execute_ret(msg, sizeof(msg) - 1, "%s client_auth '%s' '%s' '%s'",
-		config->bin_auth, mac, username_enc, password_enc);
+	rc = execute_ret(msg, sizeof(msg) - 1, "%s client_auth %s '%s' '%s'",
+		config->bin_auth, client->mac, username_enc, password_enc);
 
 	if (rc != 0) {
 		return encode_and_redirect_to_splashpage(connection, redirect_url);
@@ -502,7 +496,7 @@ static int authenticate_client_binauth(
 
 	debug(LOG_NOTICE, "Client [%s, %s] authenticated", mac, client->ip);
 
-	return authenticate_client(connection, ip_addr, mac, redirect_url, client);
+	return authenticate_client(connection, redirect_url, client);
 }
 
 /**
@@ -513,21 +507,12 @@ static int authenticate_client_binauth(
  * @return
  */
 static int preauthenticated(struct MHD_Connection *connection,
-							const char *ip_addr,
-							const char *mac,
 							const char *url,
 							t_client *client)
 {
 	const char *host = NULL;
 	const char *redirect_url;
 	s_config *config = config_get_config();
-
-	if (!client) {
-		client = add_client(ip_addr);
-		if (!client) {
-			return send_error(connection, 503);
-		}
-	}
 
 	MHD_get_connection_values(connection, MHD_HEADER_KIND, get_host_value_callback, &host);
 
@@ -543,6 +528,7 @@ static int preauthenticated(struct MHD_Connection *connection,
 		 * When the client reloads a page when it's authenticated, it should be redirected
 		 * to their origin url
 		 */
+
 		if (config->redirectURL) {
 			redirect_url = config->redirectURL;
 		} else {
@@ -555,7 +541,7 @@ static int preauthenticated(struct MHD_Connection *connection,
 		}
 
 		if (config->bin_auth) {
-			return authenticate_client_binauth(connection, ip_addr, mac, redirect_url, client);
+			return authenticate_client_binauth(connection, redirect_url, client);
 		} else {
 			client->session_start = time(NULL);
 
@@ -566,7 +552,7 @@ static int preauthenticated(struct MHD_Connection *connection,
 				client->session_end = 0;
 			}
 
-			return authenticate_client(connection, ip_addr, mac, redirect_url, client);
+			return authenticate_client(connection, redirect_url, client);
 		}
 	}
 
@@ -923,6 +909,7 @@ static int show_templated_page(struct MHD_Connection *connection, t_client *clie
 	const char *redirect_url = NULL;
 	char *imagesdir = NULL;
 	char *pagesdir = NULL;
+
 	sprintf(upload_bytes, "%llu", client->counters.outgoing);
 	sprintf(download_bytes, "%llu", client->counters.incoming);
 
@@ -962,6 +949,7 @@ static int show_templated_page(struct MHD_Connection *connection, t_client *clie
 	tmpl_set_variable(&templor, "version", VERSION);
 
 	tmpl_parse(&templor, page_result, size + TMPLVAR_SIZE, page_tmpl, size);
+
 	free(page_tmpl);
 	free(uptime);
 	free(denyaction);
