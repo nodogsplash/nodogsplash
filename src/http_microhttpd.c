@@ -937,7 +937,7 @@ static int show_templated_page(struct MHD_Connection *connection, t_client *clie
 	tmpl_set_variable(&templor, "pagesdir", pagesdir);
 
 	tmpl_set_variable(&templor, "uploadbytes", upload_bytes);
-	tmpl_set_variable(&templor, "uploadbytes", download_bytes);
+	tmpl_set_variable(&templor, "downloadbytes", download_bytes);
 
 	tmpl_set_variable(&templor, "maxclients", maxclients);
 	tmpl_set_variable(&templor, "nclients", nclients);
