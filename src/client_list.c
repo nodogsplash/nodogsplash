@@ -58,7 +58,7 @@ pthread_mutex_t client_list_mutex = PTHREAD_MUTEX_INITIALIZER;
 /** @internal
  * Holds a pointer to the first element of the list
  */
-t_client *firstclient = NULL;
+static t_client *firstclient = NULL;
 
 /** Return current length of the client list
  */
