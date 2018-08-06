@@ -321,7 +321,7 @@ ndsctl_auth(FILE *fp, char *arg)
 
 		if (client && config->bin_auth) {
 			// Client will be authenticated...
-			execute("%s manual_auth %s %llu %llu %llu",
+			execute("%s manual_auth %s %llu %llu %llu %llu",
 				config->bin_auth,
 				client->mac,
 				client->counters.incoming,

@@ -264,12 +264,13 @@ auth_client_deauth_all()
 
 			if (config->bin_auth) {
 				// Client will be deauthenticated...
-				execute("%s manual_deauth %s %llu %llu %d",
+				execute("%s manual_deauth %s %llu %llu %llu %llu",
 					config->bin_auth,
 					cp1->mac,
 					cp1->counters.incoming,
 					cp1->counters.outgoing,
-					now - cp1->session_start
+					cp1->session_start,
+					cp1->session_end
 				);
 			}
 
