@@ -919,7 +919,7 @@ static int show_templated_page(struct MHD_Connection *connection, t_client *clie
 	sprintf(maxclients, "%d", config->maxclients);
 	safe_asprintf(&denyaction, "http://%s:%d/%s/", config->gw_address, config->gw_port, config->denydir);
 	safe_asprintf(&authaction, "http://%s:%d/%s/", config->gw_address, config->gw_port, config->authdir);
-	safe_asprintf(&authtarget, "http://%s:%d/%s/?token=%s&amp;redir=%s", config->gw_address, config->gw_port, config->authdir, client->token, redirect_url);
+	safe_asprintf(&authtarget, "http://%s:%d/%s/?tok=%s&amp;redir=%s", config->gw_address, config->gw_port, config->authdir, client->token, redirect_url);
 	safe_asprintf(&pagesdir, "/%s", config->pagesdir);
 	safe_asprintf(&imagesdir, "/%s", config->imagesdir);
 
