@@ -401,13 +401,14 @@ static int try_to_authenticate(struct MHD_Connection *connection, t_client *clie
  * @return
  */
 static int authenticate_client(struct MHD_Connection *connection,
-							const char *ip_addr,
+							const char *ip,
 							const char *mac,
 							const char *redirect_url,
 							t_client *client)
 {
 	/* TODO: handle redirect_url == NULL */
-	auth_client_authenticate(ip_addr, mac);
+	auth_client_authenticate(ip, mac);
+
 	if (redirect_url) {
 		return send_redirect_temp(connection, redirect_url);
 	} else {
