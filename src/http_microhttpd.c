@@ -48,7 +48,6 @@
 static t_client *add_client(const char *ip_addr);
 static int authenticated(struct MHD_Connection *connection, const char *url, t_client *client);
 static int preauthenticated(struct MHD_Connection *connection, const char *url, t_client *client);
-static int authenticate_client_binauth(struct MHD_Connection *connection, const char *redirect_url, t_client *client);
 static int authenticate_client(struct MHD_Connection *connection, const char *redirect_url, t_client *client);
 static int get_host_value_callback(void *cls, enum MHD_ValueKind kind, const char *key, const char *value);
 static int serve_file(struct MHD_Connection *connection, t_client *client, const char *url);
@@ -67,45 +66,69 @@ static const char *lookup_mimetype(const char *filename);
 
 
 /* Get client settings from binauth */
-static int set_binauth_data(const char *buf, s_config *config, t_client *client)
+static int do_binauth(struct MHD_Connection *connection, const char *bin_auth, t_client *client,
+	int *seconds_ret, int *upload_ret, int *download_ret)
 {
-	int seconds = config->session_timeout;
-	int upload = 0;
-	int download = 0;
+	char username_enc[64] = {0};
+	char password_enc[64] = {0};
+	const char *username;
+	const char *password;
+	char msg[255] = {0};
+	int seconds;
+	int upload;
+	int download;
 	int rc;
 
-	rc = sscanf(buf, "%d %d %d", &seconds, &upload, &download);
+	username = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "username");
+	password = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "password");
+
+	if ((username && uh_urlencode(username_enc, sizeof(username_enc), username, strlen(username)) == -1)
+		|| (password && uh_urlencode(password_enc, sizeof(password_enc), password, strlen(password)) == -1)) {
+		debug(LOG_ERR, "Failed to encode username and password for binauth");
+		return -1;
+	}
+
+	rc = execute_ret(msg, sizeof(msg) - 1, "%s client_auth %s '%s' '%s'",
+		bin_auth, client->mac, username_enc, password_enc);
+
+	if (rc != 0) {
+		return -1;
+	}
+
+	rc = sscanf(msg, "%d %d %d", &seconds, &upload, &download);
 
 	switch (rc) {
 		case 3:
-			if (download < 0)
-				goto err;
-		case 2:
+			if (seconds < 0)
+				return -1;
 			if (upload < 0)
-				goto err;
+				return -1;
+			if (download < 0)
+				return -1;
+			*seconds_ret = seconds;
+			*upload_ret = upload;
+			*download_ret = download;
+			break;
+		case 2:
+			if (seconds < 0)
+				return -1;
+			if (upload < 0)
+				return -1;
+			*seconds_ret = seconds;
+			*upload_ret = upload;
+			break;
 		case 1:
 			if (seconds < 0)
-				goto err;
+				return -1;
+			*seconds_ret = seconds;
+			break;
 		case 0:
 			break;
 		default:
-			goto err;
-	}
-
-	client->download_limit = download;
-	client->upload_limit = upload;
-	client->session_start = time(NULL);
-
-	if (seconds) {
-		client->session_end = client->session_start + seconds;
-	} else {
-		client->session_end = 0;
+			return -1;
 	}
 
 	return 0;
-
-err:
-	return 1;
 }
 
 struct collect_query {
@@ -404,8 +427,37 @@ static int authenticate_client(struct MHD_Connection *connection,
 							const char *redirect_url,
 							t_client *client)
 {
-	/* TODO: handle redirect_url == NULL */
-	auth_client_authenticate(client->id);
+	s_config *config = config_get_config();
+	time_t now = time(NULL);
+	int seconds = config->session_timeout;
+	int upload = 0;
+	int download = 0;
+	int rc;
+
+	if (config->bin_auth) {
+		rc = do_binauth(connection, config->bin_auth, client, &seconds, &upload, &download);
+		if (rc != 0) {
+			return encode_and_redirect_to_splashpage(connection, redirect_url);
+		}
+	}
+
+	rc = auth_client_auth(client->id);
+	if (rc != 0) {
+		return send_error(connection, 503);
+	}
+
+	debug(LOG_NOTICE, "Client [%s, %s] authenticated", client->mac, client->ip);
+
+	/* set client values */
+	client->download_limit = download;
+	client->upload_limit = upload;
+	client->session_start = now;
+
+	if (seconds) {
+		client->session_end = now + seconds;
+	} else {
+		client->session_end = 0;
+	}
 
 	if (redirect_url) {
 		return send_redirect_temp(connection, redirect_url);
@@ -447,7 +499,7 @@ static int authenticated(struct MHD_Connection *connection,
 	}
 
 	if (check_authdir_match(url, config->denydir)) {
-		auth_client_deauthenticate(client->id);
+		auth_client_deauth(client->id);
 		snprintf(redirect_to_us, 128, "http://%s:%u/", config->gw_address, config->gw_port);
 		return send_redirect_temp(connection, redirect_to_us);
 	}
@@ -458,45 +510,6 @@ static int authenticated(struct MHD_Connection *connection,
 
 	/* user doesn't wants the splashpage or tried to auth itself */
 	return serve_file(connection, client, url);
-}
-
-static int authenticate_client_binauth(
-		struct MHD_Connection *connection,
-		const char *redirect_url,
-		t_client *client)
-{
-	char username_enc[64] = {0};
-	char password_enc[64] = {0};
-	char msg[255] = {0};
-	int rc;
-
-	s_config *config = config_get_config();
-
-	const char *username = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "username");
-	const char *password = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "password");
-
-	if ((username && uh_urlencode(username_enc, sizeof(username_enc), username, strlen(username)) == -1)
-		|| (password && uh_urlencode(password_enc, sizeof(password_enc), password, strlen(password)) == -1)) {
-		debug(LOG_ERR, "Failed to encode username and password for binauth");
-		return encode_and_redirect_to_splashpage(connection, redirect_url);
-	}
-
-	rc = execute_ret(msg, sizeof(msg) - 1, "%s client_auth %s '%s' '%s'",
-		config->bin_auth, client->mac, username_enc, password_enc);
-
-	if (rc != 0) {
-		return encode_and_redirect_to_splashpage(connection, redirect_url);
-	}
-
-	rc = set_binauth_data(msg, config, client);
-
-	if (rc != 0) {
-		return encode_and_redirect_to_splashpage(connection, redirect_url);
-	}
-
-	debug(LOG_NOTICE, "Client [%s, %s] authenticated", client->mac, client->ip);
-
-	return authenticate_client(connection, redirect_url, client);
 }
 
 /**
@@ -540,20 +553,7 @@ static int preauthenticated(struct MHD_Connection *connection,
 			return encode_and_redirect_to_splashpage(connection, redirect_url);
 		}
 
-		if (config->bin_auth) {
-			return authenticate_client_binauth(connection, redirect_url, client);
-		} else {
-			client->session_start = time(NULL);
-
-			if (config->session_timeout) {
-				client->session_end = client->session_start + config->session_timeout;
-			} else {
-				/* Session has no end */
-				client->session_end = 0;
-			}
-
-			return authenticate_client(connection, redirect_url, client);
-		}
+		return authenticate_client(connection, redirect_url, client);
 	}
 
 	if (is_splashpage(host, url)) {
@@ -639,12 +639,12 @@ static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *c
  *	their information available on the client list.
  */
 static t_client *
-add_client(const char *ip_addr)
+add_client(const char *ip)
 {
 	t_client *client;
 
 	LOCK_CLIENT_LIST();
-	client = client_list_add_client(ip_addr);
+	client = client_list_add_client(ip);
 	UNLOCK_CLIENT_LIST();
 
 	return client;

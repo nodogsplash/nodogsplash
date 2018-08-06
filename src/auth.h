@@ -26,9 +26,14 @@
 #ifndef _AUTH_H_
 #define _AUTH_H_
 
-
-void auth_client_deauthenticate(unsigned id);
-void auth_client_authenticate(unsigned id);
+int auth_client_deauth(unsigned id);
+int auth_client_auth(unsigned id);
+int auth_client_trust(const char *mac);
+int auth_client_untrust(const char *mac);
+int auth_client_allow(const char *mac);
+int auth_client_unallow(const char *mac);
+int auth_client_block(const char *mac);
+int auth_client_unblock(const char *mac);
 
 /** @brief Periodically check if connections expired */
 void *thread_client_timeout_check(void *arg);

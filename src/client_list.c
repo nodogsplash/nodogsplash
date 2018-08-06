@@ -123,7 +123,15 @@ _client_list_append(const char ip[], const char mac[], const char token[])
 	client->ip = safe_strdup(ip);
 	client->mac = safe_strdup(mac);
 	client->token = token ? safe_strdup(token) : NULL;
-	client->fw_connection_state = FW_MARK_PREAUTHENTICATED;
+
+	if (is_blocked_mac(mac)) {
+		client->fw_connection_state = FW_MARK_BLOCKED;
+	} else if(is_allowed_mac(mac) || is_trusted_mac(mac)) {
+		client->fw_connection_state = FW_MARK_TRUSTED;
+	} else {
+		client->fw_connection_state = FW_MARK_PREAUTHENTICATED;
+	}
+
 	client->counters.incoming = 0;
 	client->counters.incoming_history = 0;
 	client->counters.outgoing = 0;
@@ -136,7 +144,7 @@ _client_list_append(const char ip[], const char mac[], const char token[])
 	client->id = client_id;
 
 	debug(LOG_NOTICE, "Adding %s %s token %s to client list",
-		  client->ip, client->mac, client->token ? client->token : "none");
+		client->ip, client->mac, client->token ? client->token : "none");
 
 	if (prevclient == NULL) {
 		firstclient = client;

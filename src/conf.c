@@ -1044,6 +1044,58 @@ void parse_trusted_mac_list(const char ptr[])
 	free(ptrcopyptr);
 }
 
+int is_blocked_mac(const char *mac)
+{
+	s_config *config;
+	t_MAC *block_mac;
+
+	config = config_get_config();
+
+	if (MAC_ALLOW != config->macmechanism) {
+		for (block_mac = config->blockedmaclist; block_mac != NULL; block_mac = block_mac->next) {
+			if (!strcmp(block_mac->mac, mac)) {
+				return 1;
+			}
+		}
+	}
+
+	return 0;
+}
+
+int is_allowed_mac(const char *mac)
+{
+	s_config *config;
+	t_MAC *allow_mac;
+
+	config = config_get_config();
+
+	if (MAC_BLOCK != config->macmechanism) {
+		for (allow_mac = config->allowedmaclist; allow_mac != NULL; allow_mac = allow_mac->next) {
+			if (!strcmp(allow_mac->mac, mac)) {
+				return 1;
+			}
+		}
+	}
+
+	return 0;
+}
+
+int is_trusted_mac(const char *mac)
+{
+	s_config *config;
+	t_MAC *trust_mac;
+
+	config = config_get_config();
+
+	// Is a client even recognized here?
+	for (trust_mac = config->trustedmaclist; trust_mac != NULL; trust_mac = trust_mac->next) {
+		if (!strcmp(trust_mac->mac, mac)) {
+			return 1;
+		}
+	}
+
+	return 0;
+}
 
 /* Add given MAC address to the config's blocked mac list.
  * Return 0 on success, nonzero on failure
@@ -1115,7 +1167,7 @@ int remove_from_blocked_mac_list(const char possiblemac[])
 	}
 
 	/* Find MAC on the list, remove it */
-	for (p = &(config.blockedmaclist); *p != NULL; p = &((*p)->next)) {
+	for (p = &config.blockedmaclist; *p != NULL; p = &((*p)->next)) {
 		if (!strcasecmp((*p)->mac,mac)) {
 			/* found it */
 			del = *p;

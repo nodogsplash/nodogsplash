@@ -297,44 +297,26 @@ static void
 ndsctl_auth(FILE *fp, char *arg)
 {
 	t_client *client;
-	s_config *config;
 	unsigned id;
+	int rc;
 
 	debug(LOG_DEBUG, "Entering ndsctl_auth [%s]", arg);
-	config = config_get_config();
 
 	LOCK_CLIENT_LIST();
 	client = client_list_find_by_any(arg, arg, arg);
 	id = client ? client->id : 0;
-
-	if (client && client->fw_connection_state != FW_MARK_AUTHENTICATED) {
-		client->session_start = time(NULL);
-		if (config->session_timeout) {
-			client->session_end = client->session_start + config->session_timeout;
-		} else {
-			client->session_end = 0;
-		}
-
-		if (client && config->bin_auth) {
-			// Client will be authenticated...
-			execute("%s manual_auth %s %llu %llu %llu %llu",
-				config->bin_auth,
-				client->mac,
-				client->counters.incoming,
-				client->counters.outgoing,
-				client->session_start,
-				client->session_end
-			);
-		}
-	}
-
 	UNLOCK_CLIENT_LIST();
 
 	if (id) {
-		auth_client_authenticate(id);
-		fprintf(fp, "Yes");
+		rc = auth_client_auth(id);
 	} else {
 		debug(LOG_DEBUG, "Client not found.");
+		rc = -1;
+	}
+
+	if (rc == 0) {
+		fprintf(fp, "Yes");
+	} else {
 		fprintf(fp, "No");
 	}
 
@@ -345,34 +327,26 @@ static void
 ndsctl_deauth(FILE *fp, char *arg)
 {
 	t_client *client;
-	s_config *config;
 	unsigned id;
+	int rc;
 
 	debug(LOG_DEBUG, "Entering ndsctl_deauth [%s]", arg);
-	config = config_get_config();
 
 	LOCK_CLIENT_LIST();
 	client = client_list_find_by_any(arg, arg, arg);
 	id = client ? client->id : 0;
 	UNLOCK_CLIENT_LIST();
 
-	if (client && config->bin_auth) {
-		// Client will be deauthenticated...
-		execute("%s manual_deauth %s %llu %llu %llu %llu",
-			config->bin_auth,
-			client->mac,
-			client->counters.incoming,
-			client->counters.outgoing,
-			client->session_start,
-			client->session_end
-		);
-	}
-
 	if (id) {
-		auth_client_deauthenticate(id);
-		fprintf(fp, "Yes");
+		rc = auth_client_deauth(id);
 	} else {
 		debug(LOG_DEBUG, "Client not found.");
+		rc = -1;
+	}
+
+	if (rc == 0) {
+		fprintf(fp, "Yes");
+	} else {
 		fprintf(fp, "No");
 	}
 
@@ -382,17 +356,16 @@ ndsctl_deauth(FILE *fp, char *arg)
 static void
 ndsctl_block(FILE *fp, char *arg)
 {
+	int rc;
+
 	debug(LOG_DEBUG, "Entering ndsctl_block [%s]", arg);
 
-	LOCK_CONFIG();
-
-	if (!add_to_blocked_mac_list(arg) && !iptables_block_mac(arg)) {
+	rc = auth_client_block(arg);
+	if (rc == 0) {
 		fprintf(fp, "Yes");
 	} else {
 		fprintf(fp, "No");
 	}
-
-	UNLOCK_CONFIG();
 
 	debug(LOG_DEBUG, "Exiting ndsctl_block.");
 }
@@ -400,17 +373,16 @@ ndsctl_block(FILE *fp, char *arg)
 static void
 ndsctl_unblock(FILE *fp, char *arg)
 {
+	int rc;
+
 	debug(LOG_DEBUG, "Entering ndsctl_unblock [%s]", arg);
 
-	LOCK_CONFIG();
-
-	if (!remove_from_blocked_mac_list(arg) && !iptables_unblock_mac(arg)) {
+	rc = auth_client_unblock(arg);
+	if (rc == 0) {
 		fprintf(fp, "Yes");
 	} else {
 		fprintf(fp, "No");
 	}
-
-	UNLOCK_CONFIG();
 
 	debug(LOG_DEBUG, "Exiting ndsctl_unblock.");
 }
@@ -418,17 +390,16 @@ ndsctl_unblock(FILE *fp, char *arg)
 static void
 ndsctl_allow(FILE *fp, char *arg)
 {
+	int rc;
+
 	debug(LOG_DEBUG, "Entering ndsctl_allow [%s]", arg);
 
-	LOCK_CONFIG();
-
-	if (!add_to_allowed_mac_list(arg) && !iptables_allow_mac(arg)) {
+	rc = auth_client_allow(arg);
+	if (rc == 0) {
 		fprintf(fp, "Yes");
 	} else {
 		fprintf(fp, "No");
 	}
-
-	UNLOCK_CONFIG();
 
 	debug(LOG_DEBUG, "Exiting ndsctl_allow.");
 }
@@ -436,17 +407,16 @@ ndsctl_allow(FILE *fp, char *arg)
 static void
 ndsctl_unallow(FILE *fp, char *arg)
 {
+	int rc;
+
 	debug(LOG_DEBUG, "Entering ndsctl_unallow [%s]", arg);
 
-	LOCK_CONFIG();
-
-	if (!remove_from_allowed_mac_list(arg) && !iptables_unallow_mac(arg)) {
+	rc = auth_client_unallow(arg);
+	if (rc == 0) {
 		fprintf(fp, "Yes");
 	} else {
 		fprintf(fp, "No");
 	}
-
-	UNLOCK_CONFIG();
 
 	debug(LOG_DEBUG, "Exiting ndsctl_unallow.");
 }
@@ -454,17 +424,16 @@ ndsctl_unallow(FILE *fp, char *arg)
 static void
 ndsctl_trust(FILE *fp, char *arg)
 {
+	int rc;
+
 	debug(LOG_DEBUG, "Entering ndsctl_trust [%s]", arg);
 
-	LOCK_CONFIG();
-
-	if (!add_to_trusted_mac_list(arg) && !iptables_trust_mac(arg)) {
+	rc = auth_client_trust(arg);
+	if (rc == 0) {
 		fprintf(fp, "Yes");
 	} else {
 		fprintf(fp, "No");
 	}
-
-	UNLOCK_CONFIG();
 
 	debug(LOG_DEBUG, "Exiting ndsctl_trust.");
 }
@@ -472,17 +441,16 @@ ndsctl_trust(FILE *fp, char *arg)
 static void
 ndsctl_untrust(FILE *fp, char *arg)
 {
+	int rc;
+
 	debug(LOG_DEBUG, "Entering ndsctl_untrust [%s]", arg);
 
-	LOCK_CONFIG();
-
-	if (!remove_from_trusted_mac_list(arg) && !iptables_untrust_mac(arg)) {
+	rc = auth_client_untrust(arg);
+	if (rc == 0) {
 		fprintf(fp, "Yes");
 	} else {
 		fprintf(fp, "No");
 	}
-
-	UNLOCK_CONFIG();
 
 	debug(LOG_DEBUG, "Exiting ndsctl_untrust.");
 }

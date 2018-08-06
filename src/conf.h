@@ -213,6 +213,10 @@ void parse_trusted_mac_list(const char[]);
 void parse_blocked_mac_list(const char[]);
 void parse_allowed_mac_list(const char[]);
 
+int is_blocked_mac(const char *mac);
+int is_allowed_mac(const char *mac);
+int is_trusted_mac(const char *mac);
+
 int add_to_blocked_mac_list(const char possiblemac[]);
 int remove_from_blocked_mac_list(const char possiblemac[]);
 
