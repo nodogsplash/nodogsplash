@@ -152,7 +152,7 @@ static const struct {
 };
 
 static void config_notnull(const void *parm, const char *parmname);
-static int parse_boolean_value(char *);
+static int parse_boolean(const char *);
 static int _parse_firewall_rule(t_firewall_ruleset *ruleset, char *leftover);
 static void parse_firewall_ruleset(const char *, FILE *, const char *, int *);
 
@@ -292,7 +292,7 @@ Advance to the next word
 t_firewall_ruleset *
 add_ruleset(const char rulesetname[])
 {
-	t_firewall_ruleset * ruleset;
+	t_firewall_ruleset *ruleset;
 
 	ruleset = get_ruleset(rulesetname);
 
@@ -327,7 +327,6 @@ parse_empty_ruleset_policy(char *ptr, const char *filename, int lineno)
 	rulesetname = ptr;
 	while ((*ptr != '\0') && (!isblank(*ptr))) ptr++;
 	*ptr = '\0';
-
 
 	/* get the ruleset struct with this name; error if it doesn't exist */
 	debug(LOG_DEBUG, "Parsing EmptyRuleSetPolicy for %s", rulesetname);
@@ -375,8 +374,8 @@ static void
 parse_firewall_ruleset(const char *rulesetname, FILE *fd, const char *filename, int *linenum)
 {
 	char line[MAX_BUF], *p1, *p2;
-	int  opcode;
 	t_firewall_ruleset *ruleset;
+	int opcode;
 
 	/* find whitespace delimited word in ruleset string; this is its name */
 	p1 = strchr(rulesetname,' ');
@@ -592,16 +591,16 @@ char *
 get_empty_ruleset_policy(const char *rulesetname)
 {
 	t_firewall_ruleset *rs;
+
 	rs = get_ruleset(rulesetname);
-	if (rs == NULL) return NULL;
-	return rs->emptyrulesetpolicy;
+	return rs ? rs->emptyrulesetpolicy : NULL;
 }
 
 
 t_firewall_ruleset *
 get_ruleset(const char ruleset[])
 {
-	t_firewall_ruleset	*tmp;
+	t_firewall_ruleset *tmp;
 
 	for (tmp = config.rulesets; tmp != NULL
 			&& strcmp(tmp->name, ruleset) != 0; tmp = tmp->next);
@@ -612,11 +611,10 @@ get_ruleset(const char ruleset[])
 t_firewall_rule *
 get_ruleset_list(const char *ruleset)
 {
-	t_firewall_ruleset	*tmp = get_ruleset(ruleset);
+	t_firewall_ruleset *tmp;
 
-	if (tmp == NULL) return NULL;
-
-	return (tmp->rules);
+	tmp = get_ruleset(ruleset);
+	return tmp ? tmp->rules : NULL;
 }
 
 /** @internal
@@ -707,7 +705,7 @@ config_read(const char *filename)
 			}
 			break;
 		case oDaemon:
-			if (config.daemon == -1 && ((value = parse_boolean_value(p1)) != -1)) {
+			if (config.daemon == -1 && ((value = parse_boolean(p1)) != -1)) {
 				config.daemon = value;
 			}
 			break;
@@ -815,7 +813,7 @@ config_read(const char *filename)
 			config.ndsctl_sock = safe_strdup(p1);
 			break;
 		case oSetMSS:
-			if ((value = parse_boolean_value(p1)) != -1) {
+			if ((value = parse_boolean(p1)) != -1) {
 				config.set_mss = value;
 			} else {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
@@ -831,7 +829,7 @@ config_read(const char *filename)
 			}
 			break;
 		case oTrafficControl:
-			if ((value = parse_boolean_value(p1)) != -1) {
+			if ((value = parse_boolean(p1)) != -1) {
 				config.traffic_control = value;
 			} else {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
@@ -921,7 +919,7 @@ config_read(const char *filename)
 Parses a boolean value from the config file
 */
 static int
-parse_boolean_value(char *line)
+parse_boolean(const char *line)
 {
 	if (strcasecmp(line, "no") == 0 ||
 			strcasecmp(line, "false") == 0 ||
