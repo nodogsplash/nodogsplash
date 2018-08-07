@@ -5,14 +5,14 @@ dist: trusty
 before_script:
   - bash ./build_libmicrohttpd.sh --compile
 
-install: "pip install Sphinx"
+#install: "pip install Sphinx"
 
 script:
  - make checkstyle
  - make
 # -W to turn warnings into errors
- - cd docs/ ; make SPHINXOPTS=-W dummy
- - cd docs/ ; make SPHINXOPTS=-W linkcheck
+# - cd docs/ ; make SPHINXOPTS=-W dummy
+# - cd docs/ ; make SPHINXOPTS=-W linkcheck
 
 env:
   - CFLAGS="-I/tmp/libmicrohttpd_install/include" LDFLAGS="-L/tmp/libmicrohttpd_install/lib"
