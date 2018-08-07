@@ -441,7 +441,7 @@ static int authenticate_client(struct MHD_Connection *connection,
 		}
 	}
 
-	rc = auth_client_auth(client->id, "ack_auth");
+	rc = auth_client_auth(client->id, "user_auth");
 	if (rc != 0) {
 		return send_error(connection, 503);
 	}
