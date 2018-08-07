@@ -308,7 +308,7 @@ ndsctl_auth(FILE *fp, char *arg)
 	UNLOCK_CLIENT_LIST();
 
 	if (id) {
-		rc = auth_client_auth(id);
+		rc = auth_client_auth(id, "ndsctl_auth");
 	} else {
 		debug(LOG_DEBUG, "Client not found.");
 		rc = -1;
@@ -338,7 +338,7 @@ ndsctl_deauth(FILE *fp, char *arg)
 	UNLOCK_CLIENT_LIST();
 
 	if (id) {
-		rc = auth_client_deauth(id);
+		rc = auth_client_deauth(id, "ndsctl_deauth");
 	} else {
 		debug(LOG_DEBUG, "Client not found.");
 		rc = -1;

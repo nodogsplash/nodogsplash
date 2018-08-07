@@ -26,8 +26,8 @@
 #ifndef _AUTH_H_
 #define _AUTH_H_
 
-int auth_client_deauth(unsigned id);
-int auth_client_auth(unsigned id);
+int auth_client_deauth(unsigned id, const char *reason);
+int auth_client_auth(unsigned id, const char *reason);
 int auth_client_trust(const char *mac);
 int auth_client_untrust(const char *mac);
 int auth_client_allow(const char *mac);

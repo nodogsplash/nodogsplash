@@ -441,7 +441,7 @@ static int authenticate_client(struct MHD_Connection *connection,
 		}
 	}
 
-	rc = auth_client_auth(client->id);
+	rc = auth_client_auth(client->id, "auth_ack");
 	if (rc != 0) {
 		return send_error(connection, 503);
 	}
@@ -499,7 +499,7 @@ static int authenticated(struct MHD_Connection *connection,
 	}
 
 	if (check_authdir_match(url, config->denydir)) {
-		auth_client_deauth(client->id);
+		auth_client_deauth(client->id, "user_deauth");
 		snprintf(redirect_to_us, 128, "http://%s:%u/", config->gw_address, config->gw_port);
 		return send_redirect_temp(connection, redirect_to_us);
 	}

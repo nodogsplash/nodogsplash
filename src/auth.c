@@ -60,7 +60,7 @@ static void binauth_action(t_client *client, const char *reason)
 	if (config->bin_auth) {
 		execute("%s %s %s %llu %llu %llu %llu",
 			config->bin_auth,
-			reason,
+			reason ? reason : "unknown",
 			client->mac,
 			client->counters.incoming,
 			client->counters.outgoing,
@@ -227,7 +227,7 @@ thread_client_timeout_check(void *arg)
  * Alter the firewall rules and client list accordingly.
 */
 int
-auth_client_deauth(const unsigned id)
+auth_client_deauth(const unsigned id, const char *reason)
 {
 	t_client *client;
 	int rc = -1;
@@ -242,7 +242,7 @@ auth_client_deauth(const unsigned id)
 		goto end;
 	}
 
-	rc = auth_change_state(client, FW_MARK_PREAUTHENTICATED, "manual_deauth");
+	rc = auth_change_state(client, FW_MARK_PREAUTHENTICATED, reason);
 
 end:
 	UNLOCK_CLIENT_LIST();
@@ -250,7 +250,7 @@ end:
 }
 
 int
-auth_client_auth(const unsigned id)
+auth_client_auth(const unsigned id, const char *reason)
 {
 	t_client *client;
 	int rc;
@@ -266,7 +266,7 @@ auth_client_auth(const unsigned id)
 		goto end;
 	}
 
-	rc = auth_change_state(client, FW_MARK_AUTHENTICATED, "manual_auth");
+	rc = auth_change_state(client, FW_MARK_AUTHENTICATED, reason);
 
 	if (rc == 0) {
 		authenticated_since_start++;
