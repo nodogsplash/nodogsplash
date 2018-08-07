@@ -64,6 +64,12 @@ If a client enters a username 'Bill' and password 'tms', then the configured `bi
 
 For the authentication to be successful, the exit code of the script must be 0. The output can be up to three values. First the number of seconds the client is to authenticated, second and third the maximum number of upload and download bytes. Values not given to NDS will resort to default values. Note that the traffic shaping feature does not work right now.
 
+After initial authentication by the script, Nodogsplash will immediately acknowlege by calling the binauth script again with:
+
+.. code::
+
+   /etc/nds_auth.sh manual_auth 12:34:56:78:90 <incoming_bytes> <outgoing_bytes> <session_start> <session_end>
+
 Nodogsplash will also call the script when the client is deathenticated.
 
 Client is deauthenticated due to inactivity:
