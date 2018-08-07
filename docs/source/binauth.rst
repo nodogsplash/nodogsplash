@@ -73,4 +73,4 @@ After initial authentication by the script, Nodogsplash will immediately acknowl
 
    /etc/nds_auth.sh client_auth 12:34:56:78:90 <incoming_bytes> <outgoing_bytes> <session_start> <session_end>
 
-Nodogsplash will also call the script when the client is deathenticated.
+Nodogsplash will also call the script when the client is deauthenticated.
