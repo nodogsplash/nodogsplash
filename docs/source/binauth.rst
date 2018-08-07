@@ -27,13 +27,13 @@ For the following examples, setting `binauth` in nodogsplash.conf is set to `/et
           echo 3600 0 0
         fi
         ;;
-      user_auth|user_deauth|idle_deauth|timeout_deauth|ndsctl_auth|ndsctl_deauth|shutdown_deauth)
+      client_auth|client_deauth|idle_deauth|timeout_deauth|ndsctl_auth|ndsctl_deauth|shutdown_deauth)
         INGOING_BYTES="$3"
         OUTGOING_BYTES="$4"
         SESSION_START="$5"
         SESSION_END="$6"
-        # user_auth: Client authenticated via splash page.
-        # user_deauth: Client deauthenticated via splash page.
+        # client_auth: Client authenticated via splash page.
+        # client_deauth: Client deauthenticated via splash page.
         # idle_deauth: Client was deauthenticated because of inactivity.
         # timeout_deauth: Client was deauthenticated because the session timed out.
         # ndsctl_auth: Client was authenticated manually by the ndsctl tool.
@@ -71,6 +71,6 @@ After initial authentication by the script, Nodogsplash will immediately acknowl
 
 .. code::
 
-   /etc/nds_auth.sh user_auth 12:34:56:78:90 <incoming_bytes> <outgoing_bytes> <session_start> <session_end>
+   /etc/nds_auth.sh client_auth 12:34:56:78:90 <incoming_bytes> <outgoing_bytes> <session_start> <session_end>
 
 Nodogsplash will also call the script when the client is deathenticated.
