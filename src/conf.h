@@ -176,7 +176,7 @@ typedef struct {
 	unsigned int FW_MARK_BLOCKED;	/**< @brief iptables mark for blocked packets */
 	unsigned int FW_MARK_TRUSTED;	/**< @brief iptables mark for trusted packets */
 	int ip6;			/**< @brief enable IPv6 */
-	char *bin_auth;		/**< @brief external authentication program */
+	char *binauth;		/**< @brief external authentication program */
 } s_config;
 
 /** @brief Get the current gateway configuration */

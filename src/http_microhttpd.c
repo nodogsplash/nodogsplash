@@ -66,7 +66,7 @@ static const char *lookup_mimetype(const char *filename);
 
 
 /* Get client settings from binauth */
-static int do_binauth(struct MHD_Connection *connection, const char *bin_auth, t_client *client,
+static int do_binauth(struct MHD_Connection *connection, const char *binauth, t_client *client,
 	int *seconds_ret, int *upload_ret, int *download_ret)
 {
 	char username_enc[64] = {0};
@@ -89,7 +89,7 @@ static int do_binauth(struct MHD_Connection *connection, const char *bin_auth, t
 	}
 
 	rc = execute_ret(msg, sizeof(msg) - 1, "%s client_auth %s '%s' '%s'",
-		bin_auth, client->mac, username_enc, password_enc);
+		binauth, client->mac, username_enc, password_enc);
 
 	if (rc != 0) {
 		return -1;
@@ -434,8 +434,8 @@ static int authenticate_client(struct MHD_Connection *connection,
 	int download = 0;
 	int rc;
 
-	if (config->bin_auth) {
-		rc = do_binauth(connection, config->bin_auth, client, &seconds, &upload, &download);
+	if (config->binauth) {
+		rc = do_binauth(connection, config->binauth, client, &seconds, &upload, &download);
 		if (rc != 0) {
 			return encode_and_redirect_to_splashpage(connection, redirect_url);
 		}

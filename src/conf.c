@@ -220,7 +220,7 @@ config_init(void)
 	config.FW_MARK_TRUSTED = DEFAULT_FW_MARK_TRUSTED;
 	config.FW_MARK_BLOCKED = DEFAULT_FW_MARK_BLOCKED;
 	config.ip6 = DEFAULT_IP6;
-	config.bin_auth = NULL;
+	config.binauth = NULL;
 
 	/* Set up default FirewallRuleSets, and their empty ruleset policies */
 	rs = add_ruleset("trusted-users");
@@ -743,7 +743,7 @@ config_read(const char *filename)
 			}
 			break;
 		case oBinAuth:
-			config.bin_auth = safe_strdup(p1);
+			config.binauth = safe_strdup(p1);
 			if (!((stat(p1, &sb) == 0) && S_ISREG(sb.st_mode) && (sb.st_mode & S_IXUSR))) {
 				debug(LOG_ERR, "binauth program does not exist or is not executeable: %s", p1);
 				debug(LOG_ERR, "Exiting...");

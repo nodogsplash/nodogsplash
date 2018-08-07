@@ -57,9 +57,9 @@ static void binauth_action(t_client *client, const char *reason)
 
 	config = config_get_config();
 
-	if (config->bin_auth) {
+	if (config->binauth) {
 		execute("%s %s %s %llu %llu %llu %llu",
-			config->bin_auth,
+			config->binauth,
 			reason ? reason : "unknown",
 			client->mac,
 			client->counters.incoming,
