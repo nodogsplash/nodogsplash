@@ -404,7 +404,7 @@ auth_client_deauth_all()
 			continue;
 		}
 
-		auth_change_state(cp1, FW_MARK_PREAUTHENTICATED, "manual_deauth");
+		auth_change_state(cp1, FW_MARK_PREAUTHENTICATED, "shutdown_deauth");
 	}
 
 	UNLOCK_CLIENT_LIST();
