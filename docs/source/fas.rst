@@ -39,7 +39,10 @@ The example FAS service will run fairly well on uhttpd (the web server that serv
 Running on uhttpd:
 Install the modules php7 and php7-cgi on LEDE for the simple example. Further modules may be required when you write your own php scripts depending on your requirements.
 To enable php in uhttpd you must add the line:
-	list interpreter ".php=/usr/bin/php-cgi"
+
+::
+  list interpreter ".php=/usr/bin/php-cgi"
+
 to the /etc/config/uhttpd file in the config uhttpd 'main' or first section.
 
 Finally, reboot the router to start NoDogSplash in FAS mode.

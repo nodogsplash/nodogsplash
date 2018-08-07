@@ -1,15 +1,20 @@
 Frequenctly Asked Questions
 ###########################
 
-What's the difference between v0.9, v1 and v2?
-**********************************************
+What's the difference between v0.9, v1, v2 and v3?
+**************************************************
 
 v0.9 and v1 are the same codebase with the same feature set.
 If the documentation says something about v1, this is usally also valid
 for v0.9.
 
 v2 was developed while version v1 wasn't released. In v2 the http code got replaced by libmicrohttpd
-as well the template engine got rewritten.
+as well the template engine got rewritten. Many feature were defunct because of this procedure.
+
+v3 cleans up the source code and adds the binauth feature to be able to call an external script
+for authentication. This is similar to the old binvoucher feature, but more flexible.
+The ClientTimeout setting was split into PreauthIdleTimeout and AuthedIdleTimeout and
+for the ClientForceTimeout setting SessionTimeout is now used instead.
 
 Can I update from v0.9 to v1
 ****************************
