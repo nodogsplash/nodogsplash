@@ -88,7 +88,7 @@ static int do_binauth(struct MHD_Connection *connection, const char *binauth, t_
 		return -1;
 	}
 
-	rc = execute_ret(msg, sizeof(msg) - 1, "%s client_auth %s '%s' '%s'",
+	rc = execute_ret(msg, sizeof(msg) - 1, "%s auth_client %s '%s' '%s'",
 		binauth, client->mac, username_enc, password_enc);
 
 	if (rc != 0) {

@@ -18,7 +18,7 @@ For the following examples, setting `binauth` in nodogsplash.conf is set to `/et
     MAC="$2"
 
     case "$METHOD" in
-      client_auth)
+      auth_client)
         USERNAME="$3"
         PASSWORD="$4"
         if [ "$USERNAME" = "Bill" -a "$PASSWORD" = "tms" ]; then
@@ -63,7 +63,7 @@ If a client enters a username 'Bill' and password 'tms', then the configured `bi
 
 .. code::
 
-   /etc/nds_auth.sh client_auth 12:34:56:78:90 'Bill' 'tms'
+   /etc/nds_auth.sh auth_client 12:34:56:78:90 'Bill' 'tms'
 
 For the authentication to be successful, the exit code of the script must be 0. The output can be up to three values. First the number of seconds the client is to authenticated, second and third the maximum number of upload and download bytes. Values not given to NDS will resort to default values. Note that the traffic shaping feature does not work right now.
 
