@@ -138,7 +138,7 @@ fw_refresh_client_list(void)
 	t_client *cp1, *cp2;
 	s_config *config = config_get_config();
 	const int preauth_idle_timeout_secs = 60 * config->preauth_idle_timeout;
-	const int authed_idle_timeout_secs = 60 * config->authed_idle_timeout;
+	const int auth_idle_timeout_secs = 60 * config->auth_idle_timeout;
 	const time_t now = time(NULL);
 
 	/* Update all the counters */
@@ -176,9 +176,9 @@ fw_refresh_client_list(void)
 				cp1->counters.incoming / 1000, cp1->counters.outgoing / 1000);
 
 			client_list_delete(cp1);
-		} else if (authed_idle_timeout_secs > 0
+		} else if (auth_idle_timeout_secs > 0
 				&& conn_state == FW_MARK_AUTHENTICATED
-				&& (last_updated + authed_idle_timeout_secs) <= now) {
+				&& (last_updated + auth_idle_timeout_secs) <= now) {
 			/* Timeout inactive user */
 			debug(LOG_NOTICE, "Timeout authenticated idle user: %s %s, inactive: %ds, in: %llukB, out: %llukB",
 				cp1->ip, cp1->mac, now - last_updated,

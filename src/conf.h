@@ -56,7 +56,7 @@
 #define DEFAULT_CHECKINTERVAL 30
 #define DEFAULT_SESSION_TIMEOUT 0
 #define DEFAULT_PREAUTH_IDLE_TIMEOUT 10
-#define DEFAULT_AUTHED_IDLE_TIMEOUT 120
+#define DEFAULT_AUTH_IDLE_TIMEOUT 120
 #define DEFAULT_WEBROOT "/etc/nodogsplash/htdocs"
 #define DEFAULT_SPLASHPAGE "splash.html"
 #define DEFAULT_STATUSPAGE "status.html"
@@ -157,7 +157,7 @@ typedef struct {
 	char *denydir;			/**< @brief Notional relative dir for denial URL */
 	int session_timeout;		/**< @brief Minutes of the default session length */
 	int preauth_idle_timeout;	/**< @brief Minutes a preauthenticated client will be kept in the system */
-	int authed_idle_timeout;	/**< @brief Minutes a authenticated client will be kept in the system */
+	int auth_idle_timeout;	/**< @brief Minutes a authenticated client will be kept in the system */
 	int checkinterval;		/**< @brief Period the the client timeout check thread will run, in seconds */
 	int set_mss;			/**< @brief boolean, whether to set mss */
 	int mss_value;			/**< @brief int, mss value; <= 0 clamp to pmtu */

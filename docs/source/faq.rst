@@ -13,7 +13,7 @@ as well the template engine got rewritten. Many feature were defunct because of 
 
 v3 cleans up the source code and adds the binauth feature to be able to call an external script
 for authentication. This is similar to the old binvoucher feature, but more flexible.
-The ClientTimeout setting was split into PreauthIdleTimeout and AuthedIdleTimeout and
+The ClientTimeout setting was split into PreauthIdleTimeout and AuthIdleTimeout and
 for the ClientForceTimeout setting SessionTimeout is now used instead.
 
 Can I update from v0.9 to v1

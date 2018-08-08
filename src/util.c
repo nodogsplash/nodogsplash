@@ -440,7 +440,7 @@ ndsctl_status(FILE *fp)
 	fprintf(fp, "Server listening: %s:%d\n", config->gw_address, config->gw_port);
 	fprintf(fp, "Client Check Interval: %ds\n", config->checkinterval);
 	fprintf(fp, "Preauth Idle Timeout: %ds\n", config->preauth_idle_timeout);
-	fprintf(fp, "Authed Idle Timeout: %ds\n", config->authed_idle_timeout);
+	fprintf(fp, "Auth Idle Timeout: %ds\n", config->auth_idle_timeout);
 
 	if (config->redirectURL) {
 		fprintf(fp, "Redirect URL: %s\n", config->redirectURL);

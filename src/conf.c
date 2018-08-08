@@ -81,7 +81,7 @@ typedef enum {
 	oPagesDir,
 	oRedirectURL,
 	oPreauthIdleTimeout,
-	oAuthedIdleTimeout,
+	oAuthIdleTimeout,
 	oCheckInterval,
 	oSetMSS,
 	oMSSValue,
@@ -127,7 +127,7 @@ static const struct {
 	{ "pagesdir", oPagesDir },
 	{ "redirectURL", oRedirectURL },
 	{ "preauthidletimeout", oPreauthIdleTimeout },
-	{ "authedidletimeout", oAuthedIdleTimeout },
+	{ "authidletimeout", oAuthIdleTimeout },
 	{ "checkinterval", oCheckInterval },
 	{ "setmss", oSetMSS },
 	{ "mssvalue", oMSSValue },
@@ -198,7 +198,7 @@ config_init(void)
 	config.denydir = safe_strdup(DEFAULT_DENYDIR);
 	config.redirectURL = NULL;
 	config.preauth_idle_timeout = DEFAULT_PREAUTH_IDLE_TIMEOUT,
-	config.authed_idle_timeout = DEFAULT_AUTHED_IDLE_TIMEOUT,
+	config.auth_idle_timeout = DEFAULT_AUTH_IDLE_TIMEOUT,
 	config.checkinterval = DEFAULT_CHECKINTERVAL;
 	config.daemon = -1;
 	config.set_mss = DEFAULT_SET_MSS;
@@ -794,8 +794,8 @@ config_read(const char *filename)
 		case oRedirectURL:
 			config.redirectURL = safe_strdup(p1);
 			break;
-		case oAuthedIdleTimeout:
-			if (sscanf(p1, "%d", &config.authed_idle_timeout) < 1) {
+		case oAuthIdleTimeout:
+			if (sscanf(p1, "%d", &config.auth_idle_timeout) < 1) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);
@@ -1343,9 +1343,9 @@ config_validate(void)
 		exit(-1);
 	}
 
-	if (config.checkinterval >= (60 * config.authed_idle_timeout) / 2) {
-		debug(LOG_ERR, "Setting checkinterval (%ds) must be smaller than half of authed_idle_timeout (%ds)",
-			config.checkinterval, 60 * config.authed_idle_timeout);
+	if (config.checkinterval >= (60 * config.auth_idle_timeout) / 2) {
+		debug(LOG_ERR, "Setting checkinterval (%ds) must be smaller than half of auth_idle_timeout (%ds)",
+			config.checkinterval, 60 * config.auth_idle_timeout);
 		exit(-1);
 	}
 }
