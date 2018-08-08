@@ -429,7 +429,7 @@ static int authenticate_client(struct MHD_Connection *connection,
 {
 	s_config *config = config_get_config();
 	time_t now = time(NULL);
-	int seconds = config->session_timeout;
+	int seconds = 60 * config->session_timeout;
 	int upload = 0;
 	int download = 0;
 	int rc;

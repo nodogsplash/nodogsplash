@@ -137,8 +137,8 @@ fw_refresh_client_list(void)
 {
 	t_client *cp1, *cp2;
 	s_config *config = config_get_config();
-	const int preauth_idle_timeout = config->preauth_idle_timeout;
-	const int authed_idle_timeout = config->authed_idle_timeout;
+	const int preauth_idle_timeout_secs = 60 * config->preauth_idle_timeout;
+	const int authed_idle_timeout_secs = 60 * config->authed_idle_timeout;
 	const time_t now = time(NULL);
 
 	/* Update all the counters */
@@ -167,18 +167,18 @@ fw_refresh_client_list(void)
 				cp1->counters.incoming / 1000, cp1->counters.outgoing / 1000);
 
 			auth_change_state(cp1, FW_MARK_PREAUTHENTICATED, "timeout_deauth");
-		} else if (preauth_idle_timeout > 0
+		} else if (preauth_idle_timeout_secs > 0
 				&& conn_state == FW_MARK_PREAUTHENTICATED
-				&& (last_updated + preauth_idle_timeout) <= now) {
+				&& (last_updated + preauth_idle_timeout_secs) <= now) {
 			/* Timeout inactive user */
 			debug(LOG_NOTICE, "Timeout preauthenticated idle user: %s %s, inactive: %ds, in: %llukB, out: %llukB",
 				cp1->ip, cp1->mac, now - last_updated,
 				cp1->counters.incoming / 1000, cp1->counters.outgoing / 1000);
 
 			client_list_delete(cp1);
-		} else if (authed_idle_timeout > 0
+		} else if (authed_idle_timeout_secs > 0
 				&& conn_state == FW_MARK_AUTHENTICATED
-				&& (last_updated + authed_idle_timeout) <= now) {
+				&& (last_updated + authed_idle_timeout_secs) <= now) {
 			/* Timeout inactive user */
 			debug(LOG_NOTICE, "Timeout authenticated idle user: %s %s, inactive: %ds, in: %llukB, out: %llukB",
 				cp1->ip, cp1->mac, now - last_updated,

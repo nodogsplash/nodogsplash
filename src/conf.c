@@ -1337,15 +1337,15 @@ config_validate(void)
 		exit(-1);
 	}
 
-	if (config.checkinterval >= config.preauth_idle_timeout / 2) {
+	if (config.checkinterval >= (60 * config.preauth_idle_timeout) / 2) {
 		debug(LOG_ERR, "Setting checkinterval (%ds) must be smaller than half of preauth_idle_timeout (%ds)",
-			config.checkinterval, config.preauth_idle_timeout);
+			config.checkinterval, 60 * config.preauth_idle_timeout);
 		exit(-1);
 	}
 
-	if (config.checkinterval >= config.authed_idle_timeout / 2) {
+	if (config.checkinterval >= (60 * config.authed_idle_timeout) / 2) {
 		debug(LOG_ERR, "Setting checkinterval (%ds) must be smaller than half of authed_idle_timeout (%ds)",
-			config.checkinterval, config.authed_idle_timeout);
+			config.checkinterval, 60 * config.authed_idle_timeout);
 		exit(-1);
 	}
 }
