@@ -194,7 +194,7 @@ thread_ndsctl(void *arg)
 				}
 
 			} else {
-				ndsctl_handler(fd);
+				ndsctl_handler(events[i].data.fd);
 				epoll_ctl(epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, &ev);
 				current_fd_count -= 1;
 
