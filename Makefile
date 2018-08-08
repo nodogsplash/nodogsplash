@@ -1,6 +1,6 @@
 
 CC?=gcc
-CFLAGS?=-O0 -g -Wall
+CFLAGS?=-O2 -g -Wall
 CFLAGS+=-Isrc
 #CFLAGS+=-Wall -Wwrite-strings -pedantic -std=gnu99
 LDFLAGS+=-pthread
