@@ -439,9 +439,11 @@ static int authenticate_client(struct MHD_Connection *connection,
 		if (rc != 0) {
 			return encode_and_redirect_to_splashpage(connection, redirect_url);
 		}
+		rc = auth_client_auth(client->id, "client_auth");
+	} else {
+		rc = auth_client_auth(client->id, NULL);
 	}
 
-	rc = auth_client_auth(client->id, "client_auth");
 	if (rc != 0) {
 		return send_error(connection, 503);
 	}
