@@ -33,6 +33,7 @@ Contents:
    ndsctl
    customize
    debug
+   todo
 
 Indices and tables
 ==================

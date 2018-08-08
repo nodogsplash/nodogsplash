@@ -64,12 +64,10 @@ replaced by their values:
 
 * *$uptime* The time Nodogsplash is running.
 
-* To change the appearance of informational and error pages which may
-  occasionally be served by nodogsplash, edit the infoskel file:
+* A list of all available variables are included in the splash.html file.
 
- ``/etc/nodogsplash/htdocs/infoskel.html``
+* If the user accesses the splash page while being authenticated, a status page is shown:
 
-In this file, variables *$gatewayname*, *$version*, *$title*, and *$content* will be
-replaced by their values. $title is a summary of the information or kind of
-error; *$content* is the content of the information or error message.
+ ``/etc/nodogsplash/htdocs/status.html``
 
+In the status.html file, the same variables as in the splash.html site can be used.
