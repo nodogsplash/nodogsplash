@@ -92,7 +92,7 @@ int tmpl_parse(struct templater *templor, char *dst, size_t dst_len, const char 
 
 		/* it's a valid varname and contains a variable replace it */
 		valuelen = strlen(value);
-		strncpy(dst + dst_i, value, valuelen > dst_len-dst_i ? dst_len-dst_i : valuelen);
+		strncpy(dst + dst_i, value, (valuelen > (dst_len - dst_i)) ? (dst_len - dst_i) : valuelen);
 		dst_i += valuelen;
 		src_i += varlen;
 	}

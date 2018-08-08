@@ -131,7 +131,7 @@ thread_ndsctl(void *arg)
 	memset(&ev, 0, sizeof(struct epoll_event));
 	epoll_fd = epoll_create(MAX_EVENT_SIZE);
 
-	ev.events = EPOLLIN|EPOLLET;
+	ev.events = EPOLLIN | EPOLLET;
 	ev.data.fd = sock;
 
 	if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, sock, &ev) < 0) {
@@ -139,7 +139,7 @@ thread_ndsctl(void *arg)
 		pthread_exit(NULL);
 	}
 
-	events = (struct epoll_event*)calloc(MAX_EVENT_SIZE, sizeof(struct epoll_event));
+	events = (struct epoll_event*) calloc(MAX_EVENT_SIZE, sizeof(struct epoll_event));
 
 	if (!events) {
 		close(sock);
@@ -163,7 +163,7 @@ thread_ndsctl(void *arg)
 		for (i = 0; i < number_of_count; i++) {
 
 			if ((events[i].events & EPOLLERR) || (events[i].events & EPOLLHUP) ||
-				(!(events[i].events & EPOLLIN))) {
+					(!(events[i].events & EPOLLIN))) {
 				debug(LOG_ERR, "Socket is not ready for communication : %s", strerror(errno));
 
 				if (events[i].data.fd > 0) {
@@ -181,7 +181,7 @@ thread_ndsctl(void *arg)
 					pthread_exit(NULL);
 				} else {
 					socket_set_non_blocking(fd);
-					ev.events = EPOLLIN|EPOLLET;
+					ev.events = EPOLLIN | EPOLLET;
 					ev.data.fd = fd;
 
 					if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fd, &ev) < 0) {
