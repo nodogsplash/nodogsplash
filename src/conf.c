@@ -923,14 +923,12 @@ parse_boolean(const char *line)
 {
 	if (strcasecmp(line, "no") == 0 ||
 			strcasecmp(line, "false") == 0 ||
-			strcmp(line, "0") == 0
-	   ) {
+			strcmp(line, "0") == 0) {
 		return 0;
 	}
 	if (strcasecmp(line, "yes") == 0 ||
 			strcasecmp(line, "true") == 0 ||
-			strcmp(line, "1") == 0
-	   ) {
+			strcmp(line, "1") == 0) {
 		return 1;
 	}
 
