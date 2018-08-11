@@ -1,289 +1,738 @@
-.\" generated with Ronn/v0.7.3
-.\" http://github.com/rtomayko/ronn/tree/0.7.3
+.\" Man page generated from reStructuredText.
 .
-.TH "README" "" "April 2016" "" ""
+.TH "NODOGSPLASH" "1" "Aug 11, 2018" "2.0.0" "nodogsplash"
+.SH NAME
+nodogsplash \- nodogsplash Documentation
 .
-.SH "NAME"
-\fBREADME\fR
+.nr rst2man-indent-level 0
 .
-.SH "0\. The Nodogsplash project"
-Nodogsplash offers a simple way to provide restricted access to an internet connection\. It is derived from the codebase of the Wifi Guard Dog project\. Nodogsplash is released under the GNU General Public License\.
-.
-.IP "\(bu" 4
-Mailing List: http://ml\.ninux\.org/mailman/listinfo/nodogsplash
-.
-.IP "\(bu" 4
-Original Homepage: http://kokoro\.ucsd\.edu/nodogsplash
-.
-.IP "\(bu" 4
-Wifidog: http://dev\.wifidog\.org/
-.
-.IP "\(bu" 4
-GNU GPL: http://www\.gnu\.org/copyleft/gpl\.html
-.
-.IP "" 0
-.
-.P
-The following describes what Nodogsplash does, how to get it and run it, and how to customize its behavior for your application\.
-.
-.SH "1\. Overview"
-Nodogsplash offers a solution to this problem: You want to provide controlled and reasonably secure public access to an internet connection; and while you want to require users to give some acknowledgment of the service you are providing, you don\'t need or want the complexity of user account names and passwords and maintaining a separate database\-backed authentication server\. When installed and running, Nodogsplash implements a simple \'authentication\' protocol\. First, it detects any user attempting to use your internet connection to request a web page\. It captures the request, and instead serves back a \'splash\' web page using its own builtin web server\. The splash page contains a link which, when the user clicks on it, opens limited access for them to the internet via your connection, beginning by being redirected to their originally requested page\. This access expires after a certain time interval\. Nodogsplash also permits limiting the aggregate bandwidth provided to users, if you don\'t want to grant all of your available upload or download bandwidth\. Specific features of Nodogsplash are configurable, by editing the configuration file and the splash page\. The default installed configuration may be all you need, though\.
-.
-.SH "2\. Installing and running nodogsplash"
-.
-.IP "\(bu" 4
-Have a router working with OpenWrt\. Nodogsplash has been compiled against a OpenWrt Attitude Adjustment buildroot; it may or may not work on other versions of OpenWrt or on other kinds of Linux\-based router firmware\. For notes on using Nodogsplash with OpenWrt Kamikaze, see below\.
-.
-.IP "\(bu" 4
-Make sure your router is basically working before you try to install nodogsplash\. In particular, make sure your DHCP daemon is serving addresses on the interface that nodogsplash will manage (typically br\-lan or eth1), and for the following use ssh or telnet access to your router over a different interface\.
-.
-.IP "\(bu" 4
-To install nodogsplash, obtain the nodogsplash*\.ipk package you want to install from the project website, copy it to /tmp/ on your OpenWrt router, and, in as root on the router, run:
-.
-.IP
-\fBopkg install /tmp/nodogsplash*\.ipk\fR
-.
-.IP
-(Note: to prevent installation of an older package, you may have to remove references to remote package repositories in your /etc/opkg\.conf file)
-.
-.IP "\(bu" 4
-If the interface that you want nodogsplash to manage is not br\-lan, edit /etc/nodogsplash/nodogsplash\.conf and set GatewayInterface\.
-.
-.IP "\(bu" 4
-To start nodogsplash, run the following, or just reboot the router:
-.
-.IP
-\fB/etc/init\.d/nodogsplash start\fR
-.
-.IP "\(bu" 4
-To test the installation, connect a client machine to the interface on your router that is managed by nodogsplash (for example, connect to the router\'s wireless lan) and in a browser on that machine, attempt to visit any website\. You should see the nodogsplash splash page instead\. Click on the icon; the browser should redirect to the initially requested website\.
-.
-.IP "\(bu" 4
-To stop nodogsplash:
-.
-.IP
-\fB/etc/init\.d/nodogsplash stop\fR
-.
-.IP "\(bu" 4
-To uninstall nodogsplash:
-.
-.IP
-\fBopkg remove nodogsplash\fR
-.
-.IP "" 0
-.
-.SH "3\. How nodogsplash works"
-A wireless router running OpenWrt has two or more interfaces; nodogsplash manages one of them\. This will typically be br\-lan, the bridge to both the wireless and wired LAN; or the wireless lan interface may be named something else if you have broken the br\-lan bridge to separate the wired and wireless LAN\'s\.
-.
-.SS "3\.1 Packet filtering"
-Nodogsplash considers four kinds of packets coming into the router over the managed interface\. Each packet is one of these kinds:
-.
-.IP "1." 4
-Blocked, if the MAC mechanism is block, and the source MAC address of the packet matches one listed in the BlockedMACList; or if the MAC mechanism is allow, and source MAC address of the packet does not match one listed in the AllowedMACList or the TrustedMACList\. These packets are dropped\.
-.
-.IP "2." 4
-Trusted, if the source MAC address of the packet matches one listed in the TrustedMACList\. By default, these packets are accepted and routed to all destination addresses and ports\. If desired, this behavior can be customized by FirewallRuleSet trusted\-users and FirewallRuleSet trusted\- users\-to\-router lists in the nodogsplash\.conf configuration file, or by the EmptyRuleSetPolicy trusted\-users EmptyRuleSetPolicy trusted\-users\-to\- router directives\.
-.
-.IP "3." 4
-Authenticated, if the packet\'s IP and MAC source addresses have gone through the nodogsplash authentication process and has not yet expired\. These packets are accepted and routed to a limited set of addresses and ports (see FirewallRuleSet authenticated\-users and FirewallRuleSet users\- to\-router in the nodogsplash\.conf configuration file)\.
-.
-.IP "4." 4
-Preauthenticated\. Any other packet\. These packets are accepted and routed to a limited set of addresses and ports (see FirewallRuleSet preauthenticated\-users and FirewallRuleSet users\-to\-router in the nodogsplash\.conf configuration file)\. Any other packet is dropped, except that a packet for destination port 80 at any address is redirected to port 2050 on the router, where nodogsplash\'s builtin libhttpd\-based web server is listening\. This begins the \'authentication\' process\. The server will serve a splash page back to the source IP address of the packet\. The user clicking the appropriate link on the splash page will complete the process, causing future packets from this IP/MAC address to be marked as Authenticated until the inactive or forced timeout is reached, and its packets revert to being Preauthenticated\.
-.
-.IP "" 0
-.
-.P
-Nodogsplash implements these actions by inserting rules in the router\'s iptables mangle PREROUTING chain to mark packets, and by inserting rules in the nat PREROUTING, filter INPUT and filter FORWARD chains which match on those marks\. Because it inserts its rules at the beginning of existing chains, nodogsplash should be insensitive to most typical existing firewall configurations\.
-.
-.SS "3\.2 Traffic control"
-Nodogsplash also optionally implements basic traffic control on its managed interface\. This feature lets you specify the maximum aggregate upload and download bandwidth that can be taken by clients connected on that interface\. Nodogsplash implements this functionality by enabling two intermediate queue devices (IMQ\'s), one for upload and one for download, and attaching simple rate\-limited HTB qdiscs to them\. Rules are inserted in the router\'s iptables mangle PREROUTING and POSTROUTING tables to jump to these IMQ\'s\. The result is simple but effective tail\-drop rate limiting (no packet classification or fairness queueing is done)\.
-.
-.SH "4\. Customizing nodogsplash"
-The default shipped configuration is intended to be usable and reasonably secure as\-is for basic internet sharing applications, but it is customizable\.
-.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.sp
+Nodogsplash offers a simple way to provide restricted access to an internet
+connection. It is derived from the codebase of the Wifi Guard Dog project.
+Nodogsplash is released under the GNU General Public License.
+.INDENT 0.0
+.IP \(bu 2
+Mailing List: \fI\%http://ml.ninux.org/mailman/listinfo/nodogsplash\fP
+.IP \(bu 2
+Original Homepage \fIdown\fP: \fI\%http://kokoro.ucsd.edu/nodogsplash\fP
+.IP \(bu 2
+Wifidog: \fI\%http://dev.wifidog.org/\fP
+.IP \(bu 2
+GNU GPL: \fI\%http://www.gnu.org/copyleft/gpl.html\fP
+.UNINDENT
+.sp
+The following describes what Nodogsplash does, how to get it and run it, and
+how to customize its behavior for your application.
+.sp
+Contents:
+.SH OVERVIEW
+.sp
+Nodogsplash (NDS) offers a solution to this problem: You want to provide controlled
+and reasonably secure public access to an internet connection; and while you
+want to require users to give some acknowledgment of the service you are
+providing, you don\(aqt need or want the complexity of user account names and
+passwords and maintaining a separate database\-backed authentication server.
+When installed and running, Nodogsplash implements a simple \(aqauthentication\(aq
+protocol. First, it detects any user attempting to use your internet connection
+to request a web page. It captures the request, and instead serves back a
+\(aqsplash\(aq web page using its own builtin web server. The splash page contains a
+link which, when the user clicks on it, opens limited access for them to the
+internet via your connection, beginning by being redirected to their originally
+requested page. This access expires after a certain time interval.
+Nodogsplash also permits limiting the aggregate bandwidth provided to users, if
+you don\(aqt want to grant all of your available upload or download bandwidth.
+Specific features of Nodogsplash are configurable, by editing the configuration
+file and the splash page. The default installed configuration may be all you
+need, though.
+.sp
+Nodogsplash supports multiple means of authentication:
+.INDENT 0.0
+.IP \(bu 2
+hit the submit button (default)
+.IP \(bu 2
+call an external script that may accept username/password
+.IP \(bu 2
+forwarding authentication to an external service
+.UNINDENT
+.SH INSTALLING NODOGSPLASH
+.SS OpenWrt
+.INDENT 0.0
+.IP \(bu 2
+Have a router working with OpenWrt. At the time of writing, Nodogsplash has been tested with OpenWrt 18.06.0;
+it may or may not work on older versions of OpenWrt or on other kinds of Linux\-based router firmware.
+.IP \(bu 2
+Make sure your router is basically working before you try to install
+Nodogsplash. In particular, make sure your DHCP daemon is serving addresses on the interface that nodogsplash will manage.
+The default is br\-lan but can be changed to any interface by editing the /etc/config/nodogsplash file.
+.IP \(bu 2
+To install Nodogsplash, you may use the OpenWrt Luci web interface or alternatively, ssh to your router and run the command:
+.INDENT 2.0
+.INDENT 3.5
+\fBopkg update\fP
+.UNINDENT
+.UNINDENT
+.sp
+followed by
+.INDENT 2.0
+.INDENT 3.5
+\fBopkg install nodogsplash\fP (for version 1x).
+.UNINDENT
+.UNINDENT
+.sp
+or
+.INDENT 2.0
+.INDENT 3.5
+\fBopkg install nodogsplash2\fP (for version 2x).
+.UNINDENT
+.UNINDENT
+.IP \(bu 2
+Nodogsplash is enabled by default and will start automatically on reboot or can be started and stopped manually.
+.IP \(bu 2
+If the interface that you want Nodogsplash to manage is not br\-lan,
+edit /etc/config/nodogsplash and set GatewayInterface.
+.IP \(bu 2
+To start Nodogsplash, run the following, or just reboot the router:
+.INDENT 2.0
+.INDENT 3.5
+\fB/etc/init.d/nodogsplash start\fP
+.UNINDENT
+.UNINDENT
+.IP \(bu 2
+To test the installation, connect a client device to the interface on your
+router that is managed by Nodogsplash (for example, connect to the router\(aqs
+wireless lan).
+Most client device operating systems and browsers support Captive Portal Detection (CPD) and the operating system or browser on that device will attempt to contact a pre defined port 80 web page.
+CPD will trigger Nodogsplash to serve the default splash page where you can click or tap Continue to access the Internet.
+.sp
+See the Authentication section for details of setting up a proper authentication process.
+.sp
+If your client device does not display the splash page it most likely does not support CPD. You should then manually trigger Nodogsplash by trying to access a port 80 web site (for example, google.com:80 is a good choice).
+.IP \(bu 2
+To stop Nodogsplash:
+.INDENT 2.0
+.INDENT 3.5
+\fB/etc/init.d/nodogsplash stop\fP
+.UNINDENT
+.UNINDENT
+.IP \(bu 2
+To uninstall Nodogsplash:
+.INDENT 2.0
+.INDENT 3.5
+\fBopkg remove nodogsplash\fP
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS Debian
+.sp
+There isn\(aqt a package in the repository (yet). But we have support for a debian package.
+Requirements beside debian tools are:
+.INDENT 0.0
+.IP \(bu 2
+libmicrohttpd\-dev (>= 0.9.51) [avaiable in \fBstretch\fP]
+.UNINDENT
+.sp
+But you can also compile libmicrohttpd on your own if you\(aqre still running jessie or older.
+.sp
+\fBsudo apt\-get install debhelper dpkg\-dev dh\-systemd libmicrohttpd\-dev\fP
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+apt\-get install build\-essential debhelper devscripts hardening\-includes
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+Run this command in the repository root folder to create the package:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+dpkg\-buildpackage
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+The package will be created in the parent directory.
+.sp
+Use this command if you want to create an unsigned package:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+dpkg\-buildpackage \-b \-rfakeroot \-us \-uc
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+You will find the .deb packages in parent directory.
+.SH HOW TO COMPILE NODOGSPLASH
+.SS Linux/Unix
+.sp
+Install libmicrohttpd including the header files (often call \-dev package).
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+git clone https://github.com/nodogsplash/nodogsplash.git
+cd nodogsplash
+make
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+If you installed the libmicrohttpd to another location (e.g. /tmp/libmicrohttpd_install/)
+replace path in the make call with
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+make CFLAGS="\-I/tmp/libmicrohttpd_install/include" LDFLAGS="\-L/tmp/libmicrohttpd_install/lib"
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+After compiling you can call \fBmake install\fP to install nodogsplash to /usr/
+.SS OpenWrt
+.sp
+To compile nodogsplash please use the package definiton from the feeds package.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+git clone git://git.openwrt.org/trunk/openwrt.git
+cd openwrt
+\&./scripts/feeds update
+\&./scripts/feeds install
+\&./scripts/feeds install nodogsplash
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+Select the appropiate "Target System" and "Target Profile" in the menuconfig menu and build the image.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+make defconfig
+make menuconfig
+make
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SH FREQUENCTLY ASKED QUESTIONS
+.SS What\(aqs the difference between v0.9, v1, v2 and v3?
+.sp
+v0.9 and v1 are the same codebase with the same feature set.
+If the documentation says something about v1, this is usally also valid
+for v0.9.
+.sp
+v2 was developed while version v1 wasn\(aqt released. In v2 the http code got replaced by libmicrohttpd
+as well the template engine got rewritten. Many feature were defunct because of this procedure.
+.sp
+v3 cleans up the source code and adds the binauth feature to be able to call an external script
+for authentication. This is similar to the old binvoucher feature, but more flexible.
+The ClientTimeout setting was split into PreauthIdleTimeout and AuthIdleTimeout and
+for the ClientForceTimeout setting SessionTimeout is now used instead.
+.SS Can I update from v0.9 to v1
+.sp
+This is a very smooth update with full compatibility.
+.SS Can I update from v0.9/v1 to v2.0.0
+.sp
+You can, if you don\(aqt use:
+.INDENT 0.0
+.IP \(bu 2
+BinVoucher (there is a \fI\%PR#144\fP)
+.UNINDENT
+.SS I would like to use QoS or TrafficControl on OpenWrt
+.sp
+The original pre version 1 feature has been broken since OpenWrt 12.09 (Attitude Adjustment), because
+OpenWrt removed the IMQ (Intermediate queueing device) support. We\(aqre looking for somebody who to fix this!
+.sp
+However the OpenWrt package, SQM Scripts, is fully compatible with Nodogsplash and if configured to operate on the Nodogsplash interface (br\-lan by default) will provide efficient IP connection based traffic control to ensure fair usage of available bandwidth.
+.SS Is \fI\%https://\fP redirection supported?
+.sp
+No. We believe this is the wrong way to do it, because all connections would have a critical certificate failure.
+Https web sites are now more or less a standard and to maintain security and user confidence it is essential that captive portals DO NOT attempt to capture port 443.
+.sp
+Captive Portal Detection (CPD) has evolved as an enhancement to the network manager component included with major Operating Systems (Linux, Android, iOS/macOS, Windows). Using a pre defined port 80 web page (depending on the vendor) the network manager will detect the presence of a captive portal hotspot and notify the user. In addition, most major browsers now support CPD.
+.SH HOW NODOGSPLASH WORKS
+.sp
+A wireless router running OpenWrt has two or more interfaces; nodogsplash
+manages one of them. This will typically be br\-lan, the bridge to both the
+wireless and wired LAN; or the wireless lan interface may be named something
+else if you have broken the br\-lan bridge to separate the wired and wireless
+LAN\(aqs.
+.SS Packet filtering
+.sp
+Nodogsplash considers four kinds of packets coming into the router over the
+managed interface. Each packet is one of these kinds:
+.INDENT 0.0
+.INDENT 3.5
+.INDENT 0.0
+.IP 1. 3
+Blocked, if the MAC mechanism is block, and the source MAC address of the
+packet matches one listed in the BlockedMACList; or if the MAC mechanism
+is allow, and source MAC address of the packet does not match one listed
+in the AllowedMACList or the TrustedMACList. These packets are dropped.
+.IP 2. 3
+Trusted, if the source MAC address of the packet matches one listed in the
+TrustedMACList. By default, these packets are accepted and routed to all
+destination addresses and ports. If desired, this behavior can be
+customized by FirewallRuleSet trusted\-users and FirewallRuleSet trusted\-
+users\-to\-router lists in the nodogsplash.conf configuration file, or by
+the EmptyRuleSetPolicy trusted\-users EmptyRuleSetPolicy trusted\-users\-to\-
+router directives.
+.IP 3. 3
+Authenticated, if the packet\(aqs IP and MAC source addresses have gone
+through the nodogsplash authentication process and has not yet expired.
+These packets are accepted and routed to a limited set of addresses and
+ports (see FirewallRuleSet authenticated\-users and FirewallRuleSet users\-
+to\-router in the nodogsplash.conf configuration file).
+.IP 4. 3
+Preauthenticated. Any other packet. These packets are accepted and routed
+to a limited set of addresses and ports (see FirewallRuleSet
+preauthenticated\-users and FirewallRuleSet users\-to\-router in the
+nodogsplash.conf configuration file). Any other packet is dropped, except
+that a packet for destination port 80 at any address is redirected to port
+2050 on the router, where nodogsplash\(aqs builtin libhttpd\-based web server
+is listening. This begins the \(aqauthentication\(aq process. The server will
+serve a splash page back to the source IP address of the packet. The user
+clicking the appropriate link on the splash page will complete the
+process, causing future packets from this IP/MAC address to be marked as
+Authenticated until the inactive or forced timeout is reached, and its
+packets revert to being Preauthenticated.
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.sp
+Nodogsplash implements these actions by inserting rules in the router\(aqs
+iptables mangle PREROUTING chain to mark packets, and by inserting rules in the
+nat PREROUTING, filter INPUT and filter FORWARD chains which match on those
+marks. Because it inserts its rules at the beginning of existing chains,
+nodogsplash should be insensitive to most typical existing firewall
+configurations.
+.SS Traffic control
+.sp
+Nodogsplash also optionally implements basic traffic control on its managed
+interface. This feature lets you specify the maximum aggregate upload and
+download bandwidth that can be taken by clients connected on that interface.
+Nodogsplash implements this functionality by enabling two intermediate queue
+devices (IMQ\(aqs), one for upload and one for download, and attaching simple
+rate\-limited HTB qdiscs to them. Rules are inserted in the router\(aqs iptables
+mangle PREROUTING and POSTROUTING tables to jump to these IMQ\(aqs. The result is
+simple but effective tail\-drop rate limiting (no packet classification or
+fairness queueing is done).
+.sp
+\fBNOTE:\fP
+.INDENT 0.0
+.INDENT 3.5
+IMQ is not included anymore by OpenWrt Attitude Adjustment (12.09).
+.UNINDENT
+.UNINDENT
+.SH FORWARDING AUTHENTICATION SERVICE (FAS)
+.SS Overview
+.sp
+Nodogsplash (NDS) can support external (to NDS) authentication.
+The BinVoucher process was derived to support this and has been called Forwarding Authentication. This is a non trivial function and although partially implemented in early versions, is not implemented at all in version 2, at the time of writing.
+.sp
+Fortunately, Forwarding Authentication can be done without any modification to the core NDS code and in a way that is compatible with all versions, pre v1 beta through to the current release of v2.
+.sp
+The defacto industry standard Captive Portal Detection (CPD), present on almost all devices these days, invokes the NDS splash page with various parameters passed to the splash page by NDS, including the client access token.
+.sp
+It is a simple matter to pass this token to an external Forwarding Authentication Service (FAS) by using a redirect in the splash page.
+.sp
+For a client to access this external service, the ip address and port number of the service must be added to the NDS walled garden in nodogsplash.conf or its equivalent UCI config file if running under LEDE/OpenWrt.
+.sp
+Included are various configuration files and remote php scripts, intended as an example implementation of FAS to demonstrate the methods.
+.SS FAS Installation
+.sp
+NOTE: USING HTTPS. Your FAS can be an https server, but self signed certificates will throw dire "Here Be Dragons" warnings on your client devices when the redirection to your FAS takes place. Also even if using a registered CA all browsers will still return a security error on returning to Nodogsplash. This can be prevented by using wget to return to Nodogsplash from your FAS script instead of an html GET.
+.sp
+The contents of the FAS etc folder should be placed in the /etc folder of your NoDogSplash router, overwriting existing files.
+.sp
+The following two files should be edited as follows.
+.sp
+1:
+/etc/config/nodogsplash should be edited to reflect the ip address and port of your FAS service as described in the comments in the example file.
+Your FAS can reside on your Nodogsplash router, a web server on your LAN, or a web server on the internet.
+.sp
+2:
+/etc/nodogsplash/htdocs/splash.html should also be edited to reflect the URL of your FAS service as indicated in the comments in the example file.
+Take note of the USING HTTPS warning above. A typical URL could be \fI\%http://my\-fas.net/nodog/fas.php?auth\fP\&.... etc.
+.sp
+Running FAS on your Nodogsplash router:
+The example FAS service will run fairly well on uhttpd (the web server that serves Luci) on an LEDE/OpenWrt supported device with 8MB flash and 32MB ram but shortage of ram may well be an issue if more than two or three clients log in at the same time. For this reason a device with a minimum of 16MB flash and 64MB ram is recommended.
+.sp
+Running on uhttpd:
+Install the modules php7 and php7\-cgi on LEDE for the simple example. Further modules may be required when you write your own php scripts depending on your requirements.
+To enable php in uhttpd you must add the line:
+.INDENT 0.0
 .TP
-To change basic nodogsplash settings, edit the configuration file:
-.
-.IP
-\fB/etc/nodogsplash/nodogsplash\.conf\fR
-.
-.P
-In the configuration file, a FirewallRule has the form:
-.
-.P
-\fBFirewallRule permission [protocol [port portrange] [to ip]\fR
-.
-.P
-where
-.
-.IP "\(bu" 4
-\fIpermission\fR is required and must be allow, block, drop, log, or ulog\.
-.
-.IP "\(bu" 4
-\fIprotocol\fR is optional\. If present, it must be tcp, udp, icmp, or all\. Defaults to all\.
-.
-.IP "\(bu" 4
-port \fIportrange\fR is optional\. If present, protocol must be tcp or udp\. portrange can be a single integer port number, or a colon\-separated port range, e\.g\. 1024:1028\. Defaults to all ports\.
-.
-.IP "\(bu" 4
-\fIto ip\fR is optional\. If present, ip must be a decimal dotted\-quad IP address with optional mask\. Defaults to 0\.0\.0\.0/0, i\.e\. all addresses\.
-.
-.IP "\(bu" 4
-To change the contents of the splash page, edit the splash page file:
-.
-.IP
-\fB/etc/nodogsplash/htdocs/splash\.html\fR
-.
-.IP "" 0
-.
-.P
-When the splash page is served, the following variables in the page are replaced by their values:
-.
-.IP "\(bu" 4
-\fI$gatewayname\fR The value of GatewayName as set in nodogsplash\.conf\.
-.
-.IP "\(bu" 4
-\fI$authtarget\fR A URL which encodes a unique token and the URL of the user\'s original web request\. If nodogsplash receives a request at this URL, it completes the authentication process for the client and replies to the request with a "302 Found" to the encoded originally requested URL\. (Alternatively, you can use a GET\-method HTML form to send this information to the nodogsplash server; see below\.) As a simple example:
-.
-.IP
-\fB<a href="$authtarget">Enter</a>\fR
-.
-.IP "\(bu" 4
-\fI$imagesdir\fR The directory in nodogsplash\'s web hierarchy where images to be displayed in the splash page must be located\.
-.
-.IP "\(bu" 4
-\fI$tok\fR,\fI$redir\fR,\fI$authaction\fR, and \fI$denyaction\fR are also available and can be useful if you want to write the splash page to use a GET\-method HTML form instead of using $authtarget as the value of an href attribute to communicate with the nodogsplash server\. As a simple example:
-.
-.IP "" 0
-.
-.IP "" 4
-.
+.B ::
+list interpreter ".php=/usr/bin/php\-cgi"
+.UNINDENT
+.sp
+to the /etc/config/uhttpd file in the config uhttpd \(aqmain\(aq or first section.
+.sp
+Finally, reboot the router to start NoDogSplash in FAS mode.
+.sp
+The example file "users.dat" contains a list of usernames and passwords.
+.sp
+NOTE: /etc/config/nodogsplash contains the line "option enabled 1". If you have done something wrong and locked yourself out, you can still SSH to your router and stop NoDogSplash (ndsctl stop) to fix the problem.
+.SH BINAUTH OPTION
+.sp
+\fBKey: BinAuth\fP
+.sp
+\fBValue: /path/to/executable/script\fP
+.sp
+Authenticate a client using an external program that get passed the (optional) username and password value.
+The exit code and output values of the program decide if and how a client is to be authenticated.
+.sp
+The program will also be called on client authentication and deauthentication.
+.sp
+For the following examples, \fIbinauth\fP is set to \fI/etc/nds_auth.sh\fP in nodogsplash.conf:
+.INDENT 0.0
+.INDENT 3.5
+.sp
 .nf
+.ft C
+#!/bin/sh
 
-<form method=\'GET\' action=\'$authaction\'>
-  <input type=\'hidden\' name=\'tok\' value=\'$tok\'>
-  <input type=\'hidden\' name=\'redir\' value=\'$redir\'>
-  <input type=\'submit\' value=\'Click Here to Enter\'>
+METHOD="$1"
+MAC="$2"
+
+case "$METHOD" in
+  auth_client)
+    USERNAME="$3"
+    PASSWORD="$4"
+    if [ "$USERNAME" = "Bill" \-a "$PASSWORD" = "tms" ]; then
+      # Allow client to access the Internet for one hour (3600 seconds)
+      # Further values are upload and download limits in bytes. 0 for no limit.
+      echo 3600 0 0
+    fi
+    ;;
+  client_auth|client_deauth|idle_deauth|timeout_deauth|ndsctl_auth|ndsctl_deauth|shutdown_deauth)
+    INGOING_BYTES="$3"
+    OUTGOING_BYTES="$4"
+    SESSION_START="$5"
+    SESSION_END="$6"
+    # client_auth: Client authenticated via this script.
+    # client_deauth: Client deauthenticated by the client via splash page.
+    # idle_deauth: Client was deauthenticated because of inactivity.
+    # timeout_deauth: Client was deauthenticated because the session timed out.
+    # ndsctl_auth: Client was authenticated manually by the ndsctl tool.
+    # ndsctl_deauth: Client was deauthenticated by the ndsctl tool.
+    # shutdown_deauth: Client was deauthenticated by Nodogsplash terminating.
+    ;;
+esac
+
+exit 0
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+The \fISESSION_START\fP and \fISESSION_END\fP values are the number of seconds since 1970 or may be 0 for unknown/unlimited.
+.sp
+The splash.html page contains the following code:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+<form method=\(aqGET\(aq action=\(aq$authaction\(aq>
+<input type=\(aqhidden\(aq name=\(aqtok\(aq value=\(aq$tok\(aq>
+<input type=\(aqhidden\(aq name=\(aqredir\(aq value=\(aq$redir\(aq>
+username: <input type=\(aqtext\(aq name=\(aqusername\(aq value=\(aq\(aq size=\(aq12\(aq maxlength=\(aq12\(aq>
+<br>
+password: <input type=\(aqpassword\(aq name=\(aqpassword\(aq value=\(aq\(aq size=\(aq12\(aq maxlength=\(aq10\(aq>
+<br>
+<input type=\(aqsubmit\(aq value=\(aqEnter\(aq>
 </form>
-.
+.ft P
 .fi
-.
-.IP "" 0
-.
-.IP "\(bu" 4
-\fI$clientip\fR, \fI$clientmac\fR and \fI$gatewaymac\fR The respective addresses of the client or gateway\. This might be usefull in cases where the data needs to be forwarded to some other place by the plash page itself\.
-.
-.IP "\(bu" 4
-\fI$nclients\fR and \fI$maxclients\fR User stats\. Usefull when you need to display something like "n of m users online" on the splash site\.
-.
-.IP "\(bu" 4
-\fI$uptime\fR The time Nodogsplash is running\.
-.
-.IP "\(bu" 4
-To change the appearance of informational and error pages which may occasionally be served by nodogsplash, edit the infoskel file:
-.
-.IP
-\fB/etc/nodogsplash/htdocs/infoskel\.html\fR
-.
-.IP "" 0
-.
-.P
-In this file, variables \fI$gatewayname\fR, \fI$version\fR, \fI$title\fR, and \fI$content\fR will be replaced by their values\. $title is a summary of the information or kind of error; \fI$content\fR is the content of the information or error message\.
-.
-.SH "5\. Authentication"
-.
-.SS "5\.1 Site\-wide username and password"
-Nodogsplash can be configured to require a username and/or password to be entered on the splash page as part of the authentication process\. Since the username and password are site\-wide (not per user), and they are sent in the clear using HTTP GET, this is not a secure mechanism\. To enable this, edit \fInodogsplash\.conf\fR to set parameters \fIPasswordAuthentication\fR, \fIUsernameAuthentication\fR, \fIPassword\fR, \fIUsername\fR, and \fIPasswordAttempts\fR as desired\. Then the splash page must use a GET\-method HTML form to send user\-entered username and/or password as values of variables \fInodoguser\fR and \fInodogpass\fR respectively, along with others as required, to the server\. For example:
-.
-.IP "" 4
-.
+.UNINDENT
+.UNINDENT
+.sp
+If a client enters a username \(aqBill\(aq and password \(aqtms\(aq, then the configured \fIbinauth\fP script is executed:
+.INDENT 0.0
+.INDENT 3.5
+.sp
 .nf
-
-  <form method=\'GET\' action=\'$authaction\'>
-  <input type=\'hidden\' name=\'tok\' value=\'$tok\'>
-  <input type=\'hidden\' name=\'redir\' value=\'$redir\'>
-  username: <input type=\'text\' name=\'nodoguser\' value=\'\' size=\'12\' maxlength=\'12\'>
-  <br>
-  password: <input type=\'password\' name=\'nodogpass\' value=\'\' size=\'12\' maxlength=\'10\'>
-  <br>
-  <input type=\'submit\' value=\'Enter\'>
-  </form>
-.
+.ft C
+/etc/nds_auth.sh auth_client 12:34:56:78:90 \(aqBill\(aq \(aqtms\(aq
+.ft P
 .fi
-.
-.IP "" 0
-.
-.SS "5\.2 Forwarding authentication"
-Nodogsplash allows to call an external program for authentication using the options BinVoucher/EnablePreAuth/ForceVoucher in nodogsplash\.conf\. The given program for BinVoucher will be called using the clients MAC address as argument\. The output is expected to be the number of seconds the client is to be authenticated\. It may also contain the clients download and upload speed limit in KBits/s\. See the example configuration file for further details\.
-.
-.SH "6\. Using ndsctl"
-A nodogsplash install includes ndsctl, a separate application which provides some control over a running nodogsplash process by communicating with it over a unix socket\. Some command line options:
-.
-.IP "\(bu" 4
+.UNINDENT
+.UNINDENT
+.sp
+For the authentication to be successful, the exit code of the script must be 0. The output can be up to three values. First the number of seconds the client is to be authenticated, second and third the maximum number of upload and download bytes limits. Values not given to NDS will resort to default values. Note that the traffic shaping feature that uses the upload/download values does not work right now.
+.sp
+After initial authentication by the script, Nodogsplash will immediately acknowlege by calling the binauth script again with:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+/etc/nds_auth.sh client_auth 12:34:56:78:90 <incoming_bytes> <outgoing_bytes> <session_start> <session_end>
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+Nodogsplash will also call the script when the client is authenticated and deauthenticated in general.
+.SH USING NDSCTL
+.sp
+A nodogsplash install includes ndsctl, a separate application which provides
+some control over a running nodogsplash process by communicating with it over a
+unix socket. Some command line options:
+.INDENT 0.0
+.IP \(bu 2
 To print to stdout some information about your nodogsplash process:
-.
-.IP
-\fB/usr/bin/ndsctl status\fR
-.
-.IP "\(bu" 4
+.INDENT 2.0
+.INDENT 3.5
+\fB/usr/bin/ndsctl status\fP
+.UNINDENT
+.UNINDENT
+.IP \(bu 2
 To block a MAC address, when the MAC mechanism is block:
-.
-.IP
-\fB/usr/bin/ndsctl block MAC\fR
-.
-.IP "\(bu" 4
+.INDENT 2.0
+.INDENT 3.5
+\fB/usr/bin/ndsctl block MAC\fP
+.UNINDENT
+.UNINDENT
+.IP \(bu 2
 To unblock a MAC address, when the MAC mechanism is block:
-.
-.IP
-\fB/usr/bin/ndsctl unblock MAC\fR
-.
-.IP "\(bu" 4
+.INDENT 2.0
+.INDENT 3.5
+\fB/usr/bin/ndsctl unblock MAC\fP
+.UNINDENT
+.UNINDENT
+.IP \(bu 2
 To allow a MAC address, when the MAC mechanism is allow:
-.
-.IP
-\fB/usr/bin/ndsctl allow MAC\fR
-.
-.IP "\(bu" 4
+.INDENT 2.0
+.INDENT 3.5
+\fB/usr/bin/ndsctl allow MAC\fP
+.UNINDENT
+.UNINDENT
+.IP \(bu 2
 To unallow a MAC address, when the MAC mechanism is allow:
-.
-.IP
-\fB/usr/bin/ndsctl unallow MAC\fR
-.
-.IP "\(bu" 4
-To deauthenticate a currently authenticated user given their IP or MAC address:
-.
-.IP
-\fB/usr/bin/ndsctl deauth IP|MAC\fR
-.
-.IP "\(bu" 4
+.INDENT 2.0
+.INDENT 3.5
+\fB/usr/bin/ndsctl unallow MAC\fP
+.UNINDENT
+.UNINDENT
+.IP \(bu 2
+To deauthenticate a currently authenticated user given their IP or MAC
+address:
+.INDENT 2.0
+.INDENT 3.5
+\fB/usr/bin/ndsctl deauth IP|MAC\fP
+.UNINDENT
+.UNINDENT
+.IP \(bu 2
 To set the verbosity of logged messages to n:
+.INDENT 2.0
+.INDENT 3.5
+\fB/usr/bin/ndsctl loglevel n\fP
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.sp
+For more options, run ndsctl \-h. (Note that if you want the effect of ndsctl
+commands to to persist across nodogsplash restarts, you have to edit the
+configuration file.)
+.SH CUSTOMIZING NODOGSPLASH
+.sp
+The default shipped configuration is intended to be usable and reasonably
+secure as\-is for basic internet sharing applications, but it is customizable.
+.INDENT 0.0
+.IP \(bu 2
+To change basic nodogsplash settings, edit the configuration file:
+.sp
+\fB/etc/nodogsplash/nodogsplash.conf\fP
+.UNINDENT
+.sp
+In the configuration file, a FirewallRule has the form:
+.INDENT 0.0
+.INDENT 3.5
+\fBFirewallRule permission [protocol [port portrange] [to ip]\fP
+.UNINDENT
+.UNINDENT
+.sp
+where
+.INDENT 0.0
+.IP \(bu 2
+\fIpermission\fP is required and must be allow, block, drop, log, or ulog.
+.IP \(bu 2
+\fIprotocol\fP is optional. If present, it must be tcp, udp, icmp, or all.
+Defaults to all.
+.IP \(bu 2
+port \fIportrange\fP is optional. If present, protocol must be tcp or udp.
+portrange can be a single integer port number, or a colon\-separated port
+range, e.g. 1024:1028. Defaults to all ports.
+.IP \(bu 2
+\fIto ip\fP is optional. If present, ip must be a decimal dotted\-quad IP address
+with optional mask. Defaults to 0.0.0.0/0, i.e. all addresses.
+.IP \(bu 2
+To change the contents of the splash page, edit the splash page file:
+.sp
+\fB/etc/nodogsplash/htdocs/splash.html\fP
+.UNINDENT
+.sp
+When the splash page is served, the following variables in the page are
+replaced by their values:
+.INDENT 0.0
+.IP \(bu 2
+\fI$gatewayname\fP The value of GatewayName as set in nodogsplash.conf.
+.IP \(bu 2
+\fI$authtarget\fP A URL which encodes a unique token and the URL of the user\(aqs
+original web request. If nodogsplash receives a request at this URL, it
+completes the authentication process for the client and replies to the
+request with a "302 Found" to the encoded originally requested
+URL. (Alternatively, you can use a GET\-method HTML form to send this
+information to the nodogsplash server; see below.) As a simple example:
+.sp
+\fB<a href="$authtarget">Enter</a>\fP
+.IP \(bu 2
+\fI$imagesdir\fP The directory in nodogsplash\(aqs web hierarchy where images to be
+displayed in the splash page must be located.
+.IP \(bu 2
+\fI$tok\fP,*$redir*,*$authaction*, and \fI$denyaction\fP are also available and can be
+useful if you want to write the splash page to use a GET\-method HTML form
+instead of using $authtarget as the value of an href attribute to
+communicate with the nodogsplash server. As a simple example:
+.UNINDENT
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+<form method=\(aqGET\(aq action=\(aq$authaction\(aq>
+  <input type=\(aqhidden\(aq name=\(aqtok\(aq value=\(aq$tok\(aq>
+  <input type=\(aqhidden\(aq name=\(aqredir\(aq value=\(aq$redir\(aq>
+  <input type=\(aqsubmit\(aq value=\(aqClick Here to Enter\(aq>
+</form>
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.IP \(bu 2
+\fI$clientip\fP, \fI$clientmac\fP and \fI$gatewaymac\fP The respective addresses
+of the client or gateway. This might be usefull in cases where the data
+needs to be forwarded to some other place by the plash page itself.
+.IP \(bu 2
+\fI$nclients\fP and \fI$maxclients\fP User stats. Usefull when you need to
+display something like "n of m users online" on the splash site.
+.IP \(bu 2
+\fI$uptime\fP The time Nodogsplash is running.
+.IP \(bu 2
+A list of all available variables are included in the splash.html file.
+.IP \(bu 2
+If the user accesses the splash page while being authenticated, a status page is shown:
+.UNINDENT
+.INDENT 0.0
+.INDENT 3.5
+\fB/etc/nodogsplash/htdocs/status.html\fP
+.UNINDENT
+.UNINDENT
+.sp
+In the status.html file, the same variables as in the splash.html site can be used.
+.SH DEBUGGING NODOGSPLASH
+.INDENT 0.0
+.IP \(bu 2
+To see maximally verbose debugging output from nodogsplash, edit the
+/etc/init.d/nodogsplash file to set the OPTIONS variable to the flags "\-s \-d 7",
+restart or reboot, and view messages with logread. The \-s flag logs to
+syslog; the \-d 7 flag sets level 7, LOG_DEBUG, for debugging messages
+(see syslog.h). You don\(aqt want to run with these flags routinely, as it will
+quickly fill the syslog circular buffer, unless you enable remote logging. A
+lower level of logging, for example level 5, LOG_NOTICE, is more appropriate
+for routine use (this is the default). Logging level can also be set using
+ndsctl as shown above.
+Alternatively, you can set the flag \-f instead of \-s, and restart.
+This will run nodogsplash in the foreground, logging to stdout.
+.IP \(bu 2
+When stopped, nodogsplash deletes its iptables rules, attempting to leave the
+router\(aqs firewall in its original state. If not (for example, if nodogsplash
+crashes instead of exiting cleanly) subsequently starting and stopping
+nodogsplash should remove its rules.
+.IP \(bu 2
+Nodogsplash operates by marking packets (and, if traffic control is enabled,
+passing packets through intermediate queueing devices). Most QOS packages
+will also mark packets and use IMQ\(aqs. Therefore one or both of Nodogsplash and
+a QOS package may malfunction if used together. Potential conflicts may be
+investigated by looking at your overall iptables setup. To check to see all
+the rules in, for example, the mangle table chains, run
+.INDENT 2.0
+.INDENT 3.5
+\fBiptables \-t mangle \-v \-n \-L\fP
+.UNINDENT
+.UNINDENT
+.sp
+For extensive suggestions on debugging iptables, see for example Oskar
+Andreasson\(aqs_tutorial.
+.UNINDENT
+.SH TODO LIST
+.sp
+Not all features are finished or working as properly as they should.
+Here is a list of things that need to be improved:
+.INDENT 0.0
+.IP \(bu 2
+While (un\-) block/trust/allow via the ndsctl tool take effect, the state object of the client in NDS is not affected.
+Both systems still need to be connected (in src/auth.c).
+.IP \(bu 2
+Show a site when the users authentication was rejected, e.g. because the user exeeded the quota
+.UNINDENT
+.INDENT 0.0
+.IP \(bu 2
+genindex
+.IP \(bu 2
+search
+.UNINDENT
+.SH AUTHOR
+the nodogsplash contributors
+.SH COPYRIGHT
+2016, the nodogsplash contributors
+.\" Generated by docutils manpage writer.
 .
-.IP
-\fB/usr/bin/ndsctl loglevel n\fR
-.
-.IP "" 0
-.
-.P
-For more options, run ndsctl \-h\. (Note that if you want the effect of ndsctl commands to to persist across nodogsplash restarts, you have to edit the configuration file\.)
-.
-.SH "7\. Debugging nodogsplash"
-.
-.IP "\(bu" 4
-To see maximally verbose debugging output from nodogsplash, edit the /etc/init\.d/nodogsplash file to set the OPTIONS variable to the flags "\-s \-d 7", restart or reboot, and view messages with logread\. The \-s flag logs to syslog; the \-d 7 flag sets level 7, LOG_DEBUG, for debugging messages (see syslog\.h)\. You don\'t want to run with these flags routinely, as it will quickly fill the syslog circular buffer, unless you enable remote logging\. A lower level of logging, for example level 5, LOG_NOTICE, is more appropriate for routine use (this is the default)\. Logging level can also be set using ndsctl as shown above\. Alternatively, you can set the flag \-f instead of \-s, and restart\. This will run nodogsplash in the foreground, logging to stdout\.
-.
-.IP "\(bu" 4
-When stopped, nodogsplash deletes its iptables rules, attempting to leave the router\'s firewall in its original state\. If not (for example, if nodogsplash crashes instead of exiting cleanly) subsequently starting and stopping nodogsplash should remove its rules\.
-.
-.IP "\(bu" 4
-Nodogsplash operates by marking packets (and, if traffic control is enabled, passing packets through intermediate queueing devices)\. Most QOS packages will also mark packets and use IMQ\'s\. Therefore one or both of Nodogsplash and a QOS package may malfunction if used together\. Potential conflicts may be investigated by looking at your overall iptables setup\. To check to see all the rules in, for example, the mangle table chains, run
-.
-.IP
-\fBiptables \-t mangle \-v \-n \-L\fR
-.
-.IP
-For extensive suggestions on debugging iptables, see for example Oskar Andreasson\'s_tutorial\.
-.
-.IP "" 0
-.
-.P
-Email contact: nodogsplash (at) ml\.ninux\.org
