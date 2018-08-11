@@ -8,7 +8,9 @@ BinAuth Option
 Authenticate a client using an external program that get passed the (optional) username and password value.
 The exit code and output values of the program decide if and how a client is to be authenticated.
 
-For the following examples, setting `binauth` in nodogsplash.conf is set to `/etc/nds_auth.sh`:
+The program will also be called on client authentication and deauthentication.
+
+For the following examples, `binauth` is set to `/etc/nds_auth.sh` in nodogsplash.conf:
 
 .. code-block:: sh
 
@@ -44,6 +46,7 @@ For the following examples, setting `binauth` in nodogsplash.conf is set to `/et
 
     exit 0
 
+The `SESSION_START` and `SESSION_END` values are the number of seconds since 1970 or may be 0 for unknown/unlimited.
 
 The splash.html page contains the following code:
 
@@ -65,7 +68,7 @@ If a client enters a username 'Bill' and password 'tms', then the configured `bi
 
    /etc/nds_auth.sh auth_client 12:34:56:78:90 'Bill' 'tms'
 
-For the authentication to be successful, the exit code of the script must be 0. The output can be up to three values. First the number of seconds the client is to authenticated, second and third the maximum number of upload and download bytes. Values not given to NDS will resort to default values. Note that the traffic shaping feature does not work right now.
+For the authentication to be successful, the exit code of the script must be 0. The output can be up to three values. First the number of seconds the client is to be authenticated, second and third the maximum number of upload and download bytes limits. Values not given to NDS will resort to default values. Note that the traffic shaping feature that uses the upload/download values does not work right now. So you might just return just the seconds value.
 
 After initial authentication by the script, Nodogsplash will immediately acknowlege by calling the binauth script again with:
 
@@ -73,4 +76,4 @@ After initial authentication by the script, Nodogsplash will immediately acknowl
 
    /etc/nds_auth.sh client_auth 12:34:56:78:90 <incoming_bytes> <outgoing_bytes> <session_start> <session_end>
 
-Nodogsplash will also call the script when the client is deauthenticated.
+Nodogsplash will also call the script when the client is authenticated and deauthenticated in general.
