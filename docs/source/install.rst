@@ -1,10 +1,10 @@
 Installing Nodogsplash
 ######################
 
-OpenWrt (LEDE)
+OpenWrt
 *******
 
-* Have a router working with OpenWrt. At the time of writing, Nodogsplash has been tested with OpenWrt/LEDE 17.01.4;
+* Have a router working with OpenWrt. At the time of writing, Nodogsplash has been tested with OpenWrt 18.06.0;
   it may or may not work on older versions of OpenWrt or on other kinds of Linux-based router firmware.
 * Make sure your router is basically working before you try to install
   Nodogsplash. In particular, make sure your DHCP daemon is serving addresses on the interface that nodogsplash will manage.
