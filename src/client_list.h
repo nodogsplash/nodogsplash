@@ -64,7 +64,7 @@ void client_list_init(void);
 int get_client_list_length();
 
 /** @brief Adds a new client to the client list */
-t_client *client_list_add_client(const char ip[]);
+t_client *client_list_add_client(const char mac[], const char ip[]);
 
 /** @brief Finds a client by its MAC, IP or token */
 t_client *client_list_find_by_any(const char mac[], const char ip[], const char token[]);

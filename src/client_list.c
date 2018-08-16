@@ -98,7 +98,7 @@ client_list_init(void)
  * @return Pointer to the client we just created
  */
 static t_client *
-_client_list_append(const char ip[], const char mac[])
+_client_list_append(const char mac[], const char ip[])
 {
 	t_client *client, *prevclient;
 	s_config *config;
@@ -120,8 +120,8 @@ _client_list_append(const char ip[], const char mac[])
 	client = safe_malloc(sizeof(t_client));
 	memset(client, 0, sizeof(t_client));
 
-	client->ip = safe_strdup(ip);
 	client->mac = safe_strdup(mac);
+	client->ip = safe_strdup(ip);
 	client_renew_token(client);
 
 	if (is_blocked_mac(mac)) {
@@ -175,10 +175,15 @@ void client_renew_token(t_client *client)
  *  Return NULL if no new client entry can be created.
  */
 t_client *
-client_list_add_client(const char ip[])
+client_list_add_client(const char mac[], const char ip[])
 {
 	t_client *client;
-	char mac[18];
+
+	if (!check_mac_format(mac)) {
+		/* Inappropriate format in IP address */
+		debug(LOG_NOTICE, "Illegal MAC format [%s]", mac);
+		return NULL;
+	}
 
 	if (!check_ip_format(ip)) {
 		/* Inappropriate format in IP address */
@@ -186,15 +191,9 @@ client_list_add_client(const char ip[])
 		return NULL;
 	}
 
-	if (arp_get(mac, ip) != 0) {
-		/* We could not get their MAC address */
-		debug(LOG_NOTICE, "Could not arp MAC address for %s", ip);
-		return NULL;
-	}
-
 	client = client_list_find(mac, ip);
 	if (!client) {
-		client = _client_list_append(ip, mac);
+		client = _client_list_append(mac, ip);
 	} else {
 		debug(LOG_INFO, "Client %s %s token %s already on client list", ip, mac, client->token);
 	}

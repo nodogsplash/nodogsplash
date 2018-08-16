@@ -45,7 +45,7 @@
 /* how much memory we reserve for extending template variables */
 #define TMPLVAR_SIZE 4096
 
-static t_client *add_client(const char *ip_addr);
+static t_client *add_client(const char mac[], const char ip[]);
 static int authenticated(struct MHD_Connection *connection, const char *url, t_client *client);
 static int preauthenticated(struct MHD_Connection *connection, const char *url, t_client *client);
 static int authenticate_client(struct MHD_Connection *connection, const char *redirect_url, t_client *client);
@@ -341,7 +341,7 @@ libmicrohttpd_cb(void *cls,
 
 	client = client_list_find(mac, ip);
 	if (!client) {
-		client = add_client(ip);
+		client = add_client(mac, ip);
 		if (!client) {
 			return send_error(connection, 503);
 		}
@@ -641,12 +641,12 @@ static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *c
  *	their information available on the client list.
  */
 static t_client *
-add_client(const char *ip)
+add_client(const char *mac, const char *ip)
 {
 	t_client *client;
 
 	LOCK_CLIENT_LIST();
-	client = client_list_add_client(ip);
+	client = client_list_add_client(mac, ip);
 	UNLOCK_CLIENT_LIST();
 
 	return client;
