@@ -1,4 +1,4 @@
-nodogsplash (3.0.0-1) UNRELEASED; urgency=medium
+nodogsplash (3.0.0-1) stable; urgency=medium
 
   * Removed settings without implementation due to the change of the http library:
       DecongestHttpdThreads, HttpdThreadthreshold, HttpdThreaddelayms
@@ -18,7 +18,7 @@ nodogsplash (2.1.1-1) stable; urgency=medium
   * Update nodogsplash.conf for non-OpenWrt builds [bluewavenet]
   * Minor cosmetic changes
   
- -- Rob White <dot@blue-wave.net> Sat, 12 May 2018 10:03:00 +0000
+ -- Rob White <dot@blue-wave.net>  Sat, 12 May 2018 10:03:00 +0000
 
 nodogsplash (2.1.0-1) UNRELEASED; urgency=medium
 
