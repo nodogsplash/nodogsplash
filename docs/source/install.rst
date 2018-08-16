@@ -15,12 +15,8 @@ OpenWrt
   
   followed by
   
-    ``opkg install nodogsplash`` (for version 1x).
-  
-  or
-  
-    ``opkg install nodogsplash2`` (for version 2x).
-    
+    ``opkg install nodogsplash``
+
 * Nodogsplash is enabled by default and will start automatically on reboot or can be started and stopped manually.
   
 
