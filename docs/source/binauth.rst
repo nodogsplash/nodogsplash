@@ -27,6 +27,10 @@ For the following examples, `binauth` is set to `/etc/nds_auth.sh` in nodogsplas
           # Allow client to access the Internet for one hour (3600 seconds)
           # Further values are upload and download limits in bytes. 0 for no limit.
           echo 3600 0 0
+          exit 0
+        else
+          # Deny client to access the Internet.
+          exit 1
         fi
         ;;
       client_auth|client_deauth|idle_deauth|timeout_deauth|ndsctl_auth|ndsctl_deauth|shutdown_deauth)
@@ -43,8 +47,6 @@ For the following examples, `binauth` is set to `/etc/nds_auth.sh` in nodogsplas
         # shutdown_deauth: Client was deauthenticated by Nodogsplash terminating.
         ;;
     esac
-
-    exit 0
 
 The `SESSION_START` and `SESSION_END` values are the number of seconds since 1970 or may be 0 for unknown/unlimited.
 
