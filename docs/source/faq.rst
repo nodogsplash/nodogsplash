@@ -40,6 +40,6 @@ Is https:// redirection supported?
 **********************************
 
 No. We believe this is the wrong way to do it, because all connections would have a critical certificate failure.
-Https web sites are now more or less a standard and to maintain security and user confidence it is essential that captive portals DO NOT attempt to capture port 443.
+HTTPS web sites are now more or less a standard and to maintain security and user confidence it is essential that captive portals DO NOT attempt to capture port 443.
 
 Captive Portal Detection (CPD) has evolved as an enhancement to the network manager component included with major Operating Systems (Linux, Android, iOS/macOS, Windows). Using a pre defined port 80 web page (depending on the vendor) the network manager will detect the presence of a captive portal hotspot and notify the user. In addition, most major browsers now support CPD.

@@ -38,7 +38,7 @@ For the following examples, `binauth` is set to `/etc/nds_auth.sh` in nodogsplas
         # client_deauth: Client deauthenticated by the client via splash page.
         # idle_deauth: Client was deauthenticated because of inactivity.
         # timeout_deauth: Client was deauthenticated because the session timed out.
-        # ndsctl_auth: Client was authenticated manually by the ndsctl tool.
+        # ndsctl_auth: Client was authenticated by the ndsctl tool.
         # ndsctl_deauth: Client was deauthenticated by the ndsctl tool.
         # shutdown_deauth: Client was deauthenticated by Nodogsplash terminating.
         ;;
