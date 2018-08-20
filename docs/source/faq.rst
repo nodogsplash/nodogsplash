@@ -1,4 +1,4 @@
-Frequenctly Asked Questions
+Frequently Asked Questions
 ###########################
 
 What's the difference between v0.9, v1, v2 and v3?
@@ -26,7 +26,7 @@ Can I update from v0.9/v1 to v2.0.0
 
 You can, if you don't use:
 
-* BinVoucher (there is a `PR#144 <https://github.com/nodogsplash/nodogsplash/pull/144>`_)
+* BinVoucher
 
 I would like to use QoS or TrafficControl on OpenWrt
 ****************************************************
