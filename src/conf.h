@@ -164,14 +164,14 @@ typedef struct {
 	char *denydir;			/**< @brief Notional relative dir for denial URL */
 	int session_timeout;		/**< @brief Minutes of the default session length */
 	int preauth_idle_timeout;	/**< @brief Minutes a preauthenticated client will be kept in the system */
-	int auth_idle_timeout;	/**< @brief Minutes a authenticated client will be kept in the system */
+	int auth_idle_timeout;		/**< @brief Minutes an authenticated client will be kept in the system */
 	int checkinterval;		/**< @brief Period the the client timeout check thread will run, in seconds */
 	int set_mss;			/**< @brief boolean, whether to set mss */
 	int mss_value;			/**< @brief int, mss value; <= 0 clamp to pmtu */
 	int traffic_control;		/**< @brief boolean, whether to do tc */
 	int download_limit;		/**< @brief Download limit, kb/s */
 	int upload_limit;		/**< @brief Upload limit, kb/s */
-	int upload_ifb;		/**< @brief Number of IFB handling upload */
+	int upload_ifb;			/**< @brief Number of IFB handling upload */
 	int log_syslog;			/**< @brief boolean, whether to log to syslog */
 	int syslog_facility;		/**< @brief facility to use when using syslog for logging */
 	int macmechanism; 		/**< @brief mechanism wrt MAC addrs */
@@ -183,7 +183,7 @@ typedef struct {
 	unsigned int fw_mark_blocked;	/**< @brief iptables mark for blocked packets */
 	unsigned int fw_mark_trusted;	/**< @brief iptables mark for trusted packets */
 	int ip6;			/**< @brief enable IPv6 */
-	char *binauth;		/**< @brief external authentication program */
+	char *binauth;			/**< @brief external authentication program */
 } s_config;
 
 /** @brief Get the current gateway configuration */
