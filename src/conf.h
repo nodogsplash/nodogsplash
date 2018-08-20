@@ -78,9 +78,9 @@
 #define DEFAULT_SYSLOG_FACILITY LOG_DAEMON
 #define DEFAULT_NDSCTL_SOCK "/tmp/ndsctl.sock"
 #define DEFAULT_INTERNAL_SOCK "/tmp/ndsctl.sock"
-#define DEFAULT_FW_MARK_AUTHENTICATED 0x400
-#define DEFAULT_FW_MARK_TRUSTED 0x200
-#define DEFAULT_FW_MARK_BLOCKED 0x100
+#define DEFAULT_FW_MARK_AUTHENTICATED 0x30000
+#define DEFAULT_FW_MARK_TRUSTED 0x20000
+#define DEFAULT_FW_MARK_BLOCKED 0x10000
 /* N.B.: default policies here must be ACCEPT, REJECT, or RETURN
  * In the .conf file, they must be allow, block, or passthrough
  * Mapping between these enforced by parse_empty_ruleset_policy() */
@@ -179,9 +179,9 @@ typedef struct {
 	t_MAC *trustedmaclist;		/**< @brief list of trusted macs */
 	t_MAC *blockedmaclist;		/**< @brief list of blocked macs */
 	t_MAC *allowedmaclist;		/**< @brief list of allowed macs */
-	unsigned int FW_MARK_AUTHENTICATED;	/**< @brief iptables mark for authenticated packets */
-	unsigned int FW_MARK_BLOCKED;	/**< @brief iptables mark for blocked packets */
-	unsigned int FW_MARK_TRUSTED;	/**< @brief iptables mark for trusted packets */
+	unsigned int fw_mark_authenticated;	/**< @brief iptables mark for authenticated packets */
+	unsigned int fw_mark_blocked;	/**< @brief iptables mark for blocked packets */
+	unsigned int fw_mark_trusted;	/**< @brief iptables mark for trusted packets */
 	int ip6;			/**< @brief enable IPv6 */
 	char *binauth;		/**< @brief external authentication program */
 } s_config;

@@ -372,9 +372,9 @@ iptables_fw_init(void)
 	set_mss = config->set_mss;
 	mss_value = config->mss_value;
 	traffic_control = config->traffic_control;
-	FW_MARK_BLOCKED = config->FW_MARK_BLOCKED;
-	FW_MARK_TRUSTED = config->FW_MARK_TRUSTED;
-	FW_MARK_AUTHENTICATED = config->FW_MARK_AUTHENTICATED;
+	FW_MARK_BLOCKED = config->fw_mark_blocked;
+	FW_MARK_TRUSTED = config->fw_mark_trusted;
+	FW_MARK_AUTHENTICATED = config->fw_mark_authenticated;
 	UNLOCK_CONFIG();
 
 

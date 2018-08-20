@@ -152,9 +152,9 @@ static const struct {
 	{ "blockedmaclist", oBlockedMACList },
 	{ "allowedmaclist", oAllowedMACList },
 	{ "MACmechanism", oMACmechanism },
-	{ "FW_MARK_AUTHENTICATED", oFWMarkAuthenticated },
-	{ "FW_MARK_TRUSTED", oFWMarkTrusted },
-	{ "FW_MARK_BLOCKED", oFWMarkBlocked },
+	{ "fw_mark_authenticated", oFWMarkAuthenticated },
+	{ "fw_mark_trusted", oFWMarkTrusted },
+	{ "fw_mark_blocked", oFWMarkBlocked },
 	{ "binauth", oBinAuth },
 	{ NULL, oBadOption },
 };
@@ -228,9 +228,9 @@ config_init(void)
 	config.blockedmaclist = NULL;
 	config.allowedmaclist = NULL;
 	config.macmechanism = DEFAULT_MACMECHANISM;
-	config.FW_MARK_AUTHENTICATED = DEFAULT_FW_MARK_AUTHENTICATED;
-	config.FW_MARK_TRUSTED = DEFAULT_FW_MARK_TRUSTED;
-	config.FW_MARK_BLOCKED = DEFAULT_FW_MARK_BLOCKED;
+	config.fw_mark_authenticated = DEFAULT_FW_MARK_AUTHENTICATED;
+	config.fw_mark_trusted = DEFAULT_FW_MARK_TRUSTED;
+	config.fw_mark_blocked = DEFAULT_FW_MARK_BLOCKED;
 	config.ip6 = DEFAULT_IP6;
 	config.binauth = NULL;
 
@@ -891,30 +891,30 @@ config_read(const char *filename)
 			}
 			break;
 		case oFWMarkAuthenticated:
-			if (sscanf(p1, "%x", &config.FW_MARK_AUTHENTICATED) < 1 ||
-					config.FW_MARK_AUTHENTICATED == 0 ||
-					config.FW_MARK_AUTHENTICATED == config.FW_MARK_BLOCKED ||
-					config.FW_MARK_AUTHENTICATED == config.FW_MARK_TRUSTED) {
+			if (sscanf(p1, "%x", &config.fw_mark_authenticated) < 1 ||
+					config.fw_mark_authenticated == 0 ||
+					config.fw_mark_authenticated == config.fw_mark_blocked ||
+					config.fw_mark_authenticated == config.fw_mark_trusted) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);
 			}
 			break;
 		case oFWMarkBlocked:
-			if (sscanf(p1, "%x", &config.FW_MARK_BLOCKED) < 1 ||
-					config.FW_MARK_BLOCKED == 0 ||
-					config.FW_MARK_BLOCKED == config.FW_MARK_AUTHENTICATED ||
-					config.FW_MARK_BLOCKED == config.FW_MARK_TRUSTED) {
+			if (sscanf(p1, "%x", &config.fw_mark_blocked) < 1 ||
+					config.fw_mark_blocked == 0 ||
+					config.fw_mark_blocked == config.fw_mark_authenticated ||
+					config.fw_mark_blocked == config.fw_mark_trusted) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);
 			}
 			break;
 		case oFWMarkTrusted:
-			if (sscanf(p1, "%x", &config.FW_MARK_TRUSTED) < 1 ||
-					config.FW_MARK_TRUSTED == 0 ||
-					config.FW_MARK_TRUSTED == config.FW_MARK_AUTHENTICATED ||
-					config.FW_MARK_TRUSTED == config.FW_MARK_BLOCKED) {
+			if (sscanf(p1, "%x", &config.fw_mark_trusted) < 1 ||
+					config.fw_mark_trusted == 0 ||
+					config.fw_mark_trusted == config.fw_mark_authenticated ||
+					config.fw_mark_trusted == config.fw_mark_blocked) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);
