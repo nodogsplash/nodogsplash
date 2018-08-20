@@ -267,6 +267,19 @@ main_loop(void)
 		httpdAddC404Content(webserver, http_nodogsplash_callback_404);
 	*/
 
+	if (config->fas_port) {
+		debug(LOG_NOTICE, "Forwarding Authentication is Enabled.\n");
+		if (config->fas_remoteip) {
+			debug(LOG_NOTICE, "FAS URL is http://%s:%u%s\n", config->fas_remoteip, config->fas_port, config->fas_path);
+		} else {
+			debug(LOG_NOTICE, "FAS URL is http://%s:%u%s\n", config->gw_address, config->fas_port, config->fas_path);
+		}
+	}
+
+	if (config->fas_secure_enabled != 1 && config->fas_port) {
+		debug(LOG_NOTICE, "Warning - Forwarding Authentication - Security is DISABLED.\n");
+	}
+
 	/* Reset the firewall (cleans it, in case we are restarting after nodogsplash crash) */
 	iptables_fw_destroy();
 
