@@ -280,6 +280,11 @@ main_loop(void)
 		debug(LOG_NOTICE, "Warning - Forwarding Authentication - Security is DISABLED.\n");
 	}
 
+	if (config->binauth) {
+		debug(LOG_NOTICE, "Binauth is Enabled.\n");
+		debug(LOG_NOTICE, "Binauth Script is %s\n", config->binauth);
+	}
+
 	/* Reset the firewall (cleans it, in case we are restarting after nodogsplash crash) */
 	iptables_fw_destroy();
 
