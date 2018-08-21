@@ -1,11 +1,49 @@
-How nodogsplash works
-#####################
+How nodogsplash (NDS) works
+###########################
 
-A wireless router running OpenWrt has two or more interfaces; nodogsplash
+A wireless router running OpenWrt has two or more interfaces; NDS
 manages one of them. This will typically be br-lan, the bridge to both the
-wireless and wired LAN; or the wireless lan interface may be named something
-else if you have broken the br-lan bridge to separate the wired and wireless
-LAN's.
+wireless and wired LAN; or could be for example wlan0 if you wanted NDS
+to work just on the wireless interface.
+
+A simplified summary of operation is as follows:
+************************************************
+
+By default, NDS blocks everything, but intercepts port 80 requests.
+
+An initial port 80 request will be generated on a client device, either by the user
+manually browsing to an http web page, or automatically by the client device's
+built in Captive Portal Detection (CPD).
+
+As soon as this initial port 80 request is received, NDS will redirect the client to either
+its own splash page, or a splash page on a configured Forwarding Authentication Service (FAS).
+
+The user of the client device will then be expected to complete some actions
+on the splash page, such as accepting terms of service, entering a username and password
+etc. (this will of course be on either the basic NDS splash.html or the page presented
+by the FAS, depending on the NDS configuration).
+
+Once the user on the client device has sucessfully completed the splash page
+actions, the page then links directly, with a query string, to an NDS virtual http directory
+provided by NDS's built in web server.
+
+For security, NDS expects to receive the same valid token it allocated when
+the client issued its initial port 80 request. If the token received is valid,
+NDS then "authenticates" the client device, allowing access to the Internet.
+
+However if Binauth is enabled, NDS first calls the Binauth script, passing if required a username and password to that script.
+If the binauth script returns positively (ie return code 0), NDS then "authenticates" the
+client device, allowing access to the Internet.
+
+In FAS secure mode, it is the responsibility of the FAS to obtain the client token in a secure manner from NDS.
+
+When FAS is disabled, the token is supplied to the basic splash.html page served by NDS
+and passed back in clear text in the query string along with any username and password required for Binauth.
+
+.. note::
+FAS and Binauth can be enabled together.
+This can give great flexibility with FAS providing authentication
+and Binauth providing post authentication processing closely linked to NDS.
 
 Packet filtering
 ****************
@@ -52,15 +90,8 @@ configurations.
 Traffic control
 ***************
 
-Nodogsplash also optionally implements basic traffic control on its managed
-interface. This feature lets you specify the maximum aggregate upload and
-download bandwidth that can be taken by clients connected on that interface.
-Nodogsplash implements this functionality by enabling two intermediate queue
-devices (IMQ's), one for upload and one for download, and attaching simple
-rate-limited HTB qdiscs to them. Rules are inserted in the router's iptables
-mangle PREROUTING and POSTROUTING tables to jump to these IMQ's. The result is
-simple but effective tail-drop rate limiting (no packet classification or
-fairness queueing is done).
+Data rate control on an IP connection basis can be achived using SQM scripts
+configured separately, with NDS being fully compatible.
 
-.. note::
-   IMQ is not included anymore by OpenWrt Attitude Adjustment (12.09).
+It should be noted that while setup options and binauth do accept traffic/quota settings,
+these values currently have no effect and are reserved for future development.

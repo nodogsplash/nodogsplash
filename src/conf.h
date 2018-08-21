@@ -52,6 +52,9 @@
 #define DEFAULT_GATEWAY_IPRANGE "0.0.0.0/0"
 #define DEFAULT_GATEWAYNAME "NoDogSplash"
 #define DEFAULT_GATEWAYPORT 2050
+#define DEFAULT_FASPORT 0
+#define DEFAULT_FAS_SECURE_ENABLED 1
+#define DEFAULT_FASPATH "/"
 #define DEFAULT_REMOTE_AUTH_PORT 80
 #define DEFAULT_CHECKINTERVAL 30
 #define DEFAULT_SESSION_TIMEOUT 0
@@ -75,9 +78,9 @@
 #define DEFAULT_SYSLOG_FACILITY LOG_DAEMON
 #define DEFAULT_NDSCTL_SOCK "/tmp/ndsctl.sock"
 #define DEFAULT_INTERNAL_SOCK "/tmp/ndsctl.sock"
-#define DEFAULT_FW_MARK_AUTHENTICATED 0x400
-#define DEFAULT_FW_MARK_TRUSTED 0x200
-#define DEFAULT_FW_MARK_BLOCKED 0x100
+#define DEFAULT_FW_MARK_AUTHENTICATED 0x30000
+#define DEFAULT_FW_MARK_TRUSTED 0x20000
+#define DEFAULT_FW_MARK_BLOCKED 0x10000
 /* N.B.: default policies here must be ACCEPT, REJECT, or RETURN
  * In the .conf file, they must be allow, block, or passthrough
  * Mapping between these enforced by parse_empty_ruleset_policy() */
@@ -147,6 +150,10 @@ typedef struct {
 	char *gw_address;		/**< @brief Internal IP address for our web server */
 	char *gw_mac;			/**< @brief MAC address of the interface we manage */
 	unsigned int gw_port;		/**< @brief Port the webserver will run on */
+	unsigned int fas_port;		/**< @brief Port the fas server will run on */
+	int fas_secure_enabled;		/**< @brief Enable Secure FAS */
+	char *fas_path;			/**< @brief Path to forward authentication page of FAS */
+	char *fas_remoteip;		/**< @brief IP addess of a remote FAS */
 	char *webroot;			/**< @brief Directory containing splash pages, etc. */
 	char *splashpage;		/**< @brief Name of main splash page */
 	char *statuspage;		/**< @brief Name of info status page */
@@ -157,14 +164,14 @@ typedef struct {
 	char *denydir;			/**< @brief Notional relative dir for denial URL */
 	int session_timeout;		/**< @brief Minutes of the default session length */
 	int preauth_idle_timeout;	/**< @brief Minutes a preauthenticated client will be kept in the system */
-	int auth_idle_timeout;	/**< @brief Minutes a authenticated client will be kept in the system */
+	int auth_idle_timeout;		/**< @brief Minutes an authenticated client will be kept in the system */
 	int checkinterval;		/**< @brief Period the the client timeout check thread will run, in seconds */
 	int set_mss;			/**< @brief boolean, whether to set mss */
 	int mss_value;			/**< @brief int, mss value; <= 0 clamp to pmtu */
 	int traffic_control;		/**< @brief boolean, whether to do tc */
 	int download_limit;		/**< @brief Download limit, kb/s */
 	int upload_limit;		/**< @brief Upload limit, kb/s */
-	int upload_ifb;		/**< @brief Number of IFB handling upload */
+	int upload_ifb;			/**< @brief Number of IFB handling upload */
 	int log_syslog;			/**< @brief boolean, whether to log to syslog */
 	int syslog_facility;		/**< @brief facility to use when using syslog for logging */
 	int macmechanism; 		/**< @brief mechanism wrt MAC addrs */
@@ -172,11 +179,11 @@ typedef struct {
 	t_MAC *trustedmaclist;		/**< @brief list of trusted macs */
 	t_MAC *blockedmaclist;		/**< @brief list of blocked macs */
 	t_MAC *allowedmaclist;		/**< @brief list of allowed macs */
-	unsigned int FW_MARK_AUTHENTICATED;	/**< @brief iptables mark for authenticated packets */
-	unsigned int FW_MARK_BLOCKED;	/**< @brief iptables mark for blocked packets */
-	unsigned int FW_MARK_TRUSTED;	/**< @brief iptables mark for trusted packets */
+	unsigned int fw_mark_authenticated;	/**< @brief iptables mark for authenticated packets */
+	unsigned int fw_mark_blocked;	/**< @brief iptables mark for blocked packets */
+	unsigned int fw_mark_trusted;	/**< @brief iptables mark for trusted packets */
 	int ip6;			/**< @brief enable IPv6 */
-	char *binauth;		/**< @brief external authentication program */
+	char *binauth;			/**< @brief external authentication program */
 } s_config;
 
 /** @brief Get the current gateway configuration */

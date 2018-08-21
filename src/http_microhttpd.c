@@ -53,7 +53,7 @@ static int get_host_value_callback(void *cls, enum MHD_ValueKind kind, const cha
 static int serve_file(struct MHD_Connection *connection, t_client *client, const char *url);
 static int show_splashpage(struct MHD_Connection *connection, t_client *client);
 static int show_statuspage(struct MHD_Connection *connection, t_client *client);
-static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, const char *originurl);
+static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, const char *originurl, const char *querystr);
 static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *client, const char *host, const char *url);
 static int send_error(struct MHD_Connection *connection, int error);
 static int send_redirect_temp(struct MHD_Connection *connection, const char *url);
@@ -433,11 +433,16 @@ static int authenticate_client(struct MHD_Connection *connection,
 	int upload = 0;
 	int download = 0;
 	int rc;
+	char *query_str = NULL;
+	int ret;
 
 	if (config->binauth) {
 		rc = do_binauth(connection, config->binauth, client, &seconds, &upload, &download);
 		if (rc != 0) {
-			return encode_and_redirect_to_splashpage(connection, redirect_url);
+			safe_asprintf(&query_str, "?clientip=%s&gatewayname=%s&tok=%s", client->ip, config->gw_name, client->token);
+			ret = encode_and_redirect_to_splashpage(connection, redirect_url, query_str);
+			free(query_str);
+			return ret;
 		}
 		rc = auth_client_auth(client->id, "client_auth");
 	} else {
@@ -527,6 +532,7 @@ static int preauthenticated(struct MHD_Connection *connection,
 {
 	const char *host = NULL;
 	const char *redirect_url;
+	char *querystr = NULL;
 	s_config *config = config_get_config();
 
 	MHD_get_connection_values(connection, MHD_HEADER_KIND, get_host_value_callback, &host);
@@ -552,7 +558,7 @@ static int preauthenticated(struct MHD_Connection *connection,
 
 		if (!try_to_authenticate(connection, client, host, url)) {
 			/* user used an invalid token, redirect to splashpage but hold query "redir" intact */
-			return encode_and_redirect_to_splashpage(connection, redirect_url);
+			return encode_and_redirect_to_splashpage(connection, redirect_url, querystr);
 		}
 
 		return authenticate_client(connection, redirect_url, client);
@@ -573,12 +579,15 @@ static int preauthenticated(struct MHD_Connection *connection,
  * @param originurl
  * @return
  */
-static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, const char *originurl)
+static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, const char *originurl, const char *querystr)
 {
 	char *splashpageurl = NULL;
+	char *target = NULL;
 	char encoded[2048];
+	s_config *config;
 	int ret;
-	s_config *config = config_get_config();
+
+	config = config_get_config();
 
 	memset(encoded, 0, sizeof(encoded));
 	if (originurl) {
@@ -589,19 +598,26 @@ static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, 
 		}
 	}
 
-	if (encoded[0]) {
+	if (config->fas_port) {
+		target = (config->fas_remoteip ? config->fas_remoteip : config->gw_address);
+		// Generate secure query string or authaction url
+		if (config->fas_secure_enabled) {
+			safe_asprintf(&splashpageurl, "http://%s:%u/%s%s&redir=%s",
+				target, config->fas_port, config->fas_path, querystr, encoded);
+		} else {
+			safe_asprintf(&splashpageurl, "http://%s:%u/%s?authaction=http://%s:%u/%s/%s&redir=%s",
+				target, config->fas_port, config->fas_path, config->gw_address,
+				config->gw_port, config->authdir, querystr, encoded);
+		}
+	} else {
 		safe_asprintf(&splashpageurl, "http://%s:%u/%s?redir=%s",
 			config->gw_address, config->gw_port, config->splashpage, encoded);
-	} else {
-		safe_asprintf(&splashpageurl, "http://%s:%u/%s",
-			config->gw_address, config->gw_port, config->splashpage);
 	}
 
 	debug(LOG_DEBUG, "splashpageurl: %s", splashpageurl);
 
 	ret = send_redirect_temp(connection, splashpageurl);
 	free(splashpageurl);
-
 	return ret;
 }
 
@@ -618,16 +634,23 @@ static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *c
 	char *originurl = NULL;
 	char *query = NULL;
 	int ret = 0;
+	char *querystr = NULL;
+	s_config *config = config_get_config();
 
 	get_query(connection, &query);
 	if (!query) {
 		/* no mem */
 		return send_error(connection, 503);
 	}
-
+	if (config->fas_secure_enabled != 1) {
+		safe_asprintf(&querystr, "?clientip=%s&gatewayname=%s&tok=%s", client->ip, config->gw_name, client->token);
+	} else {
+		safe_asprintf(&querystr, "?clientip=%s&gatewayname=%s", client->ip, config->gw_name);
+	}
 	safe_asprintf(&originurl, "http://%s%s%s%s", host, url, strlen(query) ? "?" : "" , query);
-	ret = encode_and_redirect_to_splashpage(connection, originurl);
+	ret = encode_and_redirect_to_splashpage(connection, originurl, querystr);
 	free(originurl);
+	free(querystr);
 	free(query);
 	return ret;
 }
@@ -904,24 +927,26 @@ static int show_templated_page(struct MHD_Connection *connection, t_client *clie
 		bytes += ret;
 	}
 
-	char *uptime = get_uptime_string();
+	const char *redirect_url = NULL;
+	char *uptime = NULL;
 	char *denyaction = NULL;
 	char *authaction = NULL;
 	char *authtarget = NULL;
-	const char *redirect_url = NULL;
 	char *imagesdir = NULL;
 	char *pagesdir = NULL;
 
 	sprintf(upload_bytes, "%llu", client->counters.outgoing);
 	sprintf(download_bytes, "%llu", client->counters.incoming);
 
+	uptime = get_uptime_string();
 	redirect_url = get_redirect_url(connection);
 
 	sprintf(nclients, "%d", get_client_list_length());
 	sprintf(maxclients, "%d", config->maxclients);
 	safe_asprintf(&denyaction, "http://%s:%d/%s/", config->gw_address, config->gw_port, config->denydir);
 	safe_asprintf(&authaction, "http://%s:%d/%s/", config->gw_address, config->gw_port, config->authdir);
-	safe_asprintf(&authtarget, "http://%s:%d/%s/?tok=%s&amp;redir=%s", config->gw_address, config->gw_port, config->authdir, client->token, redirect_url);
+	safe_asprintf(&authtarget, "http://%s:%d/%s/?tok=%s&amp;redir=%s",
+		config->gw_address, config->gw_port, config->authdir, client->token, redirect_url);
 	safe_asprintf(&pagesdir, "/%s", config->pagesdir);
 	safe_asprintf(&imagesdir, "/%s", config->imagesdir);
 

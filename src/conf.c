@@ -73,6 +73,10 @@ typedef enum {
 	oGatewayIPRange,
 	oGatewayAddress,
 	oGatewayPort,
+	oFasPort,
+	oFasPath,
+	oFasRemoteIP,
+	oFasSecureEnabled,
 	oHTTPDMaxConn,
 	oWebRoot,
 	oSplashPage,
@@ -120,6 +124,10 @@ static const struct {
 	{ "gatewayiprange", oGatewayIPRange },
 	{ "gatewayaddress", oGatewayAddress },
 	{ "gatewayport", oGatewayPort },
+	{ "fasport", oFasPort },
+	{ "fasremoteip", oFasRemoteIP },
+	{ "fas_secure_enabled", oFasSecureEnabled },
+	{ "faspath", oFasPath },
 	{ "webroot", oWebRoot },
 	{ "splashpage", oSplashPage },
 	{ "statuspage", oStatusPage },
@@ -144,9 +152,9 @@ static const struct {
 	{ "blockedmaclist", oBlockedMACList },
 	{ "allowedmaclist", oAllowedMACList },
 	{ "MACmechanism", oMACmechanism },
-	{ "FW_MARK_AUTHENTICATED", oFWMarkAuthenticated },
-	{ "FW_MARK_TRUSTED", oFWMarkTrusted },
-	{ "FW_MARK_BLOCKED", oFWMarkBlocked },
+	{ "fw_mark_authenticated", oFWMarkAuthenticated },
+	{ "fw_mark_trusted", oFWMarkTrusted },
+	{ "fw_mark_blocked", oFWMarkBlocked },
 	{ "binauth", oBinAuth },
 	{ NULL, oBadOption },
 };
@@ -189,6 +197,10 @@ config_init(void)
 	config.gw_iprange = safe_strdup(DEFAULT_GATEWAY_IPRANGE);
 	config.gw_address = NULL;
 	config.gw_port = DEFAULT_GATEWAYPORT;
+	config.fas_port = DEFAULT_FASPORT;
+	config.fas_secure_enabled = DEFAULT_FAS_SECURE_ENABLED;
+	config.fas_remoteip = NULL;
+	config.fas_path = DEFAULT_FASPATH;
 	config.webroot = safe_strdup(DEFAULT_WEBROOT);
 	config.splashpage = safe_strdup(DEFAULT_SPLASHPAGE);
 	config.statuspage = safe_strdup(DEFAULT_STATUSPAGE);
@@ -216,9 +228,9 @@ config_init(void)
 	config.blockedmaclist = NULL;
 	config.allowedmaclist = NULL;
 	config.macmechanism = DEFAULT_MACMECHANISM;
-	config.FW_MARK_AUTHENTICATED = DEFAULT_FW_MARK_AUTHENTICATED;
-	config.FW_MARK_TRUSTED = DEFAULT_FW_MARK_TRUSTED;
-	config.FW_MARK_BLOCKED = DEFAULT_FW_MARK_BLOCKED;
+	config.fw_mark_authenticated = DEFAULT_FW_MARK_AUTHENTICATED;
+	config.fw_mark_trusted = DEFAULT_FW_MARK_TRUSTED;
+	config.fw_mark_blocked = DEFAULT_FW_MARK_BLOCKED;
 	config.ip6 = DEFAULT_IP6;
 	config.binauth = NULL;
 
@@ -742,6 +754,26 @@ config_read(const char *filename)
 				exit(-1);
 			}
 			break;
+		case oFasPort:
+			if (sscanf(p1, "%u", &config.fas_port) < 1) {
+				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
+				debug(LOG_ERR, "Exiting...");
+				exit(-1);
+			}
+			break;
+		case oFasSecureEnabled:
+			if (sscanf(p1, "%d", &config.fas_secure_enabled) < 1) {
+				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
+				debug(LOG_ERR, "Exiting...");
+				exit(-1);
+			}
+			break;
+		case oFasPath:
+			config.fas_path = safe_strdup(p1);
+			break;
+		case oFasRemoteIP:
+			config.fas_remoteip = safe_strdup(p1);
+			break;
 		case oBinAuth:
 			config.binauth = safe_strdup(p1);
 			if (!((stat(p1, &sb) == 0) && S_ISREG(sb.st_mode) && (sb.st_mode & S_IXUSR))) {
@@ -859,30 +891,30 @@ config_read(const char *filename)
 			}
 			break;
 		case oFWMarkAuthenticated:
-			if (sscanf(p1, "%x", &config.FW_MARK_AUTHENTICATED) < 1 ||
-					config.FW_MARK_AUTHENTICATED == 0 ||
-					config.FW_MARK_AUTHENTICATED == config.FW_MARK_BLOCKED ||
-					config.FW_MARK_AUTHENTICATED == config.FW_MARK_TRUSTED) {
+			if (sscanf(p1, "%x", &config.fw_mark_authenticated) < 1 ||
+					config.fw_mark_authenticated == 0 ||
+					config.fw_mark_authenticated == config.fw_mark_blocked ||
+					config.fw_mark_authenticated == config.fw_mark_trusted) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);
 			}
 			break;
 		case oFWMarkBlocked:
-			if (sscanf(p1, "%x", &config.FW_MARK_BLOCKED) < 1 ||
-					config.FW_MARK_BLOCKED == 0 ||
-					config.FW_MARK_BLOCKED == config.FW_MARK_AUTHENTICATED ||
-					config.FW_MARK_BLOCKED == config.FW_MARK_TRUSTED) {
+			if (sscanf(p1, "%x", &config.fw_mark_blocked) < 1 ||
+					config.fw_mark_blocked == 0 ||
+					config.fw_mark_blocked == config.fw_mark_authenticated ||
+					config.fw_mark_blocked == config.fw_mark_trusted) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);
 			}
 			break;
 		case oFWMarkTrusted:
-			if (sscanf(p1, "%x", &config.FW_MARK_TRUSTED) < 1 ||
-					config.FW_MARK_TRUSTED == 0 ||
-					config.FW_MARK_TRUSTED == config.FW_MARK_AUTHENTICATED ||
-					config.FW_MARK_TRUSTED == config.FW_MARK_BLOCKED) {
+			if (sscanf(p1, "%x", &config.fw_mark_trusted) < 1 ||
+					config.fw_mark_trusted == 0 ||
+					config.fw_mark_trusted == config.fw_mark_authenticated ||
+					config.fw_mark_trusted == config.fw_mark_blocked) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);

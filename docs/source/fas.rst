@@ -4,49 +4,82 @@ Forwarding Authentication Service (FAS)
 Overview
 ********
 
-Nodogsplash (NDS) can support external (to NDS) authentication.
-The BinVoucher process was derived to support this and has been called Forwarding Authentication. This is a non trivial function and although partially implemented in early versions, is not implemented at all in version 2, at the time of writing.
+Nodogsplash (NDS) supports external (to NDS) authentication service via simple configuration options.
 
-Fortunately, Forwarding Authentication can be done without any modification to the core NDS code and in a way that is compatible with all versions, pre v1 beta through to the current release of v2.
+These options are:
 
-The defacto industry standard Captive Portal Detection (CPD), present on almost all devices these days, invokes the NDS splash page with various parameters passed to the splash page by NDS, including the client access token.  
+    1. fasport. This enables Forwarding Authentication Service (FAS). Redirection is changed from splash.html to a FAS. The value is the IP port number of the FAS
 
-It is a simple matter to pass this token to an external Forwarding Authentication Service (FAS) by using a redirect in the splash page.
+    2. fasremoteip. If set, this is the remote ip address of the FAS, if not set it will take the value of the NDS gateway address.
 
-For a client to access this external service, the ip address and port number of the service must be added to the NDS walled garden in nodogsplash.conf or its equivalent UCI config file if running under LEDE/OpenWrt.
+    3. faspath. This is the path to the login page on the FAS.
 
-Included are various configuration files and remote php scripts, intended as an example implementation of FAS to demonstrate the methods.
+    4. fas secure enable. If set to "1", authaction and the client token are not revealed and it is the responsibility of the FAS to request the token from NDSCTL. If set to "0", the client token is sent to the FAS in clear text in the query string of the redirect along with authaction and redir.
 
-FAS Installation
-****************
-NOTE: USING HTTPS. Your FAS can be an https server, but self signed certificates will throw dire "Here Be Dragons" warnings on your client devices when the redirection to your FAS takes place. Also even if using a registered CA all browsers will still return a security error on returning to Nodogsplash. This can be prevented by using wget to return to Nodogsplash from your FAS script instead of an html GET.
 
-The contents of the FAS etc folder should be placed in the /etc folder of your NoDogSplash router, overwriting existing files.
+Using FAS
+*********
+When FAS is enabled, NDS automatically configures access to the FAS service.
 
-The following two files should be edited as follows.
+The FAS service must serve an http splash of its own to replace the NDS splash.html.
+Typically, the FAS service will be written in PHP or any other language that can provide dynamic web content.
 
-1:
-/etc/config/nodogsplash should be edited to reflect the ip address and port of your FAS service as described in the comments in the example file.
-Your FAS can reside on your Nodogsplash router, a web server on your LAN, or a web server on the internet. 
+FAS can then provide an action form for the client, typically requesting login, or self account creation for login.
 
-2:
-/etc/nodogsplash/htdocs/splash.html should also be edited to reflect the URL of your FAS service as indicated in the comments in the example file.
-Take note of the USING HTTPS warning above. A typical URL could be http://my-fas.net/nodog/fas.php?auth.... etc.
+The FAS can be on the same device as NDS, on the same local area network as NDS, or on an Internet hosted web server.
 
-Running FAS on your Nodogsplash router:
-The example FAS service will run fairly well on uhttpd (the web server that serves Luci) on an LEDE/OpenWrt supported device with 8MB flash and 32MB ram but shortage of ram may well be an issue if more than two or three clients log in at the same time. For this reason a device with a minimum of 16MB flash and 64MB ram is recommended.
+If FAS Secure is enabled, NDS will supply only the gateway name, the client IP address and the originally requested URL.
 
-Running on uhttpd:
-Install the modules php7 and php7-cgi on LEDE for the simple example. Further modules may be required when you write your own php scripts depending on your requirements.
+It is the responsibility of FAS to obtain the unique client token allocated by NDS.
+
+If the client successfully authenticates in the FAS, FAS will return the unique token to NDS to finally allow the client access to the Internet.
+
+If FAS Secure is disabled, the token is sent to FAS as clear text.
+
+A FAS on the local network can obtain the user token by requesting it from NDS, using, for example SSH.
+
+A Secure Internet based FAS is best implemented as a two stage process, first using a local FAS, that in turn accesses an https remote FAS using tools such as curl or wget.
+
+Running FAS on your Nodogsplash router
+**************************************
+
+A FAS service will run quite well on uhttpd (the web server that serves Luci) on an OpenWrt supported device with 8MB flash and 32MB ram but shortage of ram may well be an issue if more than two or three clients log in at the same time. For this reason a device with a minimum of 8MB flash and 64MB ram is recommended.
+
+Running on uhttpd with PHP:
+Install the modules php7 and php7-cgi on LEDE for a simple example. Further modules may be required depending on your requirements.
+
 To enable php in uhttpd you must add the line:
 
-::
-  list interpreter ".php=/usr/bin/php-cgi"
+    list interpreter ".php=/usr/bin/php-cgi"
 
 to the /etc/config/uhttpd file in the config uhttpd 'main' or first section.
 
-Finally, reboot the router to start NoDogSplash in FAS mode.
+The two important NDS options to set will be:
+    1. fasport. By default this will be port 80 for uhttpd
+    2. faspath. Set to, for example, /myfas/fas.php, your FAS files being placed in /www/myfas/
 
-The example file "users.dat" contains a list of usernames and passwords.
+**Note 1**:  
 
-NOTE: /etc/config/nodogsplash contains the line "option enabled 1". If you have done something wrong and locked yourself out, you can still SSH to your router and stop NoDogSplash (ndsctl stop) to fix the problem.
+    A typical Internet hosted Apache/PHP shared server will be set up to serve multiple domain names.
+
+    To access yours, use
+
+    fasremoteip = the ip address of the remote server
+
+    and, for example,
+
+    faspath = /domainname/pathto/myfas/fas.php
+
+    or
+
+    faspath = /accountname/pathto/myfas/fas.php
+
+    If necessary, contact your hosting service provider.  
+
+
+**Note 2:**
+
+    The configuration file /etc/config/nodogsplash contains the line "option enabled 1".  
+
+    If you have done something wrong and locked yourself out, you can still SSH to your router and stop NoDogSplash (ndsctl stop) to fix the problem.
+
