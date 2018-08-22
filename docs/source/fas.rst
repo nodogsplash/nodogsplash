@@ -6,15 +6,22 @@ Overview
 
 Nodogsplash (NDS) supports external (to NDS) authentication service via simple configuration options.
 
-These options are:
+These options are::
 
-    1. fasport. This enables Forwarding Authentication Service (FAS). Redirection is changed from splash.html to a FAS. The value is the IP port number of the FAS
+    1. fasport. This enables Forwarding Authentication Service (FAS).
+    Redirection is changed from splash.html to a FAS.
+    The value is the IP port number of the FAS
 
-    2. fasremoteip. If set, this is the remote ip address of the FAS, if not set it will take the value of the NDS gateway address.
+    2. fasremoteip. If set, this is the remote ip address of the FAS,
+    if not set it will take the value of the NDS gateway address.
 
     3. faspath. This is the path to the login page on the FAS.
 
-    4. fas secure enable. If set to "1", authaction and the client token are not revealed and it is the responsibility of the FAS to request the token from NDSCTL. If set to "0", the client token is sent to the FAS in clear text in the query string of the redirect along with authaction and redir.
+    4. fas secure enable. If set to "1", authaction and the client
+    token are not revealed and it is the responsibility of the FAS
+    to request the token from NDSCTL. If set to "0", the client
+    token is sent to the FAS in clear text in the query string
+    of the redirect along with authaction and redir.
 
 
 Using FAS
@@ -31,6 +38,11 @@ The FAS can be on the same device as NDS, on the same local area network as NDS,
 If FAS Secure is enabled, NDS will supply only the gateway name, the client IP address and the originally requested URL.
 
 It is the responsibility of FAS to obtain the unique client token allocated by NDS.
+
+This can be done using the ndstoken tool::
+
+    Usage: ndstoken <client_ip>
+    Returns: client_token
 
 If the client successfully authenticates in the FAS, FAS will return the unique token to NDS to finally allow the client access to the Internet.
 
@@ -54,32 +66,35 @@ To enable php in uhttpd you must add the line:
 
 to the /etc/config/uhttpd file in the config uhttpd 'main' or first section.
 
-The two important NDS options to set will be:
+The two important NDS options to set will be::
+
     1. fasport. By default this will be port 80 for uhttpd
-    2. faspath. Set to, for example, /myfas/fas.php, your FAS files being placed in /www/myfas/
+
+    2. faspath. Set to, for example, /myfas/fas.php,
+    your FAS files being placed in /www/myfas/
 
 **Note 1**:  
 
     A typical Internet hosted Apache/PHP shared server will be set up to serve multiple domain names.
 
-    To access yours, use
+    To access yours, use::
 
-    fasremoteip = the ip address of the remote server
+        fasremoteip = the ip address of the remote server
 
-    and, for example,
+        and, for example,
 
-    faspath = /domainname/pathto/myfas/fas.php
+        faspath = /domainname/pathto/myfas/fas.php
 
-    or
+        or
 
-    faspath = /accountname/pathto/myfas/fas.php
+        faspath = /accountname/pathto/myfas/fas.php
 
-    If necessary, contact your hosting service provider.  
+    If necessary, contact your hosting service provider.
 
 
 **Note 2:**
 
-    The configuration file /etc/config/nodogsplash contains the line "option enabled 1".  
+    The configuration file /etc/config/nodogsplash contains the line "option enabled 1".
 
     If you have done something wrong and locked yourself out, you can still SSH to your router and stop NoDogSplash (ndsctl stop) to fix the problem.
 
