@@ -252,7 +252,7 @@ ndsctl_handler(int fd)
 	} else if (strncmp(request, "clients", 7) == 0) {
 		ndsctl_clients(fp);
 	} else if (strncmp(request, "json", 4) == 0) {
-		ndsctl_json(fp);
+		ndsctl_json(fp, (request + 5));
 	} else if (strncmp(request, "stop", 4) == 0) {
 		ndsctl_stop();
 	} else if (strncmp(request, "block", 5) == 0) {

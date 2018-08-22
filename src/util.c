@@ -622,13 +622,62 @@ ndsctl_clients(FILE *fp)
 	UNLOCK_CLIENT_LIST();
 }
 
-void
-ndsctl_json(FILE *fp)
+static void
+ndsctl_json_client(FILE *fp, const t_client *client, time_t now)
+{
+	unsigned long int durationsecs;
+	unsigned long long int download_bytes, upload_bytes;
+
+	fprintf(fp, "\"id\":%d,\n", client->id);
+	fprintf(fp, "\"ip\":\"%s\",\n", client->ip);
+	fprintf(fp, "\"mac\":\"%s\",\n", client->mac);
+	fprintf(fp, "\"added\":%lld,\n", (long long) client->session_start);
+	fprintf(fp, "\"active\":%lld,\n", (long long) client->counters.last_updated);
+	fprintf(fp, "\"duration\":%lu,\n", now - client->session_start);
+	fprintf(fp, "\"token\":\"%s\",\n", client->token ? client->token : "none");
+	fprintf(fp, "\"state\":\"%s\",\n", fw_connection_state_as_string(client->fw_connection_state));
+
+	durationsecs = now - client->session_start;
+	download_bytes = client->counters.incoming;
+	upload_bytes = client->counters.outgoing;
+
+	fprintf(fp, "\"downloaded\":\"%llu\",\n", download_bytes / 1000);
+	fprintf(fp, "\"avg_down_speed\":\"%.2f\",\n", ((double)download_bytes) / 125 / durationsecs);
+	fprintf(fp, "\"uploaded\":\"%llu\",\n", upload_bytes / 1000);
+	fprintf(fp, "\"avg_up_speed\":\"%.2f\"\n", ((double)upload_bytes)/ 125 / durationsecs);
+}
+
+static void
+ndsctl_json_one(FILE *fp, const char *arg)
 {
 	t_client *client;
-	int indx;
-	unsigned long int now, durationsecs = 0;
-	unsigned long long int download_bytes, upload_bytes;
+	time_t now;
+
+	now = time(NULL);
+
+	/* Update the client's counters so info is current */
+	iptables_fw_counters_update();
+
+	LOCK_CLIENT_LIST();
+
+	client = client_list_find_by_any(arg, arg, arg);
+
+	if (client) {
+		fprintf(fp, "{\n");
+		ndsctl_json_client(fp, client, now);
+		fprintf(fp, "}\n");
+	} else {
+		fprintf(fp, "{}\n");
+	}
+
+	UNLOCK_CLIENT_LIST();
+}
+
+static void
+ndsctl_json_all(FILE *fp)
+{
+	t_client *client;
+	time_t now;
 
 	now = time(NULL);
 
@@ -640,41 +689,34 @@ ndsctl_json(FILE *fp)
 	fprintf(fp, "{\n\"client_length\": %d,\n", get_client_list_length());
 
 	client = client_get_first_client();
-	indx = 0;
 
 	fprintf(fp, "\"clients\":{\n");
 
 	while (client != NULL) {
 		fprintf(fp, "\"%s\":{\n", client->mac);
-		fprintf(fp, "\"client_id\":%d,\n", indx);
-		fprintf(fp, "\"ip\":\"%s\",\n\"mac\":\"%s\",\n", client->ip, client->mac);
-		fprintf(fp, "\"added\":%lld,\n", (long long) client->session_start);
-		fprintf(fp, "\"active\":%lld,\n", (long long) client->counters.last_updated);
-		fprintf(fp, "\"duration\":%lu,\n", now - client->session_start);
-		fprintf(fp, "\"token\":\"%s\",\n", client->token ? client->token : "none");
-		fprintf(fp, "\"state\":\"%s\",\n", fw_connection_state_as_string(client->fw_connection_state));
+		ndsctl_json_client(fp, client, now);
 
-		durationsecs = now - client->session_start;
-		download_bytes = client->counters.incoming;
-		upload_bytes = client->counters.outgoing;
-
-		fprintf(fp, "\"downloaded\":\"%llu\",\n", download_bytes / 1000);
-		fprintf(fp, "\"avg_down_speed\":\"%.2f\",\n", ((double)download_bytes) / 125 / durationsecs);
-		fprintf(fp, "\"uploaded\":\"%llu\",\n", upload_bytes / 1000);
-		fprintf(fp, "\"avg_up_speed\":\"%.2f\"\n", ((double)upload_bytes)/ 125 / durationsecs);
-
-		indx++;
 		client = client->next;
-
-		fprintf(fp, "}");
 		if (client) {
-			fprintf(fp, ",\n");
+			fprintf(fp, "},\n");
+		} else {
+			fprintf(fp, "}\n");
 		}
 	}
 
-	fprintf(fp, "}}");
+	fprintf(fp, "}\n}\n");
 
 	UNLOCK_CLIENT_LIST();
+}
+
+void
+ndsctl_json(FILE *fp, const char *arg)
+{
+	if (arg && strlen(arg)) {
+		ndsctl_json_one(fp, arg);
+	} else {
+		ndsctl_json_all(fp);
+	}
 }
 
 unsigned short

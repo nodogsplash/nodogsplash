@@ -74,7 +74,7 @@ void ndsctl_clients(FILE *fp);
 /*
  * @brief Writes a machine-readable json of currently connected clients
  */
-void ndsctl_json(FILE *fp);
+void ndsctl_json(FILE *fp, const char *arg);
 
 /** @brief cheap random */
 unsigned short rand16(void);

@@ -83,7 +83,7 @@ usage(void)
 		"commands:\n"
 		"  status              View the status of nodogsplash\n"
 		"  clients             Display machine-readable client list\n"
-		"  json                Display machine-readable client list in json format\n"
+		"  json [mac|ip|token] Display client list in json format\n"
 		"  stop                Stop the running nodogsplash\n"
 		"  auth mac|ip|token   Authenticate user with specified mac, ip or token\n"
 		"  deauth mac|ip|token Deauthenticate user with specified mac, ip or token\n"
