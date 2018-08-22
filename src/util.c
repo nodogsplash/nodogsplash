@@ -394,9 +394,9 @@ format_duration(time_t from, time_t to, char buf[64])
 }
 
 char *
-format_time(time_t *time, char buf[64])
+format_time(time_t time, char buf[64])
 {
-	strftime(buf, 64, "%a %b %d %H:%M:%S %Y", localtime(time));
+	strftime(buf, 64, "%a %b %d %H:%M:%S %Y", localtime(&time));
 	return buf;
 }
 
@@ -489,12 +489,12 @@ ndsctl_status(FILE *fp)
 
 		fprintf(fp, "  IP: %s MAC: %s\n", client->ip, client->mac);
 
-		format_time(&client->counters.last_updated, timebuf);
+		format_time(client->counters.last_updated, timebuf);
 		format_duration(client->counters.last_updated, now, durationbuf);
 		fprintf(fp, "  Last Activity: %s (%s ago)\n", timebuf, durationbuf);
 
 		if (client->session_start) {
-			format_time(&client->session_start, timebuf);
+			format_time(client->session_start, timebuf);
 			format_duration(client->session_start, now, durationbuf);
 			fprintf(fp, "  Session Start: %s (%s ago)\n", timebuf, durationbuf);
 		} else {
@@ -502,7 +502,7 @@ ndsctl_status(FILE *fp)
 		}
 
 		if (client->session_end) {
-			format_time(&client->session_end, timebuf);
+			format_time(client->session_end, timebuf);
 			format_duration(now, client->session_end, durationbuf);
 			fprintf(fp, "  Session End:   %s (%s left)\n", timebuf, durationbuf);
 		} else {
