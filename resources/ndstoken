@@ -1,0 +1,11 @@
+#!/bin/sh
+
+if [ -z $1 ]; then
+	echo "Usage: ndstoken <ipaddress>"
+	echo "Returns the client token"
+	exit 1
+fi
+
+ndsctl status | grep -A 6 $1' MAC' | grep Token | awk -F'Token: ' '{print $2}'
+
+exit 0
