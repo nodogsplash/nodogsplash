@@ -601,11 +601,12 @@ static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, 
 	if (config->fas_port) {
 		target = (config->fas_remoteip ? config->fas_remoteip : config->gw_address);
 		// Generate secure query string or authaction url
+		// Note: config->fas_path contains a leading / as it is the path from the FAS web root.
 		if (config->fas_secure_enabled) {
-			safe_asprintf(&splashpageurl, "http://%s:%u/%s%s&redir=%s",
+			safe_asprintf(&splashpageurl, "http://%s:%u%s%s&redir=%s",
 				target, config->fas_port, config->fas_path, querystr, encoded);
 		} else {
-			safe_asprintf(&splashpageurl, "http://%s:%u/%s?authaction=http://%s:%u/%s/%s&redir=%s",
+			safe_asprintf(&splashpageurl, "http://%s:%u%s?authaction=http://%s:%u/%s/%s&redir=%s",
 				target, config->fas_port, config->fas_path, config->gw_address,
 				config->gw_port, config->authdir, querystr, encoded);
 		}
