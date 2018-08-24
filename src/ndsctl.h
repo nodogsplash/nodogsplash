@@ -29,31 +29,4 @@
 
 #define DEFAULT_SOCK "/tmp/ndsctl.sock"
 
-#define NDSCTL_TERMINATOR	"\r\n\r\n"
-
-#define NDSCTL_UNDEF		0
-#define NDSCTL_STATUS		1
-#define NDSCTL_STOP		2
-#define NDSCTL_KILL		3
-#define NDSCTL_RESTART		4
-#define NDSCTL_BLOCK		5
-#define NDSCTL_UNBLOCK		6
-#define NDSCTL_ALLOW		7
-#define NDSCTL_UNALLOW		8
-#define NDSCTL_TRUST		9
-#define NDSCTL_UNTRUST		10
-#define NDSCTL_AUTH		11
-#define NDSCTL_DEAUTH		12
-#define NDSCTL_LOGLEVEL		13
-#define NDSCTL_CLIENTS 		16
-#define NDSCTL_JSON 		17
-
-
-typedef struct {
-	char *socket;
-	int command;
-	char *param;
-} s_config;
-
-
 #endif /* _NDSCTL_H_ */

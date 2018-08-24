@@ -41,29 +41,11 @@
 #include "ndsctl.h"
 
 
-/* N.B. this is ndsctl.h s_config, not conf.h s_config */
-s_config config;
-
-static void usage(void);
-static void init_config(void);
-static void parse_commandline(int, char **);
-static int connect_to_server(const char[]);
-static int send_request(int, const char[]);
-static void ndsctl_action(const char[], const char[], const char[]);
-static void ndsctl_print(const char[]);
-static void ndsctl_status(void);
-static void ndsctl_clients(void);
-static void ndsctl_json(void);
-static void ndsctl_stop(void);
-static void ndsctl_block(void);
-static void ndsctl_unblock(void);
-static void ndsctl_allow(void);
-static void ndsctl_unallow(void);
-static void ndsctl_trust(void);
-static void ndsctl_untrust(void);
-static void ndsctl_auth(void);
-static void ndsctl_deauth(void);
-static void ndsctl_loglevel(void);
+struct argument {
+	const char *cmd;
+	const char *ifyes;
+	const char *ifno;
+};
 
 /** @internal
  * @brief Print usage
@@ -83,7 +65,7 @@ usage(void)
 		"commands:\n"
 		"  status              View the status of nodogsplash\n"
 		"  clients             Display machine-readable client list\n"
-		"  json                Display machine-readable client list in json format\n"
+		"  json [mac|ip|token] Display client list in json format\n"
 		"  stop                Stop the running nodogsplash\n"
 		"  auth mac|ip|token   Authenticate user with specified mac, ip or token\n"
 		"  deauth mac|ip|token Deauthenticate user with specified mac, ip or token\n"
@@ -98,138 +80,34 @@ usage(void)
 	);
 }
 
-/** @internal
- *
- * Init default values in config struct
- */
-static void
-init_config(void)
-{
-	config.socket = strdup(DEFAULT_SOCK);
-	config.command = NDSCTL_UNDEF;
-}
+static struct argument arguments[] = {
+	{"clients", NULL, NULL},
+	{"json", NULL, NULL},
+	{"status", NULL, NULL},
+	{"stop", NULL, NULL},
+	{"loglevel", "Log level set to %s.\n", "Failed to set log level to %s.\n"},
+	{"deauth", "Client %s deauthenticated.\n", "Client %s not found.\n"},
+	{"auth", "Client %s authenticated.\n", "Failed to authenticate client %s.\n"},
+	{"block", "MAC %s blocked.\n", "Failed to block MAC %s.\n"},
+	{"unblock", "MAC %s unblocked.\n", "Failed to unblock MAC %s.\n"},
+	{"allow", "MAC %s allowed.\n", "Failed to allow MAC %s.\n"},
+	{"unallow", "MAC %s unallowed.\n", "Failed to unallow MAC %s.\n"},
+	{"trust", "MAC %s trusted.\n", "Failed to trust MAC %s.\n"},
+	{"untrust", "MAC %s untrusted.\n", "Failed to untrust MAC %s.\n"},
+	{NULL, NULL, NULL}
+};
 
-/** @internal
- *
- * Uses getopt() to parse the command line and set configuration values
- */
-void
-parse_commandline(int argc, char **argv)
-{
-	extern int optind;
-	int c;
+static const struct argument*
+find_argument(const char *cmd) {
+	int i;
 
-	while (-1 != (c = getopt(argc, argv, "s:h"))) {
-		switch(c) {
-		case 'h':
-			usage();
-			exit(1);
-			break;
-
-		case 's':
-			if (optarg) {
-				free(config.socket);
-				config.socket = strdup(optarg);
-			}
-			break;
-
-		default:
-			usage();
-			exit(1);
-			break;
+	for (i = 0; arguments[i].cmd; i++) {
+		if (strcmp(arguments[i].cmd, cmd) == 0) {
+			return &arguments[i];
 		}
 	}
 
-	if ((argc - optind) <= 0) {
-		usage();
-		exit(1);
-	}
-
-	if (strcmp(*(argv + optind), "status") == 0) {
-		config.command = NDSCTL_STATUS;
-	} else if (strcmp(*(argv + optind), "clients") == 0) {
-		config.command = NDSCTL_CLIENTS;
-	} else if (strcmp(*(argv + optind), "json") == 0) {
-		config.command = NDSCTL_JSON;
-	} else if (strcmp(*(argv + optind), "stop") == 0) {
-		config.command = NDSCTL_STOP;
-	} else if (strcmp(*(argv + optind), "block") == 0) {
-		config.command = NDSCTL_BLOCK;
-		if ((argc - (optind + 1)) <= 0) {
-			fprintf(stderr, "ndsctl: Error: You must specify a MAC address to block\n");
-			usage();
-			exit(1);
-		}
-		config.param = strdup(*(argv + optind + 1));
-	} else if (strcmp(*(argv + optind), "unblock") == 0) {
-		config.command = NDSCTL_UNBLOCK;
-		if ((argc - (optind + 1)) <= 0) {
-			fprintf(stderr, "ndsctl: Error: You must specify a MAC address to unblock\n");
-			usage();
-			exit(1);
-		}
-		config.param = strdup(*(argv + optind + 1));
-	} else if (strcmp(*(argv + optind), "allow") == 0) {
-		config.command = NDSCTL_ALLOW;
-		if ((argc - (optind + 1)) <= 0) {
-			fprintf(stderr, "ndsctl: Error: You must specify a MAC address to allow\n");
-			usage();
-			exit(1);
-		}
-		config.param = strdup(*(argv + optind + 1));
-	} else if (strcmp(*(argv + optind), "unallow") == 0) {
-		config.command = NDSCTL_UNALLOW;
-		if ((argc - (optind + 1)) <= 0) {
-			fprintf(stderr, "ndsctl: Error: You must specify a MAC address to unallow\n");
-			usage();
-			exit(1);
-		}
-		config.param = strdup(*(argv + optind + 1));
-	} else if (strcmp(*(argv + optind), "trust") == 0) {
-		config.command = NDSCTL_TRUST;
-		if ((argc - (optind + 1)) <= 0) {
-			fprintf(stderr, "ndsctl: Error: You must specify a MAC address to trust\n");
-			usage();
-			exit(1);
-		}
-		config.param = strdup(*(argv + optind + 1));
-	} else if (strcmp(*(argv + optind), "untrust") == 0) {
-		config.command = NDSCTL_UNTRUST;
-		if ((argc - (optind + 1)) <= 0) {
-			fprintf(stderr, "ndsctl: Error: You must specify a MAC address to untrust\n");
-			usage();
-			exit(1);
-		}
-		config.param = strdup(*(argv + optind + 1));
-	} else if (strcmp(*(argv + optind), "auth") == 0) {
-		config.command = NDSCTL_AUTH;
-		if ((argc - (optind + 1)) <= 0) {
-			fprintf(stderr, "ndsctl: Error: You must specify an IP address to auth\n");
-			usage();
-			exit(1);
-		}
-		config.param = strdup(*(argv + optind + 1));
-	} else if (strcmp(*(argv + optind), "deauth") == 0) {
-		config.command = NDSCTL_DEAUTH;
-		if ((argc - (optind + 1)) <= 0) {
-			fprintf(stderr, "ndsctl: Error: You must specify an IP or a MAC address to deauth\n");
-			usage();
-			exit(1);
-		}
-		config.param = strdup(*(argv + optind + 1));
-	} else if (strcmp(*(argv + optind), "loglevel") == 0) {
-		config.command = NDSCTL_LOGLEVEL;
-		if ((argc - (optind + 1)) <= 0) {
-			fprintf(stderr, "ndsctl: Error: You must specify an integer loglevel to loglevel\n");
-			usage();
-			exit(1);
-		}
-		config.param = strdup(*(argv + optind + 1));
-	} else {
-		fprintf(stderr, "ndsctl: Error: Invalid command \"%s\"\n", *(argv + optind));
-		usage();
-		exit(1);
-	}
+	return NULL;
 }
 
 static int
@@ -246,7 +124,7 @@ connect_to_server(const char sock_name[])
 
 	if (connect(sock, (struct sockaddr *)&sa_un, strlen(sa_un.sun_path) + sizeof(sa_un.sun_family))) {
 		fprintf(stderr, "ndsctl: nodogsplash probably not started (Error: %s)\n", strerror(errno));
-		exit(1);
+		return -1;
 	}
 
 	return sock;
@@ -275,236 +153,105 @@ send_request(int sock, const char request[])
  * Responses printed to stdout, as formatted by ifyes or ifno.
  * config.param interpolated in format with %s directive if desired.
  */
-static void
-ndsctl_action(const char cmd[], const char ifyes[], const char ifno[])
+static int
+ndsctl_do(const char *socket, const struct argument *arg, const char *param)
 {
 	int sock;
 	char buffer[4096];
 	char request[128];
 	int len, rlen;
+	int ret;
 
-	sock = connect_to_server(config.socket);
-
-	snprintf(request, sizeof(request)-strlen(NDSCTL_TERMINATOR), "%s %s", cmd, config.param);
-	strcat(request, NDSCTL_TERMINATOR);
-
-	len = send_request(sock, request);
-
-	len = 0;
-	memset(buffer, 0, sizeof(buffer));
-	while ((len < sizeof(buffer)) && ((rlen = read(sock, (buffer + len),
-		(sizeof(buffer) - len))) > 0)) {
-		len += rlen;
+	sock = connect_to_server(socket);
+	if (sock < 0) {
+		return 3;
 	}
 
-	if (rlen < 0) {
-		fprintf(stderr, "ndsctl: Error reading socket: %s\n", strerror(errno));
-	}
-
-	if (strcmp(buffer, "Yes") == 0) {
-		printf(ifyes, config.param);
-	} else if (strcmp(buffer, "No") == 0) {
-		printf(ifno, config.param);
+	if (param) {
+		snprintf(request, sizeof(request), "%s %s\r\n\r\n", arg->cmd, param);
 	} else {
-		fprintf(stderr, "ndsctl: Error: nodogsplash sent an abnormal reply.\n");
+		snprintf(request, sizeof(request), "%s\r\n\r\n", arg->cmd);
 	}
-
-	shutdown(sock, 2);
-	close(sock);
-}
-
-/* Perform a ndsctl action, printing to stdout the server response.
- *  Action given by cmd.
- */
-static void
-ndsctl_print(const char cmd[])
-{
-	int sock;
-	char buffer[4096];
-	char request[32];
-	int len;
-
-	sock = connect_to_server(config.socket);
-
-	snprintf(request, sizeof(request) - strlen(NDSCTL_TERMINATOR), "%s", cmd);
-	strcat(request, NDSCTL_TERMINATOR);
 
 	len = send_request(sock, request);
 
-	while ((len = read(sock, buffer, sizeof(buffer)-1)) > 0) {
-		buffer[len] = '\0';
-		printf("%s", buffer);
-	}
+	if (arg->ifyes && arg->ifno) {
+		len = 0;
+		memset(buffer, 0, sizeof(buffer));
+		while ((len < sizeof(buffer)) && ((rlen = read(sock, (buffer + len),
+			(sizeof(buffer) - len))) > 0)) {
+			len += rlen;
+		}
 
-	if (len < 0) {
-		fprintf(stderr, "ndsctl: Error reading socket: %s\n", strerror(errno));
+		if (rlen < 0) {
+			fprintf(stderr, "ndsctl: Error reading socket: %s\n", strerror(errno));
+			ret = 3;
+		} else if (strcmp(buffer, "Yes") == 0) {
+			printf(arg->ifyes, param);
+			ret = 0;
+		} else if (strcmp(buffer, "No") == 0) {
+			printf(arg->ifno, param);
+			ret = 1;
+		} else {
+			fprintf(stderr, "ndsctl: Error: nodogsplash sent an abnormal reply.\n");
+			ret = 2;
+		}
+	} else {
+		while ((len = read(sock, buffer, sizeof(buffer) - 1)) > 0) {
+			buffer[len] = '\0';
+			printf("%s", buffer);
+		}
+		ret = 0;
 	}
 
 	shutdown(sock, 2);
 	close(sock);
-}
 
-static void
-ndsctl_clients(void)
-{
-	ndsctl_print("clients");
-}
-
-static void
-ndsctl_json(void)
-{
-	ndsctl_print("json");
-}
-
-static void
-ndsctl_status(void)
-{
-	ndsctl_print("status");
-}
-
-static void
-ndsctl_stop(void)
-{
-	ndsctl_print("stop");
-}
-
-void
-ndsctl_loglevel(void)
-{
-	ndsctl_action("loglevel",
-				"Log level set to %s.\n",
-				"Failed to set log level to %s.\n");
-}
-
-void
-ndsctl_deauth(void)
-{
-	ndsctl_action("deauth",
-				"Client %s deauthenticated.\n",
-				"Client %s not found.\n");
-}
-
-void
-ndsctl_auth(void)
-{
-	ndsctl_action("auth",
-				"Client %s authenticated.\n",
-				"Failed to authenticate client %s.\n");
-}
-
-void
-ndsctl_block(void)
-{
-	ndsctl_action("block",
-				"MAC %s blocked.\n",
-				"Failed to block MAC %s.\n");
-}
-
-void
-ndsctl_unblock(void)
-{
-	ndsctl_action("unblock",
-				"MAC %s unblocked.\n",
-				"Failed to unblock MAC %s.\n");
-}
-
-void
-ndsctl_allow(void)
-{
-	ndsctl_action("allow",
-				"MAC %s allowed.\n",
-				"Failed to allow MAC %s.\n");
-}
-
-void
-ndsctl_unallow(void)
-{
-	ndsctl_action("unallow",
-				"MAC %s unallowed.\n",
-				"Failed to unallow MAC %s.\n");
-}
-
-void
-ndsctl_trust(void)
-{
-	ndsctl_action("trust",
-				"MAC %s trusted.\n",
-				"Failed to trust MAC %s.\n");
-}
-
-void
-ndsctl_untrust(void)
-{
-	ndsctl_action("untrust",
-				"MAC %s untrusted.\n",
-				"Failed to untrust MAC %s.\n");
+	return ret;
 }
 
 int
 main(int argc, char **argv)
 {
-	/* Init configuration */
-	init_config();
-	parse_commandline(argc, argv);
+	const struct argument* arg;
+	const char *socket;
+	int i = 1;
 
-	switch(config.command) {
-	case NDSCTL_STATUS:
-		ndsctl_status();
-		break;
+	socket = strdup(DEFAULT_SOCK);
 
-	case NDSCTL_CLIENTS:
-		ndsctl_clients();
-		break;
+	if (argc <= i) {
+		usage();
+		return 0;
+	}
 
-	case NDSCTL_JSON:
-		ndsctl_json();
-		break;
-
-	case NDSCTL_STOP:
-		ndsctl_stop();
-		break;
-
-	case NDSCTL_BLOCK:
-		ndsctl_block();
-		break;
-
-	case NDSCTL_UNBLOCK:
-		ndsctl_unblock();
-		break;
-
-	case NDSCTL_ALLOW:
-		ndsctl_allow();
-		break;
-
-	case NDSCTL_UNALLOW:
-		ndsctl_unallow();
-		break;
-
-	case NDSCTL_TRUST:
-		ndsctl_trust();
-		break;
-
-	case NDSCTL_UNTRUST:
-		ndsctl_untrust();
-		break;
-
-	case NDSCTL_AUTH:
-		ndsctl_auth();
-		break;
-
-	case NDSCTL_DEAUTH:
-		ndsctl_deauth();
-		break;
-
-	case NDSCTL_LOGLEVEL:
-		ndsctl_loglevel();
-		break;
-
-	default:
-		/* XXX NEVER REACHED */
-		fprintf(stderr, "Unknown opcode: %d\n", config.command);
+	if (strcmp(argv[1], "-h") == 0) {
+		usage();
 		return 1;
 	}
 
-	return 0;
+	if (strcmp(argv[1], "-s") == 0) {
+		if (argc >= 2) {
+			socket = strdup(argv[2]);
+			i = 3;
+		} else {
+			usage();
+			return 1;
+		}
+	}
+
+	// Too many arguments
+	if (argc > (i+2)) {
+		usage();
+		return 1;
+	}
+
+	arg = find_argument(argv[i]);
+
+	if (arg == NULL) {
+		fprintf(stderr, "Unknown command: %s\n", argv[i]);
+		return 1;
+	}
+
+	// Send command, argv[i+1] may be NULL.
+	return ndsctl_do(socket, arg, argv[i+1]);
 }

@@ -56,7 +56,7 @@ void mark_auth_offline();
 int is_auth_online();
 
 /* @brief Format a time_t value to 'Fri Jul 27 18:52:22 2018' */
-char *format_time(time_t *time, char buf[64]);
+char *format_time(time_t time, char buf[64]);
 
 /*
  * @brief Mallocs and returns nodogsplash uptime string
@@ -74,7 +74,7 @@ void ndsctl_clients(FILE *fp);
 /*
  * @brief Writes a machine-readable json of currently connected clients
  */
-void ndsctl_json(FILE *fp);
+void ndsctl_json(FILE *fp, const char *arg);
 
 /** @brief cheap random */
 unsigned short rand16(void);
