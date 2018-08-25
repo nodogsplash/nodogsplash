@@ -48,7 +48,7 @@
 
 /** @internal
  * Holds the current configuration of the gateway */
-static s_config config = { 0 };
+static s_config config = {{0}};
 
 /**
  * Mutex for the configuration file, used by the auth_servers related
