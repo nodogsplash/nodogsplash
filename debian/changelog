@@ -1,3 +1,14 @@
+nodogsplash (3.1.0) stable; urgency=medium
+
+  * Integrated support for separate Forward Authentication Service (FAS), adding the following configuration options:
+      fasport, faspath, fasremoteip, fas_secure_enabled
+  * Modify binauth feature internally for compatibility with FAS, allowing Binauth to be used for post FAS processing
+  * Implement ndsctl json filtering to return client information from IP, MAC or Token.
+  * Various minor code fixes and improvements
+
+ -- Rob White <dot@blue-wave.net> Sun, 26 Aug 2018 10:05:00 +0000
+
+
 nodogsplash (3.0.0-1) stable; urgency=medium
 
   * Removed settings without implementation due to the change of the http library:
