@@ -237,8 +237,8 @@ tc_destroy_tc()
 	sprintf(upload_ifbname, "ifb%d", config->upload_ifb);
 
 	/* remove qdiscs from ifb's */
-	rc |= execute("tc qdisc del dev %s root &> /dev/null", config->gw_interface);
-	rc |= execute("tc qdisc del dev %s root &> /dev/null", upload_ifbname);
+	rc |= execute("tc qdisc del dev %s root > /dev/null 2>&1", config->gw_interface);
+	rc |= execute("tc qdisc del dev %s root > /dev/null 2>&1", upload_ifbname);
 	/* bring down ifb's */
 	rc |= execute("ip link set %s down", upload_ifbname);
 

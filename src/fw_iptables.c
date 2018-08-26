@@ -190,7 +190,7 @@ iptables_do_command(const char *format, ...)
 
 	for (i = 0; i < 5; i++) {
 		if (fw_quiet) {
-			rc = execute("%s --wait %s &> /dev/null", iptables, fmt_cmd);
+			rc = execute("%s --wait %s > /dev/null 2>&1", iptables, fmt_cmd);
 		} else {
 			rc = execute("%s --wait %s", iptables, fmt_cmd);
 		}
