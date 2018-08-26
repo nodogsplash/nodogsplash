@@ -331,7 +331,7 @@ int main(int argc, char **argv)
 	parse_commandline(argc, argv);
 
 	/* Initialize the config */
-	debug(LOG_NOTICE,"Reading and validating configuration file %s", config->configfile);
+	debug(LOG_NOTICE, "Reading and validating configuration file %s", config->configfile);
 	config_read(config->configfile);
 	config_validate();
 

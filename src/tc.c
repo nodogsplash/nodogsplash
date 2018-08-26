@@ -206,17 +206,16 @@ tc_init_tc()
 	sprintf(upload_ifbname, "ifb%d", upload_ifb);
 
 	if (download_limit > 0) {
-		rc |= tc_attach_download_qdisc(config->gw_interface,NULL,download_limit);
+		rc |= tc_attach_download_qdisc(config->gw_interface, NULL, download_limit);
 	}
 
 	if (upload_limit > 0) {
 		ret = execute("ip link set %s up", upload_ifbname);
 		if (ret != 0) {
-			debug(LOG_ERR, "Could not set %s up. Upload limiting will not work",
-				  upload_ifbname);
+			debug(LOG_ERR, "Could not set %s up. Upload limiting will not work", upload_ifbname);
 			rc = -1;
 		} else {
-			rc |= tc_attach_upload_qdisc(config->gw_interface,upload_ifbname,upload_limit);
+			rc |= tc_attach_upload_qdisc(config->gw_interface, upload_ifbname, upload_limit);
 		}
 	}
 

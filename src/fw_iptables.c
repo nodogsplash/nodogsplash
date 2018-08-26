@@ -905,7 +905,7 @@ iptables_fw_total_download()
 
 	while (!feof(output)) {
 		rc = fscanf(output, "%*s %llu %s ", &counter, target);
-		if (2 == rc && !strcmp(target,CHAIN_INCOMING)) {
+		if (2 == rc && !strcmp(target, CHAIN_INCOMING)) {
 			debug(LOG_DEBUG, "Total incoming Bytes=%llu", counter);
 			pclose(output);
 			return counter;
