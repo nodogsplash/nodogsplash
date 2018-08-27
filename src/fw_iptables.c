@@ -404,7 +404,7 @@ iptables_fw_init(void)
 	}
 
 	if (iptables_version < MIN_IPTABLES_VERSION) {
-		debug(LOG_ERR, "Unsupported iptables version %d.%d.%d, needs at least %d.%d.%d",
+		debug(LOG_ERR, "Unsupported iptables version v%d.%d.%d, needs at least v%d.%d.%d.",
 			(iptables_version / 10000),
 			(iptables_version % 10000) / 100,
 			(iptables_version % 100),
