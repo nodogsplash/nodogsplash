@@ -50,6 +50,8 @@
 #include "util.h"
 #include "tc.h"
 
+#define MIN_IPTABLES_VERSION (1 * 10000 + 6 * 100 + 0)
+
 static char *_iptables_compile(const char[], const char[], t_firewall_rule *);
 static int _iptables_append_ruleset(const char[], const char[], const char[]);
 static int _iptables_init_marks(void);
@@ -337,12 +339,30 @@ iptables_untrust_mac(const char mac[])
 	return iptables_do_command("-t mangle -D " CHAIN_TRUSTED " -m mac --mac-source %s -j MARK %s 0x%x", mac, markop, FW_MARK_TRUSTED);
 }
 
+int get_iptables_version()
+{
+	char buf[256];
+	int minor;
+	int major;
+	int patch;
+	int rc;
+
+	rc = execute_ret(buf, sizeof(buf), "iptables -V");
+
+	if (rc == 0 && sscanf(buf, "iptables v%d.%d.%d", &major, &minor, &patch) == 3) {
+		return major * 10000 + minor * 100 + patch;
+	} else {
+		return -1;
+	}
+}
+
 /** Initialize the firewall rules.
  */
 int
 iptables_fw_init(void)
 {
 	s_config *config;
+	int iptables_version;
 	char *gw_interface = NULL;
 	char *gw_address = NULL;
 	char *gw_iprange = NULL;
@@ -377,6 +397,23 @@ iptables_fw_init(void)
 	FW_MARK_AUTHENTICATED = config->fw_mark_authenticated;
 	UNLOCK_CONFIG();
 
+	iptables_version = get_iptables_version();
+	if (iptables_version < 0) {
+		debug(LOG_ERR, "Cannot get iptables version.");
+		return -1;
+	}
+
+	if (iptables_version < MIN_IPTABLES_VERSION) {
+		debug(LOG_ERR, "Unsupported iptables version %d.%d.%d, needs at least %d.%d.%d",
+			(iptables_version / 10000),
+			(iptables_version % 10000) / 100,
+			(iptables_version % 100),
+			(MIN_IPTABLES_VERSION / 10000),
+			(MIN_IPTABLES_VERSION % 10000) / 100,
+			(MIN_IPTABLES_VERSION % 100)
+		);
+		return -1;
+	}
 
 	/* Set up packet marking methods */
 	rc |= _iptables_init_marks();
