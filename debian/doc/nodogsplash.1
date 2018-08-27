@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "NODOGSPLASH" "1" "Aug 11, 2018" "2.0.0" "nodogsplash"
+.TH "NODOGSPLASH" "1" "August 26, 2018" "2.0.0" "nodogsplash"
 .SH NAME
 nodogsplash \- nodogsplash Documentation
 .
@@ -99,14 +99,7 @@ To install Nodogsplash, you may use the OpenWrt Luci web interface or alternativ
 followed by
 .INDENT 2.0
 .INDENT 3.5
-\fBopkg install nodogsplash\fP (for version 1x).
-.UNINDENT
-.UNINDENT
-.sp
-or
-.INDENT 2.0
-.INDENT 3.5
-\fBopkg install nodogsplash2\fP (for version 2x).
+\fBopkg install nodogsplash\fP
 .UNINDENT
 .UNINDENT
 .IP \(bu 2
@@ -258,7 +251,7 @@ make
 .fi
 .UNINDENT
 .UNINDENT
-.SH FREQUENCTLY ASKED QUESTIONS
+.SH FREQUENTLY ASKED QUESTIONS
 .SS What\(aqs the difference between v0.9, v1, v2 and v3?
 .sp
 v0.9 and v1 are the same codebase with the same feature set.
@@ -280,7 +273,7 @@ This is a very smooth update with full compatibility.
 You can, if you don\(aqt use:
 .INDENT 0.0
 .IP \(bu 2
-BinVoucher (there is a \fI\%PR#144\fP)
+BinVoucher
 .UNINDENT
 .SS I would like to use QoS or TrafficControl on OpenWrt
 .sp
@@ -291,16 +284,51 @@ However the OpenWrt package, SQM Scripts, is fully compatible with Nodogsplash a
 .SS Is \fI\%https://\fP redirection supported?
 .sp
 No. We believe this is the wrong way to do it, because all connections would have a critical certificate failure.
-Https web sites are now more or less a standard and to maintain security and user confidence it is essential that captive portals DO NOT attempt to capture port 443.
+HTTPS web sites are now more or less a standard and to maintain security and user confidence it is essential that captive portals DO NOT attempt to capture port 443.
 .sp
 Captive Portal Detection (CPD) has evolved as an enhancement to the network manager component included with major Operating Systems (Linux, Android, iOS/macOS, Windows). Using a pre defined port 80 web page (depending on the vendor) the network manager will detect the presence of a captive portal hotspot and notify the user. In addition, most major browsers now support CPD.
-.SH HOW NODOGSPLASH WORKS
+.SH HOW NODOGSPLASH (NDS) WORKS
 .sp
-A wireless router running OpenWrt has two or more interfaces; nodogsplash
+A wireless router running OpenWrt has two or more interfaces; NDS
 manages one of them. This will typically be br\-lan, the bridge to both the
-wireless and wired LAN; or the wireless lan interface may be named something
-else if you have broken the br\-lan bridge to separate the wired and wireless
-LAN\(aqs.
+wireless and wired LAN; or could be for example wlan0 if you wanted NDS
+to work just on the wireless interface.
+.SS A simplified summary of operation is as follows:
+.sp
+By default, NDS blocks everything, but intercepts port 80 requests.
+.sp
+An initial port 80 request will be generated on a client device, either by the user
+manually browsing to an http web page, or automatically by the client device\(aqs
+built in Captive Portal Detection (CPD).
+.sp
+As soon as this initial port 80 request is received, NDS will redirect the client to either
+its own splash page, or a splash page on a configured Forwarding Authentication Service (FAS).
+.sp
+The user of the client device will then be expected to complete some actions
+on the splash page, such as accepting terms of service, entering a username and password
+etc. (this will of course be on either the basic NDS splash.html or the page presented
+by the FAS, depending on the NDS configuration).
+.sp
+Once the user on the client device has sucessfully completed the splash page
+actions, the page then links directly, with a query string, to an NDS virtual http directory
+provided by NDS\(aqs built in web server.
+.sp
+For security, NDS expects to receive the same valid token it allocated when
+the client issued its initial port 80 request. If the token received is valid,
+NDS then "authenticates" the client device, allowing access to the Internet.
+.sp
+However if Binauth is enabled, NDS first calls the Binauth script, passing if required a username and password to that script.
+If the binauth script returns positively (ie return code 0), NDS then "authenticates" the
+client device, allowing access to the Internet.
+.sp
+In FAS secure mode, it is the responsibility of the FAS to obtain the client token in a secure manner from NDS.
+.sp
+When FAS is disabled, the token is supplied to the basic splash.html page served by NDS
+and passed back in clear text in the query string along with any username and password required for Binauth.
+.sp
+FAS and Binauth can be enabled together.
+This can give great flexibility with FAS providing authentication
+and Binauth providing post authentication processing closely linked to NDS.
 .SS Packet filtering
 .sp
 Nodogsplash considers four kinds of packets coming into the router over the
@@ -352,72 +380,130 @@ nodogsplash should be insensitive to most typical existing firewall
 configurations.
 .SS Traffic control
 .sp
-Nodogsplash also optionally implements basic traffic control on its managed
-interface. This feature lets you specify the maximum aggregate upload and
-download bandwidth that can be taken by clients connected on that interface.
-Nodogsplash implements this functionality by enabling two intermediate queue
-devices (IMQ\(aqs), one for upload and one for download, and attaching simple
-rate\-limited HTB qdiscs to them. Rules are inserted in the router\(aqs iptables
-mangle PREROUTING and POSTROUTING tables to jump to these IMQ\(aqs. The result is
-simple but effective tail\-drop rate limiting (no packet classification or
-fairness queueing is done).
+Data rate control on an IP connection basis can be achived using SQM scripts
+configured separately, with NDS being fully compatible.
 .sp
-\fBNOTE:\fP
-.INDENT 0.0
-.INDENT 3.5
-IMQ is not included anymore by OpenWrt Attitude Adjustment (12.09).
-.UNINDENT
-.UNINDENT
+It should be noted that while setup options and binauth do accept traffic/quota settings,
+these values currently have no effect and are reserved for future development.
 .SH FORWARDING AUTHENTICATION SERVICE (FAS)
 .SS Overview
 .sp
-Nodogsplash (NDS) can support external (to NDS) authentication.
-The BinVoucher process was derived to support this and has been called Forwarding Authentication. This is a non trivial function and although partially implemented in early versions, is not implemented at all in version 2, at the time of writing.
+Nodogsplash (NDS) supports external (to NDS) authentication service via simple configuration options.
 .sp
-Fortunately, Forwarding Authentication can be done without any modification to the core NDS code and in a way that is compatible with all versions, pre v1 beta through to the current release of v2.
+These options are:
+.INDENT 0.0
+.INDENT 3.5
 .sp
-The defacto industry standard Captive Portal Detection (CPD), present on almost all devices these days, invokes the NDS splash page with various parameters passed to the splash page by NDS, including the client access token.
+.nf
+.ft C
+1. fasport. This enables Forwarding Authentication Service (FAS).
+Redirection is changed from splash.html to a FAS.
+The value is the IP port number of the FAS
+
+2. fasremoteip. If set, this is the remote ip address of the FAS,
+if not set it will take the value of the NDS gateway address.
+
+3. faspath. This is the path to the login page on the FAS.
+
+4. fas secure enable. If set to "1", authaction and the client
+token are not revealed and it is the responsibility of the FAS
+to request the token from NDSCTL. If set to "0", the client
+token is sent to the FAS in clear text in the query string
+of the redirect along with authaction and redir.
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SS Using FAS
 .sp
-It is a simple matter to pass this token to an external Forwarding Authentication Service (FAS) by using a redirect in the splash page.
+When FAS is enabled, NDS automatically configures access to the FAS service.
 .sp
-For a client to access this external service, the ip address and port number of the service must be added to the NDS walled garden in nodogsplash.conf or its equivalent UCI config file if running under LEDE/OpenWrt.
+The FAS service must serve an http splash of its own to replace the NDS splash.html.
+Typically, the FAS service will be written in PHP or any other language that can provide dynamic web content.
 .sp
-Included are various configuration files and remote php scripts, intended as an example implementation of FAS to demonstrate the methods.
-.SS FAS Installation
+FAS can then provide an action form for the client, typically requesting login, or self account creation for login.
 .sp
-NOTE: USING HTTPS. Your FAS can be an https server, but self signed certificates will throw dire "Here Be Dragons" warnings on your client devices when the redirection to your FAS takes place. Also even if using a registered CA all browsers will still return a security error on returning to Nodogsplash. This can be prevented by using wget to return to Nodogsplash from your FAS script instead of an html GET.
+The FAS can be on the same device as NDS, on the same local area network as NDS, or on an Internet hosted web server.
 .sp
-The contents of the FAS etc folder should be placed in the /etc folder of your NoDogSplash router, overwriting existing files.
+If FAS Secure is enabled, NDS will supply only the gateway name, the client IP address and the originally requested URL.
 .sp
-The following two files should be edited as follows.
+It is the responsibility of FAS to obtain the unique client token allocated by NDS.
 .sp
-1:
-/etc/config/nodogsplash should be edited to reflect the ip address and port of your FAS service as described in the comments in the example file.
-Your FAS can reside on your Nodogsplash router, a web server on your LAN, or a web server on the internet.
+If the client successfully authenticates in the FAS, FAS will return the unique token to NDS to finally allow the client access to the Internet.
 .sp
-2:
-/etc/nodogsplash/htdocs/splash.html should also be edited to reflect the URL of your FAS service as indicated in the comments in the example file.
-Take note of the USING HTTPS warning above. A typical URL could be \fI\%http://my\-fas.net/nodog/fas.php?auth\fP\&.... etc.
+If FAS Secure is disabled, the token is sent to FAS as clear text.
 .sp
-Running FAS on your Nodogsplash router:
-The example FAS service will run fairly well on uhttpd (the web server that serves Luci) on an LEDE/OpenWrt supported device with 8MB flash and 32MB ram but shortage of ram may well be an issue if more than two or three clients log in at the same time. For this reason a device with a minimum of 16MB flash and 64MB ram is recommended.
+A FAS on the local network can obtain the user token by requesting it from NDS, using, for example SSH.
 .sp
-Running on uhttpd:
-Install the modules php7 and php7\-cgi on LEDE for the simple example. Further modules may be required when you write your own php scripts depending on your requirements.
+A Secure Internet based FAS is best implemented as a two stage process, first using a local FAS, that in turn accesses an https remote FAS using tools such as curl or wget.
+.SS Running FAS on your Nodogsplash router
+.sp
+A FAS service will run quite well on uhttpd (the web server that serves Luci) on an OpenWrt supported device with 8MB flash and 32MB ram but shortage of ram may well be an issue if more than two or three clients log in at the same time. For this reason a device with a minimum of 8MB flash and 64MB ram is recommended.
+.sp
+Running on uhttpd with PHP:
+Install the modules php7 and php7\-cgi on LEDE for a simple example. Further modules may be required depending on your requirements.
+.sp
 To enable php in uhttpd you must add the line:
 .INDENT 0.0
-.TP
-.B ::
+.INDENT 3.5
 list interpreter ".php=/usr/bin/php\-cgi"
+.UNINDENT
 .UNINDENT
 .sp
 to the /etc/config/uhttpd file in the config uhttpd \(aqmain\(aq or first section.
 .sp
-Finally, reboot the router to start NoDogSplash in FAS mode.
+The two important NDS options to set will be:
+.INDENT 0.0
+.INDENT 3.5
 .sp
-The example file "users.dat" contains a list of usernames and passwords.
+.nf
+.ft C
+1. fasport. By default this will be port 80 for uhttpd
+
+2. faspath. Set to, for example, /myfas/fas.php,
+your FAS files being placed in /www/myfas/
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
 .sp
-NOTE: /etc/config/nodogsplash contains the line "option enabled 1". If you have done something wrong and locked yourself out, you can still SSH to your router and stop NoDogSplash (ndsctl stop) to fix the problem.
+\fBNote 1\fP:
+.INDENT 0.0
+.INDENT 3.5
+A typical Internet hosted Apache/PHP shared server will be set up to serve multiple domain names.
+.sp
+To access yours, use:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+fasremoteip = the ip address of the remote server
+
+and, for example,
+
+faspath = /domainname/pathto/myfas/fas.php
+
+or
+
+faspath = /accountname/pathto/myfas/fas.php
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+If necessary, contact your hosting service provider.
+.UNINDENT
+.UNINDENT
+.sp
+\fBNote 2:\fP
+.INDENT 0.0
+.INDENT 3.5
+The configuration file /etc/config/nodogsplash contains the line "option enabled 1".
+.sp
+If you have done something wrong and locked yourself out, you can still SSH to your router and stop NoDogSplash (ndsctl stop) to fix the problem.
+.UNINDENT
+.UNINDENT
 .SH BINAUTH OPTION
 .sp
 \fBKey: BinAuth\fP
@@ -448,6 +534,10 @@ case "$METHOD" in
       # Allow client to access the Internet for one hour (3600 seconds)
       # Further values are upload and download limits in bytes. 0 for no limit.
       echo 3600 0 0
+      exit 0
+    else
+      # Deny client to access the Internet.
+      exit 1
     fi
     ;;
   client_auth|client_deauth|idle_deauth|timeout_deauth|ndsctl_auth|ndsctl_deauth|shutdown_deauth)
@@ -459,13 +549,11 @@ case "$METHOD" in
     # client_deauth: Client deauthenticated by the client via splash page.
     # idle_deauth: Client was deauthenticated because of inactivity.
     # timeout_deauth: Client was deauthenticated because the session timed out.
-    # ndsctl_auth: Client was authenticated manually by the ndsctl tool.
+    # ndsctl_auth: Client was authenticated by the ndsctl tool.
     # ndsctl_deauth: Client was deauthenticated by the ndsctl tool.
     # shutdown_deauth: Client was deauthenticated by Nodogsplash terminating.
     ;;
 esac
-
-exit 0
 .ft P
 .fi
 .UNINDENT
@@ -531,6 +619,27 @@ To print to stdout some information about your nodogsplash process:
 .INDENT 2.0
 .INDENT 3.5
 \fB/usr/bin/ndsctl status\fP
+.UNINDENT
+.UNINDENT
+.IP \(bu 2
+To print to stdout the list of clients in human readable format:
+.INDENT 2.0
+.INDENT 3.5
+\fB/usr/bin/ndsctl clients\fP
+.UNINDENT
+.UNINDENT
+.IP \(bu 2
+To print to stdout the list of clients in json format:
+.INDENT 2.0
+.INDENT 3.5
+\fB/usr/bin/ndsctl json\fP
+.UNINDENT
+.UNINDENT
+.IP \(bu 2
+To print to stdout the details of a particular client in json format (This is particularly useful if called from a FAS or Binauth script.):
+.INDENT 2.0
+.INDENT 3.5
+\fB/usr/bin/ndsctl json [mac|ip|token]\fP
 .UNINDENT
 .UNINDENT
 .IP \(bu 2

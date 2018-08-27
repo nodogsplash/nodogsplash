@@ -9,6 +9,18 @@ unix socket. Some command line options:
 
     ``/usr/bin/ndsctl status``
 
+* To print to stdout the list of clients in human readable format:
+
+    ``/usr/bin/ndsctl clients``
+
+* To print to stdout the list of clients in json format:
+
+    ``/usr/bin/ndsctl json``
+
+* To print to stdout the details of a particular client in json format (This is particularly useful if called from a FAS or Binauth script.):
+
+    ``/usr/bin/ndsctl json [mac|ip|token]``
+
 * To block a MAC address, when the MAC mechanism is block:
 
     ``/usr/bin/ndsctl block MAC``
