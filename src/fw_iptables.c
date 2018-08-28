@@ -50,7 +50,8 @@
 #include "util.h"
 #include "tc.h"
 
-#define MIN_IPTABLES_VERSION (1 * 10000 + 6 * 100 + 0)
+// iptables v1.4.17
+#define MIN_IPTABLES_VERSION (1 * 10000 + 4 * 100 + 17)
 
 static char *_iptables_compile(const char[], const char[], t_firewall_rule *);
 static int _iptables_append_ruleset(const char[], const char[], const char[]);
