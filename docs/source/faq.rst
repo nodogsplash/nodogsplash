@@ -11,10 +11,9 @@ for v0.9.
 v2 was developed while version v1 wasn't released. In v2 the http code got replaced by libmicrohttpd
 as well the template engine got rewritten. Many feature were defunct because of this procedure.
 
-v3 cleans up the source code and adds the binauth feature to be able to call an external script
-for authentication. This is similar to the old binvoucher feature, but more flexible.
-The ClientTimeout setting was split into PreauthIdleTimeout and AuthIdleTimeout and
-for the ClientForceTimeout setting SessionTimeout is now used instead.
+v3 cleans up the source code and adds two major new features, FAS enabling an external forwarding authentication service to be called, and binauth, enabling an external script to be called for simple username/password authentication as well as doing post authentication processing such as setting session durations. This is similar to the old binvoucher feature, but more flexible.
+
+The ClientTimeout setting was split into PreauthIdleTimeout and AuthIdleTimeout and for the ClientForceTimeout setting  SessionTimeout is now used instead.
 
 Can I update from v0.9 to v1
 ****************************
