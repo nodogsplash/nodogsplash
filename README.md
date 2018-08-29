@@ -34,7 +34,7 @@ need, though.
 
 ## 2. Documentation
 
-For additonal documentation please look at https://nodogsplash.readthedocs.io/en/latest/
+For additonal documentation please look at https://nodogsplashdocs.rtfd.io/
 
 ---
 
