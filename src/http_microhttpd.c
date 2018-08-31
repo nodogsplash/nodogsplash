@@ -495,6 +495,9 @@ static int authenticated(struct MHD_Connection *connection,
 	s_config *config = config_get_config();
 	const char *host = NULL;
 	char redirect_to_us[128];
+	char *target = NULL;
+	char *fasurl = NULL;
+	int ret;
 
 	MHD_get_connection_values(connection, MHD_HEADER_KIND, get_host_value_callback, &host);
 
@@ -512,7 +515,16 @@ static int authenticated(struct MHD_Connection *connection,
 	}
 
 	if (check_authdir_match(url, config->authdir)) {
-		return show_statuspage(connection, client);
+		if (config->fas_port) {
+			target = (config->fas_remoteip ? config->fas_remoteip : config->gw_address);
+			safe_asprintf(&fasurl, "http://%s:%u%s?clientip=%s&gatewayname=%s&status=authenticated",
+				target, config->fas_port, config->fas_path, client->ip, config->gw_name);
+			ret = send_redirect_temp(connection, fasurl);
+			free(fasurl);
+			return ret;
+		} else {
+			return show_statuspage(connection, client);
+		}
 	}
 
 	/* user doesn't wants the splashpage or tried to auth itself */
