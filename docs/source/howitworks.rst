@@ -1,7 +1,7 @@
 How nodogsplash (NDS) works
 ###########################
 
-A wireless router running OpenWrt has two or more interfaces; NDS
+A wireless router, typically running OpenWrt or some other Linux distribution, has two or more interfaces; NDS
 manages one of them. This will typically be br-lan, the bridge to both the
 wireless and wired LAN; or could be for example wlan0 if you wanted NDS
 to work just on the wireless interface.
