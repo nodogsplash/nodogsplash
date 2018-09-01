@@ -495,7 +495,6 @@ static int authenticated(struct MHD_Connection *connection,
 	s_config *config = config_get_config();
 	const char *host = NULL;
 	char redirect_to_us[128];
-	char *target = NULL;
 	char *fasurl = NULL;
 	int ret;
 
@@ -516,9 +515,8 @@ static int authenticated(struct MHD_Connection *connection,
 
 	if (check_authdir_match(url, config->authdir)) {
 		if (config->fas_port) {
-			target = (config->fas_remoteip ? config->fas_remoteip : config->gw_address);
 			safe_asprintf(&fasurl, "http://%s:%u%s?clientip=%s&gatewayname=%s&status=authenticated",
-				target, config->fas_port, config->fas_path, client->ip, config->gw_name);
+				config->fas_remoteip, config->fas_port, config->fas_path, client->ip, config->gw_name);
 			ret = send_redirect_temp(connection, fasurl);
 			free(fasurl);
 			return ret;
@@ -594,7 +592,6 @@ static int preauthenticated(struct MHD_Connection *connection,
 static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, const char *originurl, const char *querystr)
 {
 	char *splashpageurl = NULL;
-	char *target = NULL;
 	char encoded[2048];
 	s_config *config;
 	int ret;
@@ -611,15 +608,14 @@ static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, 
 	}
 
 	if (config->fas_port) {
-		target = (config->fas_remoteip ? config->fas_remoteip : config->gw_address);
 		// Generate secure query string or authaction url
 		// Note: config->fas_path contains a leading / as it is the path from the FAS web root.
 		if (config->fas_secure_enabled) {
 			safe_asprintf(&splashpageurl, "http://%s:%u%s%s&redir=%s",
-				target, config->fas_port, config->fas_path, querystr, encoded);
+				config->fas_remoteip, config->fas_port, config->fas_path, querystr, encoded);
 		} else {
 			safe_asprintf(&splashpageurl, "http://%s:%u%s?authaction=http://%s:%u/%s/%s&redir=%s",
-				target, config->fas_port, config->fas_path, config->gw_address,
+				config->fas_remoteip, config->fas_port, config->fas_path, config->gw_address,
 				config->gw_port, config->authdir, querystr, encoded);
 		}
 	} else {
