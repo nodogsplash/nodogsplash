@@ -448,7 +448,7 @@ ndsctl_status(FILE *fp)
 	if (config->fas_port) {
 		fprintf(fp, "FAS: Secure=%u URL: http://%s:%u%s\n",
 			config->fas_secure_enabled,
-			config->fas_remoteip ? config->fas_remoteip : config->gw_address,
+			config->fas_remoteip,
 			config->fas_port, config->fas_path);
 	} else {
 		fprintf(fp, "FAS: Disabled\n");
