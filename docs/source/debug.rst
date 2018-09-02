@@ -1,31 +1,36 @@
-Debugging nodogsplash
+Debugging Nodogsplash
 #####################
 
 
-* To see maximally verbose debugging output from nodogsplash, edit the
-  /etc/init.d/nodogsplash file to set the OPTIONS variable to the flags "-s -d 7",
-  restart or reboot, and view messages with logread. The -s flag logs to
-  syslog; the -d 7 flag sets level 7, LOG_DEBUG, for debugging messages
-  (see syslog.h). You don't want to run with these flags routinely, as it will
-  quickly fill the syslog circular buffer, unless you enable remote logging. A
-  lower level of logging, for example level 5, LOG_NOTICE, is more appropriate
-  for routine use (this is the default). Logging level can also be set using
-  ndsctl as shown above.
-  Alternatively, you can set the flag -f instead of -s, and restart.
-  This will run nodogsplash in the foreground, logging to stdout.
-* When stopped, nodogsplash deletes its iptables rules, attempting to leave the
-  router's firewall in its original state. If not (for example, if nodogsplash
-  crashes instead of exiting cleanly) subsequently starting and stopping
-  nodogsplash should remove its rules.
-* Nodogsplash operates by marking packets (and, if traffic control is enabled,
-  passing packets through intermediate queueing devices). Most QOS packages
-  will also mark packets and use IMQ's. Therefore one or both of Nodogsplash and
-  a QOS package may malfunction if used together. Potential conflicts may be
-  investigated by looking at your overall iptables setup. To check to see all
-  the rules in, for example, the mangle table chains, run
+ To see maximally verbose debugging output from nodogsplash, set log level to 7. This can be done in the UCI configuration file on OpenWrt adding the line:
 
-    ``iptables -t mangle -v -n -L``
+  ``option debuglevel '7'``
 
-  For extensive suggestions on debugging iptables, see for example Oskar
-  Andreasson's_tutorial.
+ or by editing the file
+
+  ``/etc/init.d/nodogsplash``
+
+ and setting the OPTIONS variable to the flags "-s -d 7".
+
+ Restart or reboot, and view messages with logread. Debug messages are logged to syslog.
+
+ The default level of logging is 5, LOG_NOTICE, and is more appropriate for routine use.
+
+ Logging level can also be set using ndsctl.
+
+ When stopped, nodogsplash deletes its iptables rules, attempting to leave the router's firewall in its original state. If not (for example, if nodogsplash crashes instead of exiting cleanly) subsequently starting and stopping nodogsplash should remove its rules.
+
+ On OpenWrt, restarting the firewall will overwrite Nodogsplash's iptables rules, so when the firewall is restarted it will automatically restart Nodogsplash if it is running.
+
+ Nodogsplash operates by marking packets. Many packages, such as mwan3 and SQM scripts, also mark packets.
+
+ By default, Nodogsplash marks its packets in such a way that conficts are unlikely to occur but the masks used by Nodogsplash can be changed if necessary in the configuration file.
+
+ Potential conflicts may be investigated by looking at your overall iptables setup. To list all the rules in all the chains, run
+
+    ``iptables -L``
+
+ For extensive suggestions on debugging iptables, see for example, Oskar Andreasson's tutorial at:
+
+ https://www.frozentux.net/iptables-tutorial/iptables-tutorial.html
 
