@@ -1,6 +1,8 @@
 ## 0. The Nodogsplash project
 
-Nodogspash is a high performance, small footprint Captive Portal,     offering by default a simple splash page restricted Internet connection, yet incorporates an API that allows the creation of sophisticated authentication applications.
+Nodogsplash is a Captive Portal that offers a simple way to provide restricted access to the Internet by showing a splash page to the user before Internet access is granted.
+
+It also incorporates an API that allows the creation of sophisticated authentication applications.
 
 It was derived originally from the codebase of the Wifi Guard Dog project.
 
