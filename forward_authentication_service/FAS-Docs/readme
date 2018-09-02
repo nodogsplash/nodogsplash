@@ -92,6 +92,14 @@ Assuming you want to run the FAS example demo locally under uhttpd on the same O
 
  (Under other operating systems you may need to edit the nodogsplash.conf file in /etc/nodogsplash instead, but the process is very similar.)
 
+First you should optain the demo files by downloading the Nodogsplash zip file from
+
+ https://github.com/nodogsplash/nodogsplash/
+
+Then extract the php files from the folder
+
+ ``"forward_authentication_service/nodog/"``
+
 OpenWrt and uhttpd:
 
  * Create a folder
