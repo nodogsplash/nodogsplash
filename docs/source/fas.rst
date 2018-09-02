@@ -39,7 +39,9 @@ A Secure Internet based FAS is best implemented as a two stage process, first us
 Running FAS on your Nodogsplash router
 **************************************
 
-A FAS service will run quite well on uhttpd (the web server that serves Luci) on an OpenWrt supported device with 8MB flash and 32MB ram but shortage of ram may well be an issue if more than two or three clients log in at the same time. For this reason a device with a minimum of 8MB flash and 64MB ram is recommended.
+A FAS service will run quite well on uhttpd (the web server that serves Luci) on an OpenWrt supported device with 8MB flash and 32MB ram but shortage of ram may well be an issue if more than two or three clients log in at the same time.
+
+For this reason a device with a minimum of 8MB flash and 64MB ram is recommended.
 
 **Running on uhttpd with PHP**:
 
@@ -47,11 +49,11 @@ A FAS service will run quite well on uhttpd (the web server that serves Luci) on
 
 To enable php in uhttpd you must add the line:
 
-    list interpreter ".php=/usr/bin/php-cgi"
+  ``list interpreter ".php=/usr/bin/php-cgi"``
 
 to the /etc/config/uhttpd file in the config uhttpd 'main' or first section.
 
-The two important NDS options to set will be::
+The two important NDS options to set will be:
 
  1. fasport. By default this will be port 80 for uhttpd
 
@@ -83,3 +85,38 @@ The two important NDS options to set will be::
 
  If you have done something wrong and locked yourself out, you can still SSH to your router and stop NoDogSplash (ndsctl stop) to fix the problem.
 
+Using the simple example files
+******************************
+
+Assuming you want to run the FAS example demo locally under uhttpd on the same OpenWrt device that is running NDS, configured as above, do the following.
+
+ (Under other operating systems you may need to edit the nodogsplash.conf file in /etc/nodogsplash instead, but the process is very similar.)
+
+First you should optain the demo files by downloading the Nodogsplash zip file from
+
+ https://github.com/nodogsplash/nodogsplash/
+
+Then extract the php files from the folder
+
+ ``"forward_authentication_service/nodog/"``
+
+OpenWrt and uhttpd:
+
+ * Create a folder
+
+     ``/www/nodog/``
+
+ * Place the files fas.php, landing.php, css.php, querycheck.php, tos.php, users.dat in
+
+  ``/www/nodog/``
+
+ * Edit
+
+  ``/etc/config/nodogsplash``
+
+  adding the lines:
+    - option fasport '80'
+    - option faspath '/nodog/fas.php'
+    - option fas_secure_enabled '0'
+
+ * Restart NDS using the command "service nodogsplash restart".
