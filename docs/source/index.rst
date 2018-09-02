@@ -3,11 +3,14 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to nodogsplash's documentation!
+Welcome to Nodogsplash's documentation!
 =======================================
 
-Nodogsplash offers a simple way to provide restricted access to an internet
-connection. It is derived from the codebase of the Wifi Guard Dog project.
+Nodogspash is a high performance, small footprint Captive Portal,
+offering by default a simple splash page restricted Internet connection, yet incorporates an API that allows the creation of sophisticated authentication applications.
+
+It was derived originally from the codebase of the Wifi Guard Dog project.
+
 Nodogsplash is released under the GNU General Public License.
 
 * Mailing List: http://ml.ninux.org/mailman/listinfo/nodogsplash
