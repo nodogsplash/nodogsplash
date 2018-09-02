@@ -268,6 +268,7 @@ main_loop(void)
 		httpdAddC404Content(webserver, http_nodogsplash_callback_404);
 	*/
 
+	/* Make sure fas_remoteip is set. Note: This does not enable FAS. */
 	if (!config->fas_remoteip) {
 		config->fas_remoteip = safe_strdup(config->gw_address);
 	}
