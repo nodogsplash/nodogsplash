@@ -170,7 +170,7 @@ fw_refresh_client_list(void)
 		} else if (preauth_idle_timeout_secs > 0
 				&& conn_state == FW_MARK_PREAUTHENTICATED
 				&& (last_updated + preauth_idle_timeout_secs) <= now) {
-			/* Timeout inactive user */
+			/* Timeout inactive preauthenticated user */
 			debug(LOG_NOTICE, "Timeout preauthenticated idle user: %s %s, inactive: %ds, in: %llukB, out: %llukB",
 				cp1->ip, cp1->mac, now - last_updated,
 				cp1->counters.incoming / 1000, cp1->counters.outgoing / 1000);

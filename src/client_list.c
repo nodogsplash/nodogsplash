@@ -124,6 +124,8 @@ _client_list_append(const char mac[], const char ip[])
 	client->ip = safe_strdup(ip);
 	client_renew_token(client);
 
+	// Blocked or Trusted client do not trigger the splash page.
+	// They must access the splash or status page manually.
 	if (is_blocked_mac(mac)) {
 		client->fw_connection_state = FW_MARK_BLOCKED;
 	} else if(is_allowed_mac(mac) || is_trusted_mac(mac)) {
