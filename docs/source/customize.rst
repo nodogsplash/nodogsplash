@@ -1,29 +1,67 @@
-Customizing nodogsplash
+Customising nodogsplash
 ########################
 
-The default shipped configuration is intended to be usable and reasonably
-secure as-is for basic internet sharing applications, but it is customizable.
+After initial installation, Nogogsplash (NDS) should be working in its most basic mode and client Captive Portal Detection (CPD) should pop up the default splash page.
 
-* To change basic nodogsplash settings, edit the configuration file:
+Before attempting to customise NDS you should ensure it is working in this basic mode before you start.
+
+NDS reads its configuration file when it starts up but the location of this file varies depending on the operating system.
+
+As NDS is a package that requires hardware configured as an IP router, perhaps the most common installation is using OpenWrt. However NDS can be compiled to run on most Linux distributions, the most common being Debian or one of its popular varients (eg Raspbian).
+
+If NDS is working in the default, post installation mode, then you will have met the NDS dependencies and can now move on to your own customisation.
+
+The Configuration File
+**********************
+
+In OpenWrt, or operating systems supporting UCI (such as LEDE) the configuration is kept in the file:
+
+  ``/etc/config/nodogsplash``
+
+
+In other operating systems the configuration is kept in the file:
 
   ``/etc/nodogsplash/nodogsplash.conf``
 
-In the configuration file, a FirewallRule has the form:
+Both of these files contain a full list of options and can be edited directly. A restart of NDS is required for any changes to take effect.
 
-  ``FirewallRule permission [protocol [port portrange] [to ip]``
+In the case of OpenWrt though, once you are confident in your configuration requirements you can use UCI to read and set any of the configuration options using simple commands, making this very convenient if making changes from scripts, such as those you may write to use with Binauth and FAS.
 
-where
+For example, to list the full configuration, at the command line type:
 
-* *permission* is required and must be allow, block, drop, log, or ulog.
-* *protocol* is optional. If present, it must be tcp, udp, icmp, or all.
-  Defaults to all.
-* port *portrange* is optional. If present, protocol must be tcp or udp.
-  portrange can be a single integer port number, or a colon-separated port
-  range, e.g. 1024:1028. Defaults to all ports.
-* *to ip* is optional. If present, ip must be a decimal dotted-quad IP address
-  with optional mask. Defaults to 0.0.0.0/0, i.e. all addresses.
+.. code-block:: sh
 
-* To change the contents of the splash page, edit the splash page file:
+  uci show nodogsplash
+
+To display the Gateway Name, type:
+
+.. code-block:: sh
+
+  uci get nodogsplash.@nodogsplash[0].gatewayname
+
+To set the Gateway Name to a new value, type:
+
+.. code-block:: sh
+
+  uci set nodogsplash.@nodogsplash[0].gatewayname='my new gateway'
+
+To add a new firewall rule allowing access to another service running on port 8888 on the router, type:
+
+.. code-block:: sh
+
+ uci add_list nodogsplash.@nodogsplash[0].users_to_router='allow
+ tcp port 8888'
+
+Finally you must tell UCI to commit your changes to the configuration file:
+
+.. code-block:: sh
+
+  uci commit nodogsplash
+
+The Splash Page
+***************
+
+The default simple splash page can be found at:
 
   ``/etc/nodogsplash/htdocs/splash.html``
 
@@ -31,21 +69,17 @@ When the splash page is served, the following variables in the page are
 replaced by their values:
 
 * *$gatewayname* The value of GatewayName as set in nodogsplash.conf.
-* *$authtarget* A URL which encodes a unique token and the URL of the user's
-  original web request. If nodogsplash receives a request at this URL, it
-  completes the authentication process for the client and replies to the
-  request with a "302 Found" to the encoded originally requested
-  URL. (Alternatively, you can use a GET-method HTML form to send this
-  information to the nodogsplash server; see below.) As a simple example:
+* *$authtarget* A URL which encodes a unique token and the URL of the user's   original web request. If nodogsplash receives a request at this URL, it completes the authentication process for the client and replies to the request with a "302 Found" to the encoded originally requested URL.
+
+  It should be noted however that, depending on vendor, the client's built in CPD may not respond to simple html links.
+  (You should instead use a GET-method HTML form to send this   information to the nodogsplash server; see below.)
+
+ As an example:
 
   ``<a href="$authtarget">Enter</a>``
 
-* *$imagesdir* The directory in nodogsplash's web hierarchy where images to be
-  displayed in the splash page must be located.
-* *$tok*,*$redir*,*$authaction*, and *$denyaction* are also available and can be
-  useful if you want to write the splash page to use a GET-method HTML form
-  instead of using $authtarget as the value of an href attribute to
-  communicate with the nodogsplash server. As a simple example:
+* *$imagesdir* The directory in nodogsplash's web hierarchy where images to be displayed in the splash page must be located.
+* *$tok*, *$redir*, *$authaction*, and *$denyaction* are available and should be used to write the splash page to use a GET-method HTML form instead of using $authtarget as the value of an href attribute to communicate with the nodogsplash server. As a simple example:
 
 .. code::
    
@@ -56,18 +90,18 @@ replaced by their values:
    </form>
 
 * *$clientip*, *$clientmac* and *$gatewaymac* The respective addresses
-  of the client or gateway. This might be usefull in cases where the data
-  needs to be forwarded to some other place by the plash page itself.
+  of the client or gateway. This might be useful in cases where the data
+  needs to be forwarded to some other place by the splash page itself.
 
 * *$nclients* and *$maxclients* User stats. Usefull when you need to
   display something like "n of m users online" on the splash site.
 
 * *$uptime* The time Nodogsplash is running.
 
-* A list of all available variables are included in the splash.html file.
+ A list of all available variables are included in the splash.html file.
 
-* If the user accesses the splash page while being authenticated, a status page is shown:
+ If the user accesses the splash page when already authenticated, a status page is shown:
 
  ``/etc/nodogsplash/htdocs/status.html``
 
-In the status.html file, the same variables as in the splash.html site can be used.
+ In the status.html file, the same variables as in the splash.html site can be used.

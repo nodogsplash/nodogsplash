@@ -1,3 +1,14 @@
+nodogsplash (3.2.0) stable; urgency=medium
+
+  * Add Redirect to Status page support for FAS [bluewavenet]
+  * Add iptables version check [mwarning]
+  * Add ndsctl status output for FAS and Binauth status. [bluewavenet]
+  * Initialize fas_remoteip with gw_address and simplify code [mwarning]
+  * Fix Readthedocs updates and update Docs URL [bluewavenet]
+  * Update documentation and Debian man page [bluewavenet]
+
+ -- Rob White <dot@blue-wave.net> Sun, 2 Sep 2018 16:09:00 +0000
+
 nodogsplash (3.1.0) stable; urgency=medium
 
   * Integrated support for separate Forward Authentication Service (FAS), adding the following configuration options:
@@ -7,7 +18,6 @@ nodogsplash (3.1.0) stable; urgency=medium
   * Various minor code fixes and improvements
 
  -- Rob White <dot@blue-wave.net> Sun, 26 Aug 2018 10:05:00 +0000
-
 
 nodogsplash (3.0.0-1) stable; urgency=medium
 

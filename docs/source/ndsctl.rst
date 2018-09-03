@@ -1,9 +1,7 @@
 Using ndsctl
 ############
 
-A nodogsplash install includes ndsctl, a separate application which provides
-some control over a running nodogsplash process by communicating with it over a
-unix socket. Some command line options:
+A nodogsplash install includes ndsctl, a separate application which provides some control over a running nodogsplash process by communicating with it over a unix socket. Some command line options:
 
 * To print to stdout some information about your nodogsplash process:
 
@@ -47,7 +45,5 @@ unix socket. Some command line options:
     ``/usr/bin/ndsctl loglevel n``
 
 
-For more options, run ndsctl -h. (Note that if you want the effect of ndsctl
-commands to to persist across nodogsplash restarts, you have to edit the
-configuration file.)
+For more options, run ndsctl -h. (Note that if you want the effect of ndsctl commands to to persist across nodogsplash restarts, you have to edit the configuration file.)
 
