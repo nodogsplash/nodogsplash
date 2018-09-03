@@ -892,8 +892,8 @@ static int show_templated_page(struct MHD_Connection *connection, t_client *clie
 	int size = 0, bytes = 0;
 	char nclients[12];
 	char maxclients[12];
-	char upload_bytes[20];
-	char download_bytes[20];
+	char clientupload[20];
+	char clientdownload[20];
 	int page_fd;
 	char *page_result;
 	char *page_tmpl;
@@ -944,8 +944,8 @@ static int show_templated_page(struct MHD_Connection *connection, t_client *clie
 	char *imagesdir = NULL;
 	char *pagesdir = NULL;
 
-	sprintf(upload_bytes, "%llu", client->counters.outgoing);
-	sprintf(download_bytes, "%llu", client->counters.incoming);
+	sprintf(clientupload, "%llu", client->counters.outgoing);
+	sprintf(clientdownload, "%llu", client->counters.incoming);
 
 	uptime = get_uptime_string();
 	redirect_url = get_redirect_url(connection);
@@ -961,19 +961,18 @@ static int show_templated_page(struct MHD_Connection *connection, t_client *clie
 
 	tmpl_init_templor(&templor);
 	tmpl_set_variable(&templor, "authaction", authaction);
+	tmpl_set_variable(&templor, "denyaction", denyaction);
 	tmpl_set_variable(&templor, "authtarget", authtarget);
 	tmpl_set_variable(&templor, "clientip", client->ip);
 	tmpl_set_variable(&templor, "clientmac", client->mac);
-	tmpl_set_variable(&templor, "denyaction", denyaction);
+	tmpl_set_variable(&templor, "clientupload", clientupload);
+	tmpl_set_variable(&templor, "clientdownload", clientdownload);
 
 	tmpl_set_variable(&templor, "gatewaymac", config->gw_mac);
 	tmpl_set_variable(&templor, "gatewayname", config->gw_name);
 
 	tmpl_set_variable(&templor, "imagesdir", imagesdir);
 	tmpl_set_variable(&templor, "pagesdir", pagesdir);
-
-	tmpl_set_variable(&templor, "uploadbytes", upload_bytes);
-	tmpl_set_variable(&templor, "downloadbytes", download_bytes);
 
 	tmpl_set_variable(&templor, "maxclients", maxclients);
 	tmpl_set_variable(&templor, "nclients", nclients);
