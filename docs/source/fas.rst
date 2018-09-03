@@ -45,7 +45,7 @@ For this reason a device with a minimum of 8MB flash and 64MB ram is recommended
 
 **Running on uhttpd with PHP**:
 
- Install the modules php7 and php7-cgi on LEDE for a simple example. Further modules may be required depending on your requirements.
+ Install the modules php7 and php7-cgi on OpenWrt for a simple example. Further modules may be required depending on your requirements.
 
 To enable php in uhttpd you must add the line:
 
@@ -92,7 +92,7 @@ Assuming you want to run the FAS example demo locally under uhttpd on the same O
 
  (Under other operating systems you may need to edit the nodogsplash.conf file in /etc/nodogsplash instead, but the process is very similar.)
 
-First you should optain the demo files by downloading the Nodogsplash zip file from
+First you should obtain the demo files by downloading the Nodogsplash zip file from
 
  https://github.com/nodogsplash/nodogsplash/
 
