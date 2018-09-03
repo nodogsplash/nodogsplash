@@ -884,7 +884,6 @@ static int get_host_value_callback(void *cls, enum MHD_ValueKind kind, const cha
 static int show_templated_page(struct MHD_Connection *connection, t_client *client, char *page)
 {
 	struct MHD_Response *response;
-	struct templater templor;
 	s_config *config = config_get_config();
 	int ret = -1;
 	char filename[PATH_MAX];
@@ -959,31 +958,29 @@ static int show_templated_page(struct MHD_Connection *connection, t_client *clie
 	safe_asprintf(&pagesdir, "/%s", config->pagesdir);
 	safe_asprintf(&imagesdir, "/%s", config->imagesdir);
 
-	tmpl_init_templor(&templor);
-	tmpl_set_variable(&templor, "authaction", authaction);
-	tmpl_set_variable(&templor, "denyaction", denyaction);
-	tmpl_set_variable(&templor, "authtarget", authtarget);
-	tmpl_set_variable(&templor, "clientip", client->ip);
-	tmpl_set_variable(&templor, "clientmac", client->mac);
-	tmpl_set_variable(&templor, "clientupload", clientupload);
-	tmpl_set_variable(&templor, "clientdownload", clientdownload);
+	struct template vars[] = {
+		{"authaction", authaction},
+		{"denyaction", denyaction},
+		{"authtarget", authtarget},
+		{"clientip", client->ip},
+		{"clientmac", client->mac},
+		{"clientupload", clientupload},
+		{"clientdownload", clientdownload},
+		{"gatewaymac", config->gw_mac},
+		{"gatewayname", config->gw_name},
+		{"imagesdir", imagesdir},
+		{"pagesdir", pagesdir},
+		{"maxclients", maxclients},
+		{"nclients", nclients},
+		{"redir", redirect_url},
+		{"tok", client->token},
+		{"token", client->token},
+		{"uptime", uptime},
+		{"version", VERSION},
+		{NULL, NULL}
+	};
 
-	tmpl_set_variable(&templor, "gatewaymac", config->gw_mac);
-	tmpl_set_variable(&templor, "gatewayname", config->gw_name);
-
-	tmpl_set_variable(&templor, "imagesdir", imagesdir);
-	tmpl_set_variable(&templor, "pagesdir", pagesdir);
-
-	tmpl_set_variable(&templor, "maxclients", maxclients);
-	tmpl_set_variable(&templor, "nclients", nclients);
-
-	tmpl_set_variable(&templor, "redir", redirect_url);
-	tmpl_set_variable(&templor, "tok", client->token);
-	tmpl_set_variable(&templor, "token", client->token);
-	tmpl_set_variable(&templor, "uptime", uptime);
-	tmpl_set_variable(&templor, "version", VERSION);
-
-	tmpl_parse(&templor, page_result, size + TMPLVAR_SIZE, page_tmpl, size);
+	tmpl_parse(vars, page_result, size + TMPLVAR_SIZE, page_tmpl, size);
 
 	free(page_tmpl);
 	free(uptime);
