@@ -56,7 +56,7 @@ static int show_statuspage(struct MHD_Connection *connection, t_client *client);
 static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, const char *originurl, const char *querystr);
 static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *client, const char *host, const char *url);
 static int send_error(struct MHD_Connection *connection, int error);
-static int send_redirect_temp(struct MHD_Connection *connection, const char *url);
+static int send_redirect_511(struct MHD_Connection *connection, const char *url);
 static int send_refresh(struct MHD_Connection *connection);
 static int is_foreign_hosts(struct MHD_Connection *connection, const char *host);
 static int is_splashpage(const char *host, const char *url);
@@ -467,7 +467,7 @@ static int authenticate_client(struct MHD_Connection *connection,
 	}
 
 	if (redirect_url) {
-		return send_redirect_temp(connection, redirect_url);
+		return send_redirect_511(connection, redirect_url);
 	} else {
 		return send_error(connection, 200);
 	}
@@ -510,14 +510,14 @@ static int authenticated(struct MHD_Connection *connection,
 	if (check_authdir_match(url, config->denydir)) {
 		auth_client_deauth(client->id, "client_deauth");
 		snprintf(redirect_to_us, 128, "http://%s:%u/", config->gw_address, config->gw_port);
-		return send_redirect_temp(connection, redirect_to_us);
+		return send_redirect_511(connection, redirect_to_us);
 	}
 
 	if (check_authdir_match(url, config->authdir)) {
 		if (config->fas_port) {
 			safe_asprintf(&fasurl, "http://%s:%u%s?clientip=%s&gatewayname=%s&status=authenticated",
 				config->fas_remoteip, config->fas_port, config->fas_path, client->ip, config->gw_name);
-			ret = send_redirect_temp(connection, fasurl);
+			ret = send_redirect_511(connection, fasurl);
 			free(fasurl);
 			return ret;
 		} else {
@@ -625,7 +625,7 @@ static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, 
 
 	debug(LOG_DEBUG, "splashpageurl: %s", splashpageurl);
 
-	ret = send_redirect_temp(connection, splashpageurl);
+	ret = send_redirect_511(connection, splashpageurl);
 	free(splashpageurl);
 	return ret;
 }
@@ -684,14 +684,14 @@ add_client(const char *mac, const char *ip)
 	return client;
 }
 
-int send_redirect_temp(struct MHD_Connection *connection, const char *url)
+int send_redirect_511(struct MHD_Connection *connection, const char *url)
 {
 	struct MHD_Response *response;
 	int ret;
 	char *redirect = NULL;
 
-	const char *redirect_body = "<html><head></head><body><a href='%s'>Click here to continue to<br>%s</a></body></html>";
-	safe_asprintf(&redirect, redirect_body, url, url);
+	const char *redirect_body = "<meta http-equiv=\"refresh\" content=\"0; url=%s\">";
+	safe_asprintf(&redirect, redirect_body, url);
 
 	response = MHD_create_response_from_buffer(strlen(redirect), redirect, MHD_RESPMEM_MUST_FREE);
 	if (!response) {
@@ -699,9 +699,9 @@ int send_redirect_temp(struct MHD_Connection *connection, const char *url)
 	}
 
 	// MHD_set_response_options(response, MHD_RF_HTTP_VERSION_1_0_ONLY, MHD_RO_END);
-	MHD_add_response_header(response, "Location", url);
-	MHD_add_response_header(response, "Connection", "close");
-	ret = MHD_queue_response(connection, MHD_HTTP_TEMPORARY_REDIRECT, response);
+	//MHD_add_response_header(response, "Location", url);
+	//MHD_add_response_header(response, "Connection", "close");
+	ret = MHD_queue_response(connection, MHD_HTTP_NETWORK_AUTHENTICATION_REQUIRED, response);
 	MHD_destroy_response(response);
 
 	return ret;
