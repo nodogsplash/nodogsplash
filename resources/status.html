@@ -1,14 +1,6 @@
 <!DOCTYPE html>
 <html>
 <head>
-<!--
-Status:
-	The Status page is served to a client if they are already authenticated.
-	This may occur if the client user selects "Back" on the CPD browser
-	screen after they have successfully authenticated.
-
-	The same template variables are available as for the splash page.
--->
 
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -21,20 +13,29 @@ Status:
 
 <title>$gatewayname Hotspot Gateway Status</title>
 
+<!--
+Status:
+	The Status page is served to a client if they are already authenticated.
+	This may occur if the client user selects "Back" on the CPD browser
+	screen after they have successfully authenticated.
+
+	The same template variables are available as for the splash page.
+-->
+
 </head>
 
 <body>
 
-<med_blue>$gatewayname Hotspot Gateway.</med_blue>
+<med-blue>$gatewayname Hotspot Gateway.</med-blue>
 <br><br>
 <img src="$imagesdir/splash.jpg" alt="You are already logged in and have access to the Internet.">
 <hr>
-<p><big_red>You are already logged in and have access to the Internet.</big_red></p>
+<p><big-red>You are already logged in and have access to the Internet.</big-red></p>
 <hr>
-<p><italic_black>You can use your Browser, Email and other network Apps as you normally would.</italic_black></p>
+<p><italic-black>You can use your Browser, Email and other network Apps as you normally would.</italic-black></p>
 
 <hr>
-<copyright>Copyright &copy; The Nodogsplash Contributors 2004-2018.<br>This software is released under the GNU GPL license.</copyright>
+<copy-right>Copyright &copy; The Nodogsplash Contributors 2004-2018.<br>This software is released under the GNU GPL license.</copy-right>
 
 </body>
 </html>
