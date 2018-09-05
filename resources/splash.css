@@ -1,0 +1,55 @@
+body {
+	background-color: lightgrey;
+	color: black;
+	margin-left: 5%;
+	margin-right: 5%;
+	text-align: left;
+}
+
+img {
+	width: 40%;
+	max-width: 180px;
+	margin-left: 0%;
+	margin-right: 5%;
+}
+
+input[type=submit] {
+	color: white;
+	background: green;
+	margin-left: 0%;
+	margin-right: 5%;
+	text-align: left;
+	font-size: 1.0em;
+	line-height: 2.5em;
+	font-weight: bold;
+	border: 3px;
+	border-style: inset;
+}
+
+med_blue {
+	font-size: 1.3em;
+	color: blue;
+	font-weight: bold;
+	font-style: normal;
+}
+
+big_red {
+	font-size: 1.7em;
+	color: red;
+	font-weight: bold;
+}
+
+italic_black {
+	font-size: 1.3em;
+	color: black;
+	font-weight: bold;
+	font-style: italic;
+}
+
+copyright {
+	font-size: 0.7em;
+	color: darkgrey;
+	font-weight: bold;
+	font-style:italic;
+}
+
