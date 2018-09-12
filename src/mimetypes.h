@@ -26,7 +26,6 @@ struct mimetype {
 };
 
 static const struct mimetype uh_mime_types[] = {
-
 	{ "txt",		"text/plain" },
 	{ "log",		"text/plain" },
 	{ "js",			"text/javascript" },
@@ -81,7 +80,6 @@ static const struct mimetype uh_mime_types[] = {
 	{ "avi",		"video/x-msvideo" },
 
 	{ "README",		"text/plain" },
-	{ "log",		"text/plain" },
 	{ "cfg",		"text/plain" },
 	{ "conf",		"text/plain" },
 
@@ -92,7 +90,6 @@ static const struct mimetype uh_mime_types[] = {
 	{ "woff2",		"application/x-font-woff2" },
 	{ "ttf",		"application/x-font-ttf" },
 	{ "eot",		"application/vnd.ms-fontobject" },
-	{ "svg",		"image/svg+xml" },
 	{ "otf",		"application/x-font-opentype" },
 };
 
