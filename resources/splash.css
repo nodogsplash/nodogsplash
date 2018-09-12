@@ -26,27 +26,27 @@ input[type=submit] {
 	border-style: inset;
 }
 
-med_blue {
+med-blue {
 	font-size: 1.3em;
 	color: blue;
 	font-weight: bold;
 	font-style: normal;
 }
 
-big_red {
+big-red {
 	font-size: 1.7em;
 	color: red;
 	font-weight: bold;
 }
 
-italic_black {
+italic-black {
 	font-size: 1.3em;
 	color: black;
 	font-weight: bold;
 	font-style: italic;
 }
 
-copyright {
+copy-right {
 	font-size: 0.7em;
 	color: darkgrey;
 	font-weight: bold;
