@@ -49,9 +49,6 @@
 static int client_count = 0;
 static int client_id = 1;
 
-/** Time last client added */
-static unsigned long int last_client_time = 0;
-
 /** Global mutex to protect access to the client list */
 pthread_mutex_t client_list_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -122,7 +119,9 @@ _client_list_append(const char mac[], const char ip[])
 
 	client->mac = safe_strdup(mac);
 	client->ip = safe_strdup(ip);
-	client_renew_token(client);
+
+	// Reset volatile fields
+	client_reset(client);
 
 	// Blocked or Trusted client do not trigger the splash page.
 	// They must access the splash or status page manually.
@@ -134,15 +133,6 @@ _client_list_append(const char mac[], const char ip[])
 		client->fw_connection_state = FW_MARK_PREAUTHENTICATED;
 	}
 
-	client->counters.incoming = 0;
-	client->counters.incoming_history = 0;
-	client->counters.outgoing = 0;
-	client->counters.outgoing_history = 0;
-	last_client_time = time(NULL);
-	client->counters.last_updated = last_client_time;
-	/* Session has not started and not ended yet */
-	client->session_start = 0;
-	client->session_end = 0;
 	client->id = client_id;
 
 	debug(LOG_NOTICE, "Adding %s %s token %s to client list",
@@ -161,11 +151,22 @@ _client_list_append(const char mac[], const char ip[])
 }
 
 /** @internal
- *  Set a new client token.
- *  We just generate a random string of 8 hex digits.
+ *  Reset volatile fields
  */
-void client_renew_token(t_client *client)
+void client_reset(t_client *client)
 {
+	// Reset traffic counters
+	client->counters.incoming = 0;
+	client->counters.incoming_history = 0;
+	client->counters.outgoing = 0;
+	client->counters.outgoing_history = 0;
+	client->counters.last_updated = time(NULL);
+
+	// Reset seesion time
+	client->session_start = 0;
+	client->session_end = 0;
+
+	// Reset token
 	free(client->token);
 	safe_asprintf(&client->token, "%04hx%04hx", rand16(), rand16());
 }

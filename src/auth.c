@@ -91,7 +91,7 @@ static int auth_change_state(t_client *client, const unsigned int new_state, con
 		if (new_state == FW_MARK_PREAUTHENTICATED) {
 			iptables_fw_deauthenticate(client);
 			binauth_action(client, reason);
-			client_renew_token(client);
+			client_reset(client);
 		} else if (new_state == FW_MARK_BLOCKED) {
 			return -1;
 		} else if (new_state == FW_MARK_TRUSTED) {
