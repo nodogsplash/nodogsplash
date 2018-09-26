@@ -1,3 +1,12 @@
+nodogsplash (3.2.1)
+
+  * reset upload/download counter when a client has been authenticated a second time [mwarning]
+  * print sesssion duration as 0 in "ndsctl json" and "ndsctl clients" output when a session has not been started [mwarning]
+  * rework html templater to speed up splash page generation [mwarning]
+  * FAS documentation updates [bluewavenet]
+
+ -- Moritz Warning <moritzwarning@web.de>  Wed, 26 Sep 2018 15:04:05 +0000
+
 nodogsplash (3.2.0)
 
   * Add Redirect to Status page support for FAS [bluewavenet]
@@ -8,7 +17,6 @@ nodogsplash (3.2.0)
   * Update documentation and Debian man page [bluewavenet]
 
  -- Rob White <dot@blue-wave.net> Sun, 2 Sep 2018 16:09:00 +0000
-
 
 nodogsplash (3.1.0)
 
