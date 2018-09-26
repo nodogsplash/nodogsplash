@@ -30,10 +30,10 @@
 /** Counters struct for a client's bandwidth usage (in bytes)
  */
 typedef struct _t_counters {
-	unsigned long long incoming;	/**< @brief Incoming data total*/
-	unsigned long long outgoing;	/**< @brief Outgoing data total*/
-	unsigned long long incoming_history;	/**< @brief Incoming data before nodogsplash restarted*/
-	unsigned long long outgoing_history;	/**< @brief Outgoing data before nodogsplash restarted*/
+	unsigned long long incoming;	/**< @brief Incoming data total */
+	unsigned long long outgoing;	/**< @brief Outgoing data total */
+	unsigned long long incoming_history;	/**< @brief Incoming data before nodogsplash restarted, always 0 atm. */
+	unsigned long long outgoing_history;	/**< @brief Outgoing data before nodogsplash restarted, always 0 atm. */
 	time_t last_updated;	/**< @brief Last update of the counters */
 } t_counters;
 
@@ -84,8 +84,8 @@ t_client *client_list_find_by_mac(const char mac[]); /* needed by ndsctl_thread.
 /** @brief Finds a client by its token */
 t_client *client_list_find_by_token(const char token[]);
 
-/** @brief Renew token of a client */
-void client_renew_token(t_client *client);
+/** @brief Reset volatile client fields */
+void client_reset(t_client *client);
 
 /** @brief Deletes a client from the client list */
 void client_list_delete(t_client *client);
