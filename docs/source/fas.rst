@@ -15,6 +15,10 @@ These options are:
 
 Using FAS
 *********
+
+**Note**:
+All addresses (with the exception of fasremoteip) are relative to the *client* device, even if the FAS is located remotely.
+
 When FAS is enabled, NDS automatically configures access to the FAS service.
 
 The FAS service must serve an http splash of its own to replace the NDS splash.html.
@@ -24,17 +28,59 @@ FAS can then provide an action form for the client, typically requesting login, 
 
 The FAS can be on the same device as NDS, on the same local area network as NDS, or on an Internet hosted web server.
 
-If FAS Secure is enabled, NDS will supply only the gateway name, the client IP address and the originally requested URL.
+*Security*.
 
-It is the responsibility of FAS to obtain the unique client token allocated by NDS.
+**If FAS Secure is enabled** (fas_secure_enabled = 1, the default), NDS will supply only the gateway name, the client IP address and the originally requested URL in the query string in the redirect to FAS.
+
+For example:
+
+`http://fasremoteip:fasport/faspath?gatewayname=[gatewayname]&clientip=[clientip]&redir=[requested-url]`
+
+It is the responsibility of FAS to obtain the unique client token allocated by NDS as well as constructing the return URL to NDS.
+
+The return url will be constructed by FAS from predetermined knowledge of the configuration of NDS using gatewayname as an identifier.
+
+The client's unique access token will be obtained from NDS by the FAS making a call to the ndsctl tool.
+
+For example, the following command returns just the token with newline stripped:
+
+`ndsctl json [clientip] | grep token | tr -d '"token:,\\n'`
 
 If the client successfully authenticates in the FAS, FAS will return the unique token to NDS to finally allow the client access to the Internet.
 
-If FAS Secure is disabled, the token is sent to FAS as clear text.
-
-A FAS on the local network can obtain the user token by requesting it from NDS, using, for example SSH.
-
 A Secure Internet based FAS is best implemented as a two stage process, first using a local FAS, that in turn accesses an https remote FAS using tools such as curl or wget.
+
+**If FAS Secure is disabled** (fas_secure_enabled = 0), NDS sends the token and other information to FAS as clear text.
+
+For example:
+
+`http://fasremoteip:fasport/faspath?authaction=http://gatewayaddress:gatewayport/nodogsplash_auth/?clientip=[clientip]&gatewayname=[gatewayname]&tok=[token]&redir=[requested_url]`
+
+Clearly in this case, a knowledgeable user could bypass FAS, so running fas_secure_enabled = 1, the default, is recommended.
+
+**Post FAS processing**.
+
+Once the client has been authenticated by the FAS, NDS must then be informed to allow the client to have access to the Internet.
+
+This is done by accessing NDS at a special virtual URL.
+This is of the form:
+`http://gatewayaddress:gatewayport/nodogsplash_auth/?tok=[token]&redir=[landing_page_url]`
+
+This is most commonly done using an html form of method GET.
+The parameter redir can be the client's originally requested URL sent by NDS, or more usefully, the URL of a suitable landing page.
+
+However, be aware that many client CPD processes will **automatically close** the landing page as soon as Internet access is detected.
+
+**Manual Access of NDS Virtual URL**
+
+If the user of an already authenticated client device manually accesses the NDS Virtual URL, they will be redirected back to FAS with the "status" query string.
+
+This will be of the form:
+
+`http://fasremoteip:fasport/faspath?clientip=[clientip]&gatewayname=[gatewayname]&status=authenticated`
+
+FAS should then serve a suitable error page informing the client user that they are already logged in.
+
 
 Running FAS on your Nodogsplash router
 **************************************

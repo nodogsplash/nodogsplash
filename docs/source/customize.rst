@@ -7,7 +7,7 @@ Before attempting to customise NDS you should ensure it is working in this basic
 
 NDS reads its configuration file when it starts up but the location of this file varies depending on the operating system.
 
-As NDS is a package that requires hardware configured as an IP router, perhaps the most common installation is using OpenWrt. However NDS can be compiled to run on most Linux distributions, the most common being Debian or one of its popular varients (eg Raspbian).
+As NDS is a package that requires hardware configured as an IP router, perhaps the most common installation is using OpenWrt. However NDS can be compiled to run on most Linux distributions, the most common being Debian or one of its popular variants (eg Raspbian).
 
 If NDS is working in the default, post installation mode, then you will have met the NDS dependencies and can now move on to your own customisation.
 
@@ -72,14 +72,26 @@ replaced by their values:
 * *$authtarget* A URL which encodes a unique token and the URL of the user's   original web request. If nodogsplash receives a request at this URL, it completes the authentication process for the client and replies to the request with a "302 Found" to the encoded originally requested URL.
 
   It should be noted however that, depending on vendor, the client's built in CPD may not respond to simple html links.
-  (You should instead use a GET-method HTML form to send this   information to the nodogsplash server; see below.)
 
- As an example:
+ An href link example that my prove to be problematical:
 
   ``<a href="$authtarget">Enter</a>``
 
+ (You should instead use a GET-method HTML form to send this   information to the nodogsplash server; see below.)
+
 * *$imagesdir* The directory in nodogsplash's web hierarchy where images to be displayed in the splash page must be located.
-* *$tok*, *$redir*, *$authaction*, and *$denyaction* are available and should be used to write the splash page to use a GET-method HTML form instead of using $authtarget as the value of an href attribute to communicate with the nodogsplash server. As a simple example:
+* *$tok*, *$redir*, *$authaction*, and *$denyaction* are available and should be used to write the splash page to use a GET-method HTML form instead of using $authtarget as the value of an href attribute to communicate with the nodogsplash server.
+
+ *$authaction* and *$denyaction* are virtual urls used to inform NDS that a client should be authenticated or deauthenticated and are of the form:
+
+ `http://gatewayaddress:gatewayport/nodogsplash_auth/`
+
+ and
+
+ `http://gatewayaddress:gatewayport/nodogsplash_deny/`
+
+
+ A simple example of a GET-method form:
 
 .. code::
    
@@ -96,11 +108,11 @@ replaced by their values:
 * *$nclients* and *$maxclients* User stats. Usefull when you need to
   display something like "n of m users online" on the splash site.
 
-* *$uptime* The time Nodogsplash is running.
+* *$uptime* The time Nodogsplash has been running.
 
  A list of all available variables are included in the splash.html file.
 
- If the user accesses the splash page when already authenticated, a status page is shown:
+ If the user accesses the virtual url *$authaction* when already authenticated, a status page is shown:
 
  ``/etc/nodogsplash/htdocs/status.html``
 
