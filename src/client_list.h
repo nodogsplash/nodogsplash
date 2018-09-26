@@ -30,10 +30,10 @@
 /** Counters struct for a client's bandwidth usage (in bytes)
  */
 typedef struct _t_counters {
-	unsigned long long incoming;	/**< @brief Incoming data total*/
-	unsigned long long outgoing;	/**< @brief Outgoing data total*/
-	unsigned long long incoming_history;	/**< @brief Incoming data before nodogsplash restarted*/
-	unsigned long long outgoing_history;	/**< @brief Outgoing data before nodogsplash restarted*/
+	unsigned long long incoming;	/**< @brief Incoming data total */
+	unsigned long long outgoing;	/**< @brief Outgoing data total */
+	unsigned long long incoming_history;	/**< @brief Incoming data before nodogsplash restarted, always 0 atm. */
+	unsigned long long outgoing_history;	/**< @brief Outgoing data before nodogsplash restarted, always 0 atm. */
 	time_t last_updated;	/**< @brief Last update of the counters */
 } t_counters;
 
