@@ -1,4 +1,6 @@
 # Makefile for Sphinx documentation
+# run command "make man" in this folder
+# then copy nodogsplash.1 to the Debian docs folder
 #
 
 # You can set these variables from the command line.
