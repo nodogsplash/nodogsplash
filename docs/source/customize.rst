@@ -105,7 +105,7 @@ replaced by their values:
   of the client or gateway. This might be useful in cases where the data
   needs to be forwarded to some other place by the splash page itself.
 
-* *$nclients* and *$maxclients* User stats. Usefull when you need to
+* *$nclients* and *$maxclients* User stats. Useful when you need to
   display something like "n of m users online" on the splash site.
 
 * *$uptime* The time Nodogsplash has been running.
@@ -117,3 +117,15 @@ replaced by their values:
  ``/etc/nodogsplash/htdocs/status.html``
 
  In the status.html file, the same variables as in the splash.html site can be used.
+
+It should be noted when designing a custom splash page that for security reasons many client device CPD implementations:
+
+ * Immediately close the browser when the client has authenticated.
+
+ * Prohibit the use of href links.
+
+ * Prohibit downloading of external files (including .css and .js, even if they are allowed in NDS firewall settings).
+
+ * Prohibit the execution of javascript.
+
+Also, note that any images you reference should reside in the subdirectory that is defined by *$imagesdir* (default: "images").

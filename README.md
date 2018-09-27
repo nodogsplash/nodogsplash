@@ -9,7 +9,7 @@ It was derived originally from the codebase of the Wifi Guard Dog project.
 Nodogsplash is released under the GNU General Public License.
 
 * Mailing List: http://ml.ninux.org/mailman/listinfo/nodogsplash
-* Original Homepage: http://kokoro.ucsd.edu/nodogsplash
+* Original Homepage (no longer available): http://kokoro.ucsd.edu/nodogsplash
 * Wifidog: http://dev.wifidog.org/
 * GNU GPL: http://www.gnu.org/copyleft/gpl.html
 
@@ -31,20 +31,22 @@ Customising the page seen by users is a simple matter of editing the simple defa
 
 All modern mobile devices, most desktop operating systems and most browsers now have a Captive Portal Detection process that automatically issues a port 80 request on connection to a network. Nodogsplash detects this and serves a 'splash' web page.
 
-The splash page in its most basic form, contains a Continue button. When the user clicks on it, access to the internet is granted subject to a preset time interval.
+The splash page in its most basic form, contains a *Continue* button. When the user clicks on it, access to the Internet is granted subject to a preset time interval.
 
-Nodogsplash does not currently support traffic control but is fully compatible with other stand alone systems such as SQM scripts.
+Nodogsplash does not currently support traffic control but is fully compatible with other stand alone systems such as Smart Queue Management (SQM).
 
 **Nodogsplash supports multiple means of authentication**:
 
-- Click the submit button (default)
+- Click the *Continue* button (default)
 - Call an external script that may accept username/password and set session durations per user.
 - Forwarding authentication to an external service
 
 
 ## 2. Documentation
 
-For additonal documentation please look at https://nodogsplashdocs.rtfd.io/
+For additional documentation please look at https://nodogsplashdocs.rtfd.io/
+
+You can select either *Stable* or *Latest* documentation.
 
 ---
 
