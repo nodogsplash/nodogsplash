@@ -5,7 +5,7 @@ What's the difference between v0.9, v1, v2 and v3?
 **************************************************
 
 v0.9 and v1 are the same codebase with the same feature set.
-If the documentation says something about v1, this is usally also valid
+If the documentation says something about v1, this is usually also valid
 for v0.9.
 
 v2 was developed before version v1 was released. In v2 the http code was replaced by libmicrohttpd and the template engine was rewritten. Many features became defunct because of this procedure.
@@ -52,7 +52,7 @@ The original pre version 1 feature has been broken since OpenWrt 12.09 (Attitude
 
  **Pull Requests are welcome!**
 
-However the OpenWrt package, SQM Scripts, is fully compatible with Nodogsplash and if configured to operate on the Nodogsplash interface (br-lan by default) will provide efficient IP connection based traffic control to ensure fair usage of available bandwidth.
+However the OpenWrt package, SQM Scripts (Smart Queue Management), is fully compatible with Nodogsplash and if configured to operate on the Nodogsplash interface (br-lan by default) will provide efficient IP connection based traffic control to ensure fair usage of available bandwidth.
 
 Is https capture supported?
 ******************************
@@ -61,4 +61,4 @@ Is https capture supported?
 
 HTTPS web sites are now more or less a standard and to maintain security and user confidence it is essential that captive portals **DO NOT** attempt to capture port 443.
 
-**Captive Portal Detection** (CPD) has evolved as an enhancement to the network manager component included with major Operating Systems (Linux, Android, iOS/macOS, Windows). Using a pre defined port 80 web page (that depends upon the vendor) the network manager will detect the presence of a captive portal hotspot and notify the user. In addition, most major browsers now support CPD.
+**Captive Portal Detection** (CPD) has evolved as an enhancement to the network manager component included with major Operating Systems (Linux, Android, iOS/macOS, Windows). Using a pre-defined port 80 web page (depending on the vendor) the network manager will detect the presence of a captive portal hotspot and notify the user. In addition, most major browsers now support CPD.
