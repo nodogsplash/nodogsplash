@@ -4,6 +4,7 @@ nodogsplash (3.2.1-1) stable; urgency=medium
   * print sesssion duration as 0 in "ndsctl json" and "ndsctl clients" output when a session has not been started [mwarning]
   * rework html templater to speed up splash page generation [mwarning]
   * FAS documentation updates [bluewavenet]
+  * Add CSS file and update splash and status html [bluewavenet]
 
  -- Moritz Warning <moritzwarning@web.de>  Wed, 26 Sep 2018 15:04:05 +0000
 
