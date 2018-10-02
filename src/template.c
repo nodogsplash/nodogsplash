@@ -61,7 +61,7 @@ int tmpl_parse(struct template *vars, char *dst, size_t dst_len, const char *src
 		if (varlen > (sizeof(varname) - 1)) {
 			/* we already parsed the varname and can skip these chars
 			 * but we need to copy these first to the output buffer */
-			strncpy(dst + dst_i, varnameptr, (varlen > (dst_len - dst_i)) ? (dst_len - dst_i) : varlen);
+			memcpy(dst + dst_i, varnameptr, (varlen > (dst_len - dst_i)) ? (dst_len - dst_i) : varlen);
 			src_i += varlen;
 			dst_i += varlen;
 			continue;
@@ -74,7 +74,7 @@ int tmpl_parse(struct template *vars, char *dst, size_t dst_len, const char *src
 		/* check if varname was found in valid variable names */
 		if (value == NULL) {
 			/* we already parsed the varname and can skip these chars */
-			strncpy(dst + dst_i, varnameptr, (varlen > (dst_len - dst_i)) ? (dst_len - dst_i) : varlen);
+			memcpy(dst + dst_i, varnameptr, (varlen > (dst_len - dst_i)) ? (dst_len - dst_i) : varlen);
 			src_i += varlen;
 			dst_i += varlen;
 			continue;
@@ -82,7 +82,7 @@ int tmpl_parse(struct template *vars, char *dst, size_t dst_len, const char *src
 
 		/* it's a valid varname and contains a variable replace it */
 		valuelen = strlen(value);
-		strncpy(dst + dst_i, value, (valuelen > (dst_len - dst_i)) ? (dst_len - dst_i) : valuelen);
+		memcpy(dst + dst_i, value, (valuelen > (dst_len - dst_i)) ? (dst_len - dst_i) : valuelen);
 		dst_i += valuelen;
 		src_i += varlen;
 	}
