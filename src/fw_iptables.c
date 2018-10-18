@@ -489,38 +489,39 @@ iptables_fw_init(void)
 	/*
 	 *
 	 **************************************
-	 * Set up nat table chains and rules
+	 * Set up nat table chains and rules (ip4 only)
 	 *
 	 */
+	 
+	if (!config->ip6) {
+		/* Create new chains in nat table */
+		rc |= iptables_do_command("-t nat -N " CHAIN_OUTGOING);
 
-	/* Create new chains in nat table */
-	rc |= iptables_do_command("-t nat -N " CHAIN_OUTGOING);
+		/*
+		 * nat PREROUTING chain
+		 */
 
-	/*
-	 * nat PREROUTING chain
-	 */
+		// packets coming in on gw_interface jump to CHAIN_OUTGOING
+		rc |= iptables_do_command("-t nat -I PREROUTING -i %s -s %s -j " CHAIN_OUTGOING, gw_interface, gw_iprange);
+		// CHAIN_OUTGOING, packets marked TRUSTED  ACCEPT
+		rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -m mark --mark 0x%x%s -j RETURN", FW_MARK_TRUSTED, markmask);
+		// CHAIN_OUTGOING, packets marked AUTHENTICATED  ACCEPT
+		rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -m mark --mark 0x%x%s -j RETURN", FW_MARK_AUTHENTICATED, markmask);
+		// CHAIN_OUTGOING, append the "preauthenticated-users" ruleset
+		rc |= _iptables_append_ruleset("nat", "preauthenticated-users", CHAIN_OUTGOING);
 
-	// packets coming in on gw_interface jump to CHAIN_OUTGOING
-	rc |= iptables_do_command("-t nat -I PREROUTING -i %s -s %s -j " CHAIN_OUTGOING, gw_interface, gw_iprange);
-	// CHAIN_OUTGOING, packets marked TRUSTED  ACCEPT
-	rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -m mark --mark 0x%x%s -j RETURN", FW_MARK_TRUSTED, markmask);
-	// CHAIN_OUTGOING, packets marked AUTHENTICATED  ACCEPT
-	rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -m mark --mark 0x%x%s -j RETURN", FW_MARK_AUTHENTICATED, markmask);
-	// CHAIN_OUTGOING, append the "preauthenticated-users" ruleset
-	rc |= _iptables_append_ruleset("nat", "preauthenticated-users", CHAIN_OUTGOING);
+		// Allow access to remote FAS - CHAIN_OUTGOING and CHAIN_TO_INTERNET packets for remote FAS, ACCEPT
+		if (fas_port && strcmp(fas_remoteip, gw_address)) {
+			rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p tcp --destination %s --dport %d -j ACCEPT", fas_remoteip, fas_port);
+		}
 
-	// Allow access to remote FAS - CHAIN_OUTGOING and CHAIN_TO_INTERNET packets for remote FAS, ACCEPT
-	if (fas_port && strcmp(fas_remoteip, gw_address)) {
-		rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p tcp --destination %s --dport %d -j ACCEPT", fas_remoteip, fas_port);
+		// CHAIN_OUTGOING, packets for tcp port 80, redirect to gw_port on primary address for the iface
+		rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p tcp --dport 80 -j DNAT --to-destination %s:%d", gw_address, gw_port);
+		// CHAIN_OUTGOING, other packets ACCEPT
+		rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -j ACCEPT");
 	}
-
-	// CHAIN_OUTGOING, packets for tcp port 80, redirect to gw_port on primary address for the iface
-	rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p tcp --dport 80 -j DNAT --to-destination %s:%d", gw_address, gw_port);
-	// CHAIN_OUTGOING, other packets ACCEPT
-	rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -j ACCEPT");
-
 	/*
-	 * End of nat table chains and rules
+	 * End of nat table chains and rules (ip4 only)
 	 **************************************
 	 */
 
@@ -733,12 +734,13 @@ iptables_fw_destroy(void)
 	iptables_do_command("-t mangle -X " CHAIN_OUTGOING);
 	iptables_do_command("-t mangle -X " CHAIN_INCOMING);
 
-	/* Everything in the nat table */
-
-	debug(LOG_DEBUG, "Destroying chains in the NAT table");
-	iptables_fw_destroy_mention("nat", "PREROUTING", CHAIN_OUTGOING);
-	iptables_do_command("-t nat -F " CHAIN_OUTGOING);
-	iptables_do_command("-t nat -X " CHAIN_OUTGOING);
+	/* Everything in the nat table (ip4 only) */
+	if (!config->ip6) {
+		debug(LOG_DEBUG, "Destroying chains in the NAT table");
+		iptables_fw_destroy_mention("nat", "PREROUTING", CHAIN_OUTGOING);
+		iptables_do_command("-t nat -F " CHAIN_OUTGOING);
+		iptables_do_command("-t nat -X " CHAIN_OUTGOING);
+	}
 
 	/* Everything in the filter table */
 
