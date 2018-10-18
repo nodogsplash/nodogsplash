@@ -781,6 +781,8 @@ iptables_fw_destroy_mention(
 	const char *mention
 )
 {
+	s_config *config;
+	char *iptables;
 	FILE *p = NULL;
 	char *command = NULL;
 	char *command2 = NULL;
@@ -790,7 +792,9 @@ iptables_fw_destroy_mention(
 
 	debug(LOG_DEBUG, "Checking all mention of %s from %s.%s", mention, table, chain);
 
-	safe_asprintf(&command, "iptables -t %s -L %s -n --line-numbers -v", table, chain);
+	config = config_get_config();
+	iptables = config->ip6 ? "ip6tables" : "iptables";
+	safe_asprintf(&command, "%s -t %s -L %s -n --line-numbers -v", iptables, table, chain);
 
 	if ((p = popen(command, "r"))) {
 		/* Skip first 2 lines */
