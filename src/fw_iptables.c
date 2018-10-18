@@ -382,12 +382,16 @@ iptables_fw_init(void)
 	config = config_get_config();
 	gw_interface = safe_strdup(config->gw_interface); /* must free */
 	
-	/* ip6 addresses must be specified in square brackets like [ffcc:e08::1] */
+	/* ip4 vs ip6 differences */
+	const char *ICMP_TYPE;
 	if (config->ip6) {
+		/* ip6 addresses must be in square brackets like [ffcc:e08::1] */
 		/* TODO: check config-> gw_address doesn't already contain brackets */
 		safe_asprintf(&gw_address, "[%s]", config->gw_address);
+		ICMP_TYPE = "icmp6";
 	} else {
 		gw_address = safe_strdup(config->gw_address);    /* must free */
+		ICMP_TYPE = "icmp";
 	}
 	
 	gw_address = safe_strdup(config->gw_address);    /* must free */
@@ -579,7 +583,7 @@ iptables_fw_init(void)
 		// CHAIN_TRUSTED_TO_ROUTER, append the "trusted-users-to-router" ruleset
 		rc |= _iptables_append_ruleset("filter", "trusted-users-to-router", CHAIN_TRUSTED_TO_ROUTER);
 		// CHAIN_TRUSTED_TO_ROUTER, any packets not matching that ruleset REJECT
-		rc |= iptables_do_command("-t filter -A " CHAIN_TRUSTED_TO_ROUTER " -j REJECT --reject-with icmp-port-unreachable");
+		rc |= iptables_do_command("-t filter -A " CHAIN_TRUSTED_TO_ROUTER " -j REJECT --reject-with %s-port-unreachable", ICMP_TYPE);
 	}
 
 	// CHAIN_TO_ROUTER, other packets:
@@ -595,7 +599,7 @@ iptables_fw_init(void)
 		/* CHAIN_TO_ROUTER, append the "users-to-router" ruleset */
 		rc |= _iptables_append_ruleset("filter", "users-to-router", CHAIN_TO_ROUTER);
 		/* everything else, REJECT */
-		rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -j REJECT --reject-with icmp-port-unreachable");
+		rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -j REJECT --reject-with %s-port-unreachable", ICMP_TYPE);
 
 	}
 
@@ -643,7 +647,7 @@ iptables_fw_init(void)
 		// CHAIN_TRUSTED, append the "trusted-users" ruleset
 		rc |= _iptables_append_ruleset("filter", "trusted-users", CHAIN_TRUSTED);
 		// CHAIN_TRUSTED, any packets not matching that ruleset REJECT
-		rc |= iptables_do_command("-t filter -A " CHAIN_TRUSTED " -j REJECT --reject-with icmp-port-unreachable");
+		rc |= iptables_do_command("-t filter -A " CHAIN_TRUSTED " -j REJECT --reject-with %s-port-unreachable", ICMP_TYPE);
 	}
 
 
@@ -663,7 +667,7 @@ iptables_fw_init(void)
 		// CHAIN_AUTHENTICATED, append the "authenticated-users" ruleset
 		rc |= _iptables_append_ruleset("filter", "authenticated-users", CHAIN_AUTHENTICATED);
 		// CHAIN_AUTHENTICATED, any packets not matching that ruleset REJECT
-		rc |= iptables_do_command("-t filter -A " CHAIN_AUTHENTICATED " -j REJECT --reject-with icmp-port-unreachable");
+		rc |= iptables_do_command("-t filter -A " CHAIN_AUTHENTICATED " -j REJECT --reject-with %s-port-unreachable", ICMP_TYPE);
 	}
 
 	/* CHAIN_TO_INTERNET, other packets: */
@@ -679,7 +683,7 @@ iptables_fw_init(void)
 		rc |= _iptables_append_ruleset("filter", "preauthenticated-users", CHAIN_TO_INTERNET);
 	}
 	// CHAIN_TO_INTERNET, all other packets REJECT
-	rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -j REJECT --reject-with icmp-port-unreachable");
+	rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -j REJECT --reject-with %s-port-unreachable", ICMP_TYPE);
 
 	/*
 	 * End of filter table chains and rules
