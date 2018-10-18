@@ -439,6 +439,7 @@ iptables_fw_init(void)
 	/* Create new chains in the mangle table */
 	rc |= iptables_do_command("-t mangle -N " CHAIN_TRUSTED); /* for marking trusted packets */
 	rc |= iptables_do_command("-t mangle -N " CHAIN_BLOCKED); /* for marking blocked packets */
+	rc |= iptables_do_command("-t mangle -N " CHAIN_ALLOWED); /* for marking allowed packets */
 	rc |= iptables_do_command("-t mangle -N " CHAIN_INCOMING); /* for counting incoming packets */
 	rc |= iptables_do_command("-t mangle -N " CHAIN_OUTGOING); /* for marking authenticated packets, and for counting outgoing packets */
 
