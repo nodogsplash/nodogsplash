@@ -381,6 +381,15 @@ iptables_fw_init(void)
 	LOCK_CONFIG();
 	config = config_get_config();
 	gw_interface = safe_strdup(config->gw_interface); /* must free */
+	
+	/* ip6 addresses must be specified in square brackets like [ffcc:e08::1] */
+	if (config->ip6) {
+		/* TODO: check config-> gw_address doesn't already contain brackets */
+		safe_asprintf(&gw_address, "[%s]", config->gw_address);
+	} else {
+		gw_address = safe_strdup(config->gw_address);    /* must free */
+	}
+	
 	gw_address = safe_strdup(config->gw_address);    /* must free */
 	gw_iprange = safe_strdup(config->gw_iprange);    /* must free */
 	gw_port = config->gw_port;
