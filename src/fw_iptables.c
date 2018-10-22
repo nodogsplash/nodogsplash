@@ -381,6 +381,19 @@ iptables_fw_init(void)
 	LOCK_CONFIG();
 	config = config_get_config();
 	gw_interface = safe_strdup(config->gw_interface); /* must free */
+	
+	/* ip4 vs ip6 differences */
+	const char *ICMP_TYPE;
+	if (config->ip6) {
+		/* ip6 addresses must be in square brackets like [ffcc:e08::1] */
+		/* TODO: check config-> gw_address doesn't already contain brackets */
+		safe_asprintf(&gw_address, "[%s]", config->gw_address);
+		ICMP_TYPE = "icmp6";
+	} else {
+		gw_address = safe_strdup(config->gw_address);    /* must free */
+		ICMP_TYPE = "icmp";
+	}
+	
 	gw_address = safe_strdup(config->gw_address);    /* must free */
 	gw_iprange = safe_strdup(config->gw_iprange);    /* must free */
 	gw_port = config->gw_port;
@@ -430,6 +443,7 @@ iptables_fw_init(void)
 	/* Create new chains in the mangle table */
 	rc |= iptables_do_command("-t mangle -N " CHAIN_TRUSTED); /* for marking trusted packets */
 	rc |= iptables_do_command("-t mangle -N " CHAIN_BLOCKED); /* for marking blocked packets */
+	rc |= iptables_do_command("-t mangle -N " CHAIN_ALLOWED); /* for marking allowed packets */
 	rc |= iptables_do_command("-t mangle -N " CHAIN_INCOMING); /* for counting incoming packets */
 	rc |= iptables_do_command("-t mangle -N " CHAIN_OUTGOING); /* for marking authenticated packets, and for counting outgoing packets */
 
@@ -480,38 +494,39 @@ iptables_fw_init(void)
 	/*
 	 *
 	 **************************************
-	 * Set up nat table chains and rules
+	 * Set up nat table chains and rules (ip4 only)
 	 *
 	 */
+	 
+	if (!config->ip6) {
+		/* Create new chains in nat table */
+		rc |= iptables_do_command("-t nat -N " CHAIN_OUTGOING);
 
-	/* Create new chains in nat table */
-	rc |= iptables_do_command("-t nat -N " CHAIN_OUTGOING);
+		/*
+		 * nat PREROUTING chain
+		 */
 
-	/*
-	 * nat PREROUTING chain
-	 */
+		// packets coming in on gw_interface jump to CHAIN_OUTGOING
+		rc |= iptables_do_command("-t nat -I PREROUTING -i %s -s %s -j " CHAIN_OUTGOING, gw_interface, gw_iprange);
+		// CHAIN_OUTGOING, packets marked TRUSTED  ACCEPT
+		rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -m mark --mark 0x%x%s -j RETURN", FW_MARK_TRUSTED, markmask);
+		// CHAIN_OUTGOING, packets marked AUTHENTICATED  ACCEPT
+		rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -m mark --mark 0x%x%s -j RETURN", FW_MARK_AUTHENTICATED, markmask);
+		// CHAIN_OUTGOING, append the "preauthenticated-users" ruleset
+		rc |= _iptables_append_ruleset("nat", "preauthenticated-users", CHAIN_OUTGOING);
 
-	// packets coming in on gw_interface jump to CHAIN_OUTGOING
-	rc |= iptables_do_command("-t nat -I PREROUTING -i %s -s %s -j " CHAIN_OUTGOING, gw_interface, gw_iprange);
-	// CHAIN_OUTGOING, packets marked TRUSTED  ACCEPT
-	rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -m mark --mark 0x%x%s -j RETURN", FW_MARK_TRUSTED, markmask);
-	// CHAIN_OUTGOING, packets marked AUTHENTICATED  ACCEPT
-	rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -m mark --mark 0x%x%s -j RETURN", FW_MARK_AUTHENTICATED, markmask);
-	// CHAIN_OUTGOING, append the "preauthenticated-users" ruleset
-	rc |= _iptables_append_ruleset("nat", "preauthenticated-users", CHAIN_OUTGOING);
+		// Allow access to remote FAS - CHAIN_OUTGOING and CHAIN_TO_INTERNET packets for remote FAS, ACCEPT
+		if (fas_port && strcmp(fas_remoteip, gw_address)) {
+			rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p tcp --destination %s --dport %d -j ACCEPT", fas_remoteip, fas_port);
+		}
 
-	// Allow access to remote FAS - CHAIN_OUTGOING and CHAIN_TO_INTERNET packets for remote FAS, ACCEPT
-	if (fas_port && strcmp(fas_remoteip, gw_address)) {
-		rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p tcp --destination %s --dport %d -j ACCEPT", fas_remoteip, fas_port);
+		// CHAIN_OUTGOING, packets for tcp port 80, redirect to gw_port on primary address for the iface
+		rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p tcp --dport 80 -j DNAT --to-destination %s:%d", gw_address, gw_port);
+		// CHAIN_OUTGOING, other packets ACCEPT
+		rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -j ACCEPT");
 	}
-
-	// CHAIN_OUTGOING, packets for tcp port 80, redirect to gw_port on primary address for the iface
-	rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p tcp --dport 80 -j DNAT --to-destination %s:%d", gw_address, gw_port);
-	// CHAIN_OUTGOING, other packets ACCEPT
-	rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -j ACCEPT");
-
 	/*
-	 * End of nat table chains and rules
+	 * End of nat table chains and rules (ip4 only)
 	 **************************************
 	 */
 
@@ -568,7 +583,7 @@ iptables_fw_init(void)
 		// CHAIN_TRUSTED_TO_ROUTER, append the "trusted-users-to-router" ruleset
 		rc |= _iptables_append_ruleset("filter", "trusted-users-to-router", CHAIN_TRUSTED_TO_ROUTER);
 		// CHAIN_TRUSTED_TO_ROUTER, any packets not matching that ruleset REJECT
-		rc |= iptables_do_command("-t filter -A " CHAIN_TRUSTED_TO_ROUTER " -j REJECT --reject-with icmp-port-unreachable");
+		rc |= iptables_do_command("-t filter -A " CHAIN_TRUSTED_TO_ROUTER " -j REJECT --reject-with %s-port-unreachable", ICMP_TYPE);
 	}
 
 	// CHAIN_TO_ROUTER, other packets:
@@ -584,7 +599,7 @@ iptables_fw_init(void)
 		/* CHAIN_TO_ROUTER, append the "users-to-router" ruleset */
 		rc |= _iptables_append_ruleset("filter", "users-to-router", CHAIN_TO_ROUTER);
 		/* everything else, REJECT */
-		rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -j REJECT --reject-with icmp-port-unreachable");
+		rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -j REJECT --reject-with %s-port-unreachable", ICMP_TYPE);
 
 	}
 
@@ -632,7 +647,7 @@ iptables_fw_init(void)
 		// CHAIN_TRUSTED, append the "trusted-users" ruleset
 		rc |= _iptables_append_ruleset("filter", "trusted-users", CHAIN_TRUSTED);
 		// CHAIN_TRUSTED, any packets not matching that ruleset REJECT
-		rc |= iptables_do_command("-t filter -A " CHAIN_TRUSTED " -j REJECT --reject-with icmp-port-unreachable");
+		rc |= iptables_do_command("-t filter -A " CHAIN_TRUSTED " -j REJECT --reject-with %s-port-unreachable", ICMP_TYPE);
 	}
 
 
@@ -652,7 +667,7 @@ iptables_fw_init(void)
 		// CHAIN_AUTHENTICATED, append the "authenticated-users" ruleset
 		rc |= _iptables_append_ruleset("filter", "authenticated-users", CHAIN_AUTHENTICATED);
 		// CHAIN_AUTHENTICATED, any packets not matching that ruleset REJECT
-		rc |= iptables_do_command("-t filter -A " CHAIN_AUTHENTICATED " -j REJECT --reject-with icmp-port-unreachable");
+		rc |= iptables_do_command("-t filter -A " CHAIN_AUTHENTICATED " -j REJECT --reject-with %s-port-unreachable", ICMP_TYPE);
 	}
 
 	/* CHAIN_TO_INTERNET, other packets: */
@@ -668,7 +683,7 @@ iptables_fw_init(void)
 		rc |= _iptables_append_ruleset("filter", "preauthenticated-users", CHAIN_TO_INTERNET);
 	}
 	// CHAIN_TO_INTERNET, all other packets REJECT
-	rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -j REJECT --reject-with icmp-port-unreachable");
+	rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -j REJECT --reject-with %s-port-unreachable", ICMP_TYPE);
 
 	/*
 	 * End of filter table chains and rules
@@ -724,12 +739,13 @@ iptables_fw_destroy(void)
 	iptables_do_command("-t mangle -X " CHAIN_OUTGOING);
 	iptables_do_command("-t mangle -X " CHAIN_INCOMING);
 
-	/* Everything in the nat table */
-
-	debug(LOG_DEBUG, "Destroying chains in the NAT table");
-	iptables_fw_destroy_mention("nat", "PREROUTING", CHAIN_OUTGOING);
-	iptables_do_command("-t nat -F " CHAIN_OUTGOING);
-	iptables_do_command("-t nat -X " CHAIN_OUTGOING);
+	/* Everything in the nat table (ip4 only) */
+	if (!config->ip6) {
+		debug(LOG_DEBUG, "Destroying chains in the NAT table");
+		iptables_fw_destroy_mention("nat", "PREROUTING", CHAIN_OUTGOING);
+		iptables_do_command("-t nat -F " CHAIN_OUTGOING);
+		iptables_do_command("-t nat -X " CHAIN_OUTGOING);
+	}
 
 	/* Everything in the filter table */
 
@@ -765,6 +781,8 @@ iptables_fw_destroy_mention(
 	const char *mention
 )
 {
+	s_config *config;
+	char *iptables;
 	FILE *p = NULL;
 	char *command = NULL;
 	char *command2 = NULL;
@@ -774,7 +792,9 @@ iptables_fw_destroy_mention(
 
 	debug(LOG_DEBUG, "Checking all mention of %s from %s.%s", mention, table, chain);
 
-	safe_asprintf(&command, "iptables -t %s -L %s -n --line-numbers -v", table, chain);
+	config = config_get_config();
+	iptables = config->ip6 ? "ip6tables" : "iptables";
+	safe_asprintf(&command, "%s -t %s -L %s -n --line-numbers -v", iptables, table, chain);
 
 	if ((p = popen(command, "r"))) {
 		/* Skip first 2 lines */
