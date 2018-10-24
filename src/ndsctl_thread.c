@@ -50,7 +50,7 @@
 #include "safe.h"
 #include "client_list.h"
 #include "fw_iptables.h"
-#include "gateway.h"
+#include "main.h"
 
 #include "ndsctl_thread.h"
 

@@ -53,7 +53,7 @@
 #include "safe.h"
 #include "debug.h"
 #include "conf.h"
-#include "gateway.h"
+#include "main.h"
 #include "commandline.h"
 #include "auth.h"
 #include "client_list.h"
