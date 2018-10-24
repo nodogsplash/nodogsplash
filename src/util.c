@@ -68,7 +68,7 @@
 
 static pthread_mutex_t ghbn_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-/* Defined in gateway.c */
+/* Defined in main.c */
 extern time_t started_time;
 
 /* Defined in clientlist.c */
@@ -78,7 +78,7 @@ extern pthread_mutex_t config_mutex;
 /* Defined in auth.c */
 extern unsigned int authenticated_since_start;
 
-/* Defined in gateway.c */
+/* Defined in main.c */
 extern int created_httpd_threads;
 extern int current_httpd_threads;
 
@@ -91,7 +91,7 @@ static int _execute_ret(char* msg, int msg_len, const char *cmd)
 
 	debug(LOG_DEBUG, "Executing command: %s", cmd);
 
-	/* Temporarily get rid of SIGCHLD handler (see gateway.c), until child exits. */
+	/* Temporarily get rid of SIGCHLD handler (see main.c), until child exits. */
 	debug(LOG_DEBUG,"Setting default SIGCHLD handler SIG_DFL");
 	sa.sa_handler = SIG_DFL;
 	sigemptyset(&sa.sa_mask);

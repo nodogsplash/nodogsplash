@@ -19,7 +19,7 @@
  \********************************************************************/
 
 /** @internal
-  @file gateway.c
+  @file main.c
   @brief Main loop
   @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
   @author Copyright (C) 2004 Alexandre Carmel-Veilleux <acv@miniguru.ca>
