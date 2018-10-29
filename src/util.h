@@ -26,6 +26,9 @@
 #ifndef _UTIL_H_
 #define _UTIL_H_
 
+#define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
+#define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
+
 /* @brief Execute a shell command */
 int execute(const char fmt[], ...);
 int execute_ret(char* msg, int msg_len, const char fmt[], ...);

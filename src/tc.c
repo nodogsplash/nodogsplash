@@ -44,13 +44,18 @@
 #include "tc.h"
 
 
+/**
+ * Limit upload/download rate for a client using traffic control via IFB (Intermediate Functional Block).
+ */
+
+
 int
 tc_attach_client(const char down_dev[], int download_limit, const char up_dev[], int upload_limit, int idx, const char ip[])
 {
 	int rc = 0;
 	s_config *config = config_get_config();
-	int dlimit = (download_limit < config->download_limit ? download_limit : config->download_limit);
-	int ulimit = (upload_limit < config->upload_limit ? upload_limit : config->upload_limit);
+	int dlimit = MIN(download_limit, config->download_limit);
+	int ulimit = MIN(upload_limit, config->upload_limit);
 	int id = 3 * idx + 10;
 
 	if (dlimit > 0) {
