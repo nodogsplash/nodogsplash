@@ -97,31 +97,14 @@ static int do_binauth(struct MHD_Connection *connection, const char *binauth, t_
 
 	rc = sscanf(msg, "%d %d %d", &seconds, &upload, &download);
 
+	// store assigned parameters
 	switch (rc) {
 		case 3:
-			if (seconds < 0)
-				return -1;
-			if (upload < 0)
-				return -1;
-			if (download < 0)
-				return -1;
-			*seconds_ret = seconds;
-			*upload_ret = upload;
-			*download_ret = download;
-			break;
+			*download_ret = MAX(download, 0);
 		case 2:
-			if (seconds < 0)
-				return -1;
-			if (upload < 0)
-				return -1;
-			*seconds_ret = seconds;
-			*upload_ret = upload;
-			break;
+			*upload_ret = MAX(upload, 0);
 		case 1:
-			if (seconds < 0)
-				return -1;
-			*seconds_ret = seconds;
-			break;
+			*seconds_ret = MAX(seconds, 0);
 		case 0:
 			break;
 		default:
