@@ -157,9 +157,7 @@ void client_reset(t_client *client)
 {
 	// Reset traffic counters
 	client->counters.incoming = 0;
-	client->counters.incoming_history = 0;
 	client->counters.outgoing = 0;
-	client->counters.outgoing_history = 0;
 	client->counters.last_updated = time(NULL);
 
 	// Reset seesion time
