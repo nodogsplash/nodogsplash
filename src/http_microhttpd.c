@@ -198,47 +198,53 @@ static int is_splashpage(const char *host, const char *url)
 	return 0;
 }
 
-/**
- * Get an IP's MAC address from the ARP cache.
- * Go through all the entries in /proc/net/arp until we find the requested
- * IP address and return the MAC address bound to it.
- * @todo Make this function portable (using shell scripts?)
- */
 int
-arp_get(char mac[18], const char req_ip[])
+get_client_mac(char mac[18], const char req_ip[])
 {
-	FILE *proc;
-	char ip_tmp[INET6_ADDRSTRLEN+1];
-	char mac_tmp[18];
+	char line[255] = {0};
+	char ip[64];
+	FILE *stream;
+	int len;
 
-	if (!(proc = fopen("/proc/net/arp", "r"))) {
+	len = strlen(req_ip);
+
+	if ((len + 2) > sizeof(ip)) {
 		return -1;
 	}
 
-	/* Skip first line */
-	while (!feof(proc) && fgetc(proc) != '\n');
+	// Extend search string by one space
+	memcpy(ip, req_ip, len);
+	ip[len] = ' ';
+	ip[len+1] = '\0';
 
-	/* Find ip, copy mac in reply */
-	while (!feof(proc) && (fscanf(proc, " %15[0-9.] %*s %*s %17[A-Fa-f0-9:] %*s %*s", ip_tmp, mac_tmp) == 2)) {
-		if (strcmp(ip_tmp, req_ip) == 0) {
-			fclose(proc);
-			strcpy(mac, mac_tmp);
-			return 0;
+	stream = popen("ip neigh show", "r");
+	if (!stream) {
+		return -1;
+	}
+
+	while (!feof(stream)) {
+		if (fgets(line, sizeof(line) - 1, stream) != NULL) {
+			if (0 == strncmp(line, ip, len + 1)) {
+				if (1 == sscanf(line, "%*s %*s %*s %*s %17[A-Fa-f0-9:] ", mac)) {
+					pclose(stream);
+					return 0;
+				}
+			}
 		}
 	}
 
-	fclose(proc);
+	pclose(stream);
 
 	return -1;
 }
 
 /**
- * @brief get_ip
+ * @brief get_client_ip
  * @param connection
  * @return ip address - must be freed by caller
  */
 static int
-get_ip(char ip_addr[INET6_ADDRSTRLEN+1], struct MHD_Connection *connection)
+get_client_ip(char ip_addr[INET6_ADDRSTRLEN+1], struct MHD_Connection *connection)
 {
 	const union MHD_ConnectionInfo *connection_info;
 	const struct sockaddr *client_addr;
@@ -312,12 +318,12 @@ libmicrohttpd_cb(void *cls,
 	 * should all requests redirected? even those to .css, .js, ... or respond with 404/503/...
 	 */
 
-	rc = get_ip(ip, connection);
+	rc = get_client_ip(ip, connection);
 	if (rc != 0) {
 		return send_error(connection, 503);
 	}
 
-	rc = arp_get(mac, ip);
+	rc = get_client_mac(mac, ip);
 	if (rc != 0) {
 		return send_error(connection, 503);
 	}
