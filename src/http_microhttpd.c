@@ -745,7 +745,7 @@ static int get_query(struct MHD_Connection *connection, char **query)
 	}
 
 	/* don't miss the zero terminator */
-	*query = calloc(1, length + 1);
+	*query = calloc(length + 1, 1);
 	if (*query == NULL) {
 		for (i = 0; i < element_counter; i++) {
 			free(elements[i]);
@@ -870,59 +870,19 @@ static int get_host_value_callback(void *cls, enum MHD_ValueKind kind, const cha
 	return MHD_YES;
 }
 
-static int show_templated_page(struct MHD_Connection *connection, t_client *client, char *page)
+/**
+ * Replace variables in src and copy result to dst
+ */
+static void replace_variables(
+	struct MHD_Connection *connection, t_client *client,
+	char *dst, size_t dst_len, const char *src, size_t src_len)
 {
-	struct MHD_Response *response;
 	s_config *config = config_get_config();
-	int ret = -1;
-	char filename[PATH_MAX];
-	const char *mimetype;
-	int size = 0, bytes = 0;
+
 	char nclients[12];
 	char maxclients[12];
 	char clientupload[20];
 	char clientdownload[20];
-	int page_fd;
-	char *page_result;
-	char *page_tmpl;
-
-	snprintf(filename, PATH_MAX, "%s/%s", config->webroot, page);
-
-	page_fd = open(filename, O_RDONLY);
-	if (page_fd < 0) {
-		return send_error(connection, 404);
-	}
-
-	mimetype = lookup_mimetype(filename);
-
-	/* input size */
-	size = lseek(page_fd, 0, SEEK_END);
-	lseek(page_fd, 0, SEEK_SET);
-
-	/* we TMPLVAR_SIZE for template variables */
-	page_tmpl = calloc(1, size);
-	if (page_tmpl == NULL) {
-		close(page_fd);
-		return send_error(connection, 503);
-	}
-
-	page_result = calloc(1, size + TMPLVAR_SIZE);
-	if (page_result == NULL) {
-		close(page_fd);
-		free(page_tmpl);
-		return send_error(connection, 503);
-	}
-
-	while (bytes < size) {
-		ret = read(page_fd, page_tmpl + bytes, size - bytes);
-		if (ret < 0) {
-			free(page_result);
-			free(page_tmpl);
-			close(page_fd);
-			return send_error(connection, 503);
-		}
-		bytes += ret;
-	}
 
 	const char *redirect_url = NULL;
 	char *uptime = NULL;
@@ -969,15 +929,67 @@ static int show_templated_page(struct MHD_Connection *connection, t_client *clie
 		{NULL, NULL}
 	};
 
-	tmpl_parse(vars, page_result, size + TMPLVAR_SIZE, page_tmpl, size);
+	tmpl_parse(vars, dst, dst_len, src, src_len);
 
-	free(page_tmpl);
 	free(uptime);
 	free(denyaction);
 	free(authaction);
 	free(authtarget);
 	free(pagesdir);
 	free(imagesdir);
+}
+
+static int show_templated_page(struct MHD_Connection *connection, t_client *client, const char *page)
+{
+	struct MHD_Response *response;
+	s_config *config = config_get_config();
+	int ret = -1;
+	char filename[PATH_MAX];
+	const char *mimetype;
+	int size = 0, bytes = 0;
+	int page_fd;
+	char *page_result;
+	char *page_tmpl;
+
+	snprintf(filename, PATH_MAX, "%s/%s", config->webroot, page);
+
+	page_fd = open(filename, O_RDONLY);
+	if (page_fd < 0) {
+		return send_error(connection, 404);
+	}
+
+	mimetype = lookup_mimetype(filename);
+
+	/* input size */
+	size = lseek(page_fd, 0, SEEK_END);
+	lseek(page_fd, 0, SEEK_SET);
+
+	/* we TMPLVAR_SIZE for template variables */
+	page_tmpl = calloc(size, 1);
+	if (page_tmpl == NULL) {
+		close(page_fd);
+		return send_error(connection, 503);
+	}
+
+	page_result = calloc(size + TMPLVAR_SIZE, 1);
+	if (page_result == NULL) {
+		close(page_fd);
+		free(page_tmpl);
+		return send_error(connection, 503);
+	}
+
+	while (bytes < size) {
+		ret = read(page_fd, page_tmpl + bytes, size - bytes);
+		if (ret < 0) {
+			free(page_result);
+			free(page_tmpl);
+			close(page_fd);
+			return send_error(connection, 503);
+		}
+		bytes += ret;
+	}
+
+	replace_variables(connection, client, page_result, size + TMPLVAR_SIZE, page_tmpl, size);
 
 	response = MHD_create_response_from_buffer(strlen(page_result), (void *)page_result, MHD_RESPMEM_MUST_FREE);
 	if (!response) {
