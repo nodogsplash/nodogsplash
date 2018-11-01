@@ -198,6 +198,8 @@ static int is_splashpage(const char *host, const char *url)
 	return 0;
 }
 
+
+/* @brief Get client mac by ip address from neighbor cache */
 int
 get_client_mac(char mac[18], const char req_ip[])
 {
@@ -222,13 +224,11 @@ get_client_mac(char mac[18], const char req_ip[])
 		return -1;
 	}
 
-	while (!feof(stream)) {
-		if (fgets(line, sizeof(line) - 1, stream) != NULL) {
-			if (0 == strncmp(line, ip, len + 1)) {
-				if (1 == sscanf(line, "%*s %*s %*s %*s %17[A-Fa-f0-9:] ", mac)) {
-					pclose(stream);
-					return 0;
-				}
+	while (fgets(line, sizeof(line) - 1, stream) != NULL) {
+		if (0 == strncmp(line, ip, len + 1)) {
+			if (1 == sscanf(line, "%*s %*s %*s %*s %17[A-Fa-f0-9:] ", mac)) {
+				pclose(stream);
+				return 0;
 			}
 		}
 	}
