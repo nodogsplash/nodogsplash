@@ -38,7 +38,7 @@ In the default SQM configuration, Upload will mean what is normally accepted, ie
 
 The default SQM configuration file on OpenWrt is:
 
-.. code-block::
+.. code-block:: sh
 
  config queue
      option enabled '0'
@@ -76,7 +76,7 @@ We will configure this by issuing the following commands:
 
 *Note the reversed "upload" and "download" values.*
 
-.. code-block::
+.. code-block:: sh
 
     uci set sqm.@queue[0].interface='br-lan'
 
