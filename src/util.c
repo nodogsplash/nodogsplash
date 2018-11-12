@@ -196,7 +196,7 @@ wd_gethostbyname(const char name[])
 char *
 get_iface_ip(const char ifname[])
 {
-	char addrbuf[INET6_ADDRSTRLEN+1];
+	char addrbuf[INET6_ADDRSTRLEN];
 	const struct ifaddrs *cur;
 	struct ifaddrs *addrs;
 	s_config *config;
