@@ -244,7 +244,7 @@ get_client_mac(char mac[18], const char req_ip[])
  * @return ip address - must be freed by caller
  */
 static int
-get_client_ip(char ip_addr[INET6_ADDRSTRLEN+1], struct MHD_Connection *connection)
+get_client_ip(char ip_addr[INET6_ADDRSTRLEN], struct MHD_Connection *connection)
 {
 	const union MHD_ConnectionInfo *connection_info;
 	const struct sockaddr *client_addr;
@@ -262,13 +262,13 @@ get_client_ip(char ip_addr[INET6_ADDRSTRLEN+1], struct MHD_Connection *connectio
 
 	switch(client_addr->sa_family) {
 	case AF_INET:
-		if (inet_ntop(addrin->sin_family, &(addrin->sin_addr), ip_addr, sizeof(struct sockaddr_in))) {
+		if (inet_ntop(addrin->sin_family, &(addrin->sin_addr), ip_addr, INET_ADDRSTRLEN)) {
 			return 0;
 		}
 		break;
 
 	case AF_INET6:
-		if (inet_ntop(addrin6->sin6_family, &(addrin6->sin6_addr), ip_addr, sizeof(struct sockaddr_in6))) {
+		if (inet_ntop(addrin6->sin6_family, &(addrin6->sin6_addr), ip_addr, INET6_ADDRSTRLEN)) {
 			return 0;
 		}
 		break;
