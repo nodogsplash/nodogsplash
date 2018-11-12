@@ -66,8 +66,6 @@
 #include "fw_iptables.h"
 
 
-static pthread_mutex_t ghbn_mutex = PTHREAD_MUTEX_INITIALIZER;
-
 /* Defined in main.c */
 extern time_t started_time;
 
@@ -163,34 +161,6 @@ int execute_ret(char* msg, int msg_len, const char fmt[], ...)
 	}
 
 	return _execute_ret(msg, msg_len, cmd);
-}
-
-struct in_addr *
-wd_gethostbyname(const char name[])
-{
-	struct hostent *he;
-	struct in_addr *h_addr, *in_addr_temp;
-
-	/* XXX Calling function is reponsible for free() */
-
-	h_addr = safe_malloc(sizeof(struct in_addr));
-
-	LOCK_GHBN();
-
-	he = gethostbyname(name);
-
-	if (he == NULL) {
-		free(h_addr);
-		UNLOCK_GHBN();
-		return NULL;
-	}
-
-	in_addr_temp = (struct in_addr *)he->h_addr_list[0];
-	h_addr->s_addr = in_addr_temp->s_addr;
-
-	UNLOCK_GHBN();
-
-	return h_addr;
 }
 
 char *
