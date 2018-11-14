@@ -94,5 +94,14 @@ unsigned short rand16(void);
 	debug(LOG_DEBUG, "wd_gethostbyname() unlocked"); \
 } while (0)
 
+/*
+ * @brief Maximum <host>:<port> length (IPv6)
+ * - INET6_ADDRSTRLEN: 46 (45 chars + term. Null byte)
+ * - square brackets around IPv6 address: 2 ('[' and ']')
+ * - port separator character: 1 (':')
+ * - max port number: 5 (2^16 = 65536)
+ * Total: 54 chars
+ **/
+#define MAX_HOSTPORTLEN ( INET6_ADDRSTRLEN + sizeof("[]:65536")-1 )
 
 #endif /* _UTIL_H_ */

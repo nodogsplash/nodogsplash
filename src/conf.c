@@ -71,6 +71,8 @@ typedef enum {
 	oGatewayName,
 	oGatewayInterface,
 	oGatewayIPRange,
+	oGatewayIP,
+	/* TODO: deprecate oGatewayAddress option */
 	oGatewayAddress,
 	oGatewayPort,
 	oFasPort,
@@ -122,6 +124,8 @@ static const struct {
 	{ "gatewayname", oGatewayName },
 	{ "gatewayinterface", oGatewayInterface },
 	{ "gatewayiprange", oGatewayIPRange },
+	{ "gatewayip", oGatewayIP },
+	/* TODO: remove/deprecate gatewayaddress keyword */
 	{ "gatewayaddress", oGatewayAddress },
 	{ "gatewayport", oGatewayPort },
 	{ "fasport", oFasPort },
@@ -196,6 +200,7 @@ config_init(void)
 	config.gw_interface = NULL;
 	config.gw_iprange = safe_strdup(DEFAULT_GATEWAY_IPRANGE);
 	config.gw_address = NULL;
+	config.gw_ip = NULL;
 	config.gw_port = DEFAULT_GATEWAYPORT;
 	config.fas_port = DEFAULT_FASPORT;
 	config.fas_secure_enabled = DEFAULT_FAS_SECURE_ENABLED;
@@ -744,8 +749,10 @@ config_read(const char *filename)
 		case oGatewayIPRange:
 			config.gw_iprange = safe_strdup(p1);
 			break;
+		/* TODO: deprecate oGatewayAddress option */
 		case oGatewayAddress:
-			config.gw_address = safe_strdup(p1);
+		case oGatewayIP:
+			config.gw_ip = safe_strdup(p1);
 			break;
 		case oGatewayPort:
 			if (sscanf(p1, "%u", &config.gw_port) < 1) {
