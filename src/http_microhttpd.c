@@ -498,7 +498,7 @@ static int authenticated(struct MHD_Connection *connection,
 
 	if (check_authdir_match(url, config->denydir)) {
 		auth_client_deauth(client->id, "client_deauth");
-		snprintf(redirect_to_us, 128, "http://%s/", config->gw_address);
+		snprintf(redirect_to_us, sizeof(redirect_to_us), "http://%s/", config->gw_address);
 		return send_redirect_temp(connection, redirect_to_us);
 	}
 
