@@ -147,7 +147,8 @@ typedef struct {
 	char *gw_name;			/**< @brief Name of the gateway; e.g. its SSID */
 	char *gw_interface;		/**< @brief Interface we will manage */
 	char *gw_iprange;		/**< @brief IP range on gw_interface we will manage */
-	char *gw_address;		/**< @brief Internal IP address for our web server */
+	char *gw_ip;			/**< @brief Internal IP (v4 or v6) for our web server */
+	char *gw_address;		/**< @brief Internal IP with port for our web server */
 	char *gw_mac;			/**< @brief MAC address of the interface we manage */
 	unsigned int gw_port;		/**< @brief Port the webserver will run on */
 	unsigned int fas_port;		/**< @brief Port the fas server will run on */
