@@ -256,19 +256,19 @@ get_client_ip(char ip_addr[INET6_ADDRSTRLEN], struct MHD_Connection *connection)
 	}
 
 	/* cast required for legacy MHD API < 0.9.6*/
-	client_addr = (const struct sockaddr *)connection_info->client_addr;
+	client_addr = (const struct sockaddr *) connection_info->client_addr;
 	addrin = (const struct sockaddr_in *) client_addr;
 	addrin6 = (const struct sockaddr_in6 *) client_addr;
 
-	switch(client_addr->sa_family) {
+	switch (client_addr->sa_family) {
 	case AF_INET:
-		if (inet_ntop(addrin->sin_family, &(addrin->sin_addr), ip_addr, INET_ADDRSTRLEN)) {
+		if (inet_ntop(AF_INET, &addrin->sin_addr, ip_addr, INET_ADDRSTRLEN)) {
 			return 0;
 		}
 		break;
 
 	case AF_INET6:
-		if (inet_ntop(addrin6->sin6_family, &(addrin6->sin6_addr), ip_addr, INET6_ADDRSTRLEN)) {
+		if (inet_ntop(AF_INET6, &addrin6->sin6_addr, ip_addr, INET6_ADDRSTRLEN)) {
 			return 0;
 		}
 		break;
