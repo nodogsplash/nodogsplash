@@ -183,8 +183,8 @@ get_iface_ip(const char ifname[])
 
 	/* Iterate all interfaces */
 	cur = addrs;
-	while(cur != NULL) {
-		if ( (cur->ifa_addr != NULL) && (strcmp( cur->ifa_name, ifname ) == 0) ) {
+	while (cur != NULL) {
+		if ((cur->ifa_addr != NULL) && (strcmp( cur->ifa_name, ifname) == 0)) {
 
 			if (config->ip6 && cur->ifa_addr->sa_family == AF_INET6) {
 				inet_ntop(AF_INET6, &((struct sockaddr_in6 *)cur->ifa_addr)->sin6_addr, addrbuf, sizeof(addrbuf));

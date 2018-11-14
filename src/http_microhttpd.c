@@ -1038,7 +1038,7 @@ static int show_statuspage(struct MHD_Connection *connection, t_client *client)
 const char *get_extension(const char *filename)
 {
 	int pos = strlen(filename);
-	while(pos > 0) {
+	while (pos > 0) {
 		pos--;
 		switch (filename[pos]) {
 		case '/':
@@ -1066,7 +1066,7 @@ const char *lookup_mimetype(const char *filename)
 	if (!extension)
 		return DEFAULT_MIME_TYPE;
 
-	for(i=0; i< ARRAY_SIZE(uh_mime_types); i++) {
+	for (i = 0; i< ARRAY_SIZE(uh_mime_types); i++) {
 		if (strcmp(extension, uh_mime_types[i].extn) == 0) {
 			return uh_mime_types[i].mime;
 		}

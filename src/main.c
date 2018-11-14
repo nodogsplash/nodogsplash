@@ -362,5 +362,5 @@ int main(int argc, char **argv)
 		main_loop();
 	}
 
-	return(0); // never reached
+	return 0; // never reached
 }
