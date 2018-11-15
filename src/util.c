@@ -407,7 +407,7 @@ ndsctl_status(FILE *fp)
 	fprintf(fp, "Gateway Name: %s\n", config->gw_name);
 	fprintf(fp, "Managed interface: %s\n", config->gw_interface);
 	fprintf(fp, "Managed IP range: %s\n", config->gw_iprange);
-	fprintf(fp, "Server listening: %s:%d\n", config->gw_address, config->gw_port);
+	fprintf(fp, "Server listening: http://%s\n", config->gw_address);
 
 	if (config->binauth) {
 		fprintf(fp, "Binauth Script: %s\n", config->binauth);

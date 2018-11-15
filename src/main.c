@@ -37,6 +37,7 @@
 #include <errno.h>
 #include <time.h>
 
+#include <arpa/inet.h>
 
 /* for strerror() */
 #include <string.h>
@@ -233,19 +234,29 @@ main_loop(void)
 	}
 
 	/* If we don't have the Gateway IP address, get it. Exit on failure. */
-	if (!config->gw_address) {
+	if (!config->gw_ip) {
 		debug(LOG_DEBUG, "Finding IP address of %s", config->gw_interface);
-		config->gw_address = get_iface_ip(config->gw_interface);
-		if (!config->gw_address) {
+		config->gw_ip = get_iface_ip(config->gw_interface);
+		if (!config->gw_ip) {
 			debug(LOG_ERR, "Could not get IP address information of %s, exiting...", config->gw_interface);
 			exit(1);
 		}
 	}
+
+	/* format gw_address accordingly depending on if gw_ip is v4 or v6 */
+	char buf[16];
+	if (inet_pton(AF_INET, config->gw_ip, buf)) {
+		safe_asprintf(&config->gw_address, "%s:%d", config->gw_ip, config->gw_port);
+	} else if (inet_pton(AF_INET6, config->gw_ip, buf)) {
+		/* add square brackets around IPv6 address */
+		safe_asprintf(&config->gw_address, "[%s]:%d", config->gw_ip, config->gw_port);
+	}
+
 	if ((config->gw_mac = get_iface_mac(config->gw_interface)) == NULL) {
 		debug(LOG_ERR, "Could not get MAC address information of %s, exiting...", config->gw_interface);
 		exit(1);
 	}
-	debug(LOG_NOTICE, "Detected gateway %s at %s (%s)", config->gw_interface, config->gw_address, config->gw_mac);
+	debug(LOG_NOTICE, "Detected gateway %s at %s (%s)", config->gw_interface, config->gw_ip, config->gw_mac);
 
 	/* Initializes the web server */
 	if ((webserver = MHD_start_daemon(
@@ -260,7 +271,7 @@ main_loop(void)
 		exit(1);
 	}
 	/* TODO: set listening socket */
-	debug(LOG_NOTICE, "Created web server on %s:%d", config->gw_address, config->gw_port);
+	debug(LOG_NOTICE, "Created web server on %s", config->gw_address);
 	/*
 		httpdAddCContent(webserver, "/", "", 0, NULL, http_nodogsplash_callback_index);
 		httpdAddCWildcardContent(webserver, config->authdir, NULL, http_nodogsplash_callback_auth);
@@ -270,7 +281,7 @@ main_loop(void)
 
 	/* Make sure fas_remoteip is set. Note: This does not enable FAS. */
 	if (!config->fas_remoteip) {
-		config->fas_remoteip = safe_strdup(config->gw_address);
+		config->fas_remoteip = safe_strdup(config->gw_ip);
 	}
 
 	if (config->fas_port) {
