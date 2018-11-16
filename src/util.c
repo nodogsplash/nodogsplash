@@ -164,34 +164,31 @@ int execute_ret(char* msg, int msg_len, const char fmt[], ...)
 }
 
 char *
-get_iface_ip(const char ifname[])
+get_iface_ip(const char ifname[], int ip6)
 {
 	char addrbuf[INET6_ADDRSTRLEN];
 	const struct ifaddrs *cur;
 	struct ifaddrs *addrs;
-	s_config *config;
 
 	if (getifaddrs(&addrs) < 0) {
 		debug(LOG_ERR, "getifaddrs(): %s", strerror(errno));
 		return NULL;
 	}
 
-	config = config_get_config();
-
 	/* Set default address */
-	sprintf(addrbuf, config->ip6 ? "::" : "0.0.0.0");
+	sprintf(addrbuf, ip6 ? "::" : "0.0.0.0");
 
 	/* Iterate all interfaces */
 	cur = addrs;
 	while (cur != NULL) {
 		if ((cur->ifa_addr != NULL) && (strcmp( cur->ifa_name, ifname) == 0)) {
 
-			if (config->ip6 && cur->ifa_addr->sa_family == AF_INET6) {
+			if (ip6 && cur->ifa_addr->sa_family == AF_INET6) {
 				inet_ntop(AF_INET6, &((struct sockaddr_in6 *)cur->ifa_addr)->sin6_addr, addrbuf, sizeof(addrbuf));
 				break;
 			}
 
-			if (!config->ip6 && cur->ifa_addr->sa_family == AF_INET) {
+			if (!ip6 && cur->ifa_addr->sa_family == AF_INET) {
 				inet_ntop(AF_INET, &((struct sockaddr_in *)cur->ifa_addr)->sin_addr, addrbuf, sizeof(addrbuf));
 				break;
 			}

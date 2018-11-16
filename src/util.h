@@ -36,7 +36,7 @@ int execute_ret(char* msg, int msg_len, const char fmt[], ...);
 struct in_addr *wd_gethostbyname(const char name[]);
 
 /* @brief Get IP address of an interface */
-char *get_iface_ip(const char ifname[]);
+char *get_iface_ip(const char ifname[], int ip6);
 
 /* @brief Get MAC address of an interface */
 char *get_iface_mac(const char ifname[]);
