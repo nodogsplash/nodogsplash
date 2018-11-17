@@ -571,6 +571,25 @@ iptables_fw_init(void)
 		rc |= iptables_do_command("-t filter -A " CHAIN_TRUSTED_TO_ROUTER " -j REJECT --reject-with icmp-port-unreachable");
 	}
 
+	// CHAIN_TO_ROUTER, packets marked AUTHENTICATED:
+
+	/* if authenticated-users-to-router ruleset is empty:
+	 *    use empty ruleset policy
+	 * else:
+	 *    jump to CHAIN_AUTHENTICATED_TO_ROUTER, and load and use users-to-router ruleset
+	 */
+	if (is_empty_ruleset("authenticated-users-to-router")) {
+		rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -m mark --mark 0x%x%s -j %s", FW_MARK_AUTHENTICATED, markmask, get_empty_ruleset_policy("authenticated-users-to-router"));
+	} else {
+		rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -m mark --mark 0x%x%s -j " CHAIN_AUTHENTICATED_TO_ROUTER, FW_MARK_AUTHENTICATED, markmask);
+		// CHAIN_AUTHENTICATED_TO_ROUTER, related and established packets ACCEPT
+		rc |= iptables_do_command("-t filter -A " CHAIN_AUTHENTICATED_TO_ROUTER " -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT");
+		// CHAIN_AUTHENTICATED_TO_ROUTER, append the "authenticated-users-to-router" ruleset
+		rc |= _iptables_append_ruleset("filter", "authenticated-users-to-router", CHAIN_AUTHENTICATED_TO_ROUTER);
+		// CHAIN_AUTHENTICATED_TO_ROUTER, any packets not matching that ruleset REJECT
+		rc |= iptables_do_command("-t filter -A " CHAIN_AUTHENTICATED_TO_ROUTER " -j REJECT --reject-with icmp-port-unreachable");
+	}
+
 	// CHAIN_TO_ROUTER, other packets:
 
 	/* if users-to-router ruleset is empty:
