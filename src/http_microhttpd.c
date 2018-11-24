@@ -384,7 +384,7 @@ static int try_to_authenticate(struct MHD_Connection *connection, t_client *clie
 	 */
 	config = config_get_config();
 
-	/* we are checking here for the second '/' of /denydir/ */
+	/* Check for authdir */
 	if (check_authdir_match(url, config->authdir)) {
 		tok = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "tok");
 
@@ -393,6 +393,8 @@ static int try_to_authenticate(struct MHD_Connection *connection, t_client *clie
 			return 1;
 		}
 	}
+
+
 
 /*	//TODO: do we need denydir?
 	if (check_authdir_match(url, config->denydir)) {
@@ -532,7 +534,39 @@ static int preauthenticated(struct MHD_Connection *connection,
 	const char *host = NULL;
 	const char *redirect_url;
 	char *querystr = NULL;
+	char query_str[512] = {0};
+	char *query = &query_str;
+	//char *msg = NULL;
+	char msg[4096] = {0};
+	int rc;
+	struct MHD_Response *response;
+	int ret;
 	s_config *config = config_get_config();
+
+	/* Check for preauthdir */
+	if (check_authdir_match(url, config->preauthdir)) {
+
+		get_query(connection, &query);
+
+		rc = execute_ret(msg, sizeof(msg) - 1, "%s '%s'", config->preauth, query);
+
+		if (rc != 0) {
+			return -1;
+		}
+
+		// serve the script output (in msg)
+		response = MHD_create_response_from_buffer(strlen(msg), (char *)msg, MHD_RESPMEM_MUST_COPY);
+		if (!response) {
+			return send_error(connection, 503);
+		}
+
+		MHD_add_response_header(response, "Content-Type", "text/html");
+		ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
+		MHD_destroy_response(response);
+		return ret;
+	}
+
+
 
 	MHD_get_connection_values(connection, MHD_HEADER_KIND, get_host_value_callback, &host);
 
@@ -715,6 +749,7 @@ static int get_query(struct MHD_Connection *connection, char **query)
 {
 	int element_counter;
 	char **elements;
+	char query_str[512] = {0};
 	struct collect_query collect_query;
 	int i;
 	int j;
@@ -745,7 +780,7 @@ static int get_query(struct MHD_Connection *connection, char **query)
 	}
 
 	/* don't miss the zero terminator */
-	*query = calloc(length + 1, 1);
+	//*query = calloc(length + 1, 1);
 	if (*query == NULL) {
 		for (i = 0; i < element_counter; i++) {
 			free(elements[i]);
@@ -759,9 +794,17 @@ static int get_query(struct MHD_Connection *connection, char **query)
 			continue;
 		}
 		strncpy(*query + j, elements[i], length - j);
+		if (i == 0) {
+			strcpy(query_str, "?");
+		} else {
+			strcat(query_str, "&");
+		}
+		strcat(query_str, *query);
+
 		free(elements[i]);
 	}
 
+	strncpy(*query, query_str, sizeof(query_str));
 	free(elements);
 	return 0;
 }

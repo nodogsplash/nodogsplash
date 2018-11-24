@@ -288,6 +288,11 @@ main_loop(void)
 		debug(LOG_NOTICE, "Warning - Forwarding Authentication - Security is DISABLED.\n");
 	}
 
+	if (config->preauth) {
+		debug(LOG_NOTICE, "Preauth is Enabled.\n");
+		debug(LOG_NOTICE, "Preauth Script is %s\n", config->preauth);
+	}
+
 	if (config->binauth) {
 		debug(LOG_NOTICE, "Binauth is Enabled.\n");
 		debug(LOG_NOTICE, "Binauth Script is %s\n", config->binauth);

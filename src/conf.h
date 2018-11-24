@@ -27,7 +27,7 @@
 #ifndef _CONF_H_
 #define _CONF_H_
 
-#define VERSION "3.2.1"
+#define VERSION "3.3.0-1-beta"
 
 /*@{*/
 /** Defines */
@@ -67,6 +67,7 @@
 #define DEFAULT_PAGESDIR "pages"
 #define DEFAULT_AUTHDIR "nodogsplash_auth"
 #define DEFAULT_DENYDIR "nodogsplash_deny"
+#define DEFAULT_PREAUTHDIR "nodogsplash_preauth"
 #define DEFAULT_MACMECHANISM MAC_BLOCK
 #define DEFAULT_SET_MSS 1
 #define DEFAULT_MSS_VALUE 0
@@ -163,6 +164,7 @@ typedef struct {
 	char *redirectURL;		/**< @brief URL to direct client to after authentication */
 	char *authdir;			/**< @brief Notional relative dir for authentication URL */
 	char *denydir;			/**< @brief Notional relative dir for denial URL */
+	char *preauthdir;		/**< @brief Notional relative dir for preauth URL */
 	int session_timeout;		/**< @brief Minutes of the default session length */
 	int preauth_idle_timeout;	/**< @brief Minutes a preauthenticated client will be kept in the system */
 	int auth_idle_timeout;		/**< @brief Minutes an authenticated client will be kept in the system */
@@ -185,6 +187,7 @@ typedef struct {
 	unsigned int fw_mark_trusted;	/**< @brief iptables mark for trusted packets */
 	int ip6;			/**< @brief enable IPv6 */
 	char *binauth;			/**< @brief external authentication program */
+	char *preauth;			/**< @brief external preauthentication program */
 } s_config;
 
 /** @brief Get the current gateway configuration */
