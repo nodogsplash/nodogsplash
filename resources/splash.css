@@ -13,6 +13,19 @@ img {
 	margin-right: 5%;
 }
 
+input[type=text], input[type=email], input[type=number] {
+	color: black;
+	background: white;
+	margin-left: 0%;
+	margin-right: 5%;
+	text-align: left;
+	font-size: 1.0em;
+	line-height: 2.0em;
+	font-weight: bold;
+	border: 3px;
+	border-style: inset;
+}
+
 input[type=submit] {
 	color: white;
 	background: green;

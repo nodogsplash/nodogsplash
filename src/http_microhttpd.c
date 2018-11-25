@@ -278,7 +278,7 @@ get_client_ip(char ip_addr[INET6_ADDRSTRLEN], struct MHD_Connection *connection)
 }
 
 /**
- * @brief libmicrohttpd_cb called when the client do a request to this server
+ * @brief libmicrohttpd_cb called when the client does a request to this server
  * @param cls unused
  * @param connection - client connection
  * @param url - which url was called
@@ -387,6 +387,7 @@ static int try_to_authenticate(struct MHD_Connection *connection, t_client *clie
 	/* Check for authdir */
 	if (check_authdir_match(url, config->authdir)) {
 		tok = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "tok");
+		debug(LOG_DEBUG, "client->token=%s tok=%s ", client->token, tok );
 
 		if (tok && !strcmp(client->token, tok)) {
 			/* Token is valid */
@@ -394,7 +395,7 @@ static int try_to_authenticate(struct MHD_Connection *connection, t_client *clie
 		}
 	}
 
-
+	debug(LOG_WARNING, "Token is invalid" );
 
 /*	//TODO: do we need denydir?
 	if (check_authdir_match(url, config->denydir)) {
@@ -492,7 +493,7 @@ static int authenticated(struct MHD_Connection *connection,
 	MHD_get_connection_values(connection, MHD_HEADER_KIND, get_host_value_callback, &host);
 
 	/* check if this is an late request meaning the user tries to get the internet, but ended up here,
-	 * because the iptables rule came to late */
+	 * because the iptables rule came too late */
 	if (is_foreign_hosts(connection, host)) {
 		/* might happen if the firewall rule isn't yet installed */
 		return send_refresh(connection);
@@ -516,7 +517,19 @@ static int authenticated(struct MHD_Connection *connection,
 		}
 	}
 
-	/* user doesn't wants the splashpage or tried to auth itself */
+	if (check_authdir_match(url, config->preauthdir)) {
+		if (config->fas_port) {
+			safe_asprintf(&fasurl, "http://%s:%u%s?clientip=%s&gatewayname=%s&status=authenticated",
+				config->fas_remoteip, config->fas_port, config->fas_path, client->ip, config->gw_name);
+			ret = send_redirect_temp(connection, fasurl);
+			free(fasurl);
+			return ret;
+		} else {
+			return show_statuspage(connection, client);
+		}
+	}
+
+	/* user doesn't want the splashpage or tried to auth itself */
 	return serve_file(connection, client, url);
 }
 
@@ -535,7 +548,7 @@ static int preauthenticated(struct MHD_Connection *connection,
 	const char *redirect_url;
 	char *querystr = NULL;
 	char query_str[512] = {0};
-	char *query = &query_str;
+	char *query = query_str;
 	//char *msg = NULL;
 	char msg[4096] = {0};
 	int rc;
@@ -543,6 +556,7 @@ static int preauthenticated(struct MHD_Connection *connection,
 	int ret;
 	s_config *config = config_get_config();
 
+	debug(LOG_DEBUG, "url: %s", url);
 	/* Check for preauthdir */
 	if (check_authdir_match(url, config->preauthdir)) {
 
@@ -551,14 +565,15 @@ static int preauthenticated(struct MHD_Connection *connection,
 		rc = execute_ret(msg, sizeof(msg) - 1, "%s '%s'", config->preauth, query);
 
 		if (rc != 0) {
+			debug(LOG_WARNING, "Preauth script: %s '%s' - failed to execute", config->preauth, query);
 			return -1;
 		}
 
 		// serve the script output (in msg)
 		response = MHD_create_response_from_buffer(strlen(msg), (char *)msg, MHD_RESPMEM_MUST_COPY);
-		if (!response) {
-			return send_error(connection, 503);
-		}
+		//if (!response) {
+		//	return send_error(connection, 503);
+		//}
 
 		MHD_add_response_header(response, "Content-Type", "text/html");
 		ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
@@ -582,6 +597,7 @@ static int preauthenticated(struct MHD_Connection *connection,
 		 * When the client reloads a page when it's authenticated, it should be redirected
 		 * to their origin url
 		 */
+		debug(LOG_DEBUG, "authdir url detected: %s", url);
 
 		if (config->redirectURL) {
 			redirect_url = config->redirectURL;
