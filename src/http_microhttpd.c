@@ -53,6 +53,7 @@ static int get_host_value_callback(void *cls, enum MHD_ValueKind kind, const cha
 static int serve_file(struct MHD_Connection *connection, t_client *client, const char *url);
 static int show_splashpage(struct MHD_Connection *connection, t_client *client);
 static int show_statuspage(struct MHD_Connection *connection, t_client *client);
+static int show_preauthpage(struct MHD_Connection *connection, const char *query);
 static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, const char *originurl, const char *querystr);
 static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *client, const char *host, const char *url);
 static int send_error(struct MHD_Connection *connection, int error);
@@ -519,9 +520,9 @@ static int authenticated(struct MHD_Connection *connection,
 
 	if (check_authdir_match(url, config->preauthdir)) {
 		if (config->fas_port) {
-			safe_asprintf(&fasurl, "http://%s:%u%s?clientip=%s&gatewayname=%s&status=authenticated",
-				config->fas_remoteip, config->fas_port, config->fas_path, client->ip, config->gw_name);
-			ret = send_redirect_temp(connection, fasurl);
+			safe_asprintf(&fasurl, "?clientip=%s&gatewayname=%s&status=authenticated",
+				client->ip, config->gw_name);
+			ret = show_preauthpage(connection, fasurl);
 			free(fasurl);
 			return ret;
 		} else {
@@ -531,6 +532,36 @@ static int authenticated(struct MHD_Connection *connection,
 
 	/* user doesn't want the splashpage or tried to auth itself */
 	return serve_file(connection, client, url);
+}
+
+/**
+ * @brief show_preauthpage - run preauth script and serve output.
+ */
+static int show_preauthpage(struct MHD_Connection *connection, const char *query)
+{
+	char msg[4096] = {0};
+	int rc;
+	struct MHD_Response *response;
+	int ret;
+	s_config *config = config_get_config();
+
+	rc = execute_ret(msg, sizeof(msg) - 1, "%s '%s'", config->preauth, query);
+
+	if (rc != 0) {
+		debug(LOG_WARNING, "Preauth script: %s '%s' - failed to execute", config->preauth, query);
+		return -1;
+	}
+
+	// serve the script output (in msg)
+	response = MHD_create_response_from_buffer(strlen(msg), (char *)msg, MHD_RESPMEM_MUST_COPY);
+	//if (!response) {
+	//	return send_error(connection, 503);
+	//}
+
+	MHD_add_response_header(response, "Content-Type", "text/html");
+	ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
+	MHD_destroy_response(response);
+	return ret;
 }
 
 /**
@@ -549,9 +580,6 @@ static int preauthenticated(struct MHD_Connection *connection,
 	char *querystr = NULL;
 	char query_str[512] = {0};
 	char *query = query_str;
-	//char *msg = NULL;
-	char msg[4096] = {0};
-	int rc;
 	struct MHD_Response *response;
 	int ret;
 	s_config *config = config_get_config();
@@ -562,22 +590,7 @@ static int preauthenticated(struct MHD_Connection *connection,
 
 		get_query(connection, &query);
 
-		rc = execute_ret(msg, sizeof(msg) - 1, "%s '%s'", config->preauth, query);
-
-		if (rc != 0) {
-			debug(LOG_WARNING, "Preauth script: %s '%s' - failed to execute", config->preauth, query);
-			return -1;
-		}
-
-		// serve the script output (in msg)
-		response = MHD_create_response_from_buffer(strlen(msg), (char *)msg, MHD_RESPMEM_MUST_COPY);
-		//if (!response) {
-		//	return send_error(connection, 503);
-		//}
-
-		MHD_add_response_header(response, "Content-Type", "text/html");
-		ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
-		MHD_destroy_response(response);
+		ret=show_preauthpage(connection, query);
 		return ret;
 	}
 
