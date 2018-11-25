@@ -37,6 +37,14 @@ footer="
 
 echo -e $header
 
+if [ $requested == "authenticated" ]; then
+	echo "<p><big-red>You are already logged in and have access to the Internet.</big-red></p>"
+	echo "<hr>"
+	echo "<p><italic-black>You can use your Browser, Email and other network Apps as you normally would.</italic-black></p>"
+	echo -e $footer
+	exit 0
+fi
+
 if [ -z $username ] || [ -z $emailaddr ]; then
 	echo "<big-red>Welcome!</big-red><italic-black> To access the Internet you must enter your Name and Email Address</italic-black>"
 	echo "<form action=\"/nodogsplash_preauth/\" method=\"get\">"
@@ -48,8 +56,8 @@ if [ -z $username ] || [ -z $emailaddr ]; then
 	echo "<input type=\"submit\" value=\"Continue\" >"
 	echo "</form><hr>"
 else
-	tok="$(ndsctl json $clientip | grep token | tr -d \"\"token:,\")"
-	clientmac="$(ndsctl json $clientip | grep mac | tr -d \"\"mac,\" | cut -c 2-)"
+	tok="$(ndsctl json $clientip | grep token | cut -c 10- | cut -c -8)"
+	clientmac="$(ndsctl json $clientip | grep mac | grep mac | cut -c 8- | cut -c -17)"
 
 	echo "<big-red>Thankyou!</big-red>"
 	echo "<br><italic-black> Your News or Advertising could be here, contact the owners of this Hotspot to find out how!</italic-black>"
