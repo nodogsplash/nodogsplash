@@ -32,6 +32,7 @@ Contents:
    faq
    howitworks
    fas
+   preauth
    binauth
    traffic
    ndsctl
