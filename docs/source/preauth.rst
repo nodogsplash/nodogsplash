@@ -42,4 +42,13 @@ Using The Example PreAuth Script
 
 An example PreAuth script is provided along with the FAS examples and should be copied to a convenient location on your router eg "/etc/nodogsplash/", remembering to flag as executable.
 
+This example shell script generates html output for NDS to serve as a dynamic splash page.
 
+It asks the client user to enter their name and email address.
+On entering this information the client user then clicks or taps "Continue".
+
+The script then generates html code to send to NDS to serve a second "Thankyou" page and creates a log entry ( /tmp/ndslog.log ), recording the client authentication details.
+
+On tapping "Continue" for the second time, the client user is given access to the Internet.
+
+This is a simple example of a script to demonstrate how to use PreAuth as a built in FAS. The script could of course ask for any response from the client and conduct its own authentication procedures - entirely at the discretion of the person setting up their own captive portal functionality.
