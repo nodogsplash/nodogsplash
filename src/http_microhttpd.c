@@ -540,12 +540,22 @@ static int authenticated(struct MHD_Connection *connection,
 static int show_preauthpage(struct MHD_Connection *connection, const char *query)
 {
 	char msg[4096] = {0};
+	char query_enc[1024] = {0};
 	int rc;
 	struct MHD_Response *response;
 	int ret;
 	s_config *config = config_get_config();
 
-	rc = execute_ret(msg, sizeof(msg) - 1, "%s '%s'", config->preauth, query);
+	if (query) {
+		if (uh_urlencode(query_enc, sizeof(query_enc), query, strlen(query)) == -1) {
+			debug(LOG_WARNING, "could not encode query");
+			return -1;
+		} else {
+			debug(LOG_DEBUG, "query: %s", query);
+		}
+	}
+
+	rc = execute_ret(msg, sizeof(msg) - 1, "%s '%s'", config->preauth, query_enc);
 
 	if (rc != 0) {
 		debug(LOG_WARNING, "Preauth script: %s '%s' - failed to execute", config->preauth, query);
@@ -590,7 +600,7 @@ static int preauthenticated(struct MHD_Connection *connection,
 
 		get_query(connection, &query);
 
-		ret=show_preauthpage(connection, query);
+		ret = show_preauthpage(connection, query);
 		return ret;
 	}
 

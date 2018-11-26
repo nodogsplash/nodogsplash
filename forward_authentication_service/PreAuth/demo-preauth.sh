@@ -1,5 +1,10 @@
 #!/bin/sh
-query="$1"
+query_enc="$1"
+
+# query string is sent from NDS urlencoded, so decode it here:
+query=$(printf "${query_enc//%/\\x}")
+
+# parse for what we are looking for:
 clientip="$(echo $query | awk -F '&' '{print $1;}' | awk -F '=' '{print $2;}')"
 gatewayname="$(echo $query | awk -F '&' '{print $2;}' | awk -F '=' '{print $2;}')"
 requested="$(echo $query | awk -F '&' '{print $3;}' | awk -F '=' '{print $2;}')"
@@ -70,4 +75,5 @@ else
 fi
 
 echo -e $footer
+
 
