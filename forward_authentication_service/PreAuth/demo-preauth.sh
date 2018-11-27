@@ -120,14 +120,14 @@ if [ -z $username ] || [ -z $emailaddr ]; then
 	echo "<input type=\"submit\" value=\"Continue\" >"
 	echo "</form><hr>"
 else
-# We have both fields, so get the token and in this case also the mac address
+	# We have both fields, so get the token and in this case also the mac address
 	tok="$(ndsctl json $clientip | grep token | cut -c 10- | cut -c -8)"
 	clientmac="$(ndsctl json $clientip | grep mac | grep mac | cut -c 8- | cut -c -17)"
 
-# Output the "Thankyou page" with a continue button
-# You could include information or advertising on this page
-# Be aware that many devices will close the login browser as soon as
-# the client taps continue, so now is the time to deliver your message.
+	# Output the "Thankyou page" with a continue button
+	# You could include information or advertising on this page
+	# Be aware that many devices will close the login browser as soon as
+	# the client taps continue, so now is the time to deliver your message.
 	echo "<big-red>Thankyou!</big-red>"
 	echo "<br><b>Welcome $username</b>"
 	echo "<br><italic-black> Your News or Advertising could be here, contact the owners of this Hotspot to find out how!</italic-black>"
@@ -137,7 +137,7 @@ else
 	echo "<input type=\"submit\" value=\"Continue\" >"
 	echo "</form><hr>"
 
-# In this example we have decided to log all clients who are granted access
+	# In this example we have decided to log all clients who are granted access
 	echo "$(date) Username=$username Email Address=$emailaddr mac address=$clientmac" >> /tmp/ndslog.log
 fi
 
