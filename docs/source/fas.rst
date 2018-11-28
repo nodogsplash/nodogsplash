@@ -42,9 +42,9 @@ The return url will be constructed by FAS from predetermined knowledge of the co
 
 The client's unique access token will be obtained from NDS by the FAS making a call to the ndsctl tool.
 
-For example, the following command returns just the token with newline stripped:
+For example, the following command returns just the token:
 
-`ndsctl json [clientip] | grep token | tr -d '"token:,\\n'`
+`ndsctl json $clientip | grep token | cut -c 10- | cut -c -8`
 
 If the client successfully authenticates in the FAS, FAS will return the unique token to NDS to finally allow the client access to the Internet.
 
