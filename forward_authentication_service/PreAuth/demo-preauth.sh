@@ -122,7 +122,7 @@ if [ -z $username ] || [ -z $emailaddr ]; then
 else
 	# We have both fields, so get the token and in this case also the mac address
 	tok="$(ndsctl json $clientip | grep token | cut -c 10- | cut -c -8)"
-	clientmac="$(ndsctl json $clientip | grep mac | grep mac | cut -c 8- | cut -c -17)"
+	clientmac="$(ndsctl json $clientip | grep mac | cut -c 8- | cut -c -17)"
 
 	# Output the "Thankyou page" with a continue button
 	# You could include information or advertising on this page
