@@ -45,6 +45,9 @@
 /* how much memory we reserve for extending template variables */
 #define TMPLVAR_SIZE 4096
 
+/* Max length of a query string */
+#define QUERYMAXLEN 1024
+
 static t_client *add_client(const char mac[], const char ip[]);
 static int authenticated(struct MHD_Connection *connection, const char *url, t_client *client);
 static int preauthenticated(struct MHD_Connection *connection, const char *url, t_client *client);
@@ -588,7 +591,7 @@ static int preauthenticated(struct MHD_Connection *connection,
 	const char *host = NULL;
 	const char *redirect_url;
 	char *querystr = NULL;
-	char query_str[512] = {0};
+	char query_str[ QUERYMAXLEN ] = {0};
 	char *query = query_str;
 	struct MHD_Response *response;
 	int ret;
@@ -788,7 +791,7 @@ static int get_query(struct MHD_Connection *connection, char **query)
 {
 	int element_counter;
 	char **elements;
-	char query_str[512] = {0};
+	char query_str[ QUERYMAXLEN ] = {0};
 	struct collect_query collect_query;
 	int i;
 	int j;
@@ -834,11 +837,20 @@ static int get_query(struct MHD_Connection *connection, char **query)
 		}
 		strncpy(*query + j, elements[i], length - j);
 		if (i == 0) {
+			// query_str is empty when i = 0 so safe to copy a single char into it
 			strcpy(query_str, "?");
 		} else {
-			strcat(query_str, "&");
+			if (QUERYMAXLEN - strlen(query_str) > length - j + 1) {
+				strncat(query_str, "&", QUERYMAXLEN - strlen(query_str));
+			}
 		}
-		strcat(query_str, *query);
+
+		// note: query string will be truncated if too long
+		if (QUERYMAXLEN - strlen(query_str) > length - j) {
+			strncat(query_str, *query, QUERYMAXLEN - strlen(query_str));
+		} else {
+			debug(LOG_WARNING, "Query string is truncated");
+		}
 
 		free(elements[i]);
 	}
