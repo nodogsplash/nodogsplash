@@ -34,29 +34,59 @@ query=$(printf "${query_enc//%/\\x}")
 #
 # In a similar manner we can obtain any client or NDS information that ndsctl provides. 
 
-# The query string NDS sends to us will always be of the following form:
-# ?clientip=[clientipaddress]&gatewayname=[gatewayname]&redir=[originalurl]&var4=[data]&var5=[data]&var6......
+# The query string NDS sends to us will always be of the following form (with a "comma space" separator):
+# ?clientip=[clientipaddress], gatewayname=[gatewayname], redir=[originalurl], var4=[data], var5=[data], var6......
 #
 # The first three variables will be clientip, gatewayname and redir
 #
 # We have chosen to name redir as $requested here as it is actually the originally requested url.
 #
 # There is one exception to this. If the client presses "back" on their browser NDS detects this
-# and tells us by returning &status=authenticated instead of &redir=[originalurl]
+# and tells us by returning status=authenticated instead of redir=[originalurl]
 # If we detect this we show a page telling the client they are already logged in.
+#
+# Additional variables returned by NDS will be those we define here and send to NDS via an
+# html form method=get
+# See the examples here for $username and $emailaddress
+#
+# There is no limit to the number of variables we can define dynamically
+# as long as the query string does not exceed 2048 bytes.
+#
+# The query string will be truncated if it does exceed this length.
 
 
-# parse for what we are looking for in this example:
-clientip="$(echo $query | awk -F '&' '{print $1;}' | awk -F '=' '{print $2;}')"
-gatewayname="$(echo $query | awk -F '&' '{print $2;}' | awk -F '=' '{print $2;}')"
-requested="$(echo $query | awk -F '&' '{print $3;}' | awk -F '=' '{print $2;}')"
-username="$(echo $query | awk -F '&' '{print $4;}' | awk -F '=' '{print $2;}')"
-emailaddr="$(echo $query | awk -F '&' '{print $5;}' | awk -F '=' '{print $2;}')"
+# Parse for the system variables always sent by NDS:
+clientip="$(echo $query | awk -F ', ' '{print $1;}' | awk -F 'clientip=' '{print $2;}')"
+gatewayname="$(echo $query | awk -F ', ' '{print $2;}' | awk -F 'gatewayname=' '{print $2;}')"
+# The third system variable is either:
+requested="$(echo $query | awk -F ', ' '{print $3;}' | awk -F 'redir=' '{print $2;}')"
+# or:
+status="$(echo $query | awk -F ', ' '{print $3;}' | awk -F 'status=' '{print $2;}')"
+
+# Parse for additional variables we define in this script
+username="$(echo $query | awk -F ', ' '{print $4;}' | awk -F 'username=' '{print $2;}')"
+emailaddr="$(echo $query | awk -F ', ' '{print $5;}' | awk -F 'emailaddr=' '{print $2;}')"
+
 
 # Define some common html as the first part of the page to be served by NDS
+#
 # Note this example uses the default splash.css provided by NDS and uses splash.jpg
-# as the browser shortcut icon. You can decide how your PreAuth splash page will look
+# as the browser shortcut icon.
+#
+# You can decide how your PreAuth splash page will look
 # by incorporating your own css and images.
+#
+# Note however that the output of this script will be displayed on the client device screen via the CPD process on that device.
+# It should be noted when designing a custom splash page that for security reasons many client device CPD implementations:
+#
+#	Immediately close the browser when the client has authenticated.
+#	Prohibit the use of href links.
+#	Prohibit downloading of external files (including .css and .js, even if they are allowed in NDS firewall settings).
+#	Prohibit the execution of javascript.
+#
+
+
+
 header="
 	<!DOCTYPE html>\n
 	<html>
@@ -92,7 +122,7 @@ echo -e $header
 
 # Check if the client is already logged in and has tapped "back" on their browser
 # Make this a friendly message explaining they are good to go
-if [ $requested == "authenticated" ]; then
+if [ $status == "authenticated" ]; then
 	echo "<p><big-red>You are already logged in and have access to the Internet.</big-red></p>"
 	echo "<hr>"
 	echo "<p><italic-black>You can use your Browser, Email and other network Apps as you normally would.</italic-black></p>"

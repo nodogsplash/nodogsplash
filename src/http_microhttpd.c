@@ -67,7 +67,7 @@ static int send_redirect_temp(struct MHD_Connection *connection, const char *url
 static int send_refresh(struct MHD_Connection *connection);
 static int is_foreign_hosts(struct MHD_Connection *connection, const char *host);
 static int is_splashpage(const char *host, const char *url);
-static int get_query(struct MHD_Connection *connection, char **collect_query);
+static int get_query(struct MHD_Connection *connection, char **collect_query, const char *separator);
 static const char *get_redirect_url(struct MHD_Connection *connection);
 static const char *lookup_mimetype(const char *filename);
 
@@ -513,12 +513,18 @@ static int authenticated(struct MHD_Connection *connection,
 	}
 
 	if (check_authdir_match(url, config->authdir)) {
-		if (config->fas_port) {
+		if (config->fas_port && !config->preauth) {
 			safe_asprintf(&fasurl, "http://%s:%u%s?clientip=%s&gatewayname=%s&status=authenticated",
 				config->fas_remoteip, config->fas_port, config->fas_path, client->ip, config->gw_name);
 			ret = send_redirect_temp(connection, fasurl);
 			free(fasurl);
 			return ret;
+		} else if (config->fas_port && config->preauth) {
+			safe_asprintf(&fasurl, "?clientip=%s%sgatewayname=%s%sstatus=authenticated",
+				client->ip, QUERYSEPARATOR, config->gw_name, QUERYSEPARATOR);
+			ret = show_preauthpage(connection, fasurl);
+			free(fasurl);
+			return ret;	
 		} else {
 			return show_statuspage(connection, client);
 		}
@@ -608,9 +614,10 @@ static int preauthenticated(struct MHD_Connection *connection,
 
 		debug(LOG_DEBUG, "preauthdir url detected: %s", url);
 
-		get_query(connection, &query);
+		get_query(connection, &query, QUERYSEPARATOR);
 
 		ret = show_preauthpage(connection, query);
+		free(query);
 		return ret;
 	}
 
@@ -664,13 +671,12 @@ static int preauthenticated(struct MHD_Connection *connection,
 static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, const char *originurl, const char *querystr)
 {
 	char *splashpageurl = NULL;
-	char encoded[2048];
+	char encoded[QUERYMAXLEN] = {0};
 	s_config *config;
 	int ret;
 
 	config = config_get_config();
 
-	memset(encoded, 0, sizeof(encoded));
 	if (originurl) {
 		if (uh_urlencode(encoded, sizeof(encoded), originurl, strlen(originurl)) == -1) {
 			debug(LOG_WARNING, "could not encode url");
@@ -713,23 +719,30 @@ static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, 
 static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *client, const char *host, const char *url)
 {
 	char *originurl = NULL;
-	char *query = NULL;
+	char query_str[QUERYMAXLEN] = {0};
+	char *query = query_str;
 	int ret = 0;
+	const char *separator = "&";
 	char *querystr = NULL;
 	s_config *config = config_get_config();
 
-	get_query(connection, &query);
+	get_query(connection, &query, separator);
 	if (!query) {
 		debug(LOG_DEBUG, "Unable to get query string - error 503");
 		/* no mem */
+		free(query);
 		return send_error(connection, 503);
 	}
+
+	debug(LOG_DEBUG, "Query string is [ %s ]", query);
+
 	if (config->fas_secure_enabled != 1) {
 		safe_asprintf(&querystr, "?clientip=%s&gatewayname=%s&tok=%s", client->ip, config->gw_name, client->token);
 	} else {
 		safe_asprintf(&querystr, "?clientip=%s&gatewayname=%s", client->ip, config->gw_name);
 	}
-	safe_asprintf(&originurl, "http://%s%s%s%s", host, url, strlen(query) ? "?" : "" , query);
+
+	safe_asprintf(&originurl, "http://%s%s%s", host, url, query);
 	ret = encode_and_redirect_to_splashpage(connection, originurl, querystr);
 	free(originurl);
 	free(querystr);
@@ -794,7 +807,7 @@ static const char *get_redirect_url(struct MHD_Connection *connection)
 }
 
 /* save the query or empty string into **query.*/
-static int get_query(struct MHD_Connection *connection, char **query)
+static int get_query(struct MHD_Connection *connection, char **query, const char *separator)
 {
 	int element_counter;
 	char **elements;
@@ -803,6 +816,8 @@ static int get_query(struct MHD_Connection *connection, char **query)
 	int i;
 	int j;
 	int length = 0;
+
+	debug(LOG_DEBUG, " Separator is [%s].", separator);
 
 	element_counter = MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, counter_iterator, NULL);
 	if (element_counter == 0) {
@@ -847,7 +862,7 @@ static int get_query(struct MHD_Connection *connection, char **query)
 			strcpy(query_str, "?");
 		} else {
 			if (QUERYMAXLEN - strlen(query_str) > length - j + 1) {
-				strncat(query_str, "&", QUERYMAXLEN - strlen(query_str));
+				strncat(query_str, separator, QUERYMAXLEN - strlen(query_str));
 			}
 		}
 
