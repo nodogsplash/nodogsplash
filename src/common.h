@@ -29,4 +29,10 @@
 /** @brief Read buffer for socket read? */
 #define MAX_BUF 4096
 
+/* Max length of a query string in bytes */
+#define QUERYMAXLEN 1024
+
+/* Max dynamic html page size in bytes */
+#define HTMLMAXSIZE 4096
+
 #endif /* _COMMON_H_ */

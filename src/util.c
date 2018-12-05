@@ -129,7 +129,7 @@ abort:
 
 int execute(const char fmt[], ...)
 {
-	char cmd[512];
+	char cmd[QUERYMAXLEN];
 	va_list vlist;
 	int rc;
 

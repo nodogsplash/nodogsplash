@@ -30,6 +30,7 @@
 
 #include "client_list.h"
 #include "conf.h"
+#include "common.h"
 #include "debug.h"
 #include "auth.h"
 #include "http_microhttpd.h"
@@ -45,8 +46,10 @@
 /* how much memory we reserve for extending template variables */
 #define TMPLVAR_SIZE 4096
 
-/* Max length of a query string */
-#define QUERYMAXLEN 1024
+/* Max length of a query string QUERYMAXLEN in bytes defined in common.h */
+
+/* Max dynamic html page size HTMLMAXSIZE in bytes defined in common.h */
+
 
 static t_client *add_client(const char mac[], const char ip[]);
 static int authenticated(struct MHD_Connection *connection, const char *url, t_client *client);
@@ -542,8 +545,9 @@ static int authenticated(struct MHD_Connection *connection,
  */
 static int show_preauthpage(struct MHD_Connection *connection, const char *query)
 {
-	char msg[4096] = {0};
-	char query_enc[1024] = {0};
+	char msg[HTMLMAXSIZE] = {0};
+	// Encoded querystring could be up to 3 times the size of unencoded version
+	char query_enc[QUERYMAXLEN * 3] = {0};
 	int rc;
 	struct MHD_Response *response;
 	int ret;
@@ -558,7 +562,7 @@ static int show_preauthpage(struct MHD_Connection *connection, const char *query
 		}
 	}
 
-	rc = execute_ret(msg, sizeof(msg) - 1, "%s '%s'", config->preauth, query_enc);
+	rc = execute_ret(msg, HTMLMAXSIZE - 1, "%s '%s'", config->preauth, query_enc);
 
 	if (rc != 0) {
 		debug(LOG_WARNING, "Preauth script: %s '%s' - failed to execute", config->preauth, query);
@@ -567,9 +571,10 @@ static int show_preauthpage(struct MHD_Connection *connection, const char *query
 
 	// serve the script output (in msg)
 	response = MHD_create_response_from_buffer(strlen(msg), (char *)msg, MHD_RESPMEM_MUST_COPY);
-	//if (!response) {
-	//	return send_error(connection, 503);
-	//}
+
+	if (!response) {
+		return send_error(connection, 503);
+	}
 
 	MHD_add_response_header(response, "Content-Type", "text/html");
 	ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
@@ -591,7 +596,7 @@ static int preauthenticated(struct MHD_Connection *connection,
 	const char *host = NULL;
 	const char *redirect_url;
 	char *querystr = NULL;
-	char query_str[ QUERYMAXLEN ] = {0};
+	char query_str[QUERYMAXLEN] = {0};
 	char *query = query_str;
 	struct MHD_Response *response;
 	int ret;
@@ -600,6 +605,8 @@ static int preauthenticated(struct MHD_Connection *connection,
 	debug(LOG_DEBUG, "url: %s", url);
 	/* Check for preauthdir */
 	if (check_authdir_match(url, config->preauthdir)) {
+
+		debug(LOG_DEBUG, "preauthdir url detected: %s", url);
 
 		get_query(connection, &query);
 
@@ -713,6 +720,7 @@ static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *c
 
 	get_query(connection, &query);
 	if (!query) {
+		debug(LOG_DEBUG, "Unable to get query string - error 503");
 		/* no mem */
 		return send_error(connection, 503);
 	}
@@ -785,13 +793,12 @@ static const char *get_redirect_url(struct MHD_Connection *connection)
 	return MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "redir");
 }
 
-/* save the query or empty string into **query.
- * the call must free query later */
+/* save the query or empty string into **query.*/
 static int get_query(struct MHD_Connection *connection, char **query)
 {
 	int element_counter;
 	char **elements;
-	char query_str[ QUERYMAXLEN ] = {0};
+	char query_str[QUERYMAXLEN] = {0};
 	struct collect_query collect_query;
 	int i;
 	int j;
@@ -809,7 +816,7 @@ static int get_query(struct MHD_Connection *connection, char **query)
 	collect_query.i = 0;
 	collect_query.elements = elements;
 
-	// static int get_host_value_callback(void *cls, enum MHD_ValueKind kind, const char *key, const char *value) {
+	// Collect the arguments of the query string from MHD
 	MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, collect_query_string, &collect_query);
 
 	for (i = 0; i < element_counter; i++) {
@@ -822,7 +829,6 @@ static int get_query(struct MHD_Connection *connection, char **query)
 	}
 
 	/* don't miss the zero terminator */
-	//*query = calloc(length + 1, 1);
 	if (*query == NULL) {
 		for (i = 0; i < element_counter; i++) {
 			free(elements[i]);
@@ -849,7 +855,7 @@ static int get_query(struct MHD_Connection *connection, char **query)
 		if (QUERYMAXLEN - strlen(query_str) > length - j) {
 			strncat(query_str, *query, QUERYMAXLEN - strlen(query_str));
 		} else {
-			debug(LOG_WARNING, "Query string is truncated");
+			debug(LOG_WARNING, " Query string exceeds the maximum of %d bytes so has been truncated.", QUERYMAXLEN);
 		}
 
 		free(elements[i]);
@@ -879,7 +885,8 @@ static int send_refresh(struct MHD_Connection *connection)
 static int send_error(struct MHD_Connection *connection, int error)
 {
 	struct MHD_Response *response = NULL;
-	// cannot automate since cannot translate automagically between error number and MHD's status codes -- and cannot rely on MHD_HTTP_ values to provide an upper bound for an array
+	// cannot automate since cannot translate automagically between error number and MHD's status codes
+	// -- and cannot rely on MHD_HTTP_ values to provide an upper bound for an array
 	const char *page_200 = "<html><header><title>Authenticated</title><body><h1>Authenticated</h1></body></html>";
 	const char *page_400 = "<html><head><title>Error 400</title></head><body><h1>Error 400 - Bad Request</h1></body></html>";
 	const char *page_403 = "<html><head><title>Error 403</title></head><body><h1>Error 403 - Forbidden</h1></body></html>";
