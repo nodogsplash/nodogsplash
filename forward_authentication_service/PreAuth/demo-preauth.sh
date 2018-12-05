@@ -9,7 +9,7 @@ query=$(printf "${query_enc//%/\\x}")
 # In this example script we want to ask the client user for
 # their username and email address.
 #
-# We could ask for anything we like and add additional input to the html forms
+# We could ask for anything we like and add our own variables to the html forms
 # we generate.
 #
 # If we want to show a sequence of forms or information pages we can do this easily.
@@ -58,12 +58,14 @@ query=$(printf "${query_enc//%/\\x}")
 # Parse for the system variables always sent by NDS:
 clientip="$(echo $query | awk -F ', ' '{print $1;}' | awk -F 'clientip=' '{print $2;}')"
 gatewayname="$(echo $query | awk -F ', ' '{print $2;}' | awk -F 'gatewayname=' '{print $2;}')"
-# The third system variable is either:
+
+# The third system variable is either the originally requested url:
 requested="$(echo $query | awk -F ', ' '{print $3;}' | awk -F 'redir=' '{print $2;}')"
-# or:
+
+# or it is a status message:
 status="$(echo $query | awk -F ', ' '{print $3;}' | awk -F 'status=' '{print $2;}')"
 
-# Parse for additional variables we define in this script
+# Parse for additional variables we define in this script, in this case username and emailaddr
 username="$(echo $query | awk -F ', ' '{print $4;}' | awk -F 'username=' '{print $2;}')"
 emailaddr="$(echo $query | awk -F ', ' '{print $5;}' | awk -F 'emailaddr=' '{print $2;}')"
 
