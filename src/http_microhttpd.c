@@ -30,6 +30,7 @@
 
 #include "client_list.h"
 #include "conf.h"
+#include "common.h"
 #include "debug.h"
 #include "auth.h"
 #include "http_microhttpd.h"
@@ -45,6 +46,11 @@
 /* how much memory we reserve for extending template variables */
 #define TMPLVAR_SIZE 4096
 
+/* Max length of a query string QUERYMAXLEN in bytes defined in common.h */
+
+/* Max dynamic html page size HTMLMAXSIZE in bytes defined in common.h */
+
+
 static t_client *add_client(const char mac[], const char ip[]);
 static int authenticated(struct MHD_Connection *connection, const char *url, t_client *client);
 static int preauthenticated(struct MHD_Connection *connection, const char *url, t_client *client);
@@ -53,6 +59,7 @@ static int get_host_value_callback(void *cls, enum MHD_ValueKind kind, const cha
 static int serve_file(struct MHD_Connection *connection, t_client *client, const char *url);
 static int show_splashpage(struct MHD_Connection *connection, t_client *client);
 static int show_statuspage(struct MHD_Connection *connection, t_client *client);
+static int show_preauthpage(struct MHD_Connection *connection, const char *query);
 static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, const char *originurl, const char *querystr);
 static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *client, const char *host, const char *url);
 static int send_error(struct MHD_Connection *connection, int error);
@@ -60,7 +67,7 @@ static int send_redirect_temp(struct MHD_Connection *connection, const char *url
 static int send_refresh(struct MHD_Connection *connection);
 static int is_foreign_hosts(struct MHD_Connection *connection, const char *host);
 static int is_splashpage(const char *host, const char *url);
-static int get_query(struct MHD_Connection *connection, char **collect_query);
+static int get_query(struct MHD_Connection *connection, char **collect_query, const char *separator);
 static const char *get_redirect_url(struct MHD_Connection *connection);
 static const char *lookup_mimetype(const char *filename);
 
@@ -278,7 +285,7 @@ get_client_ip(char ip_addr[INET6_ADDRSTRLEN], struct MHD_Connection *connection)
 }
 
 /**
- * @brief libmicrohttpd_cb called when the client do a request to this server
+ * @brief libmicrohttpd_cb called when the client does a request to this server
  * @param cls unused
  * @param connection - client connection
  * @param url - which url was called
@@ -384,15 +391,18 @@ static int try_to_authenticate(struct MHD_Connection *connection, t_client *clie
 	 */
 	config = config_get_config();
 
-	/* we are checking here for the second '/' of /denydir/ */
+	/* Check for authdir */
 	if (check_authdir_match(url, config->authdir)) {
 		tok = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "tok");
+		debug(LOG_DEBUG, "client->token=%s tok=%s ", client->token, tok );
 
 		if (tok && !strcmp(client->token, tok)) {
 			/* Token is valid */
 			return 1;
 		}
 	}
+
+	debug(LOG_WARNING, "Token is invalid" );
 
 /*	//TODO: do we need denydir?
 	if (check_authdir_match(url, config->denydir)) {
@@ -490,7 +500,7 @@ static int authenticated(struct MHD_Connection *connection,
 	MHD_get_connection_values(connection, MHD_HEADER_KIND, get_host_value_callback, &host);
 
 	/* check if this is an late request meaning the user tries to get the internet, but ended up here,
-	 * because the iptables rule came to late */
+	 * because the iptables rule came too late */
 	if (is_foreign_hosts(connection, host)) {
 		/* might happen if the firewall rule isn't yet installed */
 		return send_refresh(connection);
@@ -503,10 +513,28 @@ static int authenticated(struct MHD_Connection *connection,
 	}
 
 	if (check_authdir_match(url, config->authdir)) {
-		if (config->fas_port) {
+		if (config->fas_port && !config->preauth) {
 			safe_asprintf(&fasurl, "http://%s:%u%s?clientip=%s&gatewayname=%s&status=authenticated",
 				config->fas_remoteip, config->fas_port, config->fas_path, client->ip, config->gw_name);
 			ret = send_redirect_temp(connection, fasurl);
+			free(fasurl);
+			return ret;
+		} else if (config->fas_port && config->preauth) {
+			safe_asprintf(&fasurl, "?clientip=%s%sgatewayname=%s%sstatus=authenticated",
+				client->ip, QUERYSEPARATOR, config->gw_name, QUERYSEPARATOR);
+			ret = show_preauthpage(connection, fasurl);
+			free(fasurl);
+			return ret;	
+		} else {
+			return show_statuspage(connection, client);
+		}
+	}
+
+	if (check_authdir_match(url, config->preauthdir)) {
+		if (config->fas_port) {
+			safe_asprintf(&fasurl, "?clientip=%s&gatewayname=%s&status=authenticated",
+				client->ip, config->gw_name);
+			ret = show_preauthpage(connection, fasurl);
 			free(fasurl);
 			return ret;
 		} else {
@@ -514,8 +542,50 @@ static int authenticated(struct MHD_Connection *connection,
 		}
 	}
 
-	/* user doesn't wants the splashpage or tried to auth itself */
+	/* user doesn't want the splashpage or tried to auth itself */
 	return serve_file(connection, client, url);
+}
+
+/**
+ * @brief show_preauthpage - run preauth script and serve output.
+ */
+static int show_preauthpage(struct MHD_Connection *connection, const char *query)
+{
+	char msg[HTMLMAXSIZE] = {0};
+	// Encoded querystring could be up to 3 times the size of unencoded version
+	char query_enc[QUERYMAXLEN * 3] = {0};
+	int rc;
+	struct MHD_Response *response;
+	int ret;
+	s_config *config = config_get_config();
+
+	if (query) {
+		if (uh_urlencode(query_enc, sizeof(query_enc), query, strlen(query)) == -1) {
+			debug(LOG_WARNING, "could not encode query");
+			return -1;
+		} else {
+			debug(LOG_DEBUG, "query: %s", query);
+		}
+	}
+
+	rc = execute_ret(msg, HTMLMAXSIZE - 1, "%s '%s'", config->preauth, query_enc);
+
+	if (rc != 0) {
+		debug(LOG_WARNING, "Preauth script: %s '%s' - failed to execute", config->preauth, query);
+		return -1;
+	}
+
+	// serve the script output (in msg)
+	response = MHD_create_response_from_buffer(strlen(msg), (char *)msg, MHD_RESPMEM_MUST_COPY);
+
+	if (!response) {
+		return send_error(connection, 503);
+	}
+
+	MHD_add_response_header(response, "Content-Type", "text/html");
+	ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
+	MHD_destroy_response(response);
+	return ret;
 }
 
 /**
@@ -532,7 +602,26 @@ static int preauthenticated(struct MHD_Connection *connection,
 	const char *host = NULL;
 	const char *redirect_url;
 	char *querystr = NULL;
+	char query_str[QUERYMAXLEN] = {0};
+	char *query = query_str;
+	struct MHD_Response *response;
+	int ret;
 	s_config *config = config_get_config();
+
+	debug(LOG_DEBUG, "url: %s", url);
+	/* Check for preauthdir */
+	if (check_authdir_match(url, config->preauthdir)) {
+
+		debug(LOG_DEBUG, "preauthdir url detected: %s", url);
+
+		get_query(connection, &query, QUERYSEPARATOR);
+
+		ret = show_preauthpage(connection, query);
+		free(query);
+		return ret;
+	}
+
+
 
 	MHD_get_connection_values(connection, MHD_HEADER_KIND, get_host_value_callback, &host);
 
@@ -548,6 +637,7 @@ static int preauthenticated(struct MHD_Connection *connection,
 		 * When the client reloads a page when it's authenticated, it should be redirected
 		 * to their origin url
 		 */
+		debug(LOG_DEBUG, "authdir url detected: %s", url);
 
 		if (config->redirectURL) {
 			redirect_url = config->redirectURL;
@@ -581,13 +671,12 @@ static int preauthenticated(struct MHD_Connection *connection,
 static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, const char *originurl, const char *querystr)
 {
 	char *splashpageurl = NULL;
-	char encoded[2048];
+	char encoded[QUERYMAXLEN] = {0};
 	s_config *config;
 	int ret;
 
 	config = config_get_config();
 
-	memset(encoded, 0, sizeof(encoded));
 	if (originurl) {
 		if (uh_urlencode(encoded, sizeof(encoded), originurl, strlen(originurl)) == -1) {
 			debug(LOG_WARNING, "could not encode url");
@@ -630,22 +719,30 @@ static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, 
 static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *client, const char *host, const char *url)
 {
 	char *originurl = NULL;
-	char *query = NULL;
+	char query_str[QUERYMAXLEN] = {0};
+	char *query = query_str;
 	int ret = 0;
+	const char *separator = "&";
 	char *querystr = NULL;
 	s_config *config = config_get_config();
 
-	get_query(connection, &query);
+	get_query(connection, &query, separator);
 	if (!query) {
+		debug(LOG_DEBUG, "Unable to get query string - error 503");
 		/* no mem */
+		free(query);
 		return send_error(connection, 503);
 	}
+
+	debug(LOG_DEBUG, "Query string is [ %s ]", query);
+
 	if (config->fas_secure_enabled != 1) {
 		safe_asprintf(&querystr, "?clientip=%s&gatewayname=%s&tok=%s", client->ip, config->gw_name, client->token);
 	} else {
 		safe_asprintf(&querystr, "?clientip=%s&gatewayname=%s", client->ip, config->gw_name);
 	}
-	safe_asprintf(&originurl, "http://%s%s%s%s", host, url, strlen(query) ? "?" : "" , query);
+
+	safe_asprintf(&originurl, "http://%s%s%s", host, url, query);
 	ret = encode_and_redirect_to_splashpage(connection, originurl, querystr);
 	free(originurl);
 	free(querystr);
@@ -709,16 +806,18 @@ static const char *get_redirect_url(struct MHD_Connection *connection)
 	return MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "redir");
 }
 
-/* save the query or empty string into **query.
- * the call must free query later */
-static int get_query(struct MHD_Connection *connection, char **query)
+/* save the query or empty string into **query.*/
+static int get_query(struct MHD_Connection *connection, char **query, const char *separator)
 {
 	int element_counter;
 	char **elements;
+	char query_str[QUERYMAXLEN] = {0};
 	struct collect_query collect_query;
 	int i;
 	int j;
 	int length = 0;
+
+	debug(LOG_DEBUG, " Separator is [%s].", separator);
 
 	element_counter = MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, counter_iterator, NULL);
 	if (element_counter == 0) {
@@ -732,7 +831,7 @@ static int get_query(struct MHD_Connection *connection, char **query)
 	collect_query.i = 0;
 	collect_query.elements = elements;
 
-	// static int get_host_value_callback(void *cls, enum MHD_ValueKind kind, const char *key, const char *value) {
+	// Collect the arguments of the query string from MHD
 	MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, collect_query_string, &collect_query);
 
 	for (i = 0; i < element_counter; i++) {
@@ -745,7 +844,6 @@ static int get_query(struct MHD_Connection *connection, char **query)
 	}
 
 	/* don't miss the zero terminator */
-	*query = calloc(length + 1, 1);
 	if (*query == NULL) {
 		for (i = 0; i < element_counter; i++) {
 			free(elements[i]);
@@ -759,9 +857,26 @@ static int get_query(struct MHD_Connection *connection, char **query)
 			continue;
 		}
 		strncpy(*query + j, elements[i], length - j);
+		if (i == 0) {
+			// query_str is empty when i = 0 so safe to copy a single char into it
+			strcpy(query_str, "?");
+		} else {
+			if (QUERYMAXLEN - strlen(query_str) > length - j + 1) {
+				strncat(query_str, separator, QUERYMAXLEN - strlen(query_str));
+			}
+		}
+
+		// note: query string will be truncated if too long
+		if (QUERYMAXLEN - strlen(query_str) > length - j) {
+			strncat(query_str, *query, QUERYMAXLEN - strlen(query_str));
+		} else {
+			debug(LOG_WARNING, " Query string exceeds the maximum of %d bytes so has been truncated.", QUERYMAXLEN);
+		}
+
 		free(elements[i]);
 	}
 
+	strncpy(*query, query_str, sizeof(query_str));
 	free(elements);
 	return 0;
 }
@@ -785,7 +900,8 @@ static int send_refresh(struct MHD_Connection *connection)
 static int send_error(struct MHD_Connection *connection, int error)
 {
 	struct MHD_Response *response = NULL;
-	// cannot automate since cannot translate automagically between error number and MHD's status codes -- and cannot rely on MHD_HTTP_ values to provide an upper bound for an array
+	// cannot automate since cannot translate automagically between error number and MHD's status codes
+	// -- and cannot rely on MHD_HTTP_ values to provide an upper bound for an array
 	const char *page_200 = "<html><header><title>Authenticated</title><body><h1>Authenticated</h1></body></html>";
 	const char *page_400 = "<html><head><title>Error 400</title></head><body><h1>Error 400 - Bad Request</h1></body></html>";
 	const char *page_403 = "<html><head><title>Error 403</title></head><body><h1>Error 403 - Forbidden</h1></body></html>";

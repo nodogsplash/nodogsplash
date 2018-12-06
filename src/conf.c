@@ -107,7 +107,8 @@ typedef enum {
 	oFWMarkAuthenticated,
 	oFWMarkTrusted,
 	oFWMarkBlocked,
-	oBinAuth
+	oBinAuth,
+	oPreAuth
 } OpCodes;
 
 /** @internal
@@ -160,6 +161,7 @@ static const struct {
 	{ "fw_mark_trusted", oFWMarkTrusted },
 	{ "fw_mark_blocked", oFWMarkBlocked },
 	{ "binauth", oBinAuth },
+	{ "preauth", oPreAuth },
 	{ NULL, oBadOption },
 };
 
@@ -213,6 +215,7 @@ config_init(void)
 	config.pagesdir = safe_strdup(DEFAULT_PAGESDIR);
 	config.authdir = safe_strdup(DEFAULT_AUTHDIR);
 	config.denydir = safe_strdup(DEFAULT_DENYDIR);
+	config.preauthdir = safe_strdup(DEFAULT_PREAUTHDIR);
 	config.redirectURL = NULL;
 	config.preauth_idle_timeout = DEFAULT_PREAUTH_IDLE_TIMEOUT,
 	config.auth_idle_timeout = DEFAULT_AUTH_IDLE_TIMEOUT,
@@ -238,6 +241,7 @@ config_init(void)
 	config.fw_mark_blocked = DEFAULT_FW_MARK_BLOCKED;
 	config.ip6 = DEFAULT_IP6;
 	config.binauth = NULL;
+	config.preauth = NULL;
 
 	/* Set up default FirewallRuleSets, and their empty ruleset policies */
 	rs = add_ruleset("trusted-users");
@@ -785,6 +789,14 @@ config_read(const char *filename)
 			config.binauth = safe_strdup(p1);
 			if (!((stat(p1, &sb) == 0) && S_ISREG(sb.st_mode) && (sb.st_mode & S_IXUSR))) {
 				debug(LOG_ERR, "binauth program does not exist or is not executeable: %s", p1);
+				debug(LOG_ERR, "Exiting...");
+				exit(-1);
+			}
+			break;
+		case oPreAuth:
+			config.preauth = safe_strdup(p1);
+			if (!((stat(p1, &sb) == 0) && S_ISREG(sb.st_mode) && (sb.st_mode & S_IXUSR))) {
+				debug(LOG_ERR, "preauth program does not exist or is not executeable: %s", p1);
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);
 			}

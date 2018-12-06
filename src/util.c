@@ -106,7 +106,7 @@ static int _execute_ret(char* msg, int msg_len, const char *cmd)
 	}
 
 	if (msg && msg_len > 0) {
-		fgets(msg, msg_len - 1, fp);
+		fread(msg, msg_len - 1, 1, fp);
 	}
 
 	rc = pclose(fp);
@@ -129,7 +129,7 @@ abort:
 
 int execute(const char fmt[], ...)
 {
-	char cmd[512];
+	char cmd[QUERYMAXLEN];
 	va_list vlist;
 	int rc;
 
@@ -410,6 +410,12 @@ ndsctl_status(FILE *fp)
 		fprintf(fp, "Binauth Script: %s\n", config->binauth);
 	} else {
 		fprintf(fp, "Binauth: Disabled\n");
+	}
+
+	if (config->preauth) {
+		fprintf(fp, "Preauth Script: %s\n", config->preauth);
+	} else {
+		fprintf(fp, "Preauth: Disabled\n");
 	}
 
 	if (config->fas_port) {
