@@ -77,7 +77,9 @@ Defining and Using Variables
 
 The query string is sent to us from NDS in a urlencoded form, so we must decode it here so we can parse it. In a shell script we would use the code:
 
- `query=$(printf "${query_enc//%/\\x}")`
+.. code-block:: sh
+
+ query=$(printf "${query_enc//%/\\x}")
 
 In the example script we want to ask the client user for their username and email address.
 
@@ -87,13 +89,23 @@ If we want to show a sequence of forms or information pages we can do this easil
 
 To return to the script and show additional pages, the form action must be set to:
 
- `<form action=\"/nodogsplash_preauth/\" method=\"get\">`
+.. code-block:: sh
 
-Note: quotes ( " ) must be escaped with the "\" character.
+ <form action=\"/nodogsplash_preauth/\" method=\"get\">
+
+Note: In a shell script, quotes ( " ) must be escaped with the
+
+.. code-block:: sh
+
+ "\" 
+
+character.
 
 Any variables we need to preserve and pass back to ourselves or NDS must be added to the form as hidden:
 
- `<input type=\"hidden\" name=......`
+.. code-block:: sh
+
+ <input type=\"hidden\" name=......
 
 Such variables will appear in the query string when NDS re-calls this script.
 
@@ -101,17 +113,23 @@ We can then parse for them again.
 
 When the logic of this script decides we should allow the client to access the Internet we inform NDS with a final page displaying a continue button with the form action set to:
 
- `"<form action=\"/nodogsplash_auth/\" method=\"get\">"`
+.. code-block:: sh
+
+ "<form action=\"/nodogsplash_auth/\" method=\"get\">"
 
 We must also send NDS the client token as a hidden variable, but first we must obtain the token from ndsctl using a suitable command such as:
 
- `tok="$(ndsctl json $clientip | grep token | cut -c 10- | cut -c -8)"`
+.. code-block:: sh
+
+ tok="$(ndsctl json $clientip | grep token | cut -c 10- | cut -c -8)"
 
 In a similar manner we can obtain any client or NDS information that ndsctl provides.
 
 The query string NDS sends to us will always be of the following form (with a "comma space" separator):
 
- `?clientip=[clientipaddress], gatewayname=[gatewayname],  redir=[originalurl], var4=[data], var5=[data], var6......`
+.. code-block:: sh
+
+ ?clientip=[clientipaddress], gatewayname=[gatewayname],  redir=[originalurl], var4=[data], var5=[data], var6......
 
 The first three variables will be clientip, gatewayname and redir
 
