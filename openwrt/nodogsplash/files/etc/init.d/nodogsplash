@@ -136,7 +136,7 @@ generate_uci_config() {
 
   addline "GatewayInterface $ifname"
 
-  for option in binauth fasport fasremoteip faspath fas_secure_enabled \
+  for option in preauth binauth fasport fasremoteip faspath fas_secure_enabled \
     daemon debuglevel maxclients gatewayname gatewayinterface gatewayiprange \
     gatewayaddress gatewayport webroot splashpage statuspage imagesdir pagesdir \
     redirecturl sessiontimeout preauthidletimeout authidletimeout checkinterval \
