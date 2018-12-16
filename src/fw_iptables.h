@@ -90,4 +90,6 @@ int iptables_unallow_mac(const char mac[]);
 int iptables_trust_mac(const char mac[]);
 int iptables_untrust_mac(const char mac[]);
 
+void iptables_block_if_counter_exceeded(t_client *client);
+
 #endif /* _IPTABLES_H_ */

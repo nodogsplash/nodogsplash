@@ -382,7 +382,7 @@ iptables_fw_init(void)
 	LOCK_CONFIG();
 	config = config_get_config();
 	gw_interface = safe_strdup(config->gw_interface); /* must free */
-	
+
 	/* ip4 vs ip6 differences */
 	const char *ICMP_TYPE;
 	if (config->ip6) {
@@ -393,7 +393,7 @@ iptables_fw_init(void)
 		gw_ip = safe_strdup(config->gw_ip);    /* must free */
 		ICMP_TYPE = "icmp";
 	}
-	
+
 	gw_address = safe_strdup(config->gw_address);    /* must free */
 	gw_iprange = safe_strdup(config->gw_iprange);    /* must free */
 	gw_port = config->gw_port;
@@ -497,7 +497,7 @@ iptables_fw_init(void)
 	 * Set up nat table chains and rules (ip4 only)
 	 *
 	 */
-	 
+
 	if (!config->ip6) {
 		/* Create new chains in nat table */
 		rc |= iptables_do_command("-t nat -N " CHAIN_OUTGOING);
@@ -1065,6 +1065,7 @@ iptables_fw_counters_update(void)
 				if (p1->counters.incoming < counter) {
 					p1->counters.incoming = counter;
 					debug(LOG_DEBUG, "%s - Updated counter.incoming to %llu bytes", ip, counter);
+					iptables_block_if_counter_exceeded(p1);
 				}
 			} else {
 				debug(LOG_WARNING, "Could not find %s in client list", ip);
@@ -1075,4 +1076,14 @@ iptables_fw_counters_update(void)
 	pclose(output);
 
 	return 0;
+}
+
+void
+iptables_block_if_counter_exceeded(t_client *client)
+{
+	unsigned long long int incoming_limit = 100000;
+	if (client->counters.incoming > incoming_limit) {
+		debug(LOG_DEBUG, "Client has exceeded maximum limit. Deauthenticating.");
+		iptables_fw_deauthenticate(client);
+	}
 }
