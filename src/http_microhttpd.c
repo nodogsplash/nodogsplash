@@ -617,7 +617,6 @@ static int preauthenticated(struct MHD_Connection *connection,
 		get_query(connection, &query, QUERYSEPARATOR);
 
 		ret = show_preauthpage(connection, query);
-		free(query);
 		return ret;
 	}
 
@@ -730,7 +729,6 @@ static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *c
 	if (!query) {
 		debug(LOG_DEBUG, "Unable to get query string - error 503");
 		/* no mem */
-		free(query);
 		return send_error(connection, 503);
 	}
 
@@ -746,7 +744,6 @@ static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *c
 	ret = encode_and_redirect_to_splashpage(connection, originurl, querystr);
 	free(originurl);
 	free(querystr);
-	free(query);
 	return ret;
 }
 
