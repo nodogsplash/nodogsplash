@@ -183,7 +183,7 @@ static int is_splashpage(const char *host, const char *url)
 	} else {
 		/* hostname give - check if it's our hostname */
 
-		if (strcmp(host, our_host)) {
+		if (is_foreign_hosts(host)) {
 			/* hostname isn't ours */
 			return 0;
 		}
