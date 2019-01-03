@@ -65,7 +65,7 @@ static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *c
 static int send_error(struct MHD_Connection *connection, int error);
 static int send_redirect_temp(struct MHD_Connection *connection, const char *url);
 static int send_refresh(struct MHD_Connection *connection);
-static int is_foreign_hosts(struct MHD_Connection *connection, const char *host);
+static int is_foreign_hosts(const char *host);
 static int is_splashpage(const char *host, const char *url);
 static int get_query(struct MHD_Connection *connection, char **collect_query, const char *separator);
 static const char *get_redirect_url(struct MHD_Connection *connection);
@@ -145,7 +145,7 @@ static int counter_iterator(void *cls, enum MHD_ValueKind kind, const char *key,
 	return MHD_YES;
 }
 
-static int is_foreign_hosts(struct MHD_Connection *connection, const char *host)
+static int is_foreign_hosts(const char *host)
 {
 	char our_host[MAX_HOSTPORTLEN];
 	s_config *config = config_get_config();
@@ -503,7 +503,7 @@ static int authenticated(struct MHD_Connection *connection,
 
 	/* check if this is an late request meaning the user tries to get the internet, but ended up here,
 	 * because the iptables rule came too late */
-	if (is_foreign_hosts(connection, host)) {
+	if (is_foreign_hosts(host)) {
 		/* might happen if the firewall rule isn't yet installed */
 		return send_refresh(connection);
 	}
@@ -609,7 +609,7 @@ static int preauthenticated(struct MHD_Connection *connection,
 	debug(LOG_DEBUG, "Preauthenticated - Gateway Port is [ %u ]", config->gw_port);
 
 	/* check if this is a redirect query with a foreign host as target */
-	if (is_foreign_hosts(connection, host)) {
+	if (is_foreign_hosts(host)) {
 		return redirect_to_splashpage(connection, client, host, url);
 	}
 
