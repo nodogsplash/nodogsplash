@@ -155,6 +155,10 @@ thread_ndsctl(void *arg)
 		number_of_count = epoll_wait(epoll_fd, events, current_fd_count, -1);
 
 		if (number_of_count == -1) {
+			/* interupted is not an error */
+			if (errno == -EINTR)
+				continue;
+
 			debug(LOG_ERR, "Failed to wait epoll events: %s", strerror(errno));
 			free(events);
 			pthread_exit(NULL);
