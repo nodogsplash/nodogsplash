@@ -93,7 +93,11 @@ static int auth_change_state(t_client *client, const unsigned int new_state, con
 			binauth_action(client, reason);
 			client_reset(client);
 		} else if (new_state == FW_MARK_BLOCKED) {
-			return -1;
+			iptables_fw_deauthenticate(client);
+			binauth_action(client, reason);
+			auth_client_block(client->mac);
+			client_list_delete(client);
+			return 0;
 		} else if (new_state == FW_MARK_TRUSTED) {
 			return -1;
 		} else {
@@ -166,7 +170,11 @@ fw_refresh_client_list(void)
 				cp1->ip, cp1->mac, now - cp1->session_end,
 				cp1->counters.incoming / 1000, cp1->counters.outgoing / 1000);
 
-			auth_change_state(cp1, FW_MARK_PREAUTHENTICATED, "timeout_deauth");
+			if (config->session_timeout_block > 0) {
+				auth_change_state(cp1, FW_MARK_BLOCKED, "timeout_deauth_block");
+			} else {
+				auth_change_state(cp1, FW_MARK_PREAUTHENTICATED, "timeout_deauth");
+			}
 		} else if (preauth_idle_timeout_secs > 0
 				&& conn_state == FW_MARK_PREAUTHENTICATED
 				&& (last_updated + preauth_idle_timeout_secs) <= now) {

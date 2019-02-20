@@ -429,6 +429,10 @@ ndsctl_status(FILE *fp)
 	format_duration(0, config->session_timeout * 60, durationbuf);
 	fprintf(fp, "Session Timeout: %s\n", durationbuf);
 
+	format_duration(0, config->session_timeout * 60, durationbuf);
+	fprintf(fp, "Session Timeout: %s\n", durationbuf);
+	fprintf(fp, "Block after Session timed out: %s\n", config->session_timeout_block ? "yes" : "no");
+
 	if (config->redirectURL) {
 		fprintf(fp, "Redirect URL: %s\n", config->redirectURL);
 	}
