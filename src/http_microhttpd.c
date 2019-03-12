@@ -604,7 +604,6 @@ static int preauthenticated(struct MHD_Connection *connection,
 	char *querystr = NULL;
 	char query_str[QUERYMAXLEN] = {0};
 	char *query = query_str;
-	struct MHD_Response *response;
 	int ret;
 	s_config *config = config_get_config();
 
@@ -873,7 +872,7 @@ static int get_query(struct MHD_Connection *connection, char **query, const char
 		free(elements[i]);
 	}
 
-	strncpy(*query, query_str, sizeof(query_str));
+	strncpy(*query, query_str, QUERYMAXLEN);
 	free(elements);
 	return 0;
 }
