@@ -348,13 +348,13 @@ format_duration(time_t from, time_t to, char buf[64])
 	seconds = secs;
 
 	if (days > 0) {
-		sprintf(buf, "%dd %dh %dm %ds", days, hours, minutes, seconds);
+		snprintf(buf, 64, "%dd %dh %dm %ds", days, hours, minutes, seconds);
 	} else if (hours > 0) {
-		sprintf(buf, "%dh %dm %ds", hours, minutes, seconds);
+		snprintf(buf, 64, "%dh %dm %ds", hours, minutes, seconds);
 	} else if (minutes > 0) {
-		sprintf(buf, "%dm %ds", minutes, seconds);
+		snprintf(buf, 64, "%dm %ds", minutes, seconds);
 	} else {
-		sprintf(buf, "%ds", seconds);
+		snprintf(buf, 64, "%ds", seconds);
 	}
 
 	return buf;
@@ -379,7 +379,7 @@ void
 ndsctl_status(FILE *fp)
 {
 	char timebuf[32];
-	char durationbuf[128];
+	char durationbuf[64];
 	s_config *config;
 	t_client *client;
 	int indx;
