@@ -329,14 +329,14 @@ format_duration(time_t from, time_t to, char buf[64])
 {
 	int days, hours, minutes, seconds;
 	long long int secs;
+	const char *neg = "";
 
 	if (from <= to) {
 		secs = to - from;
 	} else {
 		secs = from - to;
 		// Prepend minus sign
-		buf[0] = '-';
-		buf += 1;
+		neg = "-";
 	}
 
 	days = secs / (24 * 60 * 60);
@@ -348,13 +348,13 @@ format_duration(time_t from, time_t to, char buf[64])
 	seconds = secs;
 
 	if (days > 0) {
-		snprintf(buf, 64, "%dd %dh %dm %ds", days, hours, minutes, seconds);
+		snprintf(buf, 64, "%s%dd %dh %dm %ds", neg, days, hours, minutes, seconds);
 	} else if (hours > 0) {
-		snprintf(buf, 64, "%dh %dm %ds", hours, minutes, seconds);
+		snprintf(buf, 64, "%s%dh %dm %ds", neg, hours, minutes, seconds);
 	} else if (minutes > 0) {
-		snprintf(buf, 64, "%dm %ds", minutes, seconds);
+		snprintf(buf, 64, "%s%dm %ds", neg, minutes, seconds);
 	} else {
-		snprintf(buf, 64, "%ds", seconds);
+		snprintf(buf, 64, "%s%ds", neg, seconds);
 	}
 
 	return buf;
