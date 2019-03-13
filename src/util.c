@@ -367,11 +367,9 @@ format_time(time_t time, char buf[64])
 	return buf;
 }
 
-/* Caller must free. */
 char *
-get_uptime_string()
+get_uptime_string(char buf[64])
 {
-	char *buf = malloc(64);
 	return format_duration(started_time, time(NULL), buf);
 }
 

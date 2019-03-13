@@ -995,9 +995,9 @@ static void replace_variables(
 	char maxclients[12];
 	char clientupload[20];
 	char clientdownload[20];
+	char uptime[64];
 
 	const char *redirect_url = NULL;
-	char *uptime = NULL;
 	char *denyaction = NULL;
 	char *authaction = NULL;
 	char *authtarget = NULL;
@@ -1007,7 +1007,7 @@ static void replace_variables(
 	sprintf(clientupload, "%llu", client->counters.outgoing);
 	sprintf(clientdownload, "%llu", client->counters.incoming);
 
-	uptime = get_uptime_string();
+	get_uptime_string(uptime);
 	redirect_url = get_redirect_url(connection);
 
 	sprintf(nclients, "%d", get_client_list_length());
@@ -1043,7 +1043,6 @@ static void replace_variables(
 
 	tmpl_parse(vars, dst, dst_len, src, src_len);
 
-	free(uptime);
 	free(denyaction);
 	free(authaction);
 	free(authtarget);

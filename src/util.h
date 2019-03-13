@@ -62,7 +62,7 @@ char *format_time(time_t time, char buf[64]);
 /*
  * @brief Mallocs and returns nodogsplash uptime string
  */
-char *get_uptime_string();
+char *get_uptime_string(char buf[64]);
 /*
  * @brief Writes a human-readable paragraph of the status of the nodogsplash process
  */
