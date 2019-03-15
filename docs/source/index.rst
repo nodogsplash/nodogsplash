@@ -30,6 +30,7 @@ Contents:
    install
    compile
    faq
+   splash
    howitworks
    fas
    preauth
