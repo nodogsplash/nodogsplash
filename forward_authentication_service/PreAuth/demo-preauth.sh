@@ -113,7 +113,7 @@ header="
 footer="
 	<img src=\"/images/splash.jpg\" alt=\"Splash Page: For access to the Internet.\">\n
 	<hr>
-	<copy-right>Copyright &copy; The Nodogsplash Contributors 2004-2018.<br>This software is released under the GNU GPL license.</copy-right>\n
+	<copy-right>Copyright &copy; The Nodogsplash Contributors 2004-2019.<br>This software is released under the GNU GPL license.</copy-right>\n
 	\n
 	</body>\n
 	</html>\n
