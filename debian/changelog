@@ -1,3 +1,12 @@
+nodogsplash (3.3.0-1) stable; urgency=medium
+
+  * Add PreAuth functionality - support for Dynamic Splash Pages, served by NDS directly [bluewavenet]
+  * Documentation updates including new sections for Splash Page and PreAuth [bluewavenet]
+  * Fix memory handling bug, issue #341 [mwarning] [stevo01]
+  * Improvements towards usable IPv6 support [wanxewoj] [mwarning]
+
+ -- Rob White <dot@blue-wave.net> Fri, 15 Mar 2019 15:48:00 +0000
+
 nodogsplash (3.2.1-1) stable; urgency=medium
 
   * reset upload/download counter when a client has been authenticated a second time [mwarning]

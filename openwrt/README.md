@@ -1,4 +1,4 @@
-To inlcude NoDogSplash into your OpenWRT image or to create an .ipk
+To include NoDogSplash into your OpenWRT image or to create an .ipk
 package (similar to Debians .deb files), you have to build an OpenWRT image.
 To build the firmware you need a Unix console to enter commands into.
 
@@ -24,7 +24,7 @@ make defconfig
 make menuconfig
 ```
 
-At this point select the appropiate "Target System" and "Target Profile"
+At this point select the appropriate "Target System" and "Target Profile"
 depending on what target chipset/router you want to build for.
 Now select the NoDogSplash package in "Network ---> Captive Portals".
 
