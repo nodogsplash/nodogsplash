@@ -3,11 +3,11 @@ Upstream-Name: nodogsplash
 Source: http://github.com/nodogsplash
 
 Files: *
-Copyright: 2013-18 BlueWave Projects and Services <dot@blue-wave.net>
-           2013-18 Moritz Warning <moritzwarning@web.de>
-           2013 Shiao-An Yuan <shiao.an.yuan@gmail.com>
-           2010 Fred Moyer <fred@slwifi.com>
-           2010 Paul Kube <nodogsplash@kokoro.ucsd.edu>
+Copyright: (C) 2013-19 BlueWave Projects and Services <dot@blue-wave.net>
+           (C) 2013-19 Moritz Warning <moritzwarning@web.de>
+           (C) 2013 Shiao-An Yuan <shiao.an.yuan@gmail.com>
+           (C) 2010 Fred Moyer <fred@slwifi.com>
+           (C) 2010 Paul Kube <nodogsplash@kokoro.ucsd.edu>
 License: GPL-2.0+
 
 Files: libmicrohttpd/*

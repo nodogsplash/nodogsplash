@@ -1,0 +1,15 @@
+When ready to do a release, do the following:
+
+1. conf.h - update version number and copyright eg current year
+2. Changelog - list changes
+3. debian/changelog - list changes
+4. debian/copyright - update copyright dates as required eg current year
+5. docs/source/conf.py - update copyright notice eg current year, version and release numbers
+6. "cd docs" then "make man". Copy resulting docs/build/man/nodogsplash.1 to overwrite old debian/doc/nodogsplash.1
+7. remove /docs/build directory created in step 6
+8. Push to origin
+9. Github - Create Pull Request and Merge to master
+10. Github proceed to "Draft New Release"
+11. Github tag release as eg. v3.3.0 (remembering the leading "v"") (or use git tag -a v3.3.0 -m "nodogsplash release 3.3.0 " and git push --tags.)
+12. In your local repository, make a new branch called "stable"
+13. Push branch "stable" to origin, overwriting the existing "stable". Branch stable is the source for the readthedocs stable documentation at https://nodogsplashdocs.readthedocs.io/en/stable/

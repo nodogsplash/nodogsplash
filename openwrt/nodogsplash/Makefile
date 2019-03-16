@@ -12,7 +12,7 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_URL:=https://codeload.github.com/nodogsplash/nodogsplash/tar.gz/v$(PKG_VERSION)?
 PKG_SOURCE:=nodogsplash-$(PKG_VERSION).tar.gz
-PKG_HASH:=16da76ecf7820cd8b32081237e05b24a7d2d8a9db8a47242badc7937d6cf1ae8
+PKG_HASH:= #shasum -a 256 of tar.gz of source files goes here
 PKG_BUILD_DIR:=$(BUILD_DIR)/nodogsplash-$(PKG_VERSION)
 
 PKG_MAINTAINER:=Moritz Warning <moritzwarning@web.de>
@@ -26,7 +26,7 @@ define Package/nodogsplash
 	SUBMENU:=Captive Portals
 	SECTION:=net
 	CATEGORY:=Network
-	DEPENDS:=+libpthread +iptables-mod-ipopt +libmicrohttpd-no-ssl
+	DEPENDS:=+libpthread +iptables-mod-ipopt +libmicrohttpd
 	TITLE:=Open public network gateway daemon
 	URL:=https://github.com/nodogsplash/nodogsplash
 	CONFLICTS:=nodogsplash2
