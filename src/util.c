@@ -433,6 +433,10 @@ ndsctl_status(FILE *fp)
 	fprintf(fp, "Session Timeout: %s\n", durationbuf);
 	fprintf(fp, "Block after Session timed out: %s\n", config->session_timeout_block ? "yes" : "no");
 
+	if (config->session_limit_block) {
+		fprintf(fp, "Block after Download limit: %d MB\n", config->session_limit_block);
+	}
+
 	if (config->redirectURL) {
 		fprintf(fp, "Redirect URL: %s\n", config->redirectURL);
 	}

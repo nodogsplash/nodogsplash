@@ -57,6 +57,7 @@
 #define DEFAULT_CHECKINTERVAL 30
 #define DEFAULT_SESSION_TIMEOUT 0
 #define DEFAULT_SESSION_TIMEOUT_BLOCK 0
+#define DEFAULT_SESSION_LIMIT_BLOCK 0
 #define DEFAULT_PREAUTH_IDLE_TIMEOUT 10
 #define DEFAULT_AUTH_IDLE_TIMEOUT 120
 #define DEFAULT_WEBROOT "/etc/nodogsplash/htdocs"
@@ -161,6 +162,7 @@ typedef struct {
 	char *preauthdir;		/**< @brief Notional relative dir for preauth URL */
 	int session_timeout;		/**< @brief Minutes of the default session length */
 	int session_timeout_block;	/**< @brief state of default session_timeout block or not */
+	int session_limit_block;	/**< @brief Download limit, MB after block */
 	int preauth_idle_timeout;	/**< @brief Minutes a preauthenticated client will be kept in the system */
 	int auth_idle_timeout;		/**< @brief Minutes an authenticated client will be kept in the system */
 	int checkinterval;		/**< @brief Period the the client timeout check thread will run, in seconds */

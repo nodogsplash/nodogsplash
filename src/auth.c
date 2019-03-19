@@ -175,6 +175,10 @@ fw_refresh_client_list(void)
 			} else {
 				auth_change_state(cp1, FW_MARK_PREAUTHENTICATED, "timeout_deauth");
 			}
+		} else if (config->session_limit_block > 0
+				&& cp1->counters.incoming / 1000 > config->session_limit_block * 1000) {
+			/* Session ended (limit reached) */
+			auth_change_state(cp1, FW_MARK_BLOCKED, "limitout_deauth_block");
 		} else if (preauth_idle_timeout_secs > 0
 				&& conn_state == FW_MARK_PREAUTHENTICATED
 				&& (last_updated + preauth_idle_timeout_secs) <= now) {
