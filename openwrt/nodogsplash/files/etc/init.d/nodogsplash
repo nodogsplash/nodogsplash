@@ -50,7 +50,7 @@ setup_mac_lists() {
     addline "BlockedMACList $macs"
   else
     echo "Invalid macmechanism '$val' - allow or block are valid." >&2
-    exit 1
+    return 1
   fi
 
   macs=""
@@ -58,6 +58,8 @@ setup_mac_lists() {
   if [ -n "$macs" ]; then
     addline "TrustedMACList $macs"
   fi
+
+  return 0
 }
 
 setup_firewall() {
@@ -93,9 +95,11 @@ wait_for_interface() {
     sleep 1
     if [ $i = $timeout ]; then
       echo "Interface $ifname not detected." >&2
-      exit 1
+      return 1
     fi
   done
+
+  return 0
 }
 
 generate_uci_config() {
@@ -112,7 +116,7 @@ generate_uci_config() {
   if [ -n "$val" ]; then
     if [ ! -f "$val" ]; then
       echo "Configuration file '$file' doesn't exist." >&2
-      exit 1
+      return 1
     fi
     addline "$(cat $val)"
   fi
@@ -129,10 +133,10 @@ generate_uci_config() {
 
   if [ -z "$ifname" ]; then
       echo "Option network or gatewayinterface missing." >&2
-      exit 1
+      return 1
   fi
 
-  wait_for_interface "$ifname"
+  wait_for_interface "$ifname" || return 1
 
   addline "GatewayInterface $ifname"
 
@@ -158,10 +162,11 @@ generate_uci_config() {
     addline "TrafficControl yes"
   fi
 
-  setup_mac_lists "$cfg"
+  setup_mac_lists "$cfg" || return 1
   setup_firewall "$cfg"
 
   echo "$CONFIG" > "/tmp/etc/nodogsplash_$cfg.conf"
+  return 0
 }
 
 # setup configuration and start instance
@@ -172,7 +177,10 @@ create_instance() {
   config_get_bool val "$cfg" enabled 0
   [ $val -gt 0 ] || return 0
 
-  generate_uci_config "$cfg"
+  if ! generate_uci_config "$cfg" ; then
+      echo "Can not generate uci config. Will not start instance $cfg." >&2
+      return
+  fi
 
   procd_open_instance $cfg
   procd_set_param command /usr/bin/nodogsplash -c "/tmp/etc/nodogsplash_$cfg.conf" $OPTIONS

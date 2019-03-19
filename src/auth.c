@@ -157,8 +157,8 @@ fw_refresh_client_list(void)
 			continue;
 		}
 
-		int conn_state = cp1->fw_connection_state;
-		int last_updated = cp1->counters.last_updated;
+		unsigned int conn_state = cp1->fw_connection_state;
+		time_t last_updated = cp1->counters.last_updated;
 
 		if (cp1->session_end > 0 && cp1->session_end <= now) {
 			/* Session ended (only > 0 for FW_MARK_AUTHENTICATED by binauth) */
