@@ -128,12 +128,12 @@ generate_uci_config() {
 
   # Get device name if interface name is a section name in /etc/config/network
   if network_get_device tmp "$ifname"; then
-      ifname="$tmp"
+    ifname="$tmp"
   fi
 
   if [ -z "$ifname" ]; then
-      echo "Option network or gatewayinterface missing." >&2
-      return 1
+    echo "Option network or gatewayinterface missing." >&2
+    return 1
   fi
 
   wait_for_interface "$ifname" || return 1
@@ -177,9 +177,9 @@ create_instance() {
   config_get_bool val "$cfg" enabled 0
   [ $val -gt 0 ] || return 0
 
-  if ! generate_uci_config "$cfg" ; then
-      echo "Can not generate uci config. Will not start instance $cfg." >&2
-      return
+  if ! generate_uci_config "$cfg"; then
+    echo "Can not generate uci config. Will not start instance $cfg." >&2
+    return 1
   fi
 
   procd_open_instance $cfg
