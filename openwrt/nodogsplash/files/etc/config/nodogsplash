@@ -109,7 +109,7 @@ config nodogsplash
   #option preauth '/bin/mypreauth.sh'
 
   # Your router may have several interfaces, and you
-  # probably want to keep them private from the network/gatewayinterface.
+  # probably want to keep them private from the gatewayinterface.
   # If so, you should block the entire subnets on those interfaces, e.g.:
   #list authenticated_users 'block to 192.168.0.0/16'
   #list authenticated_users 'block to 10.0.0.0/8'

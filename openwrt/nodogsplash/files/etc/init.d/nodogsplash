@@ -122,9 +122,6 @@ generate_uci_config() {
   fi
 
   config_get ifname "$cfg" gatewayinterface
-  if [ -z "$ifname" ]; then
-    config_get ifname "$cfg" network
-  fi
 
   # Get device name if interface name is a section name in /etc/config/network
   if network_get_device tmp "$ifname"; then
