@@ -604,6 +604,8 @@ static int preauthenticated(struct MHD_Connection *connection,
 	char *querystr = NULL;
 	char query_str[QUERYMAXLEN] = {0};
 	char *query = query_str;
+	char portstr[MAX_HOSTPORTLEN] = {0};
+
 	int ret;
 	s_config *config = config_get_config();
 
@@ -622,6 +624,30 @@ static int preauthenticated(struct MHD_Connection *connection,
 
 
 	MHD_get_connection_values(connection, MHD_HEADER_KIND, get_host_value_callback, &host);
+
+	debug(LOG_DEBUG, "Preauthenticated - Requested Host is [ %s ]", host);
+	debug(LOG_DEBUG, "Preauthenticated - Requested url is [ %s ]", url);
+	debug(LOG_DEBUG, "Preauthenticated - Gateway Address is [ %s ]", config->gw_address);
+	debug(LOG_DEBUG, "Preauthenticated - Gateway Port is [ %u ]", config->gw_port);
+
+	/* check if this is an attempt to directly access the basic splash page when FAS is enabled  */
+	if (config->fas_port) {
+		snprintf(portstr, MAX_HOSTPORTLEN, ":%u", config->gw_port);
+
+		debug(LOG_DEBUG, "Preauthenticated - FAS is enabled");
+		debug(LOG_DEBUG, "Preauthenticated - NDS port ID is [ %s ]", portstr);
+		debug(LOG_DEBUG, "Preauthenticated - NDS port ID search result is [ %s ]", strstr(host, portstr));
+
+		if (check_authdir_match(url, config->authdir) || strstr(host, "/splash.css") == NULL) {
+			debug(LOG_DEBUG, "Preauthenticated - splash.css or authdir detected");
+		} else {
+			if (strstr(host, portstr) != NULL) {
+				debug(LOG_DEBUG, "Preauthenticated -  403 Direct Access Fobidden");
+				ret = send_error(connection, 403);
+				return ret;
+			}
+		}
+	}
 
 	/* check if this is a redirect query with a foreign host as target */
 	if (is_foreign_hosts(connection, host)) {
