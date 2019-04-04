@@ -16,9 +16,18 @@ config nodogsplash
   # Use plain configuration file
   #option config '/etc/nodogsplash/nodogsplash.conf'
 
-  # Use this option to set the device nogogsplash will bind to.
+  # Use this option to set the device nodogsplash will bind to.
   # The value may be an interface section in /etc/config/network or a device name such as br-lan.
   option gatewayinterface 'br-lan'
+
+  # GatewayPort
+  # Default: 2050
+  #
+  # Nodogsplash's own http server uses gateway address as its IP address.
+  # The port it listens to at that IP can be set here; default is 2050.
+  #
+  #option gatewayport '2050'
+
 
   option gatewayname 'OpenWrt Nodogsplash'
   option maxclients '250'
@@ -87,6 +96,12 @@ config nodogsplash
   #option fas_secure_enabled '0'
 
   # Enable PreAuth Support.
+  #
+  # A simple login script is provided in the package.
+  # This generates a login page asking for usename and email address.
+  # User logins are recorded in the log file /tmp/ndslog.log
+  # Details of how the script works are contained in comments in the script itself.
+  #
   # PreAuth support allows FAS to call a local program or script with html served by NDS
   # If set, a program/script is called by the NDS FAS handler when:
   # 1. fasremopteip is not set,
@@ -106,7 +121,13 @@ config nodogsplash
   # It must also obtain the client token using ndsctl (or the original query string if fas_secure_enabled=0)
   # for NDS authentication when calling /nodogsplash_auth/
   #
-  #option preauth '/bin/mypreauth.sh'
+
+  # Enable username/emailaddress login.
+  # Note: fasport must be set to the same value as gatewayport (default = 2050)
+  # Enable by uncommenting the following three lines
+  #option fasport '2050'
+  #option faspath '/nodogsplash_preauth/'
+  #option preauth '/usr/lib/nodogsplash/login.sh'
 
   # Your router may have several interfaces, and you
   # probably want to keep them private from the gatewayinterface.
