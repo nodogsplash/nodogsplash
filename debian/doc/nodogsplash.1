@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "NODOGSPLASH" "1" "March 15, 2019" "3.3.0" "nodogsplash"
+.TH "NODOGSPLASH" "1" "April 05, 2019" "3.3.1-beta" "nodogsplash"
 .SH NAME
 nodogsplash \- nodogsplash Documentation
 .
@@ -668,6 +668,13 @@ Restart NDS using the command "service nodogsplash restart".
 .sp
 This is implemented using \fBFAS\fP, but \fIwithout the resource utilisation of a separate web server\fP, particularly useful for legacy devices with limited flash and RAM capacity.
 .sp
+\fBNOTE:\fP
+.INDENT 0.0
+.INDENT 3.5
+From version 3.3.1 onwards, a PreAuth login script is preinstalled. This generates a page asking for username and email address. Logins are recorded in a log file. It is enabled by uncommenting just 3 lines in the config file.
+.UNINDENT
+.UNINDENT
+.sp
 \fBPreAuth is enabled\fP by configuring NDS FAS to point to a virtual URL in the NDS web root instead of an independent FAS server. In addition, NDS is configured with the location of the PreAuth script or program.
 .sp
 \fBThe PreAuth script\fP can be a shell script or any other script type that an interpreter is available for (for example, PHP\-cli, Python etc.).
@@ -710,9 +717,42 @@ option preauth /etc/nodogsplash/demo\-preauth.sh
 For other Linux distributions this is set in the nodogsplash.conf file.
 .SS Using The Example PreAuth Script
 .sp
-An example PreAuth script is provided along with the FAS examples and should be copied to a convenient location on your router eg "/etc/nodogsplash/", remembering to flag as executable.
+\fBNOTE:\fP
+.INDENT 0.0
+.INDENT 3.5
+From version 3.1.1 onwards, the example PreAuth script is preinstalled.
+.UNINDENT
+.UNINDENT
 .sp
-This example shell script generates html output for NDS to serve as a dynamic splash page.
+\fBEnabling the Preinstalled Script\fP
+.sp
+On Openwrt, edit the following lines in the /etc/config/nodogsplash file:
+.INDENT 0.0
+.INDENT 3.5
+\fI#option fasport \(aq2050\(aq\fP
+.sp
+\fI#option faspath \(aq/nodogsplash_preauth/\(aq\fP
+.sp
+\fI#option preauth \(aq/usr/lib/nodogsplash/login.sh\(aq\fP
+.UNINDENT
+.UNINDENT
+.sp
+To read:
+.INDENT 0.0
+.INDENT 3.5
+\fIoption fasport \(aq2050\(aq\fP
+.sp
+\fIoption faspath \(aq/nodogsplash_preauth/\(aq\fP
+.sp
+\fIoption preauth \(aq/usr/lib/nodogsplash/login.sh\(aq\fP
+.UNINDENT
+.UNINDENT
+.sp
+For other operating systems edit the equivalent lines in the /etc/nodogsplash/nodogsplash.conf file
+.sp
+After making the change, save the file and restart the router.
+.sp
+\fBThis example shell script\fP generates html output for NDS to serve as a dynamic splash page.
 .sp
 The example asks the client user to enter their name and email address.
 On entering this information the client user then clicks or taps "Continue".

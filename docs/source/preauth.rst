@@ -8,6 +8,9 @@ Overview
 
 This is implemented using **FAS**, but *without the resource utilisation of a separate web server*, particularly useful for legacy devices with limited flash and RAM capacity.
 
+.. note::
+ From version 3.3.1 onwards, a PreAuth login script is preinstalled. This generates a page asking for username and email address. Logins are recorded in a log file. It is enabled by uncommenting just 3 lines in the config file.
+
 **PreAuth is enabled** by configuring NDS FAS to point to a virtual URL in the NDS web root instead of an independent FAS server. In addition, NDS is configured with the location of the PreAuth script or program.
 
 **The PreAuth script** can be a shell script or any other script type that an interpreter is available for (for example, PHP-cli, Python etc.).
@@ -42,9 +45,32 @@ For other Linux distributions this is set in the nodogsplash.conf file.
 Using The Example PreAuth Script
 ********************************
 
-An example PreAuth script is provided along with the FAS examples and should be copied to a convenient location on your router eg "/etc/nodogsplash/", remembering to flag as executable.
+.. note::
+ From version 3.1.1 onwards, the example PreAuth script is preinstalled.
 
-This example shell script generates html output for NDS to serve as a dynamic splash page.
+**Enabling the Preinstalled Script**
+
+On Openwrt, edit the following lines in the /etc/config/nodogsplash file:
+
+    `#option fasport '2050'`
+
+    `#option faspath '/nodogsplash_preauth/'`
+
+    `#option preauth '/usr/lib/nodogsplash/login.sh'`
+
+To read:
+
+    `option fasport '2050'`
+
+    `option faspath '/nodogsplash_preauth/'`
+
+    `option preauth '/usr/lib/nodogsplash/login.sh'`
+
+For other operating systems edit the equivalent lines in the /etc/nodogsplash/nodogsplash.conf file 
+
+After making the change, save the file and restart the router.
+
+**This example shell script** generates html output for NDS to serve as a dynamic splash page.
 
 The example asks the client user to enter their name and email address.
 On entering this information the client user then clicks or taps "Continue".
