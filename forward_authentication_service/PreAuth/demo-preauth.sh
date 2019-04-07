@@ -111,12 +111,13 @@ header="
 
 # Define a common footer for every page served
 version="$(ndsctl status | grep Version)"
+year="$(date | awk -F ' ' '{print $(6)}')"
 footer="
 	<img src=\"/images/splash.jpg\" alt=\"Splash Page: For access to the Internet.\">
 	<hr>
 	<copy-right>
 		Nodogsplash $version.
-		Copyright &copy; The Nodogsplash Contributors 2004-2019.
+		Copyright &copy; The Nodogsplash Contributors 2004-$year.
 		This software is released under the GNU GPL license.
 	</copy-right>
 	</div>
