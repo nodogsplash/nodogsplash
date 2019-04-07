@@ -90,33 +90,39 @@ emailaddr="$(echo $query | awk -F ', ' '{print $5;}' | awk -F 'emailaddr=' '{pri
 
 
 header="
-	<!DOCTYPE html>\n
+	<!DOCTYPE html>
 	<html>
-	<head>\n
-	<meta http-equiv=\"Cache-Control\" content=\"no-cache, no-store, must-revalidate\">\n
-	<meta http-equiv=\"Pragma\" content=\"no-cache\">\n
-	<meta http-equiv=\"Expires\" content=\"0\">\n
-	<meta charset=\"utf-8\">\n
-	<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n
-	\n
-	<link rel=\"shortcut icon\" href=\"/images/splash.jpg\" type=\"image/x-icon\">\n
-	<link rel=\"stylesheet\" type=\"text/css\" href=\"/splash.css\">\n
-	<title>$gatewayname Hotspot Gateway.</title>\n
-	</head>\n
-	\n
-	<body>\n
-	<med-blue>$gatewayname Hotspot Gateway.</med-blue>\n
+	<head>
+	<meta http-equiv=\"Cache-Control\" content=\"no-cache, no-store, must-revalidate\">
+	<meta http-equiv=\"Pragma\" content=\"no-cache\">
+	<meta http-equiv=\"Expires\" content=\"0\">
+	<meta charset=\"utf-8\">
+	<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
+	<link rel=\"shortcut icon\" href=\"/images/splash.jpg\" type=\"image/x-icon\">
+	<link rel=\"stylesheet\" type=\"text/css\" href=\"/splash.css\">
+	<title>$gatewayname Hotspot Gateway.</title>
+	</head>
+	<body>
+	<div class=\"offset\">
+	<med-blue>$gatewayname Hotspot Gateway.</med-blue>
+	<div class=\"insert\" style=\"max-width:100%;\">
 	<hr>
 "
 
 # Define a common footer for every page served
+version="$(ndsctl status | grep Version)"
 footer="
-	<img src=\"/images/splash.jpg\" alt=\"Splash Page: For access to the Internet.\">\n
+	<img src=\"/images/splash.jpg\" alt=\"Splash Page: For access to the Internet.\">
 	<hr>
-	<copy-right>Copyright &copy; The Nodogsplash Contributors 2004-2019.<br>This software is released under the GNU GPL license.</copy-right>\n
-	\n
-	</body>\n
-	</html>\n
+	<copy-right>
+		Nodogsplash $version.
+		Copyright &copy; The Nodogsplash Contributors 2004-2019.
+		This software is released under the GNU GPL license.
+	</copy-right>
+	</div>
+	</div>
+	</body>
+	</html>
 "
 
 # Output the page common header
@@ -142,11 +148,11 @@ fi
 # Note also $clientip, $gatewayname and $requested (redir) must always be preserved
 #
 if [ -z $username ] || [ -z $emailaddr ]; then
-	echo "<big-red>Welcome!</big-red><italic-black> To access the Internet you must enter your Name and Email Address</italic-black>"
+	echo "<big-red>Welcome!</big-red><italic-black> To access the Internet you must enter your Name and Email Address</italic-black><hr>"
 	echo "<form action=\"/nodogsplash_preauth/\" method=\"get\">"
-	echo "<input type=\"hidden\" name=\"clientip\" value=\"$clientip\"><br>"
-	echo "<input type=\"hidden\" name=\"gatewayname\" value=\"$gatewayname\"><br>"
-	echo "<input type=\"hidden\" name=\"redir\" value=\"$requested\"><br>"
+	echo "<input type=\"hidden\" name=\"clientip\" value=\"$clientip\">"
+	echo "<input type=\"hidden\" name=\"gatewayname\" value=\"$gatewayname\">"
+	echo "<input type=\"hidden\" name=\"redir\" value=\"$requested\">"
 	echo "<input type=\"text\" name=\"username\" value=\"$username\" autocomplete=\"on\" >:Name<br><br>"
 	echo "<input type=\"email\" name=\"emailaddr\" value=\"$emailaddr\" autocomplete=\"on\" >:Email<br><br>"
 	echo "<input type=\"submit\" value=\"Continue\" >"
@@ -164,7 +170,7 @@ else
 	echo "<br><b>Welcome $username</b>"
 	echo "<br><italic-black> Your News or Advertising could be here, contact the owners of this Hotspot to find out how!</italic-black>"
 	echo "<form action=\"/nodogsplash_auth/\" method=\"get\">"
-	echo "<input type=\"hidden\" name=\"tok\" value=\"$tok\"><br>"
+	echo "<input type=\"hidden\" name=\"tok\" value=\"$tok\">"
 	echo "<input type=\"hidden\" name=\"redir\" value=\"$requested\"><br>"
 	echo "<input type=\"submit\" value=\"Continue\" >"
 	echo "</form><hr>"

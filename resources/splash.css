@@ -6,6 +6,35 @@ body {
 	text-align: left;
 }
 
+hr {
+	display:block;
+	margin-top:0.5em;
+	margin-bottom:0.5em;
+	margin-left:auto;
+	margin-right:auto;
+	border-style:inset;
+	border-width:5px;
+} 
+
+.offset {
+	background: rgba(300, 300, 300, 0.6);
+	margin-left:auto;
+	margin-right:auto;
+	max-width:600px;
+	min-width:200px;
+	padding: 5px;
+}
+
+.insert
+{
+	background: rgba(350, 350, 350, 0.7);
+	border: 2px solid #aaa;
+	border-radius: 4px;
+	min-width:200px;
+	max-width:100%;
+	padding: 5px;
+}
+
 img {
 	width: 40%;
 	max-width: 180px;
@@ -40,20 +69,20 @@ input[type=submit] {
 }
 
 med-blue {
-	font-size: 1.3em;
+	font-size: 1.2em;
 	color: blue;
 	font-weight: bold;
 	font-style: normal;
 }
 
 big-red {
-	font-size: 1.7em;
+	font-size: 1.5em;
 	color: red;
 	font-weight: bold;
 }
 
 italic-black {
-	font-size: 1.3em;
+	font-size: 1.0em;
 	color: black;
 	font-weight: bold;
 	font-style: italic;
