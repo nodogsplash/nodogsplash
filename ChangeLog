@@ -1,3 +1,17 @@
+nodogsplash (3.3.1)
+
+  * Include preinstalled PreAuth Login script in package [bluewavenet]
+  * Documentation updates PreAuth [bluewavenet]
+  * Generate Error 403 Forbidden, if Gateway Port is accessed directly when FAS is enabled and client is not authenticated [bluewavenet]
+  * Improve splash.css, tidy up splash/status.html, tidy up Preauth demo script [bluewavenet]
+  * Remove some redundant code [mwarning]
+  * ndsctl_thread - ignore interupts when returning from epoll [lynxis]
+  * auth.c - use correct types to prevent cast and comparement of uint and int [lynxis]
+  * openwrt/init.d - prevent start of the daemon if configuration generation fails [lynxis]
+  * Known Issue - on OpenWrt >18.x.x, an issue with libmicrohttpd results in the gnutls suite being installed causing potential out of memory errors on devices <= 64M RAM
+
+ -- Rob White <dot@blue-wave.net> Fri, 7 Apr 2019 19:43:00 +0000
+
 nodogsplash (3.3.0)
 
   * Add PreAuth functionality - support for Dynamic Splash Pages, served by NDS directly [bluewavenet]
