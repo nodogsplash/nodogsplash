@@ -45,6 +45,30 @@
 #include "auth.h"
 #include "util.h"
 
+int validateIP4Dotted(const char *ip4addr)
+{
+	if (strlen(ip4addr) < 7 || strlen(ip4addr) > 15) {
+		return 0;
+	}
+
+	char tail[16];
+	tail[0] = 0;
+
+	unsigned int d[4];
+	int c = sscanf(ip4addr, "%3u.%3u.%3u.%3u%s", &d[0], &d[1], &d[2], &d[3], tail);
+
+	if (c != 4 || tail[0]) {
+		return 0;
+	}
+
+	for (int i = 0; i < 4; i++) {
+		if (d[i] > 255) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
 
 /** @internal
  * Holds the current configuration of the gateway */
@@ -962,6 +986,22 @@ config_read(const char *filename)
 	}
 
 	fclose(fd);
+
+	if (config.fas_remoteip) {
+		if (validateIP4Dotted(config.fas_remoteip) == 1) {
+			debug(LOG_ERR, "fasremoteip - %s - is a valid IPv4 address...", config.fas_remoteip);
+		} else {
+			debug(LOG_ERR, "fasremoteip - %s - is NOT a valid IPv4 address format...", config.fas_remoteip);
+			debug(LOG_ERR, "Exiting...");
+			exit(-1);
+		}
+	} else {
+		if (config.fas_port == 80) {
+			debug(LOG_ERR, "Invalid fasport - port 80 is reserved and cannot be used for local FAS...");
+			debug(LOG_ERR, "Exiting...");
+			exit(-1);
+		}
+	}
 
 	debug(LOG_INFO, "Done reading configuration file '%s'", filename);
 }
