@@ -74,18 +74,31 @@ config nodogsplash
   # Enable Forwarding Authentication Service (FAS)
   # If set redirection is changed from splash.html to a FAS (provided by the system administrator)
   # The value is the IP port number of the FAS
+  # Note: if FAS is running locally (ie fasremoteip is NOT set), port 80 cannot be used.
+  #
+  # Typical Remote Shared Hosting Example:
   #option fasport '80'
+  #
+  # Typical Locally Hosted example (ie fasremoteip not set):
+  #option fasport '2080'
 
   # Option: fasremoteip
   # Default: GatewayAddress (the IP of NDS)
   # If set, this is the remote ip address of the FAS.
+  #
+  # Typical Remote Shared Hosting Example:
   #option fasremoteip '46.32.240.41'
 
   # Option: faspath
   # Default: /
   # This is the path from the FAS Web Root to the FAS login page
   # (not the file system root).
+  #
+  # Typical Remote Shared Hosting Example:
   #option faspath '/onboard-wifi.net/nodog/fas.php'
+  #
+  # Typical Locally Hosted example (ie fasremoteip not set):
+  #option faspath '/nodog/fas.php'
 
   # Option: fas_secure_enabled
   # Default: 1
