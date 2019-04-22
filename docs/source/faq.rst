@@ -10,13 +10,13 @@ for v0.9.
 
 v2 was developed before version v1 was released. In v2 the http code was replaced by libmicrohttpd and the template engine was rewritten. Many features became defunct because of this procedure.
 
-v3 cleans up the source code and adds two major new features,
+v3 cleans up the source code and adds three major new features,
 
- FAS enabling an external forwarding authentication service to be called,
+ 1. **FAS**, a forwarding authentication service. FAS supports development of "Credential Verification" running on any dynamic web serving platform, on the same device as Nodogsplash, on another device on the local network, or on an Internet hosted web server.
 
- and 
+ 2. **PreAuth**, an implementation of FAS running on the same device as Nodogsplash and using Nogogsplash's own web server to generate dynamic web pages. Any scripting language or even a compiled application program can be used. This has the advantage of not requiring the resources of a separate web server.
 
- binauth, enabling an external script to be called for simple username/password authentication as well as doing post authentication processing such as setting session durations. This is similar to the old binvoucher feature, but more flexible.
+ 3. **BinAuth**, enabling an external script to be called for simple username/password authentication as well as doing post authentication processing such as setting session durations. This is similar to the old binvoucher feature, but more flexible.
 
 In addition, in v3, the ClientTimeout setting was split into PreauthIdleTimeout and AuthIdleTimeout and for the ClientForceTimeout setting, SessionTimeout is now used instead.
 

@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "NODOGSPLASH" "1" "April 05, 2019" "3.3.1-beta" "nodogsplash"
+.TH "NODOGSPLASH" "1" "April 22, 2019" "3.3.2-beta" "nodogsplash"
 .SH NAME
 nodogsplash \- nodogsplash Documentation
 .
@@ -281,14 +281,17 @@ for v0.9.
 .sp
 v2 was developed before version v1 was released. In v2 the http code was replaced by libmicrohttpd and the template engine was rewritten. Many features became defunct because of this procedure.
 .sp
-v3 cleans up the source code and adds two major new features,
+v3 cleans up the source code and adds three major new features,
 .INDENT 0.0
 .INDENT 3.5
-FAS enabling an external forwarding authentication service to be called,
-.sp
-and
-.sp
-binauth, enabling an external script to be called for simple username/password authentication as well as doing post authentication processing such as setting session durations. This is similar to the old binvoucher feature, but more flexible.
+.INDENT 0.0
+.IP 1. 3
+\fBFAS\fP, a forwarding authentication service. FAS supports development of "Credential Verification" running on any dynamic web serving platform, on the same device as Nodogsplash, on another device on the local network, or on an Internet hosted web server.
+.IP 2. 3
+\fBPreAuth\fP, an implementation of FAS running on the same device as Nodogsplash and using Nogogsplash\(aqs own web server to generate dynamic web pages. Any scripting language or even a compiled application program can be used. This has the advantage of not requiring the resources of a separate web server.
+.IP 3. 3
+\fBBinAuth\fP, enabling an external script to be called for simple username/password authentication as well as doing post authentication processing such as setting session durations. This is similar to the old binvoucher feature, but more flexible.
+.UNINDENT
 .UNINDENT
 .UNINDENT
 .sp
@@ -459,6 +462,13 @@ Nodogsplash (NDS) supports external (to NDS) authentication service via simple c
 \fBfas_secure_enable\fP\&. If set to "1", authaction and the client token are not revealed and it is the responsibility of the FAS to request the token from NDSCTL. If set to "0", the client token is sent to the FAS in clear text in the query string of the redirect along with authaction and redir.
 .UNINDENT
 .UNINDENT
+.sp
+\fBNOTE:\fP
+.INDENT 0.0
+.INDENT 3.5
+FAS (and Preauth/FAS) enables pre authentication processing. NDS authentication is the process that NDS uses to allow a client device to access the Internet through the Firewall. In contrast, Forward Authentication is a process of "Credential Verification", after which FAS, if the verification process is successful, passes the client token to NDS for access to the Internet to be granted.
+.UNINDENT
+.UNINDENT
 .SS Using FAS
 .sp
 \fBNote\fP:
@@ -472,8 +482,7 @@ Typically, the FAS service will be written in PHP or any other language that can
 FAS can then provide an action form for the client, typically requesting login, or self account creation for login.
 .sp
 The FAS can be on the same device as NDS, on the same local area network as NDS, or on an Internet hosted web server.
-.sp
-\fISecurity\fP\&.
+.SS Security
 .sp
 \fBIf FAS Secure is enabled\fP (fas_secure_enabled = 1, the default), NDS will supply only the gateway name, the client IP address and the originally requested URL in the query string in the redirect to FAS.
 .sp
@@ -532,15 +541,19 @@ A FAS service will run quite well on uhttpd (the web server that serves Luci) on
 For this reason a device with a minimum of 8MB flash and 64MB ram is recommended.
 .sp
 \fBRunning on uhttpd with PHP\fP:
+.sp
+Although port 80 is the default for uhttpd, it is reserved for Captive Portal Detection so cannot be used for FAS. uhttpd can however be configured to operate on more than one port. We will use port 2080 in this example.
 .INDENT 0.0
 .INDENT 3.5
 Install the modules php7 and php7\-cgi on OpenWrt for a simple example. Further modules may be required depending on your requirements.
 .UNINDENT
 .UNINDENT
 .sp
-To enable php in uhttpd you must add the line:
+To enable FAS with php in uhttpd you must add the lines:
 .INDENT 0.0
 .INDENT 3.5
+\fBlist listen_http    0.0.0.0:2080\fP
+.sp
 \fBlist interpreter ".php=/usr/bin/php\-cgi"\fP
 .UNINDENT
 .UNINDENT
@@ -552,7 +565,7 @@ The two important NDS options to set will be:
 .INDENT 3.5
 .INDENT 0.0
 .IP 1. 3
-fasport. By default this will be port 80 for uhttpd
+fasport. We will use port 2080 for uhttpd
 .IP 2. 3
 faspath. Set to, for example, /myfas/fas.php,
 your FAS files being placed in /www/myfas/
@@ -563,12 +576,12 @@ your FAS files being placed in /www/myfas/
 \fBNote 1\fP:
 .INDENT 0.0
 .INDENT 3.5
-A typical Internet hosted Apache/PHP shared server will be set up to serve multiple domain names.
+A typical Internet hosted Apache/PHP \fBshared\fP server will be set up to serve multiple domain names.
 .sp
 To access yours, use:
 .INDENT 0.0
 .INDENT 3.5
-fasremoteip = the ip address of the remote server
+fasremoteip = the \fBip address\fP of the remote server
 .sp
 and, for example,
 .sp
