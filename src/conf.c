@@ -53,7 +53,7 @@ int validateIP4Dotted(const char *ip4addr)
 
 	char tail[16];
 	tail[0] = 0;
-
+	int i = 0;
 	unsigned int d[4];
 	int c = sscanf(ip4addr, "%3u.%3u.%3u.%3u%s", &d[0], &d[1], &d[2], &d[3], tail);
 
@@ -61,7 +61,7 @@ int validateIP4Dotted(const char *ip4addr)
 		return 0;
 	}
 
-	for (int i = 0; i < 4; i++) {
+	for (i = 0; i < 4; i++) {
 		if (d[i] > 255) {
 			return 0;
 		}
