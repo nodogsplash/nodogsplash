@@ -756,7 +756,8 @@ config_read(const char *filename)
 			break;
 		case oDebugLevel:
 			if (sscanf(p1, "%d", &config.debuglevel) < 1 || config.debuglevel < LOG_EMERG || config.debuglevel > LOG_DEBUG) {
-				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s. Valid debuglevel %d..%d", p1, s, linenum, filename, LOG_EMERG, LOG_DEBUG);
+				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s. Valid debuglevel %d..%d",
+					p1, s, linenum, filename, LOG_EMERG, LOG_DEBUG);
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);
 			}
@@ -989,7 +990,7 @@ config_read(const char *filename)
 
 	if (config.fas_remoteip) {
 		if (validateIP4Dotted(config.fas_remoteip) == 1) {
-			debug(LOG_ERR, "fasremoteip - %s - is a valid IPv4 address...", config.fas_remoteip);
+			debug(LOG_INFO, "fasremoteip - %s - is a valid IPv4 address...", config.fas_remoteip);
 		} else {
 			debug(LOG_ERR, "fasremoteip - %s - is NOT a valid IPv4 address format...", config.fas_remoteip);
 			debug(LOG_ERR, "Exiting...");
