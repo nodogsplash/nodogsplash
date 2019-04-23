@@ -12,6 +12,9 @@ These options are:
  3. **faspath**. This is the path to the login page on the FAS.
  4. **fas_secure_enable**. If set to "1", authaction and the client token are not revealed and it is the responsibility of the FAS to request the token from NDSCTL. If set to "0", the client token is sent to the FAS in clear text in the query string of the redirect along with authaction and redir.
 
+.. note::
+ FAS (and Preauth/FAS) enables pre authentication processing. NDS authentication is the process that NDS uses to allow a client device to access the Internet through the Firewall. In contrast, Forward Authentication is a process of "Credential Verification", after which FAS, if the verification process is successful, passes the client token to NDS for access to the Internet to be granted.
+
 
 Using FAS
 *********
@@ -28,7 +31,8 @@ FAS can then provide an action form for the client, typically requesting login, 
 
 The FAS can be on the same device as NDS, on the same local area network as NDS, or on an Internet hosted web server.
 
-*Security*.
+Security
+********
 
 **If FAS Secure is enabled** (fas_secure_enabled = 1, the default), NDS will supply only the gateway name, the client IP address and the originally requested URL in the query string in the redirect to FAS.
 
@@ -91,9 +95,13 @@ For this reason a device with a minimum of 8MB flash and 64MB ram is recommended
 
 **Running on uhttpd with PHP**:
 
+Although port 80 is the default for uhttpd, it is reserved for Captive Portal Detection so cannot be used for FAS. uhttpd can however be configured to operate on more than one port. We will use port 2080 in this example.
+
  Install the modules php7 and php7-cgi on OpenWrt for a simple example. Further modules may be required depending on your requirements.
 
-To enable php in uhttpd you must add the line:
+To enable FAS with php in uhttpd you must add the lines:
+
+  ``list listen_http	0.0.0.0:2080``
 
   ``list interpreter ".php=/usr/bin/php-cgi"``
 
@@ -101,18 +109,18 @@ to the /etc/config/uhttpd file in the config uhttpd 'main' or first section.
 
 The two important NDS options to set will be:
 
- 1. fasport. By default this will be port 80 for uhttpd
+ 1. fasport. We will use port 2080 for uhttpd
 
  2. faspath. Set to, for example, /myfas/fas.php,
     your FAS files being placed in /www/myfas/
 
 **Note 1**:
 
- A typical Internet hosted Apache/PHP shared server will be set up to serve multiple domain names.
+ A typical Internet hosted Apache/PHP **shared** server will be set up to serve multiple domain names.
 
  To access yours, use:
 
-  fasremoteip = the ip address of the remote server
+  fasremoteip = the **ip address** of the remote server
 
   and, for example,
 
