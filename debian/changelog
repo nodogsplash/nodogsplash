@@ -1,3 +1,11 @@
+nodogsplash (3.3.2-1) stable; urgency=medium
+
+  * Fix Issue introduced in v3.3.0 with the addition of Improvements towards usable IPv6 support, that caused CPD on client devices to fail with "Too Many Redirects" error. NDS now terminates gracefully with a console error if fasremoteip is set AND fasport=80  [bluewavenet]
+  * Validate fasremoteip to ensure that if it is set, then it is a valid dotted format IPv4 address  [bluewavenet]
+  * Numerous Documentation updates  [bluewavenet]
+
+ --Rob White <dot@blue-wave.net> Tue, 23 Apr 2019 11:49:00 +0000
+
 nodogsplash (3.3.1-1) stable; urgency=medium
 
   * Include preinstalled PreAuth Login script in package [bluewavenet]
