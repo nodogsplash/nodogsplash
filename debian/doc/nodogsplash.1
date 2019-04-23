@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "NODOGSPLASH" "1" "April 22, 2019" "3.3.2-beta" "nodogsplash"
+.TH "NODOGSPLASH" "1" "April 23, 2019" "3.3.2" "nodogsplash"
 .SH NAME
 nodogsplash \- nodogsplash Documentation
 .
@@ -624,51 +624,38 @@ First you should obtain the demo files by downloading the Nodogsplash zip file f
 Then extract the php files from the folder
 .INDENT 0.0
 .INDENT 3.5
-\fB"forward_authentication_service/nodog/"\fP
+"forward_authentication_service/nodog/"
 .UNINDENT
 .UNINDENT
 .sp
-OpenWrt and uhttpd:
+\fBOpenWrt and uhttpd:\fP
 .INDENT 0.0
 .INDENT 3.5
 .INDENT 0.0
 .IP \(bu 2
-Create a folder
-.INDENT 2.0
-.INDENT 3.5
-\fB/www/nodog/\fP
-.UNINDENT
-.UNINDENT
+Create a folder /www/nodog/
 .IP \(bu 2
-Place the files fas.php, landing.php, css.php, querycheck.php, tos.php, users.dat in
+Place the files fas.php, landing.php, css.php, querycheck.php, tos.php, users.dat in /www/nodog/
+.IP \(bu 2
+Edit the file /etc/config/nodogsplash
 .UNINDENT
 .INDENT 0.0
 .INDENT 3.5
-\fB/www/nodog/\fP
-.UNINDENT
-.UNINDENT
-.INDENT 0.0
-.IP \(bu 2
-Edit
-.UNINDENT
+adding the lines:
 .INDENT 0.0
 .INDENT 3.5
-\fB/etc/config/nodogsplash\fP
-.INDENT 0.0
-.TP
-.B adding the lines:
-.INDENT 7.0
-.IP \(bu 2
-option fasport \(aq80\(aq
-.IP \(bu 2
-option faspath \(aq/nodog/fas.php\(aq
-.IP \(bu 2
-option fas_secure_enabled \(aq0\(aq
+\fBoption fasport \(aq2080\(aq\fP
+.sp
+\fBoption faspath \(aq/nodog/fas.php\(aq\fP
+.sp
+\fBoption fas_secure_enabled \(aq0\(aq\fP
 .UNINDENT
 .UNINDENT
 .UNINDENT
 .UNINDENT
 .INDENT 0.0
+.IP \(bu 2
+Restart uhttpd using the command "service uhttpd restart".
 .IP \(bu 2
 Restart NDS using the command "service nodogsplash restart".
 .UNINDENT

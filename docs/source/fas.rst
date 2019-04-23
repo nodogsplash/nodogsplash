@@ -152,25 +152,24 @@ First you should obtain the demo files by downloading the Nodogsplash zip file f
 
 Then extract the php files from the folder
 
- ``"forward_authentication_service/nodog/"``
+ "forward_authentication_service/nodog/"
 
-OpenWrt and uhttpd:
+**OpenWrt and uhttpd:**
 
- * Create a folder
+ * Create a folder /www/nodog/
 
-     ``/www/nodog/``
+ * Place the files fas.php, landing.php, css.php, querycheck.php, tos.php, users.dat in /www/nodog/
 
- * Place the files fas.php, landing.php, css.php, querycheck.php, tos.php, users.dat in
-
-  ``/www/nodog/``
-
- * Edit
-
-  ``/etc/config/nodogsplash``
+ * Edit the file /etc/config/nodogsplash
 
   adding the lines:
-    - option fasport '80'
-    - option faspath '/nodog/fas.php'
-    - option fas_secure_enabled '0'
+
+    ``option fasport '2080'``
+
+    ``option faspath '/nodog/fas.php'``
+
+    ``option fas_secure_enabled '0'``
+
+ * Restart uhttpd using the command "service uhttpd restart".
 
  * Restart NDS using the command "service nodogsplash restart".
