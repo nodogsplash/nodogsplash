@@ -610,6 +610,7 @@ static int preauthenticated(struct MHD_Connection *connection,
 	s_config *config = config_get_config();
 
 	debug(LOG_DEBUG, "url: %s", url);
+
 	/* Check for preauthdir */
 	if (check_authdir_match(url, config->preauthdir)) {
 
@@ -620,8 +621,6 @@ static int preauthenticated(struct MHD_Connection *connection,
 		ret = show_preauthpage(connection, query);
 		return ret;
 	}
-
-
 
 	MHD_get_connection_values(connection, MHD_HEADER_KIND, get_host_value_callback, &host);
 
