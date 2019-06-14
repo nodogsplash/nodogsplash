@@ -842,9 +842,11 @@ config_read(const char *filename)
 			parse_allowed_mac_list(p1);
 			break;
 		case oMACmechanism:
-			if (!strcasecmp("allow",p1)) config.macmechanism = MAC_ALLOW;
-			else if (!strcasecmp("block",p1)) config.macmechanism = MAC_BLOCK;
-			else {
+			if (!strcasecmp("allow", p1)) {
+				config.macmechanism = MAC_ALLOW;
+			} else if (!strcasecmp("block", p1)) {
+				config.macmechanism = MAC_BLOCK;
+			} else {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);
