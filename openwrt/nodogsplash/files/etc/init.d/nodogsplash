@@ -44,9 +44,11 @@ setup_mac_lists() {
     fi
   elif [ "$val" = "allow" ]; then
     config_list_foreach "$cfg" allowedmac append_mac
+    addline "MACmechanism allow"
     addline "AllowedMACList $macs"
   elif [ "$val" = "block" ]; then
     config_list_foreach "$cfg" blockedmac append_mac
+    addline "MACmechanism block"
     addline "BlockedMACList $macs"
   else
     echo "Invalid macmechanism '$val' - allow or block are valid." >&2
