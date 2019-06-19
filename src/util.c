@@ -373,6 +373,14 @@ get_uptime_string(char buf[64])
 	return format_duration(started_time, time(NULL), buf);
 }
 
+int is_addr(const char* addr) {
+	struct sockaddr_in sa;
+	struct sockaddr_in6 sa6;
+
+	return (inet_pton(AF_INET, addr, &sa.sin_addr) == 1) ||
+		(inet_pton(AF_INET6, addr, &sa6.sin6_addr) == 1);
+}
+
 void
 ndsctl_status(FILE *fp)
 {

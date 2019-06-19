@@ -59,6 +59,9 @@ int is_auth_online();
 /* @brief Format a time_t value to 'Fri Jul 27 18:52:22 2018' */
 char *format_time(time_t time, char buf[64]);
 
+/* @brief Check if the address is a valid IPv4 or IPv6 address */
+int is_addr(const char* addr);
+
 /*
  * @brief Mallocs and returns nodogsplash uptime string
  */
