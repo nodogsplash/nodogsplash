@@ -358,14 +358,22 @@ libmicrohttpd_cb(void *cls,
  * @param authdir
  * @return
  *
- * url must look ("/%s/", authdir) to match this
+ * url must look ("/%s/", authdir) or ("/%s", authdir) to match this
  */
 static int check_authdir_match(const char *url, const char *authdir)
 {
-	if (strlen(url) != (2 + strlen(authdir)))
+	size_t url_len = strlen(url);
+	size_t authdir_len = strlen(authdir);
+	if (url_len < 1 + authdir_len || url_len > 2 + authdir_len)
 		return 0;
 
-	if (strncmp(url + 1, authdir, strlen(authdir)))
+	if (url[0] != '/')
+		return 0;
+
+	if (strncmp(url + 1, authdir, authdir_len))
+		return 0;
+
+	if (url_len == 2 + authdir_len && url[url_len-1] != '/')
 		return 0;
 
 	/* match */
