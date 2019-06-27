@@ -243,9 +243,12 @@ main_loop(void)
 		}
 	}
 
-	/* format gw_address accordingly depending on if gw_ip is v4 or v6 */
-	const char *ipfmt = config->ip6 ? "[%s]:%d" : "%s:%d";
-	safe_asprintf(&config->gw_address, ipfmt, config->gw_ip, config->gw_port);
+	if (!config->gw_ip) {
+		/* format gw_address accordingly depending on if gw_ip is v4 or v6 */
+		const char *ipfmt = config->ip6 ? "[%s]:%d" : "%s:%d";
+		safe_asprintf(&config->gw_address, ipfmt, config->gw_ip, config->gw_port);
+		debug(LOG_DEBUG, "Inferring gateway address of %s", config->gw_address);
+	}
 
 	if ((config->gw_mac = get_iface_mac(config->gw_interface)) == NULL) {
 		debug(LOG_ERR, "Could not get MAC address information of %s, exiting...", config->gw_interface);

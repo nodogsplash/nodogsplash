@@ -752,8 +752,9 @@ config_read(const char *filename)
 		case oGatewayIPRange:
 			config.gw_iprange = safe_strdup(p1);
 			break;
-		/* TODO: deprecate oGatewayAddress option */
 		case oGatewayAddress:
+			config.gw_address = safe_strdup(p1);
+			break;
 		case oGatewayIP:
 			config.gw_ip = safe_strdup(p1);
 			break;
