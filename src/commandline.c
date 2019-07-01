@@ -46,13 +46,13 @@ usage(void)
 {
 	printf("Usage: nodogsplash [options]\n"
 		"\n"
-		"  -c [filename] Use this config file\n"
-		"  -f            Run in foreground\n"
-		"  -d <level>    Debug level\n"
-		"  -s            Log to syslog\n"
-		"  -w <path>     Ndsctl socket path\n"
-		"  -h            Print usage\n"
-		"  -v            Print version information\n"
+		"  -c <path>   Use configuration file\n"
+		"  -f          Run in foreground\n"
+		"  -d <level>  Debug level (0-9)\n"
+		"  -s          Log to syslog\n"
+		"  -w <path>   Ndsctl socket path\n"
+		"  -h          Print this help\n"
+		"  -v          Print version\n"
 		"\n"
 	);
 }
