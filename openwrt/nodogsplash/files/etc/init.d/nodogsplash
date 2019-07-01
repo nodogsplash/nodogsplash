@@ -141,7 +141,7 @@ generate_uci_config() {
 
   for option in preauth binauth fasport fasremoteip faspath fas_secure_enabled \
     daemon debuglevel maxclients gatewayname gatewayinterface gatewayiprange \
-    gatewayaddress gatewayport webroot splashpage statuspage imagesdir pagesdir \
+    gatewayaddress gatewayport webroot splashpage statuspage \
     redirecturl sessiontimeout preauthidletimeout authidletimeout checkinterval \
     setmss mssvalue trafficcontrol downloadlimit uploadlimit \
     syslogfacility ndsctlsocket fw_mark_authenticated \

@@ -1026,8 +1026,6 @@ static void replace_variables(
 	char *denyaction = NULL;
 	char *authaction = NULL;
 	char *authtarget = NULL;
-	char *imagesdir = NULL;
-	char *pagesdir = NULL;
 
 	sprintf(clientupload, "%llu", client->counters.outgoing);
 	sprintf(clientdownload, "%llu", client->counters.incoming);
@@ -1041,8 +1039,6 @@ static void replace_variables(
 	safe_asprintf(&authaction, "http://%s/%s/", config->gw_address, config->authdir);
 	safe_asprintf(&authtarget, "http://%s/%s/?tok=%s&amp;redir=%s",
 		config->gw_address, config->authdir, client->token, redirect_url);
-	safe_asprintf(&pagesdir, "/%s", config->pagesdir);
-	safe_asprintf(&imagesdir, "/%s", config->imagesdir);
 
 	struct template vars[] = {
 		{"authaction", authaction},
@@ -1054,8 +1050,6 @@ static void replace_variables(
 		{"clientdownload", clientdownload},
 		{"gatewaymac", config->gw_mac},
 		{"gatewayname", config->gw_name},
-		{"imagesdir", imagesdir},
-		{"pagesdir", pagesdir},
 		{"maxclients", maxclients},
 		{"nclients", nclients},
 		{"redir", redirect_url},
@@ -1071,8 +1065,6 @@ static void replace_variables(
 	free(denyaction);
 	free(authaction);
 	free(authtarget);
-	free(pagesdir);
-	free(imagesdir);
 }
 
 static int show_templated_page(struct MHD_Connection *connection, t_client *client, const char *page)

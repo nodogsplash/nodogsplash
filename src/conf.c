@@ -83,8 +83,6 @@ typedef enum {
 	oWebRoot,
 	oSplashPage,
 	oStatusPage,
-	oImagesDir,
-	oPagesDir,
 	oRedirectURL,
 	oPreauthIdleTimeout,
 	oAuthIdleTimeout,
@@ -136,8 +134,6 @@ static const struct {
 	{ "webroot", oWebRoot },
 	{ "splashpage", oSplashPage },
 	{ "statuspage", oStatusPage },
-	{ "imagesdir", oImagesDir },
-	{ "pagesdir", oPagesDir },
 	{ "redirectURL", oRedirectURL },
 	{ "preauthidletimeout", oPreauthIdleTimeout },
 	{ "authidletimeout", oAuthIdleTimeout },
@@ -211,8 +207,6 @@ config_init(void)
 	config.webroot = safe_strdup(DEFAULT_WEBROOT);
 	config.splashpage = safe_strdup(DEFAULT_SPLASHPAGE);
 	config.statuspage = safe_strdup(DEFAULT_STATUSPAGE);
-	config.imagesdir = safe_strdup(DEFAULT_IMAGESDIR);
-	config.pagesdir = safe_strdup(DEFAULT_PAGESDIR);
 	config.authdir = safe_strdup(DEFAULT_AUTHDIR);
 	config.denydir = safe_strdup(DEFAULT_DENYDIR);
 	config.preauthdir = safe_strdup(DEFAULT_PREAUTHDIR);
@@ -836,12 +830,6 @@ config_read(const char *filename)
 			break;
 		case oStatusPage:
 			config.statuspage = safe_strdup(p1);
-			break;
-		case oImagesDir:
-			config.imagesdir = safe_strdup(p1);
-			break;
-		case oPagesDir:
-			config.pagesdir = safe_strdup(p1);
 			break;
 		case oRedirectURL:
 			config.redirectURL = safe_strdup(p1);
