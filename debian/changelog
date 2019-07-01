@@ -4,7 +4,7 @@ nodogsplash (3.3.2-1) stable; urgency=medium
   * Validate fasremoteip to ensure that if it is set, then it is a valid dotted format IPv4 address  [bluewavenet]
   * Numerous Documentation updates  [bluewavenet]
 
- --Rob White <dot@blue-wave.net> Tue, 23 Apr 2019 11:49:00 +0000
+ -- Rob White <dot@blue-wave.net>  Tue, 23 Apr 2019 11:49:00 +0000
 
 nodogsplash (3.3.1-1) stable; urgency=medium
 
@@ -17,7 +17,7 @@ nodogsplash (3.3.1-1) stable; urgency=medium
   * auth.c - use correct types to prevent cast and comparement of uint and int [lynxis]
   * openwrt/init.d - prevent start of the daemon if configuration generation fails [lynxis]
 
- -- Rob White <dot@blue-wave.net> Fri, 7 Apr 2019 19:43:00 +0000
+ -- Rob White <dot@blue-wave.net>  Fri, 7 Apr 2019 19:43:00 +0000
 
 nodogsplash (3.3.0-1) stable; urgency=medium
 
@@ -26,7 +26,7 @@ nodogsplash (3.3.0-1) stable; urgency=medium
   * Fix memory handling bug, issue #341 [mwarning] [stevo01]
   * Improvements towards usable IPv6 support [wanxewoj] [mwarning]
 
- -- Rob White <dot@blue-wave.net> Fri, 15 Mar 2019 15:48:00 +0000
+ -- Rob White <dot@blue-wave.net>  Fri, 15 Mar 2019 15:48:00 +0000
 
 nodogsplash (3.2.1-1) stable; urgency=medium
 
