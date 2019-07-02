@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<link rel="shortcut icon" href="/$imagesdir/splash.jpg" type="image/x-icon">
+<link rel="shortcut icon" href="/images/splash.jpg" type="image/x-icon">
 <link rel="stylesheet" type="text/css" href="/splash.css">
 
 <title>$gatewayname Hotspot Gateway.</title>
@@ -28,9 +28,6 @@ Content:
 		Prohibit downloading of external files
 			(including .css and .js).
 		Prohibit the execution of javascript.
-
-	Also, note that any images you reference should reside in the
-	subdirectory that is defined by $imagesdir (default: "images").
 
 Authentication:
 	A client is authenticated on submitting an HTTP form, method=get,
@@ -57,8 +54,6 @@ Available variables:
 	nclients: $nclients
 	maxclients: $maxclients
 	uptime: $uptime
-	imagesdir: $imagesdir
-	pagesdir: $pagesdir
 
 Additional Variables that can be passed back via the HTTP get,
 or appended to the query string of the authtarget link:
@@ -73,7 +68,7 @@ or appended to the query string of the authtarget link:
 <med-blue>$gatewayname Hotspot Gateway.</med-blue>
 <div class="insert">
 <br>
-<img src="$imagesdir/splash.jpg" alt="Splash Page: For access to the Internet, please click Continue.">
+<img src="/images/splash.jpg" alt="Splash Page: For access to the Internet, please click Continue.">
 <hr>
 <big-red>Welcome!</big-red>
 <hr>
