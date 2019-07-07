@@ -300,7 +300,8 @@ main_loop(void)
 		/* PHP cli command can be php or php-cli depending on Linux version. */
 		if (execute_ret(msg, sizeof(msg) - 1, "php -v") == 0) {
 			safe_asprintf(&fasssl, "php");
-			debug(LOG_NOTICE, "SSL Provider: %s FAS key is: %s\n", &msg, config->fas_key);
+			debug(LOG_NOTICE, "SSL Provider is active");
+			debug(LOG_DEBUG, "SSL Provider: %s FAS key is: %s\n", &msg, config->fas_key);
 
 		} else if (execute_ret(msg, sizeof(msg) - 1, "php-cli -v") == 0) { 
 			safe_asprintf(&fasssl, "php-cli");
