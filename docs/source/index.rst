@@ -28,16 +28,16 @@ Contents:
 
    overview
    install
-   compile
-   faq
-   splash
    howitworks
+   splash
    fas
    preauth
    binauth
    traffic
    ndsctl
    customize
+   faq
+   compile
    debug
    todo
 

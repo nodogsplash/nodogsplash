@@ -3,17 +3,32 @@ Forwarding Authentication Service (FAS)
 
 Overview
 ********
-
-Nodogsplash (NDS) supports external (to NDS) authentication service via simple configuration options.
+Nodogsplash (NDS) has the ability to forward requests to a third party authentication service (FAS). This is enabled via simple configuration options.
 
 These options are:
  1. **fasport**. This enables Forwarding Authentication Service (FAS). Redirection is changed from splash.html to a FAS. The value is the IP port number of the FAS.
  2. **fasremoteip**. If set, this is the remote ip address of the FAS, if not set it will take the value of the NDS gateway address.
- 3. **faspath**. This is the path to the login page on the FAS.
- 4. **fas_secure_enable**. If set to "1", authaction and the client token are not revealed and it is the responsibility of the FAS to request the token from NDSCTL. If set to "0", the client token is sent to the FAS in clear text in the query string of the redirect along with authaction and redir.
-
+ 3. **fasremotefqdn** If set, this is the remote fully qualified domain name (FQDN) of the FAS
+ 4. **faspath**. This is the path from the FAS Web Root (not the file system root) to the FAS login page.
+ 5. **fas_secure_enable**. This can have three values, "0", "1", or "2" providing different levels of security.
+ 6. **faskey** Used in combination with fas_secure_enable level 2, this is a key phrase for NDS to encrypt the query string sent to FAS.
+ 
 .. note::
  FAS (and Preauth/FAS) enables pre authentication processing. NDS authentication is the process that NDS uses to allow a client device to access the Internet through the Firewall. In contrast, Forward Authentication is a process of "Credential Verification", after which FAS, if the verification process is successful, passes the client token to NDS for access to the Internet to be granted.
+
+Using a Shared Hosting Server for a Remote FAS
+**********************************************
+
+ A typical Internet hosted **shared** server will be set up to serve multiple domain names.
+
+ To access yours, it is important to configure the two options:
+
+  fasremoteip = the **ip address** of the remote server
+
+  **AND**
+
+  fasremotefqdn = the **Fully Qualified Domain name** of the remote server
+
 
 
 Using FAS
@@ -22,9 +37,10 @@ Using FAS
 **Note**:
 All addresses (with the exception of fasremoteip) are relative to the *client* device, even if the FAS is located remotely.
 
-When FAS is enabled, NDS automatically configures access to the FAS service.
+When FAS is enabled, NDS automatically configures firewall access to the FAS service.
 
 The FAS service must serve an http splash of its own to replace the NDS splash.html.
+
 Typically, the FAS service will be written in PHP or any other language that can provide dynamic web content.
 
 FAS can then provide an action form for the client, typically requesting login, or self account creation for login.
@@ -34,46 +50,86 @@ The FAS can be on the same device as NDS, on the same local area network as NDS,
 Security
 ********
 
-**If FAS Secure is enabled** (fas_secure_enabled = 1, the default), NDS will supply only the gateway name, the client IP address and the originally requested URL in the query string in the redirect to FAS.
+**If FAS Secure is enabled** (Levels 1 (default), and 2), the client authentication token is kept secret until FAS verification is complete.
 
-For example:
+   **If set to "0"** the client token is sent to the FAS in clear text in the query string of the
+   redirect along with authaction and redir.
 
-`http://fasremoteip:fasport/faspath?gatewayname=[gatewayname]&clientip=[clientip]&redir=[requested-url]`
+   **If set to "1"**
+   authaction and the client token are not revealed and it is the responsibility of the FAS to request the token from NDSCTL.
 
-It is the responsibility of FAS to obtain the unique client token allocated by NDS as well as constructing the return URL to NDS.
+   **If set to "2"**
+   clientip, clientmac, gatewayname, client token, gatewayaddress, authdir and originurl are encrypted using faskey and passed to FAS in the query string.
 
-The return url will be constructed by FAS from predetermined knowledge of the configuration of NDS using gatewayname as an identifier.
+   The query string will also contain a randomly generated initialization vector to be used by the FAS for decryption.
 
-The client's unique access token will be obtained from NDS by the FAS making a call to the ndsctl tool.
+   The cipher used is "AES-256-CBC".
 
-For example, the following command returns just the token:
+   The "php-cli" package and the "php-openssl" module must both be installed for fas_secure level 2.
 
-`ndsctl json $clientip | grep token | cut -c 10- | cut -c -8`
+   Nodogsplash does not depend on this package and module, but will exit gracefully if this package and module are not installed when this level is set.
 
-If the client successfully authenticates in the FAS, FAS will return the unique token to NDS to finally allow the client access to the Internet.
+   The FAS must use the query string passed initialisation vector and the pre shared fas_key to decrypt the query string. An example FAS level 2 php script is preinstalled in the /etc/nodogsplash directory and also supplied in the source code.
 
-A Secure Internet based FAS is best implemented as a two stage process, first using a local FAS, that in turn accesses an https remote FAS using tools such as curl or wget.
+**Option faskey must be set** if fas secure is set to level 2.
 
-**If FAS Secure is disabled** (fas_secure_enabled = 0), NDS sends the token and other information to FAS as clear text.
+  Option faskey is used to encrypt the data sent by NDS to FAS.
+  It can be any combination of A-Z, a-z and 0-9, up to 16 characters with no white space.
 
-For example:
+  This is used to create a sha256 digest that is in turn used to encrypt the data using the aes-256-cbc cypher.
 
-`http://fasremoteip:fasport/faspath?authaction=http://gatewayaddress:gatewayport/nodogsplash_auth/?clientip=[clientip]&gatewayname=[gatewayname]&tok=[token]&redir=[requested_url]`
+  A random initialisation vector is generated for every encryption and sent to FAS with the encrypted data.
 
-Clearly in this case, a knowledgeable user could bypass FAS, so running fas_secure_enabled = 1, the default, is recommended.
+  Option faskey must be pre-shared with FAS.
 
-**Post FAS processing**.
+
+Example FAS Query strings
+*************************
+
+  **Level 0** (fas_secure_enabled = 0), NDS sends the token and other information to FAS as clear text.
+
+  `http://fasremoteip:fasport/faspath?authaction=http://gatewayaddress:gatewayport/nodogsplash_auth/?clientip=[clientip]&gatewayname=[gatewayname]&tok=[token]&redir=[requested_url]`
+
+   Although the simplest to set up, a knowledgeable user could bypass FAS, so running fas_secure_enabled at level 1 or 2 is recommended.
+
+
+  **Level 1** (fas_secure_enabled = 1), NDS sends only information required to identify, the instance of NDS, the client and the client's originally requested URL.
+
+  `http://fasremotefwdn:fasport/faspath?gatewayname=[gatewayname]&clientip=[clientip]&redir=[requested-url]`
+
+   It is the responsibility of FAS to obtain the unique client token allocated by NDS as well as constructing the return URL to NDS.
+
+   The return url will be constructed by FAS from predetermined knowledge of the configuration of NDS using gatewayname as an identifier.
+
+   The client's unique access token will be obtained from NDS by the FAS making a call to the ndsctl tool.
+
+   For example, the following command returns just the token:
+
+   `ndsctl json $clientip | grep token | cut -c 10- | cut -c -8`
+
+  **Level 2** (fas_secure_enabled = 2), NDS sends enrypted information to FAS.
+
+  `http://fasremotefwdn:fasport/faspath?fas=[aes-256-cbc data]&iv=[random initialisation vector]`
+
+   It is the responsibility of FAS to decrypt the aes-256-cbc data it receives, using the pre shared faskey and the random initialisation vector.
+
+
+  If the client is successfully verified by the FAS, FAS will return the unique token to NDS to finally allow the client access to the Internet.
+
+
+Post FAS processing
+*******************
 
 Once the client has been authenticated by the FAS, NDS must then be informed to allow the client to have access to the Internet.
 
-This is done by accessing NDS at a special virtual URL.
-This is of the form:
-`http://gatewayaddress:gatewayport/nodogsplash_auth/?tok=[token]&redir=[landing_page_url]`
+ This is done by accessing NDS at a special virtual URL.
+ This is of the form:
+ `http://gatewayaddress:gatewayport/nodogsplash_auth/?tok=[token]&redir=[landing_page_url]`
 
-This is most commonly done using an html form of method GET.
-The parameter redir can be the client's originally requested URL sent by NDS, or more usefully, the URL of a suitable landing page.
+ This is most commonly achieved using an html form of method GET.
+ The parameter redir can be the client's originally requested URL sent by NDS, or more usefully, the URL of a suitable landing page.
 
-However, be aware that many client CPD processes will **automatically close** the landing page as soon as Internet access is detected.
+Be aware that many client CPD processes will **automatically close** the landing page as soon as Internet access is detected.
 
 **Manual Access of NDS Virtual URL**
 
@@ -89,15 +145,19 @@ FAS should then serve a suitable error page informing the client user that they 
 Running FAS on your Nodogsplash router
 **************************************
 
-A FAS service will run quite well on uhttpd (the web server that serves Luci) on an OpenWrt supported device with 8MB flash and 32MB ram but shortage of ram may well be an issue if more than two or three clients log in at the same time.
+FAS has been tested using uhttpd, lighttpd, ngnix, apache and libmicrohttpd.
+
+**Running on OpenWrt with uhttpd/PHP**:
+
+A FAS service may run quite well on uhttpd (the web server that serves Luci) on an OpenWrt supported device with 8MB flash and 32MB ram but shortage of ram will be an issue if more than two or three clients log in at the same time.
 
 For this reason a device with a minimum of 8MB flash and 64MB ram is recommended.
 
-**Running on uhttpd with PHP**:
+*Although port 80 is the default for uhttpd, it is reserved for Captive Portal Detection so cannot be used for FAS. uhttpd can however be configured to operate on more than one port.*
 
-Although port 80 is the default for uhttpd, it is reserved for Captive Portal Detection so cannot be used for FAS. uhttpd can however be configured to operate on more than one port. We will use port 2080 in this example.
+We will use port 2080 in this example.
 
- Install the modules php7 and php7-cgi on OpenWrt for a simple example. Further modules may be required depending on your requirements.
+ Install the module php7-cgi. Further modules may be required depending on your requirements.
 
 To enable FAS with php in uhttpd you must add the lines:
 
@@ -114,51 +174,23 @@ The two important NDS options to set will be:
  2. faspath. Set to, for example, /myfas/fas.php,
     your FAS files being placed in /www/myfas/
 
-**Note 1**:
 
- A typical Internet hosted Apache/PHP **shared** server will be set up to serve multiple domain names.
+Using the FAS Example Script
+****************************
 
- To access yours, use:
+You can run the FAS example script locally on the same OpenWrt device that is running NDS (A minimum of 64MB of ram may be enough, but 128MB is recommended).
 
-  fasremoteip = the **ip address** of the remote server
-
-  and, for example,
-
-  faspath = /domainname/pathto/myfas/fas.php
-
-  or
-
-  faspath = /accountname/pathto/myfas/fas.php
-
- If necessary, contact your hosting service provider.
-
-
-**Note 2:**
-
- The configuration file /etc/config/nodogsplash contains the line "option enabled 1".
-
- If you have done something wrong and locked yourself out, you can still SSH to your router and stop NoDogSplash (ndsctl stop) to fix the problem.
-
-Using the simple example files
-******************************
-
-Assuming you want to run the FAS example demo locally under uhttpd on the same OpenWrt device that is running NDS, configured as above, do the following.
+Assuming you have installed your web server of choice, configured it for port 2080 and added PHP support using the package php7-cgi, you can do the following.
 
  (Under other operating systems you may need to edit the nodogsplash.conf file in /etc/nodogsplash instead, but the process is very similar.)
 
-First you should obtain the demo files by downloading the Nodogsplash zip file from
+ * Install the packages php7-cli and php7-mod-openssl
 
- https://github.com/nodogsplash/nodogsplash/
+ * Create a folder /[server-web-root]/nds/
 
-Then extract the php files from the folder
+ * Place the file fas-aes.php in /[server-web-root]/nds/
 
- "forward_authentication_service/nodog/"
-
-**OpenWrt and uhttpd:**
-
- * Create a folder /www/nodog/
-
- * Place the files fas.php, landing.php, css.php, querycheck.php, tos.php, users.dat in /www/nodog/
+   (You can find it in the /etc/nodogsplash directory.)
 
  * Edit the file /etc/config/nodogsplash
 
@@ -166,10 +198,14 @@ Then extract the php files from the folder
 
     ``option fasport '2080'``
 
-    ``option faspath '/nodog/fas.php'``
+    ``option faspath '/nds/fas-aes.php'``
 
-    ``option fas_secure_enabled '0'``
+    ``option fas_secure_enabled '2'``
 
- * Restart uhttpd using the command "service uhttpd restart".
+    ``option faskey '1234567890'``
 
  * Restart NDS using the command "service nodogsplash restart".
+
+The value of option faskey can be changed, but must also be pre-shared with FAS by editing the example script to match the new value.
+
+

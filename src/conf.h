@@ -29,7 +29,7 @@
 #ifndef _CONF_H_
 #define _CONF_H_
 
-#define VERSION "3.3.3-beta"
+#define VERSION "4.0.0-beta"
 
 /*@{*/
 /** Defines */
@@ -155,7 +155,11 @@ typedef struct {
 	unsigned int fas_port;		/**< @brief Port the fas server will run on */
 	int fas_secure_enabled;		/**< @brief Enable Secure FAS */
 	char *fas_path;			/**< @brief Path to forward authentication page of FAS */
+	char *fas_key;			/**< @brief AES key for FAS */
 	char *fas_remoteip;		/**< @brief IP addess of a remote FAS */
+	char *fas_remotefqdn;		/**< @brief FQDN of a remote FAS */
+	char *fas_url;			/**< @brief URL of a remote FAS */
+	char *fas_ssl;			/**< @brief SSL provider for FAS */
 	char *webroot;			/**< @brief Directory containing splash pages, etc. */
 	char *splashpage;		/**< @brief Name of main splash page */
 	char *statuspage;		/**< @brief Name of info status page */

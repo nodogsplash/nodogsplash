@@ -82,6 +82,15 @@ config nodogsplash
   # Typical Locally Hosted example (ie fasremoteip not set):
   #option fasport '2080'
 
+  # Option: fasremotefqdn
+  # Default: Not set
+  # If set, this is the remote fully qualified domain name (FQDN) of the FAS.
+  # The protocol must NOT be prepended to the FQDN (ie http:// or https://)
+  # To prevent CPD or browser security errors NDS prepends http:// before redirection.
+  # If set, DNS MUST resolve fasremotefqdn to be the same ip address as fasremoteip.
+  # Typical Remote Shared Hosting Example:
+  #option fasremotefqdn 'onboard-wifi.net'
+
   # Option: fasremoteip
   # Default: GatewayAddress (the IP of NDS)
   # If set, this is the remote ip address of the FAS.
@@ -94,30 +103,60 @@ config nodogsplash
   # This is the path from the FAS Web Root to the FAS login page
   # (not the file system root).
   #
-  # Typical Remote Shared Hosting Example:
+  # Typical Remote Shared Hosting Example (if fasremotefqdn is not specified):
   #option faspath '/onboard-wifi.net/nodog/fas.php'
   #
-  # Typical Locally Hosted example (ie fasremoteip not set):
+  # Typical Remote Shared Hosting Example (ie BOTH fasremoteip AND fasremotefqdn set):
   #option faspath '/nodog/fas.php'
+  #
+  # Typical Locally Hosted Example (ie fasremoteip not set):
+  #option faspath '/nodog/fas.php'
+
+  # Option: faskey
+  # Default: not set
+  # A key phrase for NDS to encrypt the query string sent to FAS
+  # Can be any combination of A-Z, a-z and 0-9, up to 16 characters with no white space
+  #option faskey '1234567890'
 
   # Option: fas_secure_enabled
   # Default: 1
-  # If set to "1", authaction and the client token are not revealed and it is the responsibility
-  # of the FAS to request the token from NDSCTL.
-  # If set to "0", the client token is sent to the FAS in clear text in the query string of the
+  #
+  # ****If set to "0"****
+  # the client token is sent to the FAS in clear text in the query string of the
   # redirect along with authaction and redir.
+  #
+  # ****If set to "1"****
+  # authaction and the client token are not revealed and it is the responsibility
+  # of the FAS to request the token from NDSCTL.
+  #
+  # *****If set to 2****
+  # clientip, clientmac, gatewayname, client token, gatewayaddress, authdir and originurl
+  # are encrypted using faskey and passed to FAS in the query string.
+  #
+  # The query string will also contain a randomly generated initialization vector to be used by the FAS for decryption.
+  #
+  # The "php-cli" package and the "php-openssl" module must both be installed for fas_secure level 2.
+  #
+  # Nodogsplash does not depend on this package and module, but will exit gracefully
+  # if this package and module are not installed when this level is set.
+  #
+  # The FAS must use the query string passed initialisation vector and the pre shared fas_key to decrypt the query string.
+  # An example FAS php script is supplied in the source code.
+  #
   #option fas_secure_enabled '0'
 
   # Enable PreAuth Support.
+  # PreAuth support allows FAS to call a local program or script with html served by NDS
   #
-  # A simple login script is provided in the package.
+  # A functional preauth script is installed by default providing
+  # username/emailaddress login as an alternative to the basic splash page. 
   # This generates a login page asking for usename and email address.
   # User logins are recorded in the log file /tmp/ndslog.log
   # Details of how the script works are contained in comments in the script itself.
   #
-  # PreAuth support allows FAS to call a local program or script with html served by NDS
-  # If set, a program/script is called by the NDS FAS handler when:
-  # 1. fasremopteip is not set,
+  # If set, a program/script is called by the NDS FAS handler
+  # when all three of the following conditions are met:
+  # 1. fasremoteip is NOT set,
   # 2. fasport is set to the gateway port
   # 3. faspath is set to /nodogsplash_preauth/
   #
@@ -134,7 +173,6 @@ config nodogsplash
   # It must also obtain the client token using ndsctl (or the original query string if fas_secure_enabled=0)
   # for NDS authentication when calling /nodogsplash_auth/
   #
-
   # Enable username/emailaddress login.
   # Note: fasport must be set to the same value as gatewayport (default = 2050)
   # Enable by uncommenting the following three lines
@@ -157,11 +195,21 @@ config nodogsplash
   # Or for happy customers allow all
   list authenticated_users 'allow all'
 
-  # For preauthenticated users to resolve IP addresses in their
-  # initial request not using the router itself as a DNS server,
-  # Leave commented to help prevent DNS tunnelling
+  # For preauthenticated users:
+  #
+  # *****IMPORTANT*****
+  # To help prevent DNS tunnelling and DNS Hijacking DO NOT uncomment the following two lines:
   #list preauthenticated_users 'allow tcp port 53'
   #list preauthenticated_users 'allow udp port 53'
+
+  # Allow preauthenticated users to access an external IP address
+  # This is commonly referred to as a Walled Garden.
+  # Only IPv4 addresses can be used (not domain names) 
+  #list preauthenticated_users 'allow tcp port 80 to 112.122.123.124'
+  #list preauthenticated_users 'allow udp port 8020 to 112.122.123.124'
+  #
+  # Alternatively, a preconfigured ipset can be used:
+  #list preauthenticated_users 'allow tcp port [port number] ipset [ipset rule name]'
 
   # Allow ports for SSH/Telnet/DNS/DHCP/HTTP/HTTPS
   list users_to_router 'allow tcp port 22'
@@ -170,6 +218,7 @@ config nodogsplash
   list users_to_router 'allow udp port 53'
   list users_to_router 'allow udp port 67'
   list users_to_router 'allow tcp port 80'
+  list users_to_router 'allow tcp port 443'
 
   # MAC addresses that are / are not allowed to access the splash page
   # Value is either 'allow' or 'block'. The allowedmac or blockedmac list is used.

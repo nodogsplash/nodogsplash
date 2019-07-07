@@ -11,7 +11,9 @@ When ready to do a release, do the following:
 9. Push to origin
 10. Github - Create Pull Request and Merge to master
 11. Github proceed to "Draft New Release"
-12. Github tag release as eg. v3.3.0 (remembering the leading "v"") (or use git tag -a v3.3.0 -m "nodogsplash release 3.3.0 " and git push --tags.)
+12. Github tag release as eg. v3.3.0 (remembering the leading "v"")
+	(or use git tag -a v3.3.0 -m "nodogsplash release 3.3.0 " and git push --tags.)
 13. In your local repository, make a new branch called "stable"
-14. Push branch "stable" to origin, overwriting the existing "stable". Branch stable is the source for the readthedocs stable documentation at https://nodogsplashdocs.readthedocs.io/en/stable/
+14. Push branch "stable" to origin, overwriting the existing "stable".
+	Note:Branch stable is the source for the readthedocs stable documentation at https://nodogsplashdocs.readthedocs.io/en/stable/
 15. In Master, set version to -beta eg 3.1.1-beta in conf.h, conf.py, openwrt/Makefile

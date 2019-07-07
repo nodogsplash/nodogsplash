@@ -1,10 +1,14 @@
 TODO List
 #########
 
-Not all features are finished or working as properly or as efficiently as they should.
+Not all features are finished or working as properly or as efficiently as they should. Other features have not been thought of yet!
+
+Features should be aimed at providing tools to allow NDS to be used as flexible Captive Portal engine, rather than building in specific solutions.
+
 Here is a list of things that need to be improved:
 
 * While (un-) block/trust/allow via the ndsctl tool take effect, the state object of the client in NDS is not affected.
+  
   Both systems still need to be connected (in src/auth.c).
 
 * Include blocked and trusted clients in the client list - so that they can be managed.
@@ -16,3 +20,5 @@ Here is a list of things that need to be improved:
 * The code in src/http_microhttpd.c has evolved from previous versions and possibly has some missed edge cases. It would benefit from a rewrite to improve maintainability as well as performance.
 
 * ip version 6 is not currently supported by NDS. It is not essential or advantageous to have in the short term but should be added at some time in the future.
+
+* Automatic Offline mode. Either for forced offline use, or automatic detection of a failed Internet feed could be implemented. Some thought and discussion has been put into this and it is quite possible to achieve.

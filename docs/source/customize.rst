@@ -58,10 +58,10 @@ Finally you must tell UCI to commit your changes to the configuration file:
 
   uci commit nodogsplash
 
-The Splash Page
-***************
+The Default Click and Go Splash Page
+************************************
 
-The default simple splash page can be found at:
+The default default splash page can be found at:
 
   ``/etc/nodogsplash/htdocs/splash.html``
 
@@ -79,7 +79,6 @@ replaced by their values:
 
  (You should instead use a GET-method HTML form to send this   information to the nodogsplash server; see below.)
 
-* *$imagesdir* The directory in nodogsplash's web hierarchy where images to be displayed in the splash page must be located.
 * *$tok*, *$redir*, *$authaction*, and *$denyaction* are available and should be used to write the splash page to use a GET-method HTML form instead of using $authtarget as the value of an href attribute to communicate with the nodogsplash server.
 
  *$authaction* and *$denyaction* are virtual urls used to inform NDS that a client should be authenticated or deauthenticated and are of the form:
@@ -128,4 +127,4 @@ It should be noted when designing a custom splash page that for security reasons
 
  * Prohibit the execution of javascript.
 
-Also, note that any images you reference should reside in the subdirectory that is defined by *$imagesdir* (default: "images").
+Also, note that any images you reference should reside in the subdirectory /etc/nodogsplash/htdocs/images/.

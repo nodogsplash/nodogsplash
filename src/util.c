@@ -147,7 +147,7 @@ int execute(const char fmt[], ...)
 
 int execute_ret(char* msg, int msg_len, const char fmt[], ...)
 {
-	char cmd[512];
+	char cmd[QUERYMAXLEN];
 	va_list vlist;
 	int rc;
 
@@ -162,6 +162,15 @@ int execute_ret(char* msg, int msg_len, const char fmt[], ...)
 
 	return _execute_ret(msg, msg_len, cmd);
 }
+
+// Warning: Any client originated portion of the cmd string must be url encoded before calling this function.
+// It may not be desired to url encode the entire cmd string,
+// so it is our responsibility to encode the relevant parts (eg the clients original request url) before calling.
+int execute_ret_url_encoded(char* msg, int msg_len, const char *cmd)
+{
+	return _execute_ret(msg, msg_len, cmd);
+}
+
 
 char *
 get_iface_ip(const char ifname[], int ip6)
@@ -418,10 +427,9 @@ ndsctl_status(FILE *fp)
 	}
 
 	if (config->fas_port) {
-		fprintf(fp, "FAS: Secure=%u URL: http://%s:%u%s\n",
+		fprintf(fp, "FAS: Secure Level %u, URL: %s\n",
 			config->fas_secure_enabled,
-			config->fas_remoteip,
-			config->fas_port, config->fas_path);
+			config->fas_url);
 	} else {
 		fprintf(fp, "FAS: Disabled\n");
 	}
