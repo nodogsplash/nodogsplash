@@ -499,7 +499,7 @@ static int authenticated(struct MHD_Connection *connection,
 
 	MHD_get_connection_values(connection, MHD_HEADER_KIND, get_host_value_callback, &host);
 
-	/* check if this is an late request meaning the user tries to get the internet, but ended up here,
+	/* check if this is a late request, meaning the user tries to get the internet, but ended up here,
 	 * because the iptables rule came too late */
 	if (is_foreign_hosts(connection, host)) {
 		/* might happen if the firewall rule isn't yet installed */
@@ -514,14 +514,16 @@ static int authenticated(struct MHD_Connection *connection,
 
 	if (check_authdir_match(url, config->authdir)) {
 		if (config->fas_port && !config->preauth) {
-			safe_asprintf(&fasurl, "http://%s:%u%s?clientip=%s&gatewayname=%s&status=authenticated",
-				config->fas_remoteip, config->fas_port, config->fas_path, client->ip, config->gw_name);
+			safe_asprintf(&fasurl, "%s?clientip=%s&gatewayname=%s&status=authenticated",
+				config->fas_url, client->ip, config->gw_name);
+			debug(LOG_DEBUG, "fasurl %s", fasurl);
 			ret = send_redirect_temp(connection, fasurl);
 			free(fasurl);
 			return ret;
 		} else if (config->fas_port && config->preauth) {
 			safe_asprintf(&fasurl, "?clientip=%s%sgatewayname=%s%sstatus=authenticated",
 				client->ip, QUERYSEPARATOR, config->gw_name, QUERYSEPARATOR);
+			debug(LOG_DEBUG, "fasurl %s", fasurl);
 			ret = show_preauthpage(connection, fasurl);
 			free(fasurl);
 			return ret;	
@@ -534,6 +536,7 @@ static int authenticated(struct MHD_Connection *connection,
 		if (config->fas_port) {
 			safe_asprintf(&fasurl, "?clientip=%s&gatewayname=%s&status=authenticated",
 				client->ip, config->gw_name);
+			debug(LOG_DEBUG, "fasurl %s", fasurl);
 			ret = show_preauthpage(connection, fasurl);
 			free(fasurl);
 			return ret;
@@ -693,35 +696,60 @@ static int preauthenticated(struct MHD_Connection *connection,
  */
 static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, const char *originurl, const char *querystr)
 {
+	char msg[QUERYMAXLEN] = {0};
 	char *splashpageurl = NULL;
-	char encoded[QUERYMAXLEN] = {0};
+	char *phpcmd = NULL;
 	s_config *config;
 	int ret;
 
 	config = config_get_config();
 
-	if (originurl) {
-		if (uh_urlencode(encoded, sizeof(encoded), originurl, strlen(originurl)) == -1) {
-			debug(LOG_WARNING, "could not encode url");
-		} else {
-			debug(LOG_DEBUG, "originurl: %s", originurl);
-		}
-	}
-
 	if (config->fas_port) {
 		// Generate secure query string or authaction url
 		// Note: config->fas_path contains a leading / as it is the path from the FAS web root.
-		if (config->fas_secure_enabled) {
-			safe_asprintf(&splashpageurl, "http://%s:%u%s%s&redir=%s",
-				config->fas_remoteip, config->fas_port, config->fas_path, querystr, encoded);
-		} else {
+		if (config->fas_secure_enabled == 0) {
 			safe_asprintf(&splashpageurl, "http://%s:%u%s?authaction=http://%s/%s/%s&redir=%s",
 				config->fas_remoteip, config->fas_port, config->fas_path, 
-				config->gw_address, config->authdir, querystr, encoded);
+				config->gw_address, config->authdir, querystr, originurl);
+		} else if (config->fas_secure_enabled == 1) {
+			safe_asprintf(&splashpageurl, "%s%s&redir=%s",
+				config->fas_url, querystr, originurl);
+		} else if (config->fas_secure_enabled == 2) {
+			safe_asprintf(&phpcmd,
+				"echo '<?php \n"
+				"$key=\"%s\";\n"
+				"$string=\"%s\";\n"
+				"$cipher=\"aes-256-cbc\";\n"
+
+				"if (in_array($cipher, openssl_get_cipher_methods())) {\n"
+					"$secret_iv = base64_encode(openssl_random_pseudo_bytes(\"8\"));\n"
+					"$iv = substr(openssl_digest($secret_iv, \"sha256\"), 0, 16 );\n"
+					"$string = base64_encode( openssl_encrypt( $string, $cipher, $key, 0, $iv ) );\n"
+					"echo \"?fas=\".$string.\"&iv=\".$iv;\n"
+				"}\n"
+				" ?>' "
+				" | %s\n",
+				config->fas_key, querystr, config->fas_ssl);
+
+			debug(LOG_DEBUG, "phpcmd: %s", phpcmd);
+
+			if (execute_ret_url_encoded(msg, sizeof(msg) - 1, phpcmd) == 0) {
+				safe_asprintf(&splashpageurl, "%s%s",
+					config->fas_url, msg);
+				debug(LOG_DEBUG, "Encrypted query string=%s\n", msg);
+			} else {
+				safe_asprintf(&splashpageurl, "%s?redir=%s",
+					config->fas_url, originurl);
+				debug(LOG_ERR, "Error encrypting query string. %s", msg);
+			}
+			free(phpcmd);
+		} else {
+			safe_asprintf(&splashpageurl, "%s%s&redir=%s",
+				config->fas_url, querystr, originurl);
 		}
 	} else {
 		safe_asprintf(&splashpageurl, "http://%s/%s?redir=%s",
-			config->gw_address, config->splashpage, encoded);
+			config->gw_address, config->splashpage, originurl);
 	}
 
 	debug(LOG_DEBUG, "splashpageurl: %s", splashpageurl);
@@ -741,7 +769,8 @@ static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, 
  */
 static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *client, const char *host, const char *url)
 {
-	char *originurl = NULL;
+	char *originurl_raw = NULL;
+	char originurl[QUERYMAXLEN] = {0};
 	char query_str[QUERYMAXLEN] = {0};
 	char *query = query_str;
 	int ret = 0;
@@ -757,16 +786,35 @@ static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *c
 	}
 
 	debug(LOG_DEBUG, "Query string is [ %s ]", query);
+	safe_asprintf(&originurl_raw, "http://%s%s%s", host, url, query);
 
-	if (config->fas_secure_enabled != 1) {
+	if (uh_urlencode(originurl, sizeof(originurl), originurl_raw, strlen(originurl_raw)) == -1) {
+		debug(LOG_WARNING, "could not encode url");
+	} else {
+		debug(LOG_DEBUG, "originurl: %s", originurl);
+	}
+
+
+	if (config->fas_secure_enabled == 0) {
 		safe_asprintf(&querystr, "?clientip=%s&gatewayname=%s&tok=%s", client->ip, config->gw_name, client->token);
+	} else if (config->fas_secure_enabled == 1) {
+		safe_asprintf(&querystr, "?clientip=%s&gatewayname=%s", client->ip, config->gw_name);
+	} else if (config->fas_secure_enabled == 2) {
+		safe_asprintf(&querystr,
+			"clientip=%s%sclientmac=%s%sgatewayname=%s%stok=%s%sgatewayaddress=%s%sauthdir=%s%soriginurl=%s",
+			client->ip, QUERYSEPARATOR,
+			client->mac, QUERYSEPARATOR,
+			config->gw_name, QUERYSEPARATOR,
+			client->token, QUERYSEPARATOR,
+			config->gw_address, QUERYSEPARATOR,
+			config->authdir, QUERYSEPARATOR,
+			originurl);
 	} else {
 		safe_asprintf(&querystr, "?clientip=%s&gatewayname=%s", client->ip, config->gw_name);
 	}
 
-	safe_asprintf(&originurl, "http://%s%s%s", host, url, query);
 	ret = encode_and_redirect_to_splashpage(connection, originurl, querystr);
-	free(originurl);
+	free(originurl_raw);
 	free(querystr);
 	return ret;
 }

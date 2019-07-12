@@ -1,11 +1,24 @@
+nodogsplash (4.0.0)
+
+  * Introduce aes encryption of the query string passed to remote FAS, allowing authdir and client token to be transferred securely. Uses php-cli and php-openssl. These are required if encryption is enabled but are not dependencies [bluewavenet]
+  * Introduce fasremotefqdn, specifying the FQDN of the remote FAS. This facilitates simplified support for FAS operation on shared hosting systems [bluewavenet]
+  * Add a FAS php script supporting aes encrypted query string sent from NDS [bluewavenet]
+  * Numerous Documentation updates [bluewavenet]
+  * Remove unused pagesdir and imagesdir [mwarning]
+  * Add Preauth script that displays images from remote servers [bluewavenet]
+  * Use elegant check for valid ip addresses [mwarning]
+  * openwrt initscript - add missing macmechanism in the config file [lynxis]
+
+ -- Rob White <dot@blue-wave.net> Sun, 7 Jul 2019 08:29:00 +0000
+
 nodogsplash (3.3.2)
 
-  * Fix Issue introduced in v3.3.0 with the addition of Improvements towards usable IPv6 support, that caused CPD on client devices to fail with "Too Many Redirects" error. NDS now terminates gracefully with a console error if fasremoteip is set AND fasport=80  [bluewavenet]
+  * Fix Issue introduced in v3.3.0 with the addition of Improvements towards usable IPv6 support, that caused CPD on client devices to fail with "Too Many Redirects" error. NDS now terminates gracefully with a console error if fasremoteip is not set AND fasport=80  [bluewavenet]
   * Validate fasremoteip to ensure that if it is set, then it is a valid dotted format IPv4 address  [bluewavenet]
-  * Numerous Documentation updates  [bluewavenet]
+  * Numerous Documentation updates [bluewavenet]
   * Fix to Known Issue on OpenWrt >18.x.x with v3.3.1. This was caused by misconfigured Makefile for libmicrohttpd; this has been fixed there [bluewavenet]
 
- --Rob White <dot@blue-wave.net> Tue, 23 Apr 2019 11:49:00 +0000
+ -- Rob White <dot@blue-wave.net> Tue, 23 Apr 2019 11:49:00 +0000
 
 nodogsplash (3.3.1)
 
@@ -33,7 +46,7 @@ nodogsplash (3.3.0)
 nodogsplash (3.2.1)
 
   * reset upload/download counter when a client has been authenticated a second time [mwarning]
-  * print sesssion duration as 0 in "ndsctl json" and "ndsctl clients" output when a session has not been started [mwarning]
+  * print session duration as 0 in "ndsctl json" and "ndsctl clients" output when a session has not been started [mwarning]
   * rework html templater to speed up splash page generation [mwarning]
   * FAS documentation updates [bluewavenet]
   * Add CSS file and update splash and status html [bluewavenet]

@@ -3,7 +3,8 @@ How Nodogsplash (NDS) works
 
 A wireless router, typically running OpenWrt or some other Linux distribution, has two or more interfaces; NDS manages one of them. This will typically be br-lan, the bridge to both the wireless and wired LAN; or could be for example wlan0 if you wanted NDS to work just on the wireless interface.
 
-**A simplified summary of operation is as follows**:
+Summary of Operation
+********************
 
  By default, NDS blocks everything, but intercepts port 80 requests.
 
@@ -21,7 +22,7 @@ A wireless router, typically running OpenWrt or some other Linux distribution, h
 
  If the binauth script returns positively (ie return code 0), NDS then "authenticates" the client device, allowing access to the Internet.
 
- In FAS secure mode, it is the responsibility of the FAS to obtain the client token in a secure manner from NDS.
+ In FAS secure modes (levels 1 and 2), the client token and other required information is kept securely hidden from the Client, ensuring verification cannot be bypassed.
 
  When FAS is disabled, the token is supplied to the basic splash.html page served by NDS and passed back in clear text in the query string along with any username and password required for Binauth.
 
@@ -29,6 +30,19 @@ A wireless router, typically running OpenWrt or some other Linux distribution, h
 
  FAS and Binauth can be enabled together.
  This can give great flexibility with FAS providing authentication     and Binauth providing post authentication processing closely linked to  NDS.
+
+Rules for Customised Splash Pages
+*********************************
+
+It should be noted when designing a custom splash page that for security reasons many client device CPD implementations:
+
+ * Immediately close the browser when the client has authenticated.
+
+ * Prohibit the use of href links.
+
+ * Prohibit downloading of external files (including .css and .js, even if they are allowed in NDS firewall settings).
+
+ * Prohibit the execution of javascript.
 
 Packet filtering
 ****************

@@ -32,7 +32,7 @@
 /* @brief Execute a shell command */
 int execute(const char fmt[], ...);
 int execute_ret(char* msg, int msg_len, const char fmt[], ...);
-
+int execute_ret_url_encoded(char* msg, int msg_len, const char *cmd);
 /* @brief Get IP address of an interface */
 char *get_iface_ip(const char ifname[], int ip6);
 
