@@ -8,7 +8,7 @@ Features should be aimed at providing tools to allow NDS to be used as flexible 
 Here is a list of things that need to be improved:
 
 * While (un-) block/trust/allow via the ndsctl tool take effect, the state object of the client in NDS is not affected.
-  
+
   Both systems still need to be connected (in src/auth.c).
 
 * Include blocked and trusted clients in the client list - so that they can be managed.
