@@ -4,13 +4,13 @@ Installing Nodogsplash
 OpenWrt
 *******
 
-* Have a router working with OpenWrt. At the time of writing, Nodogsplash has been tested with OpenWrt 17.01.4/5 and 18.06.0
+* Have a router working with OpenWrt. At the time of writing, Nodogsplash has been tested with OpenWrt 18.06.x, 19.x.x and Snapshot.
 
- It may or may not work on older versions of OpenWrt or on other kinds of Linux-based router firmware.
+* It may or may not work on older versions of OpenWrt or on other kinds of Linux-based router firmware.
 
 * Make sure your router is basically working before you try to install  Nodogsplash. In particular, make sure your DHCP daemon is serving addresses on the interface that nodogsplash will manage.
 
- The default is br-lan but can be changed to any interface by editing the /etc/config/nodogsplash file.
+  The default is br-lan but can be changed to any interface by editing the /etc/config/nodogsplash file.
 
 * To install Nodogsplash, you may use the OpenWrt Luci web interface or alternatively, ssh to your router and run the command:
 
@@ -27,7 +27,7 @@ OpenWrt
 
 * To start Nodogsplash, run the following, or just reboot the router:
 
-    ``/etc/init.d/nodogsplash start``
+    ``service nodogsplash start``
 
 * To test the installation, connect a client device to the interface on your router that is managed by Nodogsplash (for example, connect to the router's wireless lan).
 
@@ -43,7 +43,7 @@ OpenWrt
 
 * To stop Nodogsplash:
 
-    ``/etc/init.d/nodogsplash stop``
+    ``service nodogsplash stop``
 
 * To uninstall Nodogsplash:
 

@@ -11,7 +11,6 @@ nodogsplash (4.0.0-1) stable; urgency=medium
 
  -- Rob White <dot@blue-wave.net>  Sun, 7 Jul 2019 08:29:00 +0000
 
-
 nodogsplash (3.3.2-1) stable; urgency=medium
 
   * Fix Issue introduced in v3.3.0 with the addition of Improvements towards usable IPv6 support, that caused CPD on client devices to fail with "Too Many Redirects" error. NDS now terminates gracefully with a console error if fasremoteip is set AND fasport=80  [bluewavenet]
