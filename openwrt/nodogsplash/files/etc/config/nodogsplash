@@ -10,8 +10,12 @@ config nodogsplash
   # This hook is needed as a restart of Firewall overwrites nodogsplash iptables entries.
   option fwhook_enabled '1'
 
-  # Serve the file splash.html from this directory
-  option webroot '/etc/nodogsplash/htdocs'
+  # WebRoot
+  # Default: /etc/nodogsplash/htdocs
+  #
+  # The local path where the splash page content resides.
+  # ie. Serve the file splash.html from this directory
+  #option webroot '/etc/nodogsplash/htdocs'
 
   # Use plain configuration file
   #option config '/etc/nodogsplash/nodogsplash.conf'
