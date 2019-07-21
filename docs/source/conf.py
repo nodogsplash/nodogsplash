@@ -51,7 +51,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'nodogsplash'
+project = 'NoDogSplash'
 copyright = '2016 - 2019, The Nodogsplash Contributors'
 author = 'The Nodogsplash Contributors'
 
@@ -136,11 +136,11 @@ html_theme_options = {'sticky_navigation': True}
 # The name for this set of Sphinx documents.
 # "<project> v<release> documentation" by default.
 #
-# html_title = 'nodogsplash v2.0.0'
+html_title = project + ' v' + release
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
 #
-# html_short_title = None
+html_short_title = project + ' v' + release
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
