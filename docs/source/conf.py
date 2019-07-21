@@ -140,7 +140,7 @@ html_title = project + ' v' + release
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
 #
-html_short_title = project + ' v' + release
+html_short_title = 'NDS-v' + release
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
