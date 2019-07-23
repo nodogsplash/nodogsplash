@@ -222,7 +222,6 @@ main_loop(void)
 	pthread_t tid;
 	s_config *config;
 	char msg[255] = {0};
-	int rc;
 	char *fasurl = NULL;
 	char *fasssl = NULL;
 	char *phpcmd = NULL;
