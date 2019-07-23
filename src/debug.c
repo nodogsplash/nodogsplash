@@ -33,7 +33,30 @@
 
 #include "util.h"
 #include "conf.h"
+#include "debug.h"
 
+
+static int do_log(int level, int debuglevel) {
+	switch (level) {
+		case LOG_EMERG:
+		case LOG_ERR:
+			// quiet
+			return (debuglevel >= 0);
+		case LOG_WARNING:
+		case LOG_NOTICE:
+			// default
+			return (debuglevel >= 1);
+		case LOG_INFO:
+			// verbose
+			return (debuglevel >= 2);
+		case LOG_DEBUG:
+			// debug
+			return (debuglevel >= 3);
+		default:
+			debug(LOG_ERR, "Unhandled debug level: %d", level);
+			return 1;
+	}
+}
 
 /** @internal
 Do not use directly, use the debug macro */
@@ -43,31 +66,31 @@ _debug(const char filename[], int line, int level, const char *format, ...)
 	char buf[28];
 	va_list vlist;
 	s_config *config;
+	FILE *out;
 	time_t ts;
 	sigset_t block_chld;
 
 	time(&ts);
 
 	config = config_get_config();
-	if (config->debuglevel >= level) {
+
+	if (do_log(level, config->debuglevel)) {
 		sigemptyset(&block_chld);
 		sigaddset(&block_chld, SIGCHLD);
 		sigprocmask(SIG_BLOCK, &block_chld, NULL);
 
-		if (level <= LOG_WARNING) {
-			fprintf(stderr, "[%d][%.24s][%u](%s:%d) ", level, format_time(ts, buf), getpid(), filename, line);
-			va_start(vlist, format);
-			vfprintf(stderr, format, vlist);
-			va_end(vlist);
-			fputc('\n', stderr);
-		} else if (!config->daemon) {
-			fprintf(stdout, "[%d][%.24s][%u](%s:%d) ", level, format_time(ts, buf), getpid(), filename, line);
-			va_start(vlist, format);
-			vfprintf(stdout, format, vlist);
-			va_end(vlist);
-			fputc('\n', stdout);
-			fflush(stdout);
+		if (config->daemon) {
+			out = stdout;
+		} else {
+			out = stderr;
 		}
+
+		fprintf(out, "[%d][%.24s][%u](%s:%d) ", level, format_time(ts, buf), getpid(), filename, line);
+		va_start(vlist, format);
+		vfprintf(out, format, vlist);
+		va_end(vlist);
+		fputc('\n', out);
+		fflush(out);
 
 		if (config->log_syslog) {
 			openlog("nodogsplash", LOG_PID, config->syslog_facility);
