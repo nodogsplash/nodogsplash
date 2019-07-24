@@ -369,8 +369,8 @@ iptables_fw_init(void)
 	char *gw_address = NULL;
 	char *gw_iprange = NULL;
 	int gw_port = 0;
-	char *fas_remoteip;
-	int fas_port;
+	char *fas_remoteip = NULL;
+	int fas_port = 0;
 	int traffic_control;
 	int set_mss, mss_value;
 	t_MAC *pt;
@@ -394,11 +394,14 @@ iptables_fw_init(void)
 		ICMP_TYPE = "icmp";
 	}
 	
+	if (config->fas_port) {
+		fas_remoteip = safe_strdup(config->fas_remoteip);    /* must free */
+		fas_port = config->fas_port;
+	}
+
 	gw_address = safe_strdup(config->gw_address);    /* must free */
 	gw_iprange = safe_strdup(config->gw_iprange);    /* must free */
 	gw_port = config->gw_port;
-	fas_remoteip = safe_strdup(config->fas_remoteip);    /* must free */
-	fas_port = config->fas_port;
 	pt = config->trustedmaclist;
 	pb = config->blockedmaclist;
 	pa = config->allowedmaclist;
