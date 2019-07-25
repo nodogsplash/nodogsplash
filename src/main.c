@@ -278,67 +278,64 @@ main_loop(void)
 		httpdAddC404Content(webserver, http_nodogsplash_callback_404);
 	*/
 
-
-	if (config->fas_remoteip) {
-		if (is_addr(config->fas_remoteip) == 1) {
-			debug(LOG_INFO, "fasremoteip - %s - is a valid IPv4 address...", config->fas_remoteip);
-		} else {
-			debug(LOG_ERR, "fasremoteip - %s - is NOT a valid IPv4 address format...", config->fas_remoteip);
-			debug(LOG_ERR, "Exiting...");
-			exit(1);
-		}
-	} else {
-		if (config->fas_port == 80) {
-			debug(LOG_ERR, "Invalid fasport - port 80 is reserved and cannot be used for local FAS...");
-			debug(LOG_ERR, "Exiting...");
-			exit(1);
-		}
-	}
-
-	if (config->fas_key) {
-		/* PHP cli command can be php or php-cli depending on Linux version. */
-		if (execute_ret(msg, sizeof(msg) - 1, "php -v") == 0) {
-			safe_asprintf(&fasssl, "php");
-			debug(LOG_NOTICE, "SSL Provider is active");
-			debug(LOG_DEBUG, "SSL Provider: %s FAS key is: %s\n", &msg, config->fas_key);
-
-		} else if (execute_ret(msg, sizeof(msg) - 1, "php-cli -v") == 0) { 
-			safe_asprintf(&fasssl, "php-cli");
-			debug(LOG_NOTICE, "SSL Provider is active");
-			debug(LOG_DEBUG, "SSL Provider: %s FAS key is: %s\n", &msg, config->fas_key);
-		} else {
-			debug(LOG_ERR, "PHP packages PHP CLI and PHP OpenSSL are required");
-			debug(LOG_ERR, "Exiting...");
-			exit(1);
-		}
-		config->fas_ssl = safe_strdup(fasssl);
-		free(fasssl);
-		safe_asprintf(&phpcmd,
-			"echo '<?php "
-			"if (!extension_loaded (openssl)) {exit(1);"
-			"} ?>' | %s", config->fas_ssl);
-		if (execute_ret(msg, sizeof(msg) - 1, phpcmd) == 0) {
-			debug(LOG_NOTICE, "OpenSSL module is loaded\n");
-		} else {
-			debug(LOG_ERR, "OpenSSL PHP module is not loaded");
-			debug(LOG_ERR, "Exiting...");
-			exit(1);
-		}
-		free(phpcmd);
-	}
-
-
-
-	/* Make sure fas_remoteip is set. Note: This does not enable FAS. */
-	if (!config->fas_remoteip) {
-		config->fas_remoteip = safe_strdup(config->gw_ip);
-	}
-
-	if (config->fas_remotefqdn) {
-		debug(LOG_NOTICE, "FAS FQDN is: %s\n", config->fas_remotefqdn);
-	}
-
 	if (config->fas_port) {
+		if (config->fas_remoteip) {
+			if (is_addr(config->fas_remoteip) == 1) {
+				debug(LOG_INFO, "fasremoteip - %s - is a valid IPv4 address...", config->fas_remoteip);
+			} else {
+				debug(LOG_ERR, "fasremoteip - %s - is NOT a valid IPv4 address format...", config->fas_remoteip);
+				debug(LOG_ERR, "Exiting...");
+				exit(1);
+			}
+		} else {
+			if (config->fas_port == 80) {
+				debug(LOG_ERR, "Invalid fasport - port 80 is reserved and cannot be used for local FAS...");
+				debug(LOG_ERR, "Exiting...");
+				exit(1);
+			}
+		}
+
+		if (config->fas_key) {
+			/* PHP cli command can be php or php-cli depending on Linux version. */
+			if (execute_ret(msg, sizeof(msg) - 1, "php -v") == 0) {
+				safe_asprintf(&fasssl, "php");
+				debug(LOG_NOTICE, "SSL Provider is active");
+				debug(LOG_DEBUG, "SSL Provider: %s FAS key is: %s\n", &msg, config->fas_key);
+
+			} else if (execute_ret(msg, sizeof(msg) - 1, "php-cli -v") == 0) {
+				safe_asprintf(&fasssl, "php-cli");
+				debug(LOG_NOTICE, "SSL Provider is active");
+				debug(LOG_DEBUG, "SSL Provider: %s FAS key is: %s\n", &msg, config->fas_key);
+			} else {
+				debug(LOG_ERR, "PHP packages PHP CLI and PHP OpenSSL are required");
+				debug(LOG_ERR, "Exiting...");
+				exit(1);
+			}
+			config->fas_ssl = safe_strdup(fasssl);
+			free(fasssl);
+			safe_asprintf(&phpcmd,
+				"echo '<?php "
+				"if (!extension_loaded (openssl)) {exit(1);"
+				"} ?>' | %s", config->fas_ssl);
+			if (execute_ret(msg, sizeof(msg) - 1, phpcmd) == 0) {
+				debug(LOG_NOTICE, "OpenSSL module is loaded\n");
+			} else {
+				debug(LOG_ERR, "OpenSSL PHP module is not loaded");
+				debug(LOG_ERR, "Exiting...");
+				exit(1);
+			}
+			free(phpcmd);
+		}
+
+		/* Make sure fas_remoteip is set. Note: This does not enable FAS. */
+		if (!config->fas_remoteip) {
+			config->fas_remoteip = safe_strdup(config->gw_ip);
+		}
+
+		if (config->fas_remotefqdn) {
+			debug(LOG_NOTICE, "FAS FQDN is: %s\n", config->fas_remotefqdn);
+		}
+
 		debug(LOG_NOTICE, "Forwarding Authentication is Enabled.\n");
 		if (config->fas_remotefqdn) {
 			safe_asprintf(&fasurl, "http://%s:%u%s",
@@ -351,10 +348,10 @@ main_loop(void)
 		}
 		debug(LOG_NOTICE, "FAS URL is %s\n", config->fas_url);
 		free(fasurl);
-	}
 
-	if (config->fas_secure_enabled == 0 && config->fas_port) {
-		debug(LOG_NOTICE, "Warning - Forwarding Authentication - Security is DISABLED.\n");
+		if (config->fas_secure_enabled == 0) {
+			debug(LOG_NOTICE, "Warning - Forwarding Authentication - Security is DISABLED.\n");
+		}
 	}
 
 	if (config->preauth) {
