@@ -49,7 +49,7 @@
 #define DEFAULT_CONFIGFILE SYSCONFDIR"/nodogsplash/nodogsplash.conf"
 #endif
 #define DEFAULT_DAEMON 1
-#define DEFAULT_DEBUGLEVEL LOG_WARNING
+#define DEFAULT_DEBUGLEVEL 1
 #define DEFAULT_MAXCLIENTS 20
 #define DEFAULT_GATEWAY_IPRANGE "0.0.0.0/0"
 #define DEFAULT_GATEWAYNAME "NoDogSplash"
@@ -239,7 +239,7 @@ int check_ip_format(const char[]);
 int check_mac_format(const char[]);
 
 /** config API, used in commandline.c */
-int set_log_level(int);
+int set_debuglevel(const char[]);
 
 #define LOCK_CONFIG() do { \
 	debug(LOG_DEBUG, "Locking config"); \

@@ -723,11 +723,14 @@ config_read(const char *filename)
 			}
 			break;
 		case oDebugLevel:
-			if (sscanf(p1, "%d", &config.debuglevel) < 1 || config.debuglevel < LOG_EMERG || config.debuglevel > LOG_DEBUG) {
-				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s. Valid debuglevel %d..%d",
-					p1, s, linenum, filename, LOG_EMERG, LOG_DEBUG);
+			if (sscanf(p1, "%d", &config.debuglevel) < 1 || config.debuglevel < DEBUGLEVEL_MIN) {
+				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s. Valid levels are %d...%d.",
+					p1, s, linenum, filename, DEBUGLEVEL_MIN, DEBUGLEVEL_MAX);
 				debug(LOG_ERR, "Exiting...");
 				exit(1);
+			} else if (config.debuglevel > DEBUGLEVEL_MAX) {
+				config.debuglevel = DEBUGLEVEL_MAX;
+				debug(LOG_WARNING, "Invalid debug level. Set to maximum.");
 			}
 			break;
 		case oMaxClients:
@@ -1375,15 +1378,29 @@ void parse_allowed_mac_list(const char ptr[])
 	free(ptrcopyptr);
 }
 
-
-
 /** Set the debug log level.  See syslog.h
  *  Return 0 on success.
  */
-int set_log_level(int level)
+int set_debuglevel(const char opt[])
 {
-	config.debuglevel = level;
-	return 0;
+	char *end;
+
+	if (opt == NULL || strlen(opt) == 0) {
+		return 1;
+	}
+
+	// parse number
+	int level = strtol(opt, &end, 10);
+	if (end != (opt + strlen(opt))) {
+		return 1;
+	}
+
+	if (level >= DEBUGLEVEL_MIN && level <= DEBUGLEVEL_MAX) {
+		config.debuglevel = level;
+		return 0;
+	} else {
+		return 1;
+	}
 }
 
 /** Verifies if the configuration is complete and valid.  Terminates the program if it isn't */
