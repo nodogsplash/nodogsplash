@@ -106,8 +106,6 @@ if (isset($_GET["originurl"])) {
 } else if (isset($_GET["terms"])) {
 	$gatewayname=$_GET["gatewayname"];
 	$terms=true;
-} else {
-	$redir=$_SERVER["SCRIPT_URI"]."/?originurl=".urlencode($originurl);
 }
 
 // Add headers to stop browsers from cacheing 
@@ -206,19 +204,28 @@ if ($fullname == "" or $email == "") {
 	"<br><italic-black> Your News or Advertising could be here, contact the owners of this Hotspot to find out how!</italic-black>\n".
 	"<form action=\"".$authaction."\" method=\"get\">\n".
 	"<input type=\"hidden\" name=\"tok\" value=\"".$tok."\">\n".
-	"<input type=\"hidden\" name=\"redir\" value=\"".$redir."\"><br>\n".
+	"<input type=\"hidden\" name=\"redir\" value=\"".$originurl."\"><br>\n".
 	"<input type=\"submit\" value=\"Continue\" >\n".
 	"</form><hr>\n";
 	read_terms($me,$gatewayname);
+
 	# In this example we have decided to log all clients who are granted access
+	# Note: the web server daemon must have read and write permissions to the folder defined in $logpath
+	# By default $logpath is null so the logfile will be written to the folder this script resides in.
+
+	$logpath="";
 	$log=date('d/m/Y H:i:s', $_SERVER['REQUEST_TIME'])." Username=".$fullname." emailaddress=".$email." macaddress=".$clientmac."\n";
 
 	$gwname=str_replace(" ", "_", trim($gatewayname));
+	$logfile=$logpath.$gwname."_log.php";
 
-	if (!file_exists($gwname."_log.php")) {
-		file_put_contents($gwname."_log.php", "<?php exit(0); ?>\n");
+
+	if (!file_exists($logfile)) {
+		@file_put_contents($logfile, "<?php exit(0); ?>\n");
 	}
-	file_put_contents($gwname."_log.php", $log,  FILE_APPEND );
+	if (is_writable($logfile)) {
+		file_put_contents($logfile, $log,  FILE_APPEND );
+	}
 }
 
 footer();
