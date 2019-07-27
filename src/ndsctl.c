@@ -75,7 +75,7 @@ usage(void)
 		"  unallow mac         Unallow the given MAC address\n"
 		"  trust mac           Trust the given MAC address\n"
 		"  untrust mac         Untrust the given MAC address\n"
-		"  loglevel n          Set logging level to n\n"
+		"  debuglevel n        Set debug level to n\n"
 		"\n"
 	);
 }
@@ -85,7 +85,7 @@ static struct argument arguments[] = {
 	{"json", NULL, NULL},
 	{"status", NULL, NULL},
 	{"stop", NULL, NULL},
-	{"loglevel", "Log level set to %s.\n", "Failed to set log level to %s.\n"},
+	{"debuglevel", "Debug level set to %s.\n", "Failed to set debug level to %s.\n"},
 	{"deauth", "Client %s deauthenticated.\n", "Client %s not found.\n"},
 	{"auth", "Client %s authenticated.\n", "Failed to authenticate client %s.\n"},
 	{"block", "MAC %s blocked.\n", "Failed to block MAC %s.\n"},

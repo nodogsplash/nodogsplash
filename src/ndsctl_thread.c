@@ -70,7 +70,7 @@ static void ndsctl_trust(FILE *fp, char *arg);
 static void ndsctl_untrust(FILE *fp, char *arg);
 static void ndsctl_auth(FILE *fp, char *arg);
 static void ndsctl_deauth(FILE *fp, char *arg);
-static void ndsctl_loglevel(FILE *fp, char *arg);
+static void ndsctl_debuglevel(FILE *fp, char *arg);
 
 static int socket_set_non_blocking(int sockfd);
 
@@ -275,8 +275,8 @@ ndsctl_handler(int fd)
 		ndsctl_auth(fp, (request + 5));
 	} else if (strncmp(request, "deauth", 6) == 0) {
 		ndsctl_deauth(fp, (request + 7));
-	} else if (strncmp(request, "loglevel", 8) == 0) {
-		ndsctl_loglevel(fp, (request + 9));
+	} else if (strncmp(request, "debuglevel", 10) == 0) {
+		ndsctl_debuglevel(fp, (request + 11));
 	}
 
 	if (!done) {
@@ -460,24 +460,22 @@ ndsctl_untrust(FILE *fp, char *arg)
 }
 
 static void
-ndsctl_loglevel(FILE *fp, char *arg)
+ndsctl_debuglevel(FILE *fp, char *arg)
 {
-	int level = atoi(arg);
-
-	debug(LOG_DEBUG, "Entering ndsctl_loglevel [%s]", arg);
+	debug(LOG_DEBUG, "Entering ndsctl_debuglevel [%s]", arg);
 
 	LOCK_CONFIG();
 
-	if (!set_log_level(level)) {
+	if (!set_debuglevel(arg)) {
 		fprintf(fp, "Yes");
-		debug(LOG_NOTICE, "Set debug loglevel to %d.", level);
+		debug(LOG_NOTICE, "Set debug debuglevel to %s.", arg);
 	} else {
 		fprintf(fp, "No");
 	}
 
 	UNLOCK_CONFIG();
 
-	debug(LOG_DEBUG, "Exiting ndsctl_loglevel.");
+	debug(LOG_DEBUG, "Exiting ndsctl_debuglevel.");
 }
 
 static int

@@ -48,12 +48,12 @@ usage(void)
 		"\n"
 		"  -c <path>   Use configuration file\n"
 		"  -f          Run in foreground\n"
-		"  -d <level>  Debug level (0-9)\n"
+		"  -d <level>  Debug level (%d-%d)\n"
 		"  -s          Log to syslog\n"
 		"  -w <path>   Ndsctl socket path\n"
 		"  -h          Print this help\n"
 		"  -v          Print version\n"
-		"\n"
+		"\n", DEBUGLEVEL_MIN, DEBUGLEVEL_MAX
 	);
 }
 
@@ -92,8 +92,9 @@ void parse_commandline(int argc, char **argv)
 			break;
 
 		case 'd':
-			if (optarg) {
-				set_log_level(atoi(optarg));
+			if (set_debuglevel(optarg)) {
+				printf("Could not set debuglevel to %d\n", atoi(optarg));
+				exit(1);
 			}
 			break;
 
