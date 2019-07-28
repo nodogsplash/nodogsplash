@@ -379,6 +379,8 @@ iptables_fw_init(void)
 	int rc = 0;
 	int macmechanism;
 
+	debug(LOG_NOTICE, "Initializing firewall rules");
+
 	LOCK_CONFIG();
 	config = config_get_config();
 	gw_interface = safe_strdup(config->gw_interface); /* must free */
@@ -791,7 +793,7 @@ iptables_fw_destroy_mention(
 	char rulenum[10];
 	int retval = -1;
 
-	debug(LOG_DEBUG, "Checking all mention of %s from %s.%s", mention, table, chain);
+	debug(LOG_DEBUG, "Checking all mention of %s in table %s of chain %s", mention, table, chain);
 
 	config = config_get_config();
 	iptables = config->ip6 ? "ip6tables" : "iptables";

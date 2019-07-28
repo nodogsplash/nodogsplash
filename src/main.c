@@ -188,7 +188,7 @@ init_signals(void)
 		exit(1);
 	}
 
-	debug(LOG_DEBUG, "Setting SIGTERM,SIGQUIT,SIGINT  handlers to termination_handler()");
+	debug(LOG_DEBUG, "Setting SIGTERM, SIGQUIT, SIGINT  handlers to termination_handler()");
 	sa.sa_handler = termination_handler;
 	sigemptyset(&sa.sa_mask);
 	sa.sa_flags = SA_RESTART;
@@ -302,7 +302,6 @@ main_loop(void)
 	iptables_fw_destroy();
 
 	/* Then initialize it */
-	debug(LOG_NOTICE, "Initializing firewall rules");
 	if (iptables_fw_init() != 0) {
 		debug(LOG_ERR, "Error initializing firewall rules! Cleaning up");
 		iptables_fw_destroy();
