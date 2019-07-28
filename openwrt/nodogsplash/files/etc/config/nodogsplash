@@ -36,8 +36,8 @@ config nodogsplash
   option gatewayname 'OpenWrt Nodogsplash'
   option maxclients '250'
 
-  # Enables debug output (0-7)
-  #option debuglevel '7'
+  # Enables debug output (0-3)
+  #option debuglevel '1'
 
   # Client timeouts in minutes
   option preauthidletimeout '30'
