@@ -11,9 +11,7 @@ USE_PROCD=1
 
 IPT=/usr/sbin/iptables
 WD_DIR=/usr/bin
-# -s -d 5 runs in background, with level 5 (not so verbose) messages to syslog
-# -f -d 7 runs in foreground, with level 7 (verbose) debug messages to terminal
-OPTIONS="-s -f -d 5"
+OPTIONS="-f -d 1"
 CONFIG=""
 
 
