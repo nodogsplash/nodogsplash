@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "NODOGSPLASH" "1" "July 13, 2019" "4.0.0" "nodogsplash"
+.TH "NODOGSPLASH" "1" "Jul 29, 2019" "4.0.1" "NoDogSplash"
 .SH NAME
 nodogsplash \- nodogsplash Documentation
 .
@@ -93,7 +93,7 @@ Forwarding authentication to an external service
 .SS OpenWrt
 .INDENT 0.0
 .IP \(bu 2
-Have a router working with OpenWrt. At the time of writing, Nodogsplash has been tested with OpenWrt 18.06.x, 19.x.x and Snapshot.
+Have a router working with OpenWrt. At the time of writing, Nodogsplash has been tested with OpenWrt 18.06.x, 19.7.x and Snapshot.
 .IP \(bu 2
 It may or may not work on older versions of OpenWrt or on other kinds of Linux\-based router firmware.
 .IP \(bu 2
@@ -292,6 +292,7 @@ It should be noted that while setup options and binauth do accept traffic/quota 
 As you will see mentioned in the "How Nodogsplash (NDS) Works" section, an initial port 80 request is generated on a client device, either by the user manually browsing to an http web page, or, more usually, automatically by the client device\(aqs built in Captive Portal Detection (CPD).
 .sp
 This request is intercepted by NDS and an html Splash Page is served to the user of the client device to enable them to authenticate and obtain Internet access.
+.SS Types of Splash Page
 .sp
 This Splash page can be one of the following:
 .INDENT 0.0
@@ -331,6 +332,67 @@ A script or executable file is called by NDS immediately (without serving splash
 This not only enables a dialogue with the client user, for dissemination of information, user response and authentication but also full flexibility in design and implementation of the captive portal functionality from a self contained system through to, for example, a fully integrated multi site system with a common database.
 .UNINDENT
 .UNINDENT
+.SS The Two Installed Basic Splash Pages
+.INDENT 0.0
+.TP
+.B By default, two fully functional but basic "Splash" pages are installed.
+.INDENT 7.0
+.IP \(bu 2
+The Simple "Click to Continue" splash page. This is enabled on installing NoDogSplash.
+.IP \(bu 2
+The "Username/Email\-address" PreAuth script. This is enabled simply by un\-commenting three lines in the config file.
+.UNINDENT
+.UNINDENT
+.sp
+In many instances, one or other of these simple methods will be all that is required, but the power of FAS, PreAuth and BinAuth can be used to create very sophisticated Captive Portal Systems.
+.SS Enable Username/Email\-address Login
+.sp
+On Openwrt, edit (to uncomment) following lines in the /etc/config/nodogsplash file:
+.INDENT 0.0
+.INDENT 3.5
+\fI#option fasport \(aq2050\(aq\fP
+.sp
+\fI#option faspath \(aq/nodogsplash_preauth/\(aq\fP
+.sp
+\fI#option preauth \(aq/usr/lib/nodogsplash/login.sh\(aq\fP
+.UNINDENT
+.UNINDENT
+.sp
+To read:
+.INDENT 0.0
+.INDENT 3.5
+\fIoption fasport \(aq2050\(aq\fP
+.sp
+\fIoption faspath \(aq/nodogsplash_preauth/\(aq\fP
+.sp
+\fIoption preauth \(aq/usr/lib/nodogsplash/login.sh\(aq\fP
+.UNINDENT
+.UNINDENT
+.sp
+For other operating systems edit the equivalent lines in the /etc/nodogsplash/nodogsplash.conf file
+.sp
+After making the change, save the file and restart the router.
+.SS Displaying Remote Banner Images
+.sp
+A modified version of the Username/Email\-address login script is available that demonstrates how to display remotely hosted images on its login pages.
+.sp
+This additional example PreAuth script, demo\-preauth\-remote\-image.sh, is available in the source code:
+.INDENT 0.0
+.INDENT 3.5
+\fIhttps://github.com/nodogsplash/nodogsplash/archive/master.zip\fP
+.UNINDENT
+.UNINDENT
+.sp
+and extracting from the folder:
+.INDENT 0.0
+.INDENT 3.5
+"forward_authentication_service/PreAuth/"
+.UNINDENT
+.UNINDENT
+.sp
+This is an enhancement of the preinstalled login.sh, giving an example of how to display images pulled in from remote web servers, both http and https.
+.sp
+The example displays the NodogSplash avatar image dynamically retrieved from Github.
 .SH FORWARDING AUTHENTICATION SERVICE (FAS)
 .SS Overview
 .sp
@@ -661,18 +723,18 @@ The remaining FAS configuration options must be left unset at the default values
 In OpenWrt this will be of the form
 option preauth /etc/nodogsplash/demo\-preauth.sh
 For other Linux distributions this is set in the nodogsplash.conf file.
-.SS Using The Example PreAuth Script
+.SS Enabling the Preinstalled UserName/Email\-address Login Script
 .sp
 \fBNOTE:\fP
 .INDENT 0.0
 .INDENT 3.5
-From version 3.1.1 onwards, the example PreAuth script is preinstalled.
+From version 3.1.1 onwards, this example PreAuth script is preinstalled.
 .UNINDENT
 .UNINDENT
 .sp
 \fBEnabling the Preinstalled Script\fP
 .sp
-On Openwrt, edit the following lines in the /etc/config/nodogsplash file:
+On Openwrt, edit (to uncomment) following lines in the /etc/config/nodogsplash file:
 .INDENT 0.0
 .INDENT 3.5
 \fI#option fasport \(aq2050\(aq\fP
@@ -1215,9 +1277,21 @@ address:
 To set the verbosity of logged messages to n:
 .INDENT 2.0
 .INDENT 3.5
-\fB/usr/bin/ndsctl loglevel n\fP
+\fB/usr/bin/ndsctl debuglevel n\fP
 .UNINDENT
 .UNINDENT
+.INDENT 2.0
+.IP \(bu 2
+debuglevel 0 : Silent (only LOG_ERR and LOG_EMERG messages will be seen, otherwise there will be no logging.)
+.IP \(bu 2
+debuglevel 1 : LOG_ERR, LOG_EMERG, LOG_WARNING and LOG_NOTICE (this is the default level).
+.IP \(bu 2
+debuglevel 2 : debuglevel 1 + LOG_INFO
+.IP \(bu 2
+debuglevel 3 : debuglevel 2 + LOG_DEBUG
+.UNINDENT
+.sp
+All other levels are undefined and will result in debug level 3 being set.
 .UNINDENT
 .sp
 For more options, run ndsctl \-h. (Note that if you want the effect of ndsctl commands to to persist across nodogsplash restarts, you have to edit the configuration file.)
@@ -1507,7 +1581,7 @@ You have iptables v1.4.21 or above
 .IP \(bu 2
 You use the new options contained in the version 3 configuration file
 .UNINDENT
-.SS Can I update from v0.9/v1/v2/v3 to v4.0.0?
+.SS Can I update from v0.9/v1/v2/v3 to v4?
 .sp
 You can, if:
 .INDENT 0.0
@@ -1623,38 +1697,61 @@ make
 .UNINDENT
 .UNINDENT
 .SH DEBUGGING NODOGSPLASH
+.SS Syslog Logging
+.sp
+NoDogSplash supports four levels of debugging to syslog.
 .INDENT 0.0
 .INDENT 3.5
-To see maximally verbose debugging output from nodogsplash, set log level to 7. This can be done in the UCI configuration file on OpenWrt adding the line:
 .INDENT 0.0
 .INDENT 3.5
-\fBoption debuglevel \(aq7\(aq\fP
+.INDENT 0.0
+.IP \(bu 2
+debuglevel 0 : Silent (only LOG_ERR and LOG_EMERG messages will be seen, otherwise there will be no logging.)
+.IP \(bu 2
+debuglevel 1 : LOG_ERR, LOG_EMERG, LOG_WARNING and LOG_NOTICE (this is the default level).
+.IP \(bu 2
+debuglevel 2 : debuglevel 1 + LOG_INFO
+.IP \(bu 2
+debuglevel 3 : debuglevel 2 + LOG_DEBUG
+.UNINDENT
+.sp
+All other levels are undefined and will result in debug level 3 being set.
 .UNINDENT
 .UNINDENT
 .sp
-or by editing the file
+To see maximally verbose debugging output from NoDogSplash, set log level to 3. This can be done in the UCI configuration file on OpenWrt adding the line:
 .INDENT 0.0
 .INDENT 3.5
-\fB/etc/init.d/nodogsplash\fP
+\fBoption debuglevel \(aq3\(aq\fP
 .UNINDENT
 .UNINDENT
 .sp
-and setting the OPTIONS variable to the flags "\-s \-d 7".
+Restart or reboot. Debug messages are logged to syslog. You can view messages with the logread command.
 .sp
-Restart or reboot, and view messages with logread. Debug messages are logged to syslog.
-.sp
-The default level of logging is 5, LOG_NOTICE, and is more appropriate for routine use.
+The default level of logging is 1, and is more appropriate for routine use.
 .sp
 Logging level can also be set using ndsctl.
+.UNINDENT
+.UNINDENT
+.SS Firewall Cleanup
+.INDENT 0.0
+.INDENT 3.5
+When stopped, NoDogSplash deletes its iptables rules, attempting to leave the router\(aqs firewall in its original state. If not (for example, if NoDogSplash crashes instead of exiting cleanly) subsequently starting and stopping NoDogSplash should remove its rules.
 .sp
-When stopped, nodogsplash deletes its iptables rules, attempting to leave the router\(aqs firewall in its original state. If not (for example, if nodogsplash crashes instead of exiting cleanly) subsequently starting and stopping nodogsplash should remove its rules.
+On OpenWrt, restarting the firewall will overwrite NoDogSplash\(aqs iptables rules, so when the firewall is restarted it will automatically restart NoDogSplash if it is running.
+.UNINDENT
+.UNINDENT
+.SS Packet Marking
+.INDENT 0.0
+.INDENT 3.5
+NoDogSplash operates by marking packets. Many packages, such as mwan3 and SQM scripts, also mark packets.
 .sp
-On OpenWrt, restarting the firewall will overwrite Nodogsplash\(aqs iptables rules, so when the firewall is restarted it will automatically restart Nodogsplash if it is running.
-.sp
-Nodogsplash operates by marking packets. Many packages, such as mwan3 and SQM scripts, also mark packets.
-.sp
-By default, Nodogsplash marks its packets in such a way that conficts are unlikely to occur but the masks used by Nodogsplash can be changed if necessary in the configuration file.
-.sp
+By default, NoDogSplash marks its packets in such a way that conflicts are unlikely to occur but the masks used by NoDogSplash can be changed if necessary in the configuration file.
+.UNINDENT
+.UNINDENT
+.SS IPtables Conflicts
+.INDENT 0.0
+.INDENT 3.5
 Potential conflicts may be investigated by looking at your overall iptables setup. To list all the rules in all the chains, run
 .INDENT 0.0
 .INDENT 3.5

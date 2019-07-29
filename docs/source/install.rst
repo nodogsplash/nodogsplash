@@ -4,7 +4,7 @@ Installing Nodogsplash
 OpenWrt
 *******
 
-* Have a router working with OpenWrt. At the time of writing, Nodogsplash has been tested with OpenWrt 18.06.x, 19.x.x and Snapshot.
+* Have a router working with OpenWrt. At the time of writing, Nodogsplash has been tested with OpenWrt 18.06.x, 19.7.x and Snapshot.
 
 * It may or may not work on older versions of OpenWrt or on other kinds of Linux-based router firmware.
 

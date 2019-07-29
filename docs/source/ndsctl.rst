@@ -42,7 +42,14 @@ A nodogsplash install includes ndsctl, a separate application which provides som
 
 * To set the verbosity of logged messages to n:
 
-    ``/usr/bin/ndsctl loglevel n``
+    ``/usr/bin/ndsctl debuglevel n``
+
+  * debuglevel 0 : Silent (only LOG_ERR and LOG_EMERG messages will be seen, otherwise there will be no logging.)
+  * debuglevel 1 : LOG_ERR, LOG_EMERG, LOG_WARNING and LOG_NOTICE (this is the default level).
+  * debuglevel 2 : debuglevel 1 + LOG_INFO
+  * debuglevel 3 : debuglevel 2 + LOG_DEBUG
+
+  All other levels are undefined and will result in debug level 3 being set.
 
 
 For more options, run ndsctl -h. (Note that if you want the effect of ndsctl commands to to persist across nodogsplash restarts, you have to edit the configuration file.)
