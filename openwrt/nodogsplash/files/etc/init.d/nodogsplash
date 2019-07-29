@@ -11,7 +11,11 @@ USE_PROCD=1
 
 IPT=/usr/sbin/iptables
 WD_DIR=/usr/bin
-OPTIONS="-f -d 1"
+
+# Run in PROCD (-f) and log to SYSLOG (-s)
+OPTIONS="-f -s"
+#
+
 CONFIG=""
 
 
