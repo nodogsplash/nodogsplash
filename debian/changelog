@@ -1,3 +1,14 @@
+nodogsplash (4.0.1-1) stable; urgency=medium
+
+  * Make debuglevel platform independent [mwarning]
+  * Add/move/reword some debug output lines [mwarning]
+  * Numerous code cleanups [mwarning]
+  * Put fas code into block [mwarning]
+  * Fix coding error in fas-aes.php incorrectly passing redir back to NDS [bluewavenet]
+  * Numerous documentation updates [bluewavenet]
+
+ -- Rob White <dot@blue-wave.net>  Mon, 29 Jul 2019 20:19:00 +0000
+
 nodogsplash (4.0.0-1) stable; urgency=medium
 
   * Introduce aes encryption of the query string passed to remote FAS, allowing authdir and client token to be transferred securely. Uses php-cli and php-openssl. These are required if encryption is enabled but are not dependencies [bluewavenet]

@@ -63,8 +63,8 @@ You can, if:
 * You have iptables v1.4.21 or above
 * You use the new options contained in the version 3 configuration file
 
-Can I update from v0.9/v1/v2/v3 to v4.0.0?
-******************************************
+Can I update from v0.9/v1/v2/v3 to v4?
+**************************************
 
 You can, if:
 

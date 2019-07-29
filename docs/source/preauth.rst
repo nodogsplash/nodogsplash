@@ -42,15 +42,15 @@ In OpenWrt this will be of the form
 option preauth /etc/nodogsplash/demo-preauth.sh
 For other Linux distributions this is set in the nodogsplash.conf file.
 
-Using The Example PreAuth Script
-********************************
+Enabling the Preinstalled UserName/Email-address Login Script
+*************************************************************
 
 .. note::
- From version 3.1.1 onwards, the example PreAuth script is preinstalled.
+ From version 3.1.1 onwards, this example PreAuth script is preinstalled.
 
 **Enabling the Preinstalled Script**
 
-On Openwrt, edit the following lines in the /etc/config/nodogsplash file:
+On Openwrt, edit (to uncomment) following lines in the /etc/config/nodogsplash file:
 
     `#option fasport '2050'`
 
@@ -66,7 +66,7 @@ To read:
 
     `option preauth '/usr/lib/nodogsplash/login.sh'`
 
-For other operating systems edit the equivalent lines in the /etc/nodogsplash/nodogsplash.conf file 
+For other operating systems edit the equivalent lines in the /etc/nodogsplash/nodogsplash.conf file
 
 After making the change, save the file and restart the router.
 

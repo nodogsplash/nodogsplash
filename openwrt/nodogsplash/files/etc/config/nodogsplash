@@ -37,6 +37,11 @@ config nodogsplash
   option maxclients '250'
 
   # Enables debug output (0-3)
+  # Default: 1
+  # 0 : Silent (only LOG_ERR and LOG_EMERG messages will be seen, otherwise there will be no logging.)
+  # 1 : LOG_ERR, LOG_EMERG, LOG_WARNING and LOG_NOTICE (this is the default level).
+  # 2 : debuglevel 1  + LOG_INFO
+  # 3 : debuglevel 2 + LOG_DEBUG
   #option debuglevel '1'
 
   # Client timeouts in minutes

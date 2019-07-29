@@ -1,30 +1,44 @@
-Debugging Nodogsplash
+Debugging NoDogSplash
 #####################
 
+Syslog Logging
+**************
 
- To see maximally verbose debugging output from nodogsplash, set log level to 7. This can be done in the UCI configuration file on OpenWrt adding the line:
+NoDogSplash supports four levels of debugging to syslog.
 
-  ``option debuglevel '7'``
+  * debuglevel 0 : Silent (only LOG_ERR and LOG_EMERG messages will be seen, otherwise there will be no logging.)
+  * debuglevel 1 : LOG_ERR, LOG_EMERG, LOG_WARNING and LOG_NOTICE (this is the default level).
+  * debuglevel 2 : debuglevel 1 + LOG_INFO
+  * debuglevel 3 : debuglevel 2 + LOG_DEBUG
 
- or by editing the file
+  All other levels are undefined and will result in debug level 3 being set.
 
-  ``/etc/init.d/nodogsplash``
+ To see maximally verbose debugging output from NoDogSplash, set log level to 3. This can be done in the UCI configuration file on OpenWrt adding the line:
 
- and setting the OPTIONS variable to the flags "-s -d 7".
+  ``option debuglevel '3'``
 
- Restart or reboot, and view messages with logread. Debug messages are logged to syslog.
+ Restart or reboot. Debug messages are logged to syslog. You can view messages with the logread command. 
 
- The default level of logging is 5, LOG_NOTICE, and is more appropriate for routine use.
+ The default level of logging is 1, and is more appropriate for routine use.
 
  Logging level can also be set using ndsctl.
 
- When stopped, nodogsplash deletes its iptables rules, attempting to leave the router's firewall in its original state. If not (for example, if nodogsplash crashes instead of exiting cleanly) subsequently starting and stopping nodogsplash should remove its rules.
+Firewall Cleanup
+****************
 
- On OpenWrt, restarting the firewall will overwrite Nodogsplash's iptables rules, so when the firewall is restarted it will automatically restart Nodogsplash if it is running.
+ When stopped, NoDogSplash deletes its iptables rules, attempting to leave the router's firewall in its original state. If not (for example, if NoDogSplash crashes instead of exiting cleanly) subsequently starting and stopping NoDogSplash should remove its rules.
 
- Nodogsplash operates by marking packets. Many packages, such as mwan3 and SQM scripts, also mark packets.
+ On OpenWrt, restarting the firewall will overwrite NoDogSplash's iptables rules, so when the firewall is restarted it will automatically restart NoDogSplash if it is running.
 
- By default, Nodogsplash marks its packets in such a way that conficts are unlikely to occur but the masks used by Nodogsplash can be changed if necessary in the configuration file.
+Packet Marking
+**************
+
+ NoDogSplash operates by marking packets. Many packages, such as mwan3 and SQM scripts, also mark packets.
+
+ By default, NoDogSplash marks its packets in such a way that conflicts are unlikely to occur but the masks used by NoDogSplash can be changed if necessary in the configuration file.
+
+IPtables Conflicts
+******************
 
  Potential conflicts may be investigated by looking at your overall iptables setup. To list all the rules in all the chains, run
 
