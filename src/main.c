@@ -409,7 +409,7 @@ int main(int argc, char **argv)
 	parse_commandline(argc, argv);
 
 	/* Initialize the config */
-	debug(LOG_NOTICE, "Reading and validating configuration file %s", config->configfile);
+	debug(LOG_INFO, "Reading and validating configuration file %s", config->configfile);
 	config_read(config->configfile);
 	config_validate();
 
@@ -417,7 +417,7 @@ int main(int argc, char **argv)
 	client_list_init();
 
 	// Init the signals to catch chld/quit/etc
-	debug(LOG_NOTICE, "Initializing signal handlers");
+	debug(LOG_INFO, "Initializing signal handlers");
 	init_signals();
 
 	if (config->daemon) {
