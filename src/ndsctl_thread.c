@@ -60,8 +60,7 @@
 extern pthread_mutex_t client_list_mutex;
 extern pthread_mutex_t config_mutex;
 
-static void ndsctl_handler(int fd);
-static void ndsctl_stop();
+static int ndsctl_handler(int fd);
 static void ndsctl_block(FILE *fp, char *arg);
 static void ndsctl_unblock(FILE *fp, char *arg);
 static void ndsctl_allow(FILE *fp, char *arg);
@@ -198,7 +197,10 @@ thread_ndsctl(void *arg)
 				}
 
 			} else {
-				ndsctl_handler(events[i].data.fd);
+				if (ndsctl_handler(events[i].data.fd)) {
+					free(events);
+					pthread_exit(NULL);
+				}
 				epoll_ctl(epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, &ev);
 				current_fd_count -= 1;
 
@@ -211,15 +213,13 @@ thread_ndsctl(void *arg)
 		}
 	}
 
-	free(events);
-
 	return NULL;
 }
 
-static void
+static int
 ndsctl_handler(int fd)
 {
-	int done, i;
+	int done, i, ret = 0;
 	char request[MAX_BUF];
 	ssize_t read_bytes, len;
 	FILE* fp;
@@ -258,7 +258,8 @@ ndsctl_handler(int fd)
 	} else if (strncmp(request, "json", 4) == 0) {
 		ndsctl_json(fp, (request + 5));
 	} else if (strncmp(request, "stop", 4) == 0) {
-		ndsctl_stop();
+		/* tell the caller to stop the thread */
+		ret = 1;
 	} else if (strncmp(request, "block", 5) == 0) {
 		ndsctl_block(fp, (request + 6));
 	} else if (strncmp(request, "unblock", 7) == 0) {
@@ -288,13 +289,7 @@ ndsctl_handler(int fd)
 
 	/* Close and flush fp, also closes underlying fd */
 	fclose(fp);
-}
-
-/** A bit of an hack, self kills.... */
-static void
-ndsctl_stop()
-{
-	pthread_exit(NULL);
+	return ret;
 }
 
 static void
