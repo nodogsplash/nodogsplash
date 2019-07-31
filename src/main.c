@@ -267,12 +267,6 @@ main_loop(void)
 	}
 	/* TODO: set listening socket */
 	debug(LOG_NOTICE, "Created web server on %s", config->gw_address);
-	/*
-		httpdAddCContent(webserver, "/", "", 0, NULL, http_nodogsplash_callback_index);
-		httpdAddCWildcardContent(webserver, config->authdir, NULL, http_nodogsplash_callback_auth);
-		httpdAddCWildcardContent(webserver, config->denydir, NULL, http_nodogsplash_callback_deny);
-		httpdAddC404Content(webserver, http_nodogsplash_callback_404);
-	*/
 
 	/* Make sure fas_remoteip is set. Note: This does not enable FAS. */
 	if (!config->fas_remoteip) {
