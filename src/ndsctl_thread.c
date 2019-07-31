@@ -156,7 +156,7 @@ thread_ndsctl(void *arg)
 
 		if (number_of_count == -1) {
 			/* interupted is not an error */
-			if (errno == -EINTR)
+			if (errno == EINTR)
 				continue;
 
 			debug(LOG_ERR, "Failed to wait epoll events: %s", strerror(errno));
