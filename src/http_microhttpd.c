@@ -1129,6 +1129,7 @@ static int show_templated_page(struct MHD_Connection *connection, t_client *clie
 	ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
 	MHD_destroy_response(response);
 
+	free(page_tmpl);
 	close(page_fd);
 
 	return ret;
