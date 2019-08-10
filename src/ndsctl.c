@@ -161,6 +161,21 @@ ndsctl_do(const char *socket, const struct argument *arg, const char *param)
 	char request[128];
 	int len, rlen;
 	int ret;
+	char lockfile[] = "/tmp/ndsctl.lock";
+	FILE *fd;
+
+	setlogmask(LOG_UPTO (LOG_NOTICE));
+
+	if (fd = fopen(lockfile, "r")) {
+		openlog ("ndsctl", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
+		syslog (LOG_NOTICE, "ndsctl is locked by another process - try again later...");
+		closelog ();
+		fclose(fd);
+		return -1;
+	} else {
+		//Create lock
+		fd = fopen(lockfile, "w");
+	}
 
 	sock = connect_to_server(socket);
 	if (sock < 0) {
@@ -206,7 +221,8 @@ ndsctl_do(const char *socket, const struct argument *arg, const char *param)
 
 	shutdown(sock, 2);
 	close(sock);
-
+	fclose(fd);
+	remove(lockfile);
 	return ret;
 }
 
