@@ -681,6 +681,12 @@ config_read(const char *filename)
 	char line[MAX_BUF], *s, *p1, *p2;
 	int linenum = 0, opcode, value;
 	struct stat sb;
+	char lockfile[] = "/tmp/ndsctl.lock";
+
+	//Remove ndsctl lock file if it exists
+	if (fd = fopen(lockfile, "r")) {
+		remove(lockfile);
+	}
 
 	debug(LOG_INFO, "Reading configuration file '%s'", filename);
 
