@@ -685,6 +685,7 @@ config_read(const char *filename)
 
 	//Remove ndsctl lock file if it exists
 	if (fd = fopen(lockfile, "r")) {
+		fclose(fd);
 		remove(lockfile);
 	}
 
