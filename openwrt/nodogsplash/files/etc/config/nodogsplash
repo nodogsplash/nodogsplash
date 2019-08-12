@@ -182,12 +182,19 @@ config nodogsplash
   # It must also obtain the client token using ndsctl (or the original query string if fas_secure_enabled=0)
   # for NDS authentication when calling /nodogsplash_auth/
   #
+
+
+  ################################################################################
   # Enable username/emailaddress login.
+  ################################################################################
   # Note: fasport must be set to the same value as gatewayport (default = 2050)
   # Enable by uncommenting the following three lines
   #option fasport '2050'
   #option faspath '/nodogsplash_preauth/'
   #option preauth '/usr/lib/nodogsplash/login.sh'
+  ################################################################################
+  #
+  ################################################################################
 
   # Your router may have several interfaces, and you
   # probably want to keep them private from the gatewayinterface.
