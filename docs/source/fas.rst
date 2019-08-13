@@ -92,6 +92,8 @@ Example FAS Query strings
 
    `ndsctl json $clientip | grep token | cut -c 10- | cut -c -8`
 
+  A more sophisticated json parser could be used to extract all the client variables supplied by ndsctl, an example can be found in the default PreAuth Login script in /usr/lib/nogogsplash/login.sh.
+
   **Level 2** (fas_secure_enabled = 2), NDS sends enrypted information to FAS.
 
   `http://fasremotefqdn:fasport/faspath?fas=[aes-256-cbc data]&iv=[random initialisation vector]`

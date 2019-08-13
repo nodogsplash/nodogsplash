@@ -1,4 +1,7 @@
 #!/bin/sh
+#Copyright &copy; The Nodogsplash Contributors 2004-2019
+#Copyright &copy; Blue Wave Projects and Services 2015-2019
+#This software is released under the GNU GPL license.
 
 ### functions
 
@@ -142,17 +145,28 @@ imageurl="https://avatars0.githubusercontent.com/u/4403602"
 get_image_file
 
 footer="
-	<img src=\"/images/remote/$filename\" alt=\"Splash Page: For access to the Internet.\">
-	<hr>
+	<img style=\"height:60px; width:60px; float:left;\" src=\"/images/remote/$filename\" alt=\"Splash Page: For access to the Internet.\">
+
 	<copy-right>
+		<br><br>
 		Nodogsplash $version.
-		Copyright &copy; The Nodogsplash Contributors 2004-$year.
-		This software is released under the GNU GPL license.
 	</copy-right>
 	</div>
 	</div>
 	</body>
 	</html>
+"
+
+# Define a login form
+login_form="
+	<form action=\"/nodogsplash_preauth/\" method=\"get\">
+	<input type=\"hidden\" name=\"clientip\" value=\"$clientip\">
+	<input type=\"hidden\" name=\"gatewayname\" value=\"$gatewayname\">
+	<input type=\"hidden\" name=\"redir\" value=\"$requested\">
+	<input type=\"text\" name=\"username\" value=\"$username\" autocomplete=\"on\" ><br>:Name<br><br>
+	<input type=\"email\" name=\"emailaddr\" value=\"$emailaddr\" autocomplete=\"on\" ><br>:Email<br><br>
+	<input type=\"submit\" value=\"Continue\" >
+	</form><hr>
 "
 
 # Output the page common header
@@ -179,26 +193,49 @@ fi
 #
 if [ -z $username ] || [ -z $emailaddr ]; then
 	echo "<big-red>Welcome!</big-red><italic-black> To access the Internet you must enter your Name and Email Address</italic-black><hr>"
-	echo "<form action=\"/nodogsplash_preauth/\" method=\"get\">"
-	echo "<input type=\"hidden\" name=\"clientip\" value=\"$clientip\">"
-	echo "<input type=\"hidden\" name=\"gatewayname\" value=\"$gatewayname\">"
-	echo "<input type=\"hidden\" name=\"redir\" value=\"$requested\">"
-	echo "<input type=\"text\" name=\"username\" value=\"$username\" autocomplete=\"on\" >:Name<br><br>"
-	echo "<input type=\"email\" name=\"emailaddr\" value=\"$emailaddr\" autocomplete=\"on\" >:Email<br><br>"
-	echo "<input type=\"submit\" value=\"Continue\" >"
-	echo "</form><hr>"
+	echo -e $login_form
 else
-	# We have both fields, so get the token and in this case also the mac address
-	tok="$(ndsctl json $clientip | grep token | cut -c 10- | cut -c -8)"
-	clientmac="$(ndsctl json $clientip | grep mac | cut -c 8- | cut -c -17)"
+	# If we got here, we have both the username and emailaddr fields as completed on the login page on the client,
+	# so we will now call ndsctl to get client data we need to authenticate and add to our log.
 
-	# Output the "Thankyou page" with a continue button
-	# You could include information or advertising on this page
+	# Variables returned from ndsctl are listed in $varlist.
+
+	# We at least need the client token to authenticate.
+	# In this example we will also log the client mac address.
+
+	varlist="id ip mac added active duration token state downloaded avg_down_speed uploaded avg_up_speed"
+	clientinfo=$(ndsctl json $clientip)
+
+	if [ -z $clientinfo ]; then
+		echo "<big-red>Sorry!</big-red><italic-black> The portal is busy, please try again.</italic-black><hr>"
+		echo -e $login_form
+		echo -e $footer
+		exit 0
+	else
+		for var in $varlist; do
+			eval $var=$(echo "$clientinfo" | grep $var | awk -F'"' '{print $4}')
+		done
+	fi
+
+	tok=$token
+	clientmac=$mac
+
+	# We now output the "Thankyou page" with a "Continue" button.
+
+	# This is the place to include information or advertising on this page,
+	# as this page will stay open until the client user taps or clicks "Continue"
+
 	# Be aware that many devices will close the login browser as soon as
-	# the client taps continue, so now is the time to deliver your message.
+	# the client user continues, so now is the time to deliver your message.
+
 	echo "<big-red>Thankyou!</big-red>"
 	echo "<br><b>Welcome $username</b>"
+
+	# Add your message here:
+	# You could retrieve text or images from a remote server using wget or curl
+	# as this router has Internet access whilst the client device does not (yet).
 	echo "<br><italic-black> Your News or Advertising could be here, contact the owners of this Hotspot to find out how!</italic-black>"
+
 	echo "<form action=\"/nodogsplash_auth/\" method=\"get\">"
 	echo "<input type=\"hidden\" name=\"tok\" value=\"$tok\">"
 	echo "<input type=\"hidden\" name=\"redir\" value=\"$requested\"><br>"

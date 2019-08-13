@@ -628,15 +628,15 @@ ndsctl_json_client(FILE *fp, const t_client *client, time_t now)
 	unsigned long int durationsecs;
 	unsigned long long int download_bytes, upload_bytes;
 
-	fprintf(fp, "\"id\":%d,\n", client->id);
+	fprintf(fp, "\"id\":\"%d\",\n", client->id);
 	fprintf(fp, "\"ip\":\"%s\",\n", client->ip);
 	fprintf(fp, "\"mac\":\"%s\",\n", client->mac);
-	fprintf(fp, "\"added\":%lld,\n", (long long) client->session_start);
-	fprintf(fp, "\"active\":%lld,\n", (long long) client->counters.last_updated);
+	fprintf(fp, "\"added\":\"%lld\",\n", (long long) client->session_start);
+	fprintf(fp, "\"active\":\"%lld\",\n", (long long) client->counters.last_updated);
 	if (client->session_start) {
-		fprintf(fp, "\"duration\":%lu,\n", now - client->session_start);
+		fprintf(fp, "\"duration\":\"%lu\",\n", now - client->session_start);
 	} else {
-		fprintf(fp, "\"duration\":%lu,\n", 0ul);
+		fprintf(fp, "\"duration\":\"%lu\",\n", 0ul);
 	}
 	fprintf(fp, "\"token\":\"%s\",\n", client->token ? client->token : "none");
 	fprintf(fp, "\"state\":\"%s\",\n", fw_connection_state_as_string(client->fw_connection_state));
@@ -645,10 +645,10 @@ ndsctl_json_client(FILE *fp, const t_client *client, time_t now)
 	download_bytes = client->counters.incoming;
 	upload_bytes = client->counters.outgoing;
 
-	fprintf(fp, "\"downloaded\":%llu,\n", download_bytes / 1000);
-	fprintf(fp, "\"avg_down_speed\":%.2f,\n", ((double)download_bytes) / 125 / durationsecs);
-	fprintf(fp, "\"uploaded\":%llu,\n", upload_bytes / 1000);
-	fprintf(fp, "\"avg_up_speed\":%.2f\n", ((double)upload_bytes)/ 125 / durationsecs);
+	fprintf(fp, "\"downloaded\":\"%llu\",\n", download_bytes / 1000);
+	fprintf(fp, "\"avg_down_speed\":\"%.2f\",\n", ((double)download_bytes) / 125 / durationsecs);
+	fprintf(fp, "\"uploaded\":\"%llu\",\n", upload_bytes / 1000);
+	fprintf(fp, "\"avg_up_speed\":\"%.2f\"\n", ((double)upload_bytes)/ 125 / durationsecs);
 }
 
 static void
@@ -690,7 +690,7 @@ ndsctl_json_all(FILE *fp)
 
 	LOCK_CLIENT_LIST();
 
-	fprintf(fp, "{\n\"client_length\": %d,\n", get_client_list_length());
+	fprintf(fp, "{\n\"client_list_length\": \"%d\",\n", get_client_list_length());
 
 	client = client_get_first_client();
 

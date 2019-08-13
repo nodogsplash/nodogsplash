@@ -10,6 +10,15 @@ config nodogsplash
   # This hook is needed as a restart of Firewall overwrites nodogsplash iptables entries.
   option fwhook_enabled '1'
 
+  # Nodogsplash comes preconfigured for two basic modes of operation
+  # 1. A simple static splash page (splash.html) with template variables and click to continue (enabled by default)
+  # 2. A simple login page requiring username and email address to be entered. (enabled by uncommenting the following line)
+
+  #option preauth '/usr/lib/nodogsplash/login.sh'
+
+  # Both modes may be customised or a full custom system can be developed using FAS and BinAuth
+  # See documentation at: https://nodogsplashdocs.readthedocs.io/
+
   # WebRoot
   # Default: /etc/nodogsplash/htdocs
   #
@@ -157,17 +166,15 @@ config nodogsplash
   # Enable PreAuth Support.
   # PreAuth support allows FAS to call a local program or script with html served by NDS
   #
-  # A functional preauth script is installed by default providing
-  # username/emailaddress login as an alternative to the basic splash page. 
+  # A PreAuth login script is installed by default providing
+  # username/emailaddress login as an alternative to the basic splash page.
+  #
   # This generates a login page asking for usename and email address.
   # User logins are recorded in the log file /tmp/ndslog.log
   # Details of how the script works are contained in comments in the script itself.
   #
   # If set, a program/script is called by the NDS FAS handler
-  # when all three of the following conditions are met:
-  # 1. fasremoteip is NOT set,
-  # 2. fasport is set to the gateway port
-  # 3. faspath is set to /nodogsplash_preauth/
+  # All other FAS settings will be overidden.
   #
   # Initially FAS appends its query string to faspath.
   #
@@ -179,15 +186,18 @@ config nodogsplash
   #
   # The Preauth program should append at least the client ip to the query string
   # (using html input type hidden) for all calls to /nodogsplash_preauth/
-  # It must also obtain the client token using ndsctl (or the original query string if fas_secure_enabled=0)
+  # It must also obtain the client token using ndsctl
   # for NDS authentication when calling /nodogsplash_auth/
   #
-  # Enable username/emailaddress login.
-  # Note: fasport must be set to the same value as gatewayport (default = 2050)
-  # Enable by uncommenting the following three lines
-  #option fasport '2050'
-  #option faspath '/nodogsplash_preauth/'
+
+  ################################################################################
+  # Enable Default PreAuth login script
+  ################################################################################
+  # Enable by uncommenting the following line.
   #option preauth '/usr/lib/nodogsplash/login.sh'
+  ################################################################################
+  #
+  ################################################################################
 
   # Your router may have several interfaces, and you
   # probably want to keep them private from the gatewayinterface.
