@@ -708,9 +708,8 @@ static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, 
 		// Generate secure query string or authaction url
 		// Note: config->fas_path contains a leading / as it is the path from the FAS web root.
 		if (config->fas_secure_enabled == 0) {
-			safe_asprintf(&splashpageurl, "http://%s:%u%s?authaction=http://%s/%s/%s&redir=%s",
-				config->fas_remoteip, config->fas_port, config->fas_path, 
-				config->gw_address, config->authdir, querystr, originurl);
+			safe_asprintf(&splashpageurl, "%s?authaction=http://%s/%s/%s&redir=%s",
+				config->fas_url, config->gw_address, config->authdir, querystr, originurl);
 		} else if (config->fas_secure_enabled == 1) {
 			safe_asprintf(&splashpageurl, "%s%s&redir=%s",
 				config->fas_url, querystr, originurl);
