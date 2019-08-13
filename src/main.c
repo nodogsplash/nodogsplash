@@ -225,6 +225,7 @@ main_loop(void)
 	char *fasurl = NULL;
 	char *fasssl = NULL;
 	char *phpcmd = NULL;
+	char *preauth_dir = NULL;
 
 	config = config_get_config();
 
@@ -272,7 +273,23 @@ main_loop(void)
 	/* TODO: set listening socket */
 	debug(LOG_NOTICE, "Created web server on %s", config->gw_address);
 
+	if (config->preauth) {
+		debug(LOG_NOTICE, "Preauth is Enabled - Overiding FAS configuration.\n");
+		debug(LOG_NOTICE, "Preauth Script is %s\n", config->preauth);
+
+		//override all other FAS settings
+		config->fas_remoteip = safe_strdup(config->gw_ip);
+		config->fas_remotefqdn = NULL;
+		config->fas_key = NULL;
+		config->fas_port = config->gw_port;
+		safe_asprintf(&preauth_dir, "/%s/", config->preauthdir);
+		config->fas_path = safe_strdup(preauth_dir);
+		config->fas_secure_enabled = 1;
+		free(preauth_dir);
+	}
+
 	if (config->fas_port) {
+
 		if (config->fas_remoteip) {
 			if (is_addr(config->fas_remoteip) == 1) {
 				debug(LOG_INFO, "fasremoteip - %s - is a valid IPv4 address...", config->fas_remoteip);
@@ -331,6 +348,7 @@ main_loop(void)
 		}
 
 		debug(LOG_NOTICE, "Forwarding Authentication is Enabled.\n");
+
 		if (config->fas_remotefqdn) {
 			safe_asprintf(&fasurl, "http://%s:%u%s",
 				config->fas_remotefqdn, config->fas_port, config->fas_path);
@@ -346,11 +364,6 @@ main_loop(void)
 		if (config->fas_secure_enabled == 0) {
 			debug(LOG_NOTICE, "Warning - Forwarding Authentication - Security is DISABLED.\n");
 		}
-	}
-
-	if (config->preauth) {
-		debug(LOG_NOTICE, "Preauth is Enabled.\n");
-		debug(LOG_NOTICE, "Preauth Script is %s\n", config->preauth);
 	}
 
 	if (config->binauth) {
