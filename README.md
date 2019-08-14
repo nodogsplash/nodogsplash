@@ -24,7 +24,7 @@ how to customize its behaviour for your application.
 
  All modern mobile devices, most desktop operating systems and most browsers now have a CPD process that automatically issues a port 80 request on connection to a network. NDS detects this and serves a special "**splash**" web page to the connecting client device.
 
-** Provide simple and immediate public Internet access**
+**Provide simple and immediate public Internet access**
 
  NDS provides two pre-installed methods.
 
