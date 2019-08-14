@@ -1,31 +1,25 @@
 Overview
 ########
 
-**Nodogspash** (NDS) is a high performance, small footprint Captive Portal, offering by default a simple splash page restricted Internet connection, yet incorporates an API that allows the creation of sophisticated authentication applications.
+**NoDogSplash** (NDS) is a high performance, small footprint Captive Portal, offering by default a simple splash page restricted Internet connection, yet incorporates an API that allows the creation of sophisticated authentication applications.
 
- **If you want to provide simple and immediate public access** to an Internet connection with users giving some acknowledgment of the service, Nodogsplash does this by default.
+Captive Portal Detection (CPD)
+******************************
+ All modern mobile devices, most desktop operating systems and most browsers now have a CPD process that automatically issues a port 80 request on connection to a network. NDS detects this and serves a special "**splash**" web page to the connecting client device.
 
- Customising the page seen by users is a simple matter of editing the simple default html splash page file.
+Provide simple and immediate public Internet access
+***************************************************
+ NDS provides two pre-installed methods.
 
- **If you want to enforce use of a set of preset usernames** and passwords with perhaps a limited connection time, the addition of a simple shell script is all that is required.
+ * **Click to Continue**. A simple static web page with template variables (*default*). This provides basic notification and a simple click/tap to continue button.
+ * **username/email-address login**. A simple dynamic set of web pages that provide username/email-address login, a welcome page and logs access by client users. (*Installed by default and enabled by un-commenting a line in the configuration file*)
 
- **If you want a more sophisticated authentication system** providing a dynamic web interface you can do that too by providing your own web service written in a language such as php running on its own server.
+  Customising the page seen by users is a simple matter of editing the respective html or script files.
 
- **If you want to link Nodogsplash** to your own centralised Internet based authentication service with user account self generation and access charging, you can do that too, or anything in between.
+Write Your Own Captive Portal.
+******************************
+ NDS can be used as the "Engine" behind the most sophisticated Captive Portal systems using the tools provided.
 
- **All modern mobile devices**, most desktop operating systems and most browsers now have a Captive Portal Detection process that automatically issues a port 80 request on connection to a network. Nodogsplash detects this and serves a 'splash' web page.
-
-The splash page in its most basic form, contains a *Continue* button. When the user clicks on it, access to the Internet is granted subject to a preset time interval.
-
-Nodogsplash does not currently support traffic control but is fully compatible with other stand alone systems such as Smart Queue Management (SQM).
-
-Nodogsplash Methods of authentication
-*************************************
-
-Nodogsplash offers numerous methods of authentication:
-
- - Click the *Continue* button (default)
-
- - Call an external script that may accept username/password and set session durations per user.
-
- - Forwarding authentication to an external service
+ * **Forward Authentication Service (FAS)**. FAS provides pre-authentication user validation in the form of a set of dynamic web pages, typically served by a web service independent of NDS, located remotely on the Internet, on the local area network or on the NDS router.
+ * **PreAuth**. A special case of FAS that runs locally on the NDS router with dynamic html served by NDS itself. This requires none of the overheads of a full FAS implementation and is ideal for NDS routers with limited RAM and Flash memory.
+ * **BinAuth**. A method of running a post authentication script or extension program.
