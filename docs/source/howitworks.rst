@@ -10,39 +10,25 @@ Summary of Operation
 
  An initial port 80 request will be generated on a client device, either by the user manually browsing to an http web page, or automatically by the client device's built in Captive Portal Detection (CPD).
 
- As soon as this initial port 80 request is received, NDS will redirect the client to either its own splash page, or a splash page on a configured Forwarding Authentication Service (FAS).
+ As soon as this initial port 80 request is received, NDS will redirect the client to a "splash" page.
 
- The user of the client device will then be expected to complete some actions on the splash page, such as accepting terms of service, entering a username and password etc. (this will of course be on either the basic NDS splash.html or the page presented by the FAS, depending on the NDS configuration).
+ This splash page is either one of the two standard options or a custom configuration provided by the user (See FAS, PreAuth).
 
- Once the user on the client device has successfully completed the splash page actions, the page then links directly, with a query string, to an NDS virtual http directory provided by NDS's built in web server.
+ The user of the client device will then be expected to complete some actions on the splash page, such as accepting terms of service, entering a username and password etc.
+
+ Once the user on the client device has successfully completed the splash page actions, that page then links directly back to NDS.
 
  For security, NDS expects to receive the same valid token it allocated when the client issued its initial port 80 request. If the token received is valid, NDS then "authenticates" the client device, allowing access to the Internet.
 
- However if Binauth is enabled, NDS first calls the Binauth script, passing if required a username and password to that script.
+ Post authentication processing extensions may be added to NDS (See BinAuth). Once NDS has received a valid token it calls a Binauth script.
 
- If the binauth script returns positively (ie return code 0), NDS then "authenticates" the client device, allowing access to the Internet.
+ If the BinAuth script returns positively (ie return code 0), NDS then "authenticates" the client device, allowing access to the Internet.
 
- In FAS secure modes (levels 1 and 2), the client token and other required information is kept securely hidden from the Client, ensuring verification cannot be bypassed.
-
- When FAS is disabled, the token is supplied to the basic splash.html page served by NDS and passed back in clear text in the query string along with any username and password required for Binauth.
+ In FAS secure modes are provided (levels 1, 2 and 3), where the client token and other required variables are kept securely hidden from the Client, ensuring verification cannot be bypassed.
 
 .. note::
 
- FAS and Binauth can be enabled together.
- This can give great flexibility with FAS providing authentication     and Binauth providing post authentication processing closely linked to  NDS.
-
-Rules for Customised Splash Pages
-*********************************
-
-It should be noted when designing a custom splash page that for security reasons many client device CPD implementations:
-
- * Immediately close the browser when the client has authenticated.
-
- * Prohibit the use of href links.
-
- * Prohibit downloading of external files (including .css and .js, even if they are allowed in NDS firewall settings).
-
- * Prohibit the execution of javascript.
+ FAS and Binauth can be enabled together. This can give great flexibility with FAS providing authentication and Binauth providing post authentication processing closely linked to  NDS.
 
 Packet filtering
 ****************
@@ -64,4 +50,4 @@ Traffic control
 
 Data rate control on an IP connection basis can be achieved using Smart Queue Management (SQM) configured separately, with NDS being fully compatible.
 
-It should be noted that while setup options and binauth do accept traffic/quota settings, these values currently have no effect and are reserved for future development.
+It should be noted that while setup options and BinAuth do accept traffic/quota settings, these values currently have no effect and are reserved for future development.

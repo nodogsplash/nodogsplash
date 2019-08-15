@@ -11,6 +11,19 @@ As NDS is a package that requires hardware configured as an IP router, perhaps t
 
 If NDS is working in the default, post installation mode, then you will have met the NDS dependencies and can now move on to your own customisation.
 
+Rules for Customised Splash Pages
+*********************************
+
+It should be noted when designing a custom splash page that for security reasons many client device CPD implementations:
+
+ * Immediately close the browser when the client has authenticated.
+
+ * Prohibit the use of href links.
+
+ * Prohibit downloading of external files (including .css and .js, even if they are allowed in NDS firewall settings).
+
+ * Prohibit the execution of javascript.
+
 The Configuration File
 **********************
 
@@ -128,3 +141,11 @@ It should be noted when designing a custom splash page that for security reasons
  * Prohibit the execution of javascript.
 
 Also, note that any images you reference should reside in the subdirectory /etc/nodogsplash/htdocs/images/.
+
+Dynamic Splash Pages
+********************
+
+Dynamically generated splash pages are supported using FAS and PreAuth (including the included alternative username/email login script).
+
+For details see the FAS and PreAuth chapters.
+
