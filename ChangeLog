@@ -1,3 +1,15 @@
+nodogsplash (4.0.2)
+
+  * Fix bug - fas_remotefqdn not supported with option fas_secure_enabled 0 [bluewavenet]
+  * Fix bug - prevent deadlock causing ndsctl to hang and NDS to become unresponsive [bluewavenet]
+  * PreAuth - Override FAS settings making configuration foolproof [bluewavenet]
+  * ndsctl - make json parsing consistent for all client variables [bluewavenet]
+  * Fix memory leak in template generation [lynxis]
+  * When executing the ndsctl stop command, cleanup all structures [lynxis]
+  * Check for positive errno in thread_ndsctl [lynxis]
+
+ -- Rob White <dot@blue-wave.net> Mon, 15 Aug 2019 15:01:00 +0000
+
 nodogsplash (4.0.1)
 
   * Make debuglevel platform independent [mwarning]
