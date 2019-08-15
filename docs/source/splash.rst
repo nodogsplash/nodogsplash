@@ -35,51 +35,20 @@ This Splash page can be one of the following:
 The Two Installed Basic Splash Pages
 ************************************
 
-By default, two fully functional but basic "Splash" pages are installed.
- * The Simple "Click to Continue" splash page. This is enabled on installing NoDogSplash.
- * The "Username/Email-address" PreAuth script. This is enabled simply by un-commenting three lines in the config file.
+By default, two fully functional but basic "Splash" pages are installed. Simple config options allow you to choose which one to use.
+
+ * The Simple "Click to Continue" splash page. (Default)
+ * The "Username/Email-address" Login script.
+
+*See the chapter on PreAuth for details on how to switch between these splash page types.*
 
 In many instances, one or other of these simple methods will be all that is required, but the power of FAS, PreAuth and BinAuth can be used to create very sophisticated Captive Portal Systems.
 
-Enable Username/Email-address Login
-***********************************
+Displaying Remote Content
+*************************
 
-On Openwrt, edit (to uncomment) following lines in the /etc/config/nodogsplash file:
+FASand PreAuth can be used to display remote content on the client user login screen.
+This is ideal for serving information, banner advertising etc.
 
-    `#option fasport '2050'`
-
-    `#option faspath '/nodogsplash_preauth/'`
-
-    `#option preauth '/usr/lib/nodogsplash/login.sh'`
-
-To read:
-
-    `option fasport '2050'`
-
-    `option faspath '/nodogsplash_preauth/'`
-
-    `option preauth '/usr/lib/nodogsplash/login.sh'`
-
-For other operating systems edit the equivalent lines in the /etc/nodogsplash/nodogsplash.conf file
-
-After making the change, save the file and restart the router.
-
-Displaying Remote Banner Images
-*******************************
-
-A modified version of the Username/Email-address login script is available that demonstrates how to display remotely hosted images on its login pages.
-
-This additional example PreAuth script, demo-preauth-remote-image.sh, is available in the source code:
-
- `https://github.com/nodogsplash/nodogsplash/archive/master.zip`
-
-and extracting from the folder:
-
- "forward_authentication_service/PreAuth/"
-
-This is an enhancement of the preinstalled login.sh, giving an example of how to display images pulled in from remote web servers, both http and https.
-
-The example displays the NodogSplash avatar image dynamically retrieved from Github.
-
-
-
+An example is described in the **Displaying Remote Banner Images**
+section of the PreAuth chapter.
