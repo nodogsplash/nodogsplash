@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 Type=forking
-ExecStart=/usr/bin/nodogsplash -d 5 $OPTIONS
+ExecStart=/usr/bin/nodogsplash $OPTIONS
 Restart=on-failure
 
 [Install]
