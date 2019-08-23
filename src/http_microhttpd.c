@@ -659,7 +659,16 @@ static int preauthenticated(struct MHD_Connection *connection,
 	/* request is directed to us */
 	/* check if client wants to be authenticated */
 	if (check_authdir_match(url, config->authdir)) {
+
 		/* Only the first request will redirected to config->redirectURL.
+		 * TODO: Deprecate redirectURL
+
+			redirectURL is now redundant as most CPD implementations immediately close the "splash" page
+			as soon as NDS authenticates, thus redirectURL will not be shown.
+
+			This functionality, ie displaying a particular web page as a final "Landing Page"
+			can be achieved reliably using FAS, with NDS calling the previous "redirectURL" as the FAS page.
+
 		 * When the client reloads a page when it's authenticated, it should be redirected
 		 * to their origin url
 		 */
