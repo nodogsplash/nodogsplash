@@ -364,6 +364,11 @@ main_loop(void)
 		if (config->fas_secure_enabled == 0) {
 			debug(LOG_NOTICE, "Warning - Forwarding Authentication - Security is DISABLED.\n");
 		}
+
+		if (config->fas_secure_enabled == 2 && config->fas_key == NULL) {
+			debug(LOG_ERR, "Error - faskey is not set - exiting...\n");
+			exit(1);
+		}
 	}
 
 	if (config->binauth) {
