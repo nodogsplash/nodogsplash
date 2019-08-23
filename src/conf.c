@@ -859,8 +859,11 @@ config_read(const char *filename)
 		case oStatusPage:
 			config.statuspage = safe_strdup(p1);
 			break;
+
+		// TODO: Deprecate RedirectURL
 		case oRedirectURL:
 			config.redirectURL = safe_strdup(p1);
+			debug(LOG_WARNING, "RedirectURL is now deprecated, please use FAS to provide this functionality");
 			break;
 		case oAuthIdleTimeout:
 			if (sscanf(p1, "%d", &config.auth_idle_timeout) < 1 || config.auth_idle_timeout < 0) {
