@@ -67,7 +67,7 @@ The script file must be executable and is flagged as such in the source archive.
 
 This script is then activated with the command:
 
-    'service nodogsplash restart'
+    `service nodogsplash restart`
 
 **The Example 1 script contains the following code:**
 
@@ -258,7 +258,7 @@ The script file must be executable and is flagged as such in the source archive.
 
 This script is then activated with the command:
 
-    'service nodogsplash restart'
+    `service nodogsplash restart`
 
 **The Example 2 script contains the following code:**
 
