@@ -114,6 +114,7 @@ static int
 connect_to_server(const char sock_name[])
 {
 	int sock;
+	char lockfile[] = "/tmp/ndsctl.lock";
 	struct sockaddr_un sa_un;
 
 	/* Connect to socket */
@@ -124,6 +125,7 @@ connect_to_server(const char sock_name[])
 
 	if (connect(sock, (struct sockaddr *)&sa_un, strlen(sa_un.sun_path) + sizeof(sa_un.sun_family))) {
 		fprintf(stderr, "ndsctl: nodogsplash probably not started (Error: %s)\n", strerror(errno));
+		remove(lockfile);
 		return -1;
 	}
 
