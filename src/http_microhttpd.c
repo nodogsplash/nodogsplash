@@ -68,19 +68,22 @@ static int send_refresh(struct MHD_Connection *connection);
 static int is_foreign_hosts(struct MHD_Connection *connection, const char *host);
 static int is_splashpage(const char *host, const char *url);
 static int get_query(struct MHD_Connection *connection, char **collect_query, const char *separator);
+static char *construct_querystring(t_client *client, char *originurl, char *querystr);
 static const char *get_redirect_url(struct MHD_Connection *connection);
 static const char *lookup_mimetype(const char *filename);
 
 
-/* Get client settings from binauth */
+/* Call the BinAuth script */
 static int do_binauth(struct MHD_Connection *connection, const char *binauth, t_client *client,
-	int *seconds_ret, int *upload_ret, int *download_ret)
+	int *seconds_ret, int *upload_ret, int *download_ret, const char *redirect_url)
 {
 	char username_enc[64] = {0};
 	char password_enc[64] = {0};
+	char redirect_url_enc_buf[QUERYMAXLEN] = {0};
 	const char *username;
 	const char *password;
 	char msg[255] = {0};
+	char *argv = NULL;
 	int seconds;
 	int upload;
 	int download;
@@ -89,14 +92,22 @@ static int do_binauth(struct MHD_Connection *connection, const char *binauth, t_
 	username = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "username");
 	password = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "password");
 
-	if ((username && uh_urlencode(username_enc, sizeof(username_enc), username, strlen(username)) == -1)
-		|| (password && uh_urlencode(password_enc, sizeof(password_enc), password, strlen(password)) == -1)) {
-		debug(LOG_ERR, "Failed to encode username and password for binauth");
-		return -1;
+	if (!username || strlen(username) == 0) {
+		username="na";
 	}
 
-	rc = execute_ret(msg, sizeof(msg) - 1, "%s auth_client %s '%s' '%s'",
-		binauth, client->mac, username_enc, password_enc);
+	if (!password || strlen(password) == 0) {
+		password="na";
+	}
+
+	uh_urlencode(username_enc, sizeof(username_enc), username, strlen(username));
+	uh_urlencode(password_enc, sizeof(password_enc), password, strlen(password));
+	uh_urlencode(redirect_url_enc_buf, sizeof(redirect_url_enc_buf), redirect_url, strlen(redirect_url));
+
+	safe_asprintf(&argv,"%s auth_client %s %s %s %s", binauth, client->mac, username_enc, password_enc, redirect_url_enc_buf);
+	debug(LOG_INFO, "BinAuth argv: %s", argv);
+	rc = execute_ret_url_encoded(msg, sizeof(msg) - 1, argv);
+	free(argv);
 
 	if (rc != 0) {
 		return -1;
@@ -432,15 +443,28 @@ static int authenticate_client(struct MHD_Connection *connection,
 	int upload = 0;
 	int download = 0;
 	int rc;
-	char *query_str = NULL;
 	int ret;
+	char query_str[QUERYMAXLEN] = {0};
+	char redirect_url_enc[QUERYMAXLEN] = {0};
+	char *querystr = query_str;
+
+	debug(LOG_INFO, "redirect_url is [ %s ]", redirect_url);
 
 	if (config->binauth) {
-		rc = do_binauth(connection, config->binauth, client, &seconds, &upload, &download);
+		rc = do_binauth(connection, config->binauth, client, &seconds, &upload, &download, redirect_url);
 		if (rc != 0) {
-			safe_asprintf(&query_str, "?clientip=%s&gatewayname=%s&tok=%s", client->ip, config->gw_name, client->token);
-			ret = encode_and_redirect_to_splashpage(connection, redirect_url, query_str);
-			free(query_str);
+			/*BinAuth denies access so redirect client back to login/splash page where they can try again.
+				If FAS is enabled, this will cause nesting of the contents of redirect_url,
+				FAS should account for this if used with BinAuth.
+			*/
+
+			uh_urlencode(redirect_url_enc, sizeof(redirect_url_enc), redirect_url, strlen(redirect_url));
+
+			debug(LOG_DEBUG, "redirect_url after binauth deny: %s", redirect_url);
+			debug(LOG_DEBUG, "redirect_url_enc after binauth deny: %s", redirect_url_enc);
+
+			querystr=construct_querystring(client, redirect_url_enc, querystr);
+			ret = encode_and_redirect_to_splashpage(connection, redirect_url_enc, querystr);
 			return ret;
 		}
 		rc = auth_client_auth(client->id, "client_auth");
@@ -451,8 +475,6 @@ static int authenticate_client(struct MHD_Connection *connection,
 	if (rc != 0) {
 		return send_error(connection, 503);
 	}
-
-	debug(LOG_NOTICE, "Client [%s, %s] authenticated", client->mac, client->ip);
 
 	/* set client values */
 	client->download_limit = download;
@@ -563,12 +585,8 @@ static int show_preauthpage(struct MHD_Connection *connection, const char *query
 	s_config *config = config_get_config();
 
 	if (query) {
-		if (uh_urlencode(query_enc, sizeof(query_enc), query, strlen(query)) == -1) {
-			debug(LOG_WARNING, "could not encode query");
-			return -1;
-		} else {
-			debug(LOG_DEBUG, "query: %s", query);
-		}
+		uh_urlencode(query_enc, sizeof(query_enc), query, strlen(query));
+		debug(LOG_DEBUG, "query: %s", query);
 	}
 
 	rc = execute_ret(msg, HTMLMAXSIZE - 1, "%s '%s'", config->preauth, query_enc);
@@ -783,7 +801,7 @@ static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *c
 	char *query = query_str;
 	int ret = 0;
 	const char *separator = "&";
-	char *querystr = NULL;
+	char *querystr = query_str;
 	s_config *config = config_get_config();
 
 	get_query(connection, &query, separator);
@@ -795,20 +813,30 @@ static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *c
 
 	debug(LOG_DEBUG, "Query string is [ %s ]", query);
 	safe_asprintf(&originurl_raw, "http://%s%s%s", host, url, query);
+	uh_urlencode(originurl, sizeof(originurl), originurl_raw, strlen(originurl_raw));
 
-	if (uh_urlencode(originurl, sizeof(originurl), originurl_raw, strlen(originurl_raw)) == -1) {
-		debug(LOG_WARNING, "could not encode url");
-	} else {
-		debug(LOG_DEBUG, "originurl: %s", originurl);
-	}
+	debug(LOG_DEBUG, "originurl: %s", originurl);
 
+	querystr=construct_querystring(client, originurl, querystr);
+	ret = encode_and_redirect_to_splashpage(connection, originurl, querystr);
+	free(originurl_raw);
+	return ret;
+}
+
+/////
+/**
+ * @brief construct_querystring
+ * @return the querystring
+ */
+static char *construct_querystring( t_client *client, char *originurl, char *querystr ) {
+	s_config *config = config_get_config();
 
 	if (config->fas_secure_enabled == 0) {
-		safe_asprintf(&querystr, "?clientip=%s&gatewayname=%s&tok=%s", client->ip, config->gw_name, client->token);
+		snprintf(querystr, QUERYMAXLEN, "?clientip=%s&gatewayname=%s&tok=%s", client->ip, config->gw_name, client->token);
 	} else if (config->fas_secure_enabled == 1) {
-		safe_asprintf(&querystr, "?clientip=%s&gatewayname=%s", client->ip, config->gw_name);
+		snprintf(querystr, QUERYMAXLEN, "?clientip=%s&gatewayname=%s", client->ip, config->gw_name);
 	} else if (config->fas_secure_enabled == 2) {
-		safe_asprintf(&querystr,
+		snprintf(querystr, QUERYMAXLEN,
 			"clientip=%s%sclientmac=%s%sgatewayname=%s%stok=%s%sgatewayaddress=%s%sauthdir=%s%soriginurl=%s",
 			client->ip, QUERYSEPARATOR,
 			client->mac, QUERYSEPARATOR,
@@ -818,15 +846,13 @@ static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *c
 			config->authdir, QUERYSEPARATOR,
 			originurl);
 	} else {
-		safe_asprintf(&querystr, "?clientip=%s&gatewayname=%s", client->ip, config->gw_name);
+		snprintf(querystr, QUERYMAXLEN, "?clientip=%s&gatewayname=%s", client->ip, config->gw_name);
 	}
 
-	ret = encode_and_redirect_to_splashpage(connection, originurl, querystr);
-	free(originurl_raw);
-	free(querystr);
-	return ret;
+	return querystr;
 }
 
+/////
 
 /**
  *	Add client making a request to client list.

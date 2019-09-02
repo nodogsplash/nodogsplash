@@ -104,11 +104,11 @@ header="
 	<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
 	<link rel=\"shortcut icon\" href=\"/images/splash.jpg\" type=\"image/x-icon\">
 	<link rel=\"stylesheet\" type=\"text/css\" href=\"/splash.css\">
-	<title>$gatewayname Hotspot Gateway.</title>
+	<title>$gatewayname Captive Portal.</title>
 	</head>
 	<body>
 	<div class=\"offset\">
-	<med-blue>$gatewayname Hotspot Gateway.</med-blue>
+	<med-blue>$gatewayname Captive Portal.</med-blue>
 	<div class=\"insert\" style=\"max-width:100%;\">
 	<hr>
 "
