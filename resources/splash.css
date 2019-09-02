@@ -41,7 +41,7 @@
 		margin-right: 5%;
 	}
 
-	input[type=text], input[type=email] {
+	input[type=text], input[type=email], input[type=password] {
 		color: black;
 		background: lightgrey;
 	}

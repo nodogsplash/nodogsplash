@@ -1,7 +1,7 @@
-Customising nodogsplash
+Customising NoDogSplash
 ########################
 
-After initial installation, Nogogsplash (NDS) should be working in its most basic mode and client Captive Portal Detection (CPD) should pop up the default splash page.
+After initial installation, NoDogSplash (NDS) should be working in its most basic mode and client Captive Portal Detection (CPD) should pop up the default splash page.
 
 Before attempting to customise NDS you should ensure it is working in this basic mode before you start.
 
