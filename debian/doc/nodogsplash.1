@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "NODOGSPLASH" "1" "Aug 15, 2019" "4.0.2" "NoDogSplash"
+.TH "NODOGSPLASH" "1" "Sep 02, 2019" "4.1.0" "NoDogSplash"
 .SH NAME
 nodogsplash \- nodogsplash Documentation
 .
@@ -246,6 +246,64 @@ In FAS secure modes are provided (levels 1, 2 and 3), where the client token and
 FAS and Binauth can be enabled together. This can give great flexibility with FAS providing authentication and Binauth providing post authentication processing closely linked to  NDS.
 .UNINDENT
 .UNINDENT
+.SS Captive Portal Detection (CPD)
+.INDENT 0.0
+.INDENT 3.5
+All modern mobile devices, most desktop operating systems and most browsers now have a CPD process that automatically issues a port 80 request on connection to a network. NDS detects this and serves a special “splash” web page to the connecting client device.
+.sp
+The port 80 html request made by the client CPD can be one of many vendor specific URLs.
+.sp
+Typical CPD URLs used are, for example:
+.INDENT 0.0
+.IP \(bu 2
+\fIhttp://captive.apple.com/hotspot\-detect.html\fP
+.IP \(bu 2
+\fIhttp://connectivitycheck.gstatic.com/generate_204\fP
+.IP \(bu 2
+\fIhttp://connectivitycheck.platform.hicloud.com/generate_204\fP
+.IP \(bu 2
+\fIhttp://www.samsung.com/\fP
+.IP \(bu 2
+\fIhttp://detectportal.firefox.com/success.txt\fP
+.IP \(bu 2
+Plus many more
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.sp
+It is important to remember that CPD is designed primarily for mobile devices to automatically detect the presence of a portal and to trigger the login page, without having to resort to breaking SSL/TLS security by requiring the portal to redirect port 443 for example.
+.sp
+Just about all current CPD implementations work very well but some compromises are necessary depending on the application.
+.sp
+The vast majority of devices attaching to a typical Captive Portal are mobile devices. CPD works well giving the initial login page.
+.sp
+For a typical guest wifi, eg a coffee shop, bar, club, hotel etc., a device connects, the Internet is accessed for a while, then the user takes the device out of range.
+.sp
+When taken out of range, a typical mobile device begins periodically polling the wireless spectrum for SSIDs that it knows about to try to obtain a connection again, subject to timeouts to preserve battery life.
+.sp
+Most Captive Portals have a session duration limit (NDS included).
+.sp
+If a previously logged in device returns to within the coverage of the portal, the previously used SSID is recognised and CPD is triggered and tests for an Internet connection in the normal way. Within the session duration limit of the portal, the Internet connection will be established, if the session has expired, the splash page will be displayed again.
+.sp
+Early mobile device implementations of CPD used to poll their detection URL at regular intervals, typically around 30 to 300 seconds. This would trigger the Portal splash page quite quickly if the device stayed in range and the session limit had been reached.
+.sp
+However it was very quickly realised that this polling kept the WiFi on the device enabled continuously having a very negative effect on battery life, so this polling whilst connected was either increased to a very long interval or removed all together (depending on vendor) to preserve battery charge. As most mobile devices come and go into and out of range, this is not an issue.
+.sp
+A common issue raised is:
+.sp
+\fIMy devices show the splash page when they first connect, but when the authorization expires, they just announce there is no internet connection. I have to make them "forget" the wireless network to see the splash page again. Is this how is it supposed to work?\fP
+.sp
+The workaround is as described in the issue, or even just manually disconnecting or turning WiFi off and on will simulate a "going out of range", initialising an immediate trigger of the CPD. One or any combination of these workarounds should work, again depending on the particular vendor\(aqs implementation of CPD.
+.sp
+In contrast, most laptop/desktop operating systems, and browser versions for these still implement CPD polling whilst online as battery considerations are not so important.
+.sp
+For example, Gnome desktop has its own built in CPD browser with a default interval of 300 seconds. Firefox also defaults to something like 300 seconds. Windows 10 is similar.
+.sp
+This IS how it is supposed to work, but does involve some compromises.
+.sp
+The best solution is to set the session timeout to a value greater than the expected length of time a client device is likely to be present. Experience shows a limit of 24 hours covers most situations eg bars, clubs, coffee shops, motels etc. If for example an hotel has guests regularly staying for a few days, then increase the session timeout as required.
+.sp
+Staff at the venue could have their devices added to the Trusted List if appropriate, but experience shows, it is better not to do this as they very soon learn what to do and can help guests who encounter the issue. (Anything that reduces support calls is good!)
 .SS Packet filtering
 .sp
 Nodogsplash considers four kinds of packets coming into the router over the managed interface. Each packet is one of these kinds:
@@ -907,17 +965,100 @@ This is an enhancement of the preinstalled login.sh, giving an example of how to
 .sp
 The example displays the NodogSplash avatar image dynamically retrieved from Github.
 .SH BINAUTH OPTION
+.SS Overview
 .sp
-\fBKey: BinAuth\fP
+\fBBinAuth provides a method of running a post authentication script\fP or extension program. BinAuth is ALWAYS local to NDS and as such will have access to all the resources of the local system.
 .sp
-\fBValue: /path/to/executable/script\fP
+\fBBinAuth works with, but does not require FAS\fP and in a simple system can be used to provide site\-wide username/password access.
 .sp
-Authenticate a client using an external program that get passed the (optional) username and password value.
-The exit code and output values of the program decide if and how a client is to be authenticated.
+\fBWith FAS, the redir variable forwarded to BinAuth\fP can contain an embedded payload of custom variables defined by the FAS. As FAS is typically remote from the NDS router, this provides a link to the local system.
 .sp
-The program will also be called on client authentication and deauthentication.
+\fBBinAuth has the means to set a session timeout\fP interval on a client by client basis.
 .sp
-For the following examples, \fIbinauth\fP is set to \fI/etc/nds_auth.sh\fP in nodogsplash.conf:
+\fBBinAuth is called by NDS at the following times:\fP
+.INDENT 0.0
+.INDENT 3.5
+.INDENT 0.0
+.IP \(bu 2
+After the client CPD browser makes an authentication request to NDS
+.IP \(bu 2
+After the client device is granted Internet access by NDS
+.IP \(bu 2
+After the client is deauthenticated by request
+.IP \(bu 2
+After the client idle timeout interval has expired
+.IP \(bu 2
+After the client session timeout interval has expired
+.IP \(bu 2
+After the client is authenticated by ndsctl command
+.IP \(bu 2
+After the client is deauthenticated by ndsctl command
+.IP \(bu 2
+After NDS has received a shutdown command
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS Example BinAuth Scripts
+.sp
+Two example BinAuth scripts are included in the source files available for download at:
+\fI\%https://github.com/nodogsplash/nodogsplash/releases\fP
+.sp
+The files can be extracted from the downloaded release archive file and reside in the folder:
+.sp
+\fI/nodogsplash\-[*version*]/forward_authentication_service/binauth\fP
+.SS Example 1 \- Sitewide Username/Password
+.sp
+This example is a script designed to be used with or without FAS and provides site wide Username/Password login for two groups of users, in this case "Staff" and "Guest" with two corresponding sets of credentials. If used without FAS, a special html splash page must be installed, otherwise FAS must forward the required username and password variables.
+.sp
+The "Staff" user is allowed access to the Internet for the full duration of the global sessiontimeout interval before being logged out.
+.sp
+The "Guest" user is allowed access for 10 minutes before being logged out.
+.SS Installing Example 1
+.sp
+This script has two components, the actual script and an associated html file.
+.INDENT 0.0
+.INDENT 3.5
+.INDENT 0.0
+.IP \(bu 2
+binauth_sitewide.sh
+.IP \(bu 2
+splash_sitewide.html
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.sp
+The file binauth_sitewide.sh should be copied to a suitable location on the NDS router, eg \fI/etc/nodogsplash/\fP
+.sp
+The file splash_sitewide.html should be copied to \fI/etc/nodogsplash/htdocs/\fP
+.sp
+Assuming FAS is not being used, NDS is then configured by setting the BinAuth and SplashPage options in the config file (/etc/config/nodogsplash on Openwrt, or /etc/nodogsplash/nodogsplash.conf on other operating systems.
+.sp
+On OpenWrt this is most easily accomplished by issuing the following commands:
+.INDENT 0.0
+.INDENT 3.5
+\fIuci set nodogsplash.@nodogsplash[0].splashpage=\(aqsplash_sitewide.html\(aq\fP
+.sp
+\fIuci set nodogsplash.@nodogsplash[0].binauth=\(aq/etc/nodogsplash/binauth_sitewide.sh\(aq\fP
+.sp
+\fIuci commit nodogsplash\fP
+.UNINDENT
+.UNINDENT
+.sp
+The script file must be executable and is flagged as such in the source archive. If necessary set using the command:
+.INDENT 0.0
+.INDENT 3.5
+\fIchmod u+x /etc/nodogsplash/binauth_sitewide.sh\fP
+.UNINDENT
+.UNINDENT
+.sp
+This script is then activated with the command:
+.INDENT 0.0
+.INDENT 3.5
+\fIservice nodogsplash restart\fP
+.UNINDENT
+.UNINDENT
+.sp
+\fBThe Example 1 script contains the following code:\fP
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -925,36 +1066,56 @@ For the following examples, \fIbinauth\fP is set to \fI/etc/nds_auth.sh\fP in no
 .ft C
 #!/bin/sh
 
+# EXAMPLE 1
+# This is an example script for BinAuth
+# It verifies a client username and password and sets the session length.
+#
+# If BinAuth is enabled, NDS will call this script as soon as it has received an authentication request
+# from the web page served to the client\(aqs CPD (Captive Portal Detection) Browser by one of the following:
+#
+# 1. splash_sitewide.html
+# 2. PreAuth
+# 3. FAS
+#
+# The username and password entered by the clent user will be included in the query string sent to NDS via html GET
+# For an example, see the file splash_sitewide.html
+
 METHOD="$1"
-MAC="$2"
+CLIENTMAC="$2"
 
 case "$METHOD" in
-  auth_client)
-    USERNAME="$3"
-    PASSWORD="$4"
-    if [ "$USERNAME" = "Bill" \-a "$PASSWORD" = "tms" ]; then
-      # Allow client to access the Internet for one hour (3600 seconds)
-      # Further values are upload and download limits in bytes. 0 for no limit.
-      echo 3600 0 0
-      exit 0
-    else
-      # Deny client to access the Internet.
-      exit 1
-    fi
-    ;;
-  client_auth|client_deauth|idle_deauth|timeout_deauth|ndsctl_auth|ndsctl_deauth|shutdown_deauth)
-    INGOING_BYTES="$3"
-    OUTGOING_BYTES="$4"
-    SESSION_START="$5"
-    SESSION_END="$6"
-    # client_auth: Client authenticated via this script.
-    # client_deauth: Client deauthenticated by the client via splash page.
-    # idle_deauth: Client was deauthenticated because of inactivity.
-    # timeout_deauth: Client was deauthenticated because the session timed out.
-    # ndsctl_auth: Client was authenticated by the ndsctl tool.
-    # ndsctl_deauth: Client was deauthenticated by the ndsctl tool.
-    # shutdown_deauth: Client was deauthenticated by Nodogsplash terminating.
-    ;;
+       auth_client)
+               USERNAME="$3"
+               PASSWORD="$4"
+               if [ "$USERNAME" = "Staff" \-a "$PASSWORD" = "weneedit" ]; then
+                       # Allow Staff to access the Internet for the global sessiontimeout interval
+                       # Further values are reserved for upload and download limits in bytes. 0 for no limit.
+                       echo 0 0 0
+                       exit 0
+               elif [ "$USERNAME" = "Guest" \-a "$PASSWORD" = "thanks" ]; then
+                       # Allow Guest to access the Internet for 10 minutes (600 seconds)
+                       # Further values are reserved for upload and download limits in bytes. 0 for no limit.
+                       echo 600 0 0
+                       exit 0
+               else
+                       # Deny client access to the Internet.
+                       exit 1
+               fi
+
+               ;;
+       client_auth|client_deauth|idle_deauth|timeout_deauth|ndsctl_auth|ndsctl_deauth|shutdown_deauth)
+               INGOING_BYTES="$3"
+               OUTGOING_BYTES="$4"
+               SESSION_START="$5"
+               SESSION_END="$6"
+               # client_auth: Client authenticated via this script.
+               # client_deauth: Client deauthenticated by the client via splash page.
+               # idle_deauth: Client was deauthenticated because of inactivity.
+               # timeout_deauth: Client was deauthenticated because the session timed out.
+               # ndsctl_auth: Client was authenticated by the ndsctl tool.
+               # ndsctl_deauth: Client was deauthenticated by the ndsctl tool.
+               # shutdown_deauth: Client was deauthenticated by Nodogsplash terminating.
+               ;;
 esac
 .ft P
 .fi
@@ -963,53 +1124,231 @@ esac
 .sp
 The \fISESSION_START\fP and \fISESSION_END\fP values are the number of seconds since 1970 or may be 0 for unknown/unlimited.
 .sp
-The splash.html page contains the following code:
+\fBThe splash_sitewide.html page contains the following code:\fP
 .INDENT 0.0
 .INDENT 3.5
 .sp
 .nf
 .ft C
-<form method=\(aqGET\(aq action=\(aq$authaction\(aq>
-<input type=\(aqhidden\(aq name=\(aqtok\(aq value=\(aq$tok\(aq>
-<input type=\(aqhidden\(aq name=\(aqredir\(aq value=\(aq$redir\(aq>
-username: <input type=\(aqtext\(aq name=\(aqusername\(aq value=\(aq\(aq size=\(aq12\(aq maxlength=\(aq12\(aq>
+<!DOCTYPE html>
+<html>
+<head>
+<meta http\-equiv="Cache\-Control" content="no\-cache, no\-store, must\-revalidate">
+<meta http\-equiv="Pragma" content="no\-cache">
+<meta http\-equiv="Expires" content="0">
+<meta charset="utf\-8">
+<meta name="viewport" content="width=device\-width, initial\-scale=1.0">
+
+<link rel="shortcut icon" href="/images/splash.jpg" type="image/x\-icon">
+<link rel="stylesheet" type="text/css" href="/splash.css">
+
+<title>$gatewayname Captive Portal.</title>
+
+<!\-\-
+Content:
+       Nodogsplash (NDS), by default, serves this splash page (splash.html)
+       when a client device Captive Portal Detection (CPD) process
+       attempts to send a port 80 request to the Internet.
+
+       You may either embed css in this file or use a separate .css file
+       in the same directory as this file, as demonstrated here.
+
+       It should be noted when designing a custom splash page
+       that for security reasons many CPD implementations:
+               Immediately close the browser when the client has authenticated.
+               Prohibit the use of href links.
+               Prohibit downloading of external files
+                       (including .css and .js).
+               Prohibit the execution of javascript.
+
+Authentication:
+       A client is authenticated on submitting an HTTP form, method=get,
+       passing $authaction, $tok and $redir.
+
+       It is also possible to authenticate using an href link to
+       $authtarget but be aware that many device Captive Portal Detection
+       processes prohibit href links, so this method may not work with
+       all client devices.
+
+Available variables:
+       error_msg: $error_msg
+       gatewayname: $gatewayname
+       tok: $tok
+       redir: $redir
+       authaction: $authaction
+       denyaction: $denyaction
+       authtarget: $authtarget
+       clientip: $clientip
+       clientmac: $clientmac
+       clientupload: $clientupload
+       clientdownload: $clientdownload
+       gatewaymac: $gatewaymac
+       nclients: $nclients
+       maxclients: $maxclients
+       uptime: $uptime
+
+Additional Variables that can be passed back via the HTTP get,
+or appended to the query string of the authtarget link:
+       username
+       password
+\-\->
+
+</head>
+
+<body>
+<div class="offset">
+<med\-blue>$gatewayname Captive Portal.</med\-blue>
+<div class="insert">
+<img style="height:60px; width:60px; float:left;" src="/images/splash.jpg" alt="Splash Page: For access to the Internet.">
+<big\-red>Welcome!</big\-red>
+<hr>
 <br>
-password: <input type=\(aqpassword\(aq name=\(aqpassword\(aq value=\(aq\(aq size=\(aq12\(aq maxlength=\(aq10\(aq>
-<br>
-<input type=\(aqsubmit\(aq value=\(aqEnter\(aq>
+<italic\-black>For access to the Internet, please enter your Username and Password.</italic\-black>
+<br><br>
+<hr>
+
+<form method="get" action="$authaction">
+<input type="hidden" name="tok" value="$tok">
+<input type="hidden" name="redir" value="$redir">
+<input type="text" placeholder="Enter Username" name="username" value="" size="12" maxlength="12">
+<br>Username<br><br>
+<input type="password" placeholder="Enter Password" name="password" value="" size="12" maxlength="10">
+<br>Password<br><br>
+<input type="submit" value="Continue">
 </form>
+
+<hr>
+<copy\-right>Copyright &copy; The Nodogsplash Contributors 2004\-2019.<br>This software is released under the GNU GPL license.</copy\-right>
+
+</div></div>
+</body>
+</html>
 .ft P
 .fi
 .UNINDENT
 .UNINDENT
+.SS Example 2 \- Local NDS Access Log
 .sp
-If a client enters a username \(aqBill\(aq and password \(aqtms\(aq, then the configured \fIbinauth\fP script is executed:
+This example is a script designed to be used with or without FAS and provides local NDS logging. FAS is often remote from the NDS router and this script provides a simple method of interacting directly with the local NDS. FAS can provide the values of custom variables securly embedded as a payload in the redir parameter that is relayed to BinAuth by NDS. FAS can also utilise the username and password parameters to send general purpose variables although these will be readable by the client user on their browser screen.
+.sp
+The log file is stored by default in the /tmp/ directory but no free space checking is done in this simple example.
+It would be a simple matter to change the location of the log file to a USB stick for example.
+.SS Installing Example 2
+.sp
+This script has a single component, the shell script.
+.INDENT 0.0
+.INDENT 3.5
+.INDENT 0.0
+.IP \(bu 2
+binauth_log.sh
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.sp
+The file binauth_log.sh should be copied to a suitable location on the NDS router, eg \fI/etc/nodogsplash/\fP
+.sp
+Assuming FAS is not being used, NDS is then configured by setting the BinAuth option in the config file (/etc/config/nodogsplash on Openwrt, or /etc/nodogsplash/nodogsplash.conf on other operating systems.
+.sp
+On OpenWrt this is most easily accomplished by issuing the following commands:
+.INDENT 0.0
+.INDENT 3.5
+\fIuci set nodogsplash.@nodogsplash[0].binauth=\(aq/etc/nodogsplash/binauth_log.sh\(aq\fP
+.sp
+\fIuci commit nodogsplash\fP
+.UNINDENT
+.UNINDENT
+.sp
+The script file must be executable and is flagged as such in the source archive. If necessary set using the command:
+.INDENT 0.0
+.INDENT 3.5
+\fIchmod u+x /etc/nodogsplash/binauth_log.sh\fP
+.UNINDENT
+.UNINDENT
+.sp
+This script is then activated with the command:
+.INDENT 0.0
+.INDENT 3.5
+\fIservice nodogsplash restart\fP
+.UNINDENT
+.UNINDENT
+.sp
+\fBThe Example 2 script contains the following code:\fP
 .INDENT 0.0
 .INDENT 3.5
 .sp
 .nf
 .ft C
-/etc/nds_auth.sh auth_client 12:34:56:78:90 \(aqBill\(aq \(aqtms\(aq
+#!/bin/sh
+
+# EXAMPLE 2
+# This is an example script for BinAuth
+# It can set the session duration per client and writes a local log.
+#
+# It also retrieves redir, a variable that either contains the originally requested url
+# or a url\-encoded or aes\-encrypted payload of custom variables sent from FAS or PreAuth.
+#
+# If BinAuth is enabled, NDS will call this script as soon as it has received an authentication request
+# from the web page served to the client\(aqs CPD (Captive Portal Detection) Browser by one of the following:
+#
+# 1. splash.html
+# 2. PreAuth
+# 3. FAS
+#
+
+# Get the current Date/Time for the log
+date=$(date)
+
+#
+# Get the action method from NDS ie the first command line argument.
+#
+# Possible values are:
+# "auth_client" \- NDS requests validation of the client
+# "client_auth" \- NDS has authorised the client
+# "client_deauth" \- NDS has deauthorised the client
+# "idle_deauth" \- NDS has deauthorised the client because the idle timeout duration has been exceeded
+# "timeout_deauth" \- NDS has deauthorised the client because the session length duration has been exceeded
+# "ndsctl_auth" \- NDS has authorised the client because of an ndsctl command
+# "ndsctl_deauth" \- NDS has deauthorised the client because of an ndsctl command
+# "shutdown_deauth" \- NDS has deauthorised the client because it received a shutdown command
+#
+action=$1
+
+if [ $action == "auth_client" ]; then
+       #
+       # The redir parameter is sent to this script as the fifth command line argument in url\-encoded form.
+       #
+       # In the case of a simple splash.html login, redir is the URL originally requested by the client CPD.
+       #
+       # In the case of PreAuth or FAS it MAY contain not only the originally requested URL
+       # but also a payload of custom variables defined by Preauth or FAS.
+       #
+       # It may just be simply url\-encoded (fas_secure_enabled 0 and 1), or
+       # aes encrypted (fas_secure_enabled 2)
+       #
+       # The username and password variables may be passed from splash.html, FAS or PreAuth and can be used
+       # not just as "username" and "password" but also as general purpose string variables to pass information to BinAuth.
+
+       # Append to the log.
+       echo "$date method=$1 clientmac=$2 username=$3 password=$4 redir=$5" >> /tmp/binauth.log
+else
+       echo "$date method=$1 clientmac=$2 bytes_incoming=$3 bytes_outgoing=$4 session_start=$5 session_end=$6" >> /tmp/binauth.log
+fi
+
+
+# Set length of session in seconds (eg 24 hours is 86400 seconds \- if set to 0 then defaults to global sessiontimeout value):
+session_length=0
+# The session length could be determined by FAS or PreAuth, on a per client basis, and embedded in the redir variable payload.
+
+# Finally before exiting, output the session length, followed by two integers (reserved for future use in traffic shaping)
+echo $session_length 0 0
+
+# exit 0 tells NDS is is ok to allow the client to have access.
+# exit 1 would tell NDS to deny access.
+exit 0
 .ft P
 .fi
 .UNINDENT
 .UNINDENT
-.sp
-For the authentication to be successful, the exit code of the script must be 0. The output can be up to three values. First the number of seconds the client is to be authenticated, second and third the maximum number of upload and download bytes limits. Values not given to NDS will resort to default values. Note that the traffic shaping feature that uses the upload/download values does not work right now.
-.sp
-After initial authentication by the script, Nodogsplash will immediately acknowlege by calling the binauth script again with:
-.INDENT 0.0
-.INDENT 3.5
-.sp
-.nf
-.ft C
-/etc/nds_auth.sh client_auth 12:34:56:78:90 <incoming_bytes> <outgoing_bytes> <session_start> <session_end>
-.ft P
-.fi
-.UNINDENT
-.UNINDENT
-.sp
-Nodogsplash will also call the script when the client is authenticated and deauthenticated in general.
 .SH TRAFFIC CONTROL
 .SS Overview
 .sp
@@ -1280,7 +1619,7 @@ All other levels are undefined and will result in debug level 3 being set.
 For more options, run ndsctl \-h. (Note that if you want the effect of ndsctl commands to to persist across nodogsplash restarts, you have to edit the configuration file.)
 .SH CUSTOMISING NODOGSPLASH
 .sp
-After initial installation, Nogogsplash (NDS) should be working in its most basic mode and client Captive Portal Detection (CPD) should pop up the default splash page.
+After initial installation, NoDogSplash (NDS) should be working in its most basic mode and client Captive Portal Detection (CPD) should pop up the default splash page.
 .sp
 Before attempting to customise NDS you should ensure it is working in this basic mode before you start.
 .sp

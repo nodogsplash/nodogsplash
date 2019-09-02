@@ -1,3 +1,16 @@
+nodogsplash (4.1.0)
+
+  * BinAuth - Send redir variable to the binauth script, allow passing of custom variable payload [bluewavenet]
+  * BinAuth - Provide two example BinAuth scripts [bluewavenet]
+  * Documentation - Rework Binauth section plus numerous minor updates [bluewavenet]
+  * Deprecate RedirectURL config option as it is rendered obsolete by many CPD implementations, use FAS instead [bluewavenet]
+  * Numerous minor updates to html, css and script files [bluewavenet]
+  * Fix bug - faskey, exit gracefully if not set and fas_secure_enabled = 2 [bluewavenet]
+  * Fix bug - Systemd, Do not set debug level in nodogsplash.service [bluewavenet]
+  * Fix bug - ndsctl, delete lock file if NDS is not started [bluewavenet]
+
+ -- Rob White <dot@blue-wave.net> Mon, 2 Sep 2019 19:38:33 +0000
+
 nodogsplash (4.0.2)
 
   * Fix bug - fas_remotefqdn not supported with option fas_secure_enabled 0 [bluewavenet]
