@@ -3,12 +3,16 @@
 #Copyright &copy; Blue Wave Projects and Services 2015-2019
 #This software is released under the GNU GPL license.
 
-# Get the urlencoded querystring
+# Get the urlencoded querystring and user_agent
 query_enc="$1"
+user_agent_enc="$2"
 
 # The query string is sent to us from NDS in a urlencoded form,
 # so we must decode it here so we can parse it:
 query=$(printf "${query_enc//%/\\x}")
+
+# The User Agent string is sent urlencoded also:
+user_agent=$(printf "${user_agent_enc//%/\\x}")
 
 # In this example script we want to ask the client user for
 # their username and email address.
@@ -135,8 +139,8 @@ login_form="
 	<input type=\"hidden\" name=\"clientip\" value=\"$clientip\">
 	<input type=\"hidden\" name=\"gatewayname\" value=\"$gatewayname\">
 	<input type=\"hidden\" name=\"redir\" value=\"$requested\">
-	<input type=\"text\" name=\"username\" value=\"$username\" autocomplete=\"on\" ><br>:Name<br><br>
-	<input type=\"email\" name=\"emailaddr\" value=\"$emailaddr\" autocomplete=\"on\" ><br>:Email<br><br>
+	<input type=\"text\" name=\"username\" value=\"$username\" autocomplete=\"on\" ><br>Name<br><br>
+	<input type=\"email\" name=\"emailaddr\" value=\"$emailaddr\" autocomplete=\"on\" ><br>Email<br><br>
 	<input type=\"submit\" value=\"Continue\" >
 	</form><hr>
 "
@@ -215,7 +219,7 @@ else
 	echo "</form><hr>"
 
 	# In this example we have decided to log all clients who are granted access
-	echo "$(date) Username=$username Email Address=$emailaddr mac address=$clientmac" >> /tmp/ndslog.log
+	echo "$(date), Username=$username, Email Address=$emailaddr, mac address=$clientmac, user_agent=$user_agent" >> /tmp/ndslog.log
 fi
 
 # Output the page footer

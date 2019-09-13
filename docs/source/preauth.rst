@@ -49,11 +49,12 @@ ie:
  1. **fasremoteip**. Not set (defaults to the gateway ip address).
  2. **fas_secure_enable**. Not set (defaults to enabled).
 
+.. note::
+ From version 3.3.1 onwards, the example PreAuth script is preinstalled.
+
+
 Enabling the Preinstalled Login Script (v3.3.1 to 4.0.1)
 ********************************************************
-
-.. note::
- From version 3.3.1 onwards, this example PreAuth script is preinstalled.
 
 On Openwrt, edit (to uncomment) following lines in the /etc/config/nodogsplash file:
 
@@ -70,6 +71,18 @@ To read:
     `option faspath '/nodogsplash_preauth/'`
 
     `option preauth '/usr/lib/nodogsplash/login.sh'`
+
+Enabling the Preinstalled Login Script (v4.0.2 onwards)
+********************************************************
+
+On Openwrt, edit (to uncomment) following line in the /etc/config/nodogsplash file:
+
+    `#option preauth '/usr/lib/nodogsplash/login.sh'`
+
+To read:
+
+    `option preauth '/usr/lib/nodogsplash/login.sh'`
+
 
 For other operating systems edit the equivalent lines in the /etc/nodogsplash/nodogsplash.conf file
 

@@ -20,6 +20,10 @@ case "$METHOD" in
 	auth_client)
 		USERNAME="$3"
 		PASSWORD="$4"
+		REDIR="$5"
+		USER_AGENT="$6"
+		CLIENTIP="$7"
+
 		if [ "$USERNAME" = "Staff" -a "$PASSWORD" = "weneedit" ]; then
 			# Allow Staff to access the Internet for the global sessiontimeout interval
 			# Further values are reserved for upload and download limits in bytes. 0 for no limit.
