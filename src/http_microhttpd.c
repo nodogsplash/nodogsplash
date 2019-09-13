@@ -56,6 +56,7 @@ static int authenticated(struct MHD_Connection *connection, const char *url, t_c
 static int preauthenticated(struct MHD_Connection *connection, const char *url, t_client *client);
 static int authenticate_client(struct MHD_Connection *connection, const char *redirect_url, t_client *client);
 static int get_host_value_callback(void *cls, enum MHD_ValueKind kind, const char *key, const char *value);
+static int get_user_agent_callback(void *cls, enum MHD_ValueKind kind, const char *key, const char *value);
 static int serve_file(struct MHD_Connection *connection, t_client *client, const char *url);
 static int show_splashpage(struct MHD_Connection *connection, t_client *client);
 static int show_statuspage(struct MHD_Connection *connection, t_client *client);
@@ -84,10 +85,18 @@ static int do_binauth(struct MHD_Connection *connection, const char *binauth, t_
 	const char *password;
 	char msg[255] = {0};
 	char *argv = NULL;
+	const char *user_agent = NULL;
+	char enc_user_agent[256] = {0};
 	int seconds;
 	int upload;
 	int download;
 	int rc;
+
+	s_config *config = config_get_config();
+
+	MHD_get_connection_values(connection, MHD_HEADER_KIND, get_user_agent_callback, &user_agent);
+
+	debug(LOG_INFO, "BinAuth: User Agent is [ %s ]", user_agent);
 
 	username = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "username");
 	password = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "password");
@@ -103,8 +112,12 @@ static int do_binauth(struct MHD_Connection *connection, const char *binauth, t_
 	uh_urlencode(username_enc, sizeof(username_enc), username, strlen(username));
 	uh_urlencode(password_enc, sizeof(password_enc), password, strlen(password));
 	uh_urlencode(redirect_url_enc_buf, sizeof(redirect_url_enc_buf), redirect_url, strlen(redirect_url));
+	uh_urlencode(enc_user_agent, sizeof(enc_user_agent), user_agent, strlen(user_agent));
 
-	safe_asprintf(&argv,"%s auth_client %s %s %s %s", binauth, client->mac, username_enc, password_enc, redirect_url_enc_buf);
+	// Note: username, password and user_agent may contain spaces so argument should be quoted
+	safe_asprintf(&argv,"%s auth_client %s '%s' '%s' '%s' '%s' '%s'",
+		binauth, client->mac, username_enc, password_enc, redirect_url_enc_buf, enc_user_agent, client->ip);
+
 	debug(LOG_INFO, "BinAuth argv: %s", argv);
 	rc = execute_ret_url_encoded(msg, sizeof(msg) - 1, argv);
 	free(argv);
@@ -576,20 +589,30 @@ static int authenticated(struct MHD_Connection *connection,
  */
 static int show_preauthpage(struct MHD_Connection *connection, const char *query)
 {
-	char msg[HTMLMAXSIZE] = {0};
-	// Encoded querystring could be up to 3 times the size of unencoded version
-	char query_enc[QUERYMAXLEN * 3] = {0};
-	int rc;
-	struct MHD_Response *response;
-	int ret;
 	s_config *config = config_get_config();
+	char msg[HTMLMAXSIZE] = {0};
+	const char *user_agent = NULL;
+	char enc_user_agent[256] = {0};
+
+	// Encoded querystring could be up to 3 times the size of unencoded version
+	char enc_query[QUERYMAXLEN * 3] = {0};
+
+	int rc;
+	int ret;
+	struct MHD_Response *response;
+
+	MHD_get_connection_values(connection, MHD_HEADER_KIND, get_user_agent_callback, &user_agent);
+
+	debug(LOG_INFO, "PreAuth: User Agent is [ %s ]", user_agent);
+
+	uh_urlencode(enc_user_agent, sizeof(enc_user_agent), user_agent, strlen(user_agent));
 
 	if (query) {
-		uh_urlencode(query_enc, sizeof(query_enc), query, strlen(query));
-		debug(LOG_DEBUG, "query: %s", query);
+		uh_urlencode(enc_query, sizeof(enc_query), query, strlen(query));
+		debug(LOG_INFO, "PreAuth: query: %s", query);
 	}
 
-	rc = execute_ret(msg, HTMLMAXSIZE - 1, "%s '%s'", config->preauth, query_enc);
+	rc = execute_ret(msg, HTMLMAXSIZE - 1, "%s '%s' '%s'", config->preauth, enc_query, enc_user_agent);
 
 	if (rc != 0) {
 		debug(LOG_WARNING, "Preauth script: %s '%s' - failed to execute", config->preauth, query);
@@ -828,7 +851,8 @@ static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *c
  * @brief construct_querystring
  * @return the querystring
  */
-static char *construct_querystring( t_client *client, char *originurl, char *querystr ) {
+static char *construct_querystring(t_client *client, char *originurl, char *querystr ) {
+
 	s_config *config = config_get_config();
 
 	if (config->fas_secure_enabled == 0) {
@@ -1083,6 +1107,30 @@ static int get_host_value_callback(void *cls, enum MHD_ValueKind kind, const cha
 
 	if (!strcmp("Host", key)) {
 		*host = value;
+		return MHD_NO;
+	}
+
+	return MHD_YES;
+}
+
+/**
+ * @brief get_user_agent_callback save User-Agent into cls which is a char**
+ * @param cls - a char ** pointer to our target buffer. This buffer will be alloc in this function.
+ * @param kind - see doc of	MHD_KeyValueIterator's
+ * @param key
+ * @param value
+ * @return MHD_YES or MHD_NO. MHD_NO means we found our item and this callback will not called again.
+ */
+static int get_user_agent_callback(void *cls, enum MHD_ValueKind kind, const char *key, const char *value)
+{
+	const char **user_agent = (const char **)cls;
+	if (MHD_HEADER_KIND != kind) {
+		*user_agent = NULL;
+		return MHD_NO;
+	}
+
+	if (!strcmp("User-Agent", key)) {
+		*user_agent = value;
 		return MHD_NO;
 	}
 
