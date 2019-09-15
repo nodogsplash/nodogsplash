@@ -198,7 +198,7 @@ config nodogsplash
   # List: fw_mark_blocked
   # Default: 10000 (0001|0000|0000|0000|0000 binary)
   #
-  #list fw_mark_authenticated '30000'
-  #list fw_mark_trusted '20000'
-  #list fw_mark_blocked '10000'
+  #option fw_mark_authenticated '30000'
+  #option fw_mark_trusted '20000'
+  #option fw_mark_blocked '10000'
 
