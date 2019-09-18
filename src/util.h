@@ -62,6 +62,9 @@ char *format_time(time_t time, char buf[64]);
 /* @brief Check if the address is a valid IPv4 or IPv6 address */
 int is_addr(const char* addr);
 
+/* @brief Returns System Uptime in seconds */
+time_t get_system_uptime();
+
 /*
  * @brief Mallocs and returns nodogsplash uptime string
  */
