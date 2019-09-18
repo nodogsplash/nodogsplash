@@ -226,14 +226,18 @@ main_loop(void)
 	char *fasssl = NULL;
 	char *phpcmd = NULL;
 	char *preauth_dir = NULL;
+	time_t sysuptime;
 
 	config = config_get_config();
+
+	sysuptime = get_system_uptime ();
+	debug(LOG_INFO, "main: System Uptime is %li seconds", sysuptime);
 
 	/* Set the time when nodogsplash started */
 	if (!started_time) {
 		debug(LOG_INFO, "Setting started_time");
 		started_time = time(NULL);
-	} else if (started_time < MINIMUM_STARTED_TIME) {
+	} else if (started_time < (time(NULL) - sysuptime)) {
 		debug(LOG_WARNING, "Detected possible clock skew - re-setting started_time");
 		started_time = time(NULL);
 	}

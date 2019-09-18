@@ -369,11 +369,43 @@ format_time(time_t time, char buf[64])
 	return buf;
 }
 
-char *
-get_uptime_string(char buf[64])
-{
-	return format_duration(started_time, time(NULL), buf);
+char * get_uptime_string(char buf[64]) {
+	time_t sysuptime;
+	unsigned long int now, uptimesecs;
+
+	sysuptime = get_system_uptime ();
+	now = time(NULL);
+
+	debug(LOG_INFO, "Uncorrected NDS Uptime: %li seconds ", (now - started_time));
+
+	if ((now - started_time) > sysuptime) {
+		uptimesecs = sysuptime;
+	} else {
+		uptimesecs = now - started_time;
+	}
+
+	return format_duration((now - uptimesecs), now, buf);
 }
+
+time_t get_system_uptime() {
+	time_t sysuptime;
+	char buf[64];
+	FILE *pfp;
+
+	pfp = fopen ("/proc/uptime", "r");
+
+	if (pfp != NULL) {
+		fgets (buf, sizeof(buf), pfp);
+		sysuptime = atol(strtok(buf, "."));
+		debug(LOG_INFO, "Operating System Uptime: %li seconds ", sysuptime);
+		fclose (pfp);
+		return sysuptime;
+	}
+
+	debug(LOG_WARNING, "Unable to determine System Uptime.");
+	return -1;
+}
+
 
 int is_addr(const char* addr) {
 	struct sockaddr_in sa;
@@ -396,19 +428,27 @@ ndsctl_status(FILE *fp)
 	t_MAC *trust_mac;
 	t_MAC *allow_mac;
 	t_MAC *block_mac;
+	time_t sysuptime;
 
 	config = config_get_config();
 
 	fprintf(fp, "==================\nNoDogSplash Status\n====\n");
-
+	sysuptime = get_system_uptime ();
 	now = time(NULL);
-	uptimesecs = now - started_time;
+
+	debug(LOG_INFO, "Uncorrected Uptime: %li seconds ", (now - started_time));
+
+	if ((now - started_time) > sysuptime) {
+		uptimesecs = sysuptime;
+	} else {
+		uptimesecs = now - started_time;
+	}
 
 	fprintf(fp, "Version: " VERSION "\n");
 
-	format_duration(started_time, now, durationbuf);
-	fprintf(fp, "Uptime: %s\n", durationbuf);
+	format_duration(0, uptimesecs, durationbuf);
 
+	fprintf(fp, "Uptime: %s\n", durationbuf);
 	fprintf(fp, "Gateway Name: %s\n", config->gw_name);
 	fprintf(fp, "Managed interface: %s\n", config->gw_interface);
 	fprintf(fp, "Managed IP range: %s\n", config->gw_iprange);
