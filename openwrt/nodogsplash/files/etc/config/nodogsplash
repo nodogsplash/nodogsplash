@@ -253,13 +253,13 @@ config nodogsplash
   # This mask can conflict with the requirements of other packages such as mwan3, sqm etc
   # Any values set here are interpreted as in hex format.
   #
-  # List: fw_mark_authenticated
+  # Option: fw_mark_authenticated
   # Default: 30000 (0011|0000|0000|0000|0000 binary)
   #
-  # List: fw_mark_trusted
+  # Option: fw_mark_trusted
   # Default: 20000 (0010|0000|0000|0000|0000 binary)
   #
-  # List: fw_mark_blocked
+  # Option: fw_mark_blocked
   # Default: 10000 (0001|0000|0000|0000|0000 binary)
   #
   #option fw_mark_authenticated '30000'
