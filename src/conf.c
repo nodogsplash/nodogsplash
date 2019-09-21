@@ -684,7 +684,7 @@ config_read(const char *filename)
 	char lockfile[] = "/tmp/ndsctl.lock";
 
 	//Remove ndsctl lock file if it exists
-	if (fd = fopen(lockfile, "r")) {
+	if ((fd = fopen(lockfile, "r")) != NULL) {
 		fclose(fd);
 		remove(lockfile);
 	}

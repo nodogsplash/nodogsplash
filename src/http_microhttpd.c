@@ -92,8 +92,6 @@ static int do_binauth(struct MHD_Connection *connection, const char *binauth, t_
 	int download;
 	int rc;
 
-	s_config *config = config_get_config();
-
 	MHD_get_connection_values(connection, MHD_HEADER_KIND, get_user_agent_callback, &user_agent);
 
 	debug(LOG_INFO, "BinAuth: User Agent is [ %s ]", user_agent);
@@ -825,7 +823,6 @@ static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *c
 	int ret = 0;
 	const char *separator = "&";
 	char *querystr = query_str;
-	s_config *config = config_get_config();
 
 	get_query(connection, &query, separator);
 	if (!query) {

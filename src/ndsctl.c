@@ -168,7 +168,7 @@ ndsctl_do(const char *socket, const struct argument *arg, const char *param)
 
 	setlogmask(LOG_UPTO (LOG_NOTICE));
 
-	if (fd = fopen(lockfile, "r")) {
+	if ((fd = fopen(lockfile, "r")) != NULL) {
 		openlog ("ndsctl", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 		syslog (LOG_NOTICE, "ndsctl is locked by another process - try again later...");
 		closelog ();
