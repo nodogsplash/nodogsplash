@@ -395,7 +395,7 @@ time_t get_system_uptime() {
 	pfp = fopen ("/proc/uptime", "r");
 
 	if (pfp != NULL) {
-		fgets (buf, sizeof(buf), pfp);
+		(void) fgets (buf, sizeof(buf), pfp);
 		sysuptime = atol(strtok(buf, "."));
 		debug(LOG_INFO, "Operating System Uptime: %li seconds ", sysuptime);
 		fclose (pfp);
