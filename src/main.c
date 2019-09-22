@@ -224,6 +224,7 @@ main_loop(void)
 	char msg[255] = {0};
 	char *fasurl = NULL;
 	char *fasssl = NULL;
+	char *fashid = NULL;
 	char *phpcmd = NULL;
 	char *preauth_dir = NULL;
 	time_t sysuptime;
@@ -284,7 +285,6 @@ main_loop(void)
 		//override all other FAS settings
 		config->fas_remoteip = safe_strdup(config->gw_ip);
 		config->fas_remotefqdn = NULL;
-		config->fas_key = NULL;
 		config->fas_port = config->gw_port;
 		safe_asprintf(&preauth_dir, "/%s/", config->preauthdir);
 		config->fas_path = safe_strdup(preauth_dir);
@@ -310,7 +310,21 @@ main_loop(void)
 			}
 		}
 
-		if (config->fas_key) {
+		if (config->fas_key && config->fas_secure_enabled == 1) {
+			/* Check sha256sum command is available */
+			if (execute_ret_url_encoded(msg, sizeof(msg) - 1, "printf 'test' | sha256sum") == 0) {
+				safe_asprintf(&fashid, "sha256sum");
+				debug(LOG_NOTICE, "sha256sum provider is available");
+			} else {
+				debug(LOG_ERR, "sha256sum provider not available - please install package to provide it");
+				debug(LOG_ERR, "Exiting...");
+				exit(1);
+			}
+			config->fas_hid = safe_strdup(fashid);
+			free(fashid);
+		}
+
+		if (config->fas_key && config->fas_secure_enabled == 2) {
 			/* PHP cli command can be php or php-cli depending on Linux version. */
 			if (execute_ret(msg, sizeof(msg) - 1, "php -v") == 0) {
 				safe_asprintf(&fasssl, "php");
