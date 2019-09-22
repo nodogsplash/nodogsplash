@@ -160,6 +160,7 @@ typedef struct {
 	char *fas_remotefqdn;		/**< @brief FQDN of a remote FAS */
 	char *fas_url;			/**< @brief URL of a remote FAS */
 	char *fas_ssl;			/**< @brief SSL provider for FAS */
+	char *fas_hid;			/**< @brief Hash provider for FAS */
 	char *webroot;			/**< @brief Directory containing splash pages, etc. */
 	char *splashpage;		/**< @brief Name of main splash page */
 	char *statuspage;		/**< @brief Name of info status page */

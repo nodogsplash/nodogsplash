@@ -81,6 +81,27 @@ extern int created_httpd_threads;
 extern int current_httpd_threads;
 
 
+int hash_str(char* hash, int hash_len, const char *src)
+{
+	char *hashcmd = NULL;
+
+	s_config *config = config_get_config();
+
+	safe_asprintf(&hashcmd, "printf '%s' | %s | awk -F' ' '{printf $1}'", src, config->fas_hid);
+
+	if (execute_ret_url_encoded(hash, hash_len - 1, hashcmd) == 0) {
+		debug(LOG_DEBUG, "Source string: %s", src);
+		debug(LOG_DEBUG, "Hashed string: %s", hash);
+	} else {
+		debug(LOG_ERR, "Failed to hash string");
+		free (hashcmd);
+		return -1;
+	}
+	free (hashcmd);
+	return 0;
+}
+
+
 static int _execute_ret(char* msg, int msg_len, const char *cmd)
 {
 	struct sigaction sa, oldsa;

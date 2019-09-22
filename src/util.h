@@ -65,14 +65,19 @@ int is_addr(const char* addr);
 /* @brief Returns System Uptime in seconds */
 time_t get_system_uptime();
 
+/* @brief Returns the hash of a string */
+int hash_str(char *buf, int hash_len, const char *src);
+
 /*
  * @brief Mallocs and returns nodogsplash uptime string
  */
 char *get_uptime_string(char buf[64]);
+
 /*
  * @brief Writes a human-readable paragraph of the status of the nodogsplash process
  */
 void ndsctl_status(FILE *fp);
+
 /*
  * @brief Writes a machine-readable dump of currently connected clients
  */

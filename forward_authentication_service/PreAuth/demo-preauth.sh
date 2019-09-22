@@ -1,6 +1,6 @@
 #!/bin/sh
-#Copyright &copy; The Nodogsplash Contributors 2004-2019
-#Copyright &copy; Blue Wave Projects and Services 2015-2019
+#Copyright (C) The Nodogsplash Contributors 2004-2019
+#Copyright (C) Blue Wave Projects and Services 2015-2019
 #This software is released under the GNU GPL license.
 
 # Get the urlencoded querystring and user_agent
@@ -8,8 +8,8 @@ query_enc="$1"
 user_agent_enc="$2"
 
 # The query string is sent to us from NDS in a urlencoded form,
-# so we must decode it here so we can parse it:
-query=$(printf "${query_enc//%/\\x}")
+# we can decode it or parts of it using something like the following:
+# query=$(printf "${query_enc//%/\\x}")
 
 # The User Agent string is sent urlencoded also:
 user_agent=$(printf "${user_agent_enc//%/\\x}")
@@ -64,19 +64,16 @@ user_agent=$(printf "${user_agent_enc//%/\\x}")
 
 
 # Parse for the system variables always sent by NDS:
-clientip="$(echo $query | awk -F ', ' '{print $1;}' | awk -F 'clientip=' '{print $2;}')"
-gatewayname="$(echo $query | awk -F ', ' '{print $2;}' | awk -F 'gatewayname=' '{print $2;}')"
+queryvarlist="clientip gatewayname hid redir status username emailaddr"
 
-# The third system variable is either the originally requested url:
-requested="$(echo $query | awk -F ', ' '{print $3;}' | awk -F 'redir=' '{print $2;}')"
+for var in $queryvarlist; do
+	eval $var=$(echo "$query_enc" | awk -F "$var%3d" '{print $2}' | awk -F "%2c%20" '{print $1}')
+done
 
-# or it is a status message:
-status="$(echo $query | awk -F ', ' '{print $3;}' | awk -F 'status=' '{print $2;}')"
-
-# Parse for additional variables we define in this script, in this case username and emailaddr
-username="$(echo $query | awk -F ', ' '{print $4;}' | awk -F 'username=' '{print $2;}')"
-emailaddr="$(echo $query | awk -F ', ' '{print $5;}' | awk -F 'emailaddr=' '{print $2;}')"
-
+# URL decode vars that need it:
+requested=$(printf "${redir//%/\\x}")
+username=$(printf "${username//%/\\x}")
+emailaddr=$(printf "${emailaddr//%/\\x}")
 
 # Define some common html as the first part of the page to be served by NDS
 #
@@ -138,6 +135,7 @@ login_form="
 	<form action=\"/nodogsplash_preauth/\" method=\"get\">
 	<input type=\"hidden\" name=\"clientip\" value=\"$clientip\">
 	<input type=\"hidden\" name=\"gatewayname\" value=\"$gatewayname\">
+	<input type=\"hidden\" name=\"hid\" value=\"$hid\">
 	<input type=\"hidden\" name=\"redir\" value=\"$requested\">
 	<input type=\"text\" name=\"username\" value=\"$username\" autocomplete=\"on\" ><br>Name<br><br>
 	<input type=\"email\" name=\"emailaddr\" value=\"$emailaddr\" autocomplete=\"on\" ><br>Email<br><br>

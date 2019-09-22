@@ -61,7 +61,7 @@ static int serve_file(struct MHD_Connection *connection, t_client *client, const
 static int show_splashpage(struct MHD_Connection *connection, t_client *client);
 static int show_statuspage(struct MHD_Connection *connection, t_client *client);
 static int show_preauthpage(struct MHD_Connection *connection, const char *query);
-static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, const char *originurl, const char *querystr);
+static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, t_client *client, const char *originurl, const char *querystr);
 static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *client, const char *host, const char *url);
 static int send_error(struct MHD_Connection *connection, int error);
 static int send_redirect_temp(struct MHD_Connection *connection, const char *url);
@@ -406,6 +406,9 @@ static int try_to_authenticate(struct MHD_Connection *connection, t_client *clie
 {
 	s_config *config;
 	const char *tok;
+	char hid[128] = {0};
+	char rhid[128] = {0};
+	char *rhidraw = NULL;
 
 	/* a successful auth looks like
 	 * http://192.168.42.1:2050/nodogsplash_auth/?redir=http%3A%2F%2Fberlin.freifunk.net%2F&tok=94c4cdd2
@@ -418,9 +421,23 @@ static int try_to_authenticate(struct MHD_Connection *connection, t_client *clie
 		tok = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "tok");
 		debug(LOG_DEBUG, "client->token=%s tok=%s ", client->token, tok );
 
-		if (tok && !strcmp(client->token, tok)) {
-			/* Token is valid */
-			return 1;
+		//Check if token (tok) or hash_id (hid) mode
+		if (strlen(tok) > 8) {
+			// hid mode
+			hash_str(hid, sizeof(hid), client->token);
+			safe_asprintf(&rhidraw, "%s%s", hid, config->fas_key);
+			hash_str(rhid, sizeof(rhid), rhidraw);
+			free (rhidraw);
+			if (tok && !strcmp(rhid, tok)) {
+				/* rhid is valid */
+				return 1;
+			}
+		} else {
+			// tok mode
+			if (tok && !strcmp(client->token, tok)) {
+				/* Token is valid */
+				return 1;
+			}
 		}
 	}
 
@@ -475,7 +492,7 @@ static int authenticate_client(struct MHD_Connection *connection,
 			debug(LOG_DEBUG, "redirect_url_enc after binauth deny: %s", redirect_url_enc);
 
 			querystr=construct_querystring(client, redirect_url_enc, querystr);
-			ret = encode_and_redirect_to_splashpage(connection, redirect_url_enc, querystr);
+			ret = encode_and_redirect_to_splashpage(connection, client, redirect_url_enc, querystr);
 			return ret;
 		}
 		rc = auth_client_auth(client->id, "client_auth");
@@ -643,10 +660,11 @@ static int preauthenticated(struct MHD_Connection *connection,
 {
 	const char *host = NULL;
 	const char *redirect_url;
-	char *querystr = NULL;
 	char query_str[QUERYMAXLEN] = {0};
 	char *query = query_str;
+	char *querystr = query_str;
 	char portstr[MAX_HOSTPORTLEN] = {0};
+	char originurl[QUERYMAXLEN] = {0};
 
 	int ret;
 	s_config *config = config_get_config();
@@ -683,7 +701,7 @@ static int preauthenticated(struct MHD_Connection *connection,
 			debug(LOG_DEBUG, "Preauthenticated - splash.css or authdir detected");
 		} else {
 			if (strstr(host, portstr) != NULL) {
-				debug(LOG_DEBUG, "Preauthenticated -  403 Direct Access Fobidden");
+				debug(LOG_DEBUG, "Preauthenticated -  403 Direct Access Forbidden");
 				ret = send_error(connection, 403);
 				return ret;
 			}
@@ -721,7 +739,9 @@ static int preauthenticated(struct MHD_Connection *connection,
 
 		if (!try_to_authenticate(connection, client, host, url)) {
 			/* user used an invalid token, redirect to splashpage but hold query "redir" intact */
-			return encode_and_redirect_to_splashpage(connection, redirect_url, querystr);
+			uh_urlencode(originurl, sizeof(originurl), redirect_url, strlen(redirect_url));
+			querystr=construct_querystring(client, originurl, querystr);
+			return encode_and_redirect_to_splashpage(connection, client, originurl, querystr);
 		}
 
 		return authenticate_client(connection, redirect_url, client);
@@ -742,7 +762,7 @@ static int preauthenticated(struct MHD_Connection *connection,
  * @param originurl
  * @return
  */
-static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, const char *originurl, const char *querystr)
+static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, t_client *client, const char *originurl, const char *querystr)
 {
 	char msg[QUERYMAXLEN] = {0};
 	char *splashpageurl = NULL;
@@ -759,8 +779,8 @@ static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, 
 			safe_asprintf(&splashpageurl, "%s?authaction=http://%s/%s/%s&redir=%s",
 				config->fas_url, config->gw_address, config->authdir, querystr, originurl);
 		} else if (config->fas_secure_enabled == 1) {
-			safe_asprintf(&splashpageurl, "%s%s&redir=%s",
-				config->fas_url, querystr, originurl);
+				safe_asprintf(&splashpageurl, "%s%s&redir=%s",
+					config->fas_url, querystr, originurl);
 		} else if (config->fas_secure_enabled == 2) {
 			safe_asprintf(&phpcmd,
 				"echo '<?php \n"
@@ -799,7 +819,7 @@ static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, 
 			config->gw_address, config->splashpage, originurl);
 	}
 
-	debug(LOG_DEBUG, "splashpageurl: %s", splashpageurl);
+	debug(LOG_INFO, "splashpageurl: %s", splashpageurl);
 
 	ret = send_redirect_temp(connection, splashpageurl);
 	free(splashpageurl);
@@ -838,7 +858,7 @@ static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *c
 	debug(LOG_DEBUG, "originurl: %s", originurl);
 
 	querystr=construct_querystring(client, originurl, querystr);
-	ret = encode_and_redirect_to_splashpage(connection, originurl, querystr);
+	ret = encode_and_redirect_to_splashpage(connection, client, originurl, querystr);
 	free(originurl_raw);
 	return ret;
 }
@@ -850,12 +870,23 @@ static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *c
  */
 static char *construct_querystring(t_client *client, char *originurl, char *querystr ) {
 
+	char hash[128] = {0};
+
 	s_config *config = config_get_config();
 
 	if (config->fas_secure_enabled == 0) {
 		snprintf(querystr, QUERYMAXLEN, "?clientip=%s&gatewayname=%s&tok=%s", client->ip, config->gw_name, client->token);
+
 	} else if (config->fas_secure_enabled == 1) {
-		snprintf(querystr, QUERYMAXLEN, "?clientip=%s&gatewayname=%s", client->ip, config->gw_name);
+
+			if (config->fas_hid) {
+				hash_str(hash, sizeof(hash), client->token);
+				debug(LOG_INFO, "hid=%s", hash);
+				snprintf(querystr, QUERYMAXLEN, "?clientip=%s&gatewayname=%s&hid=%s", client->ip, config->gw_name, hash);
+			} else {
+				snprintf(querystr, QUERYMAXLEN, "?clientip=%s&gatewayname=%s", client->ip, config->gw_name);
+			}
+
 	} else if (config->fas_secure_enabled == 2) {
 		snprintf(querystr, QUERYMAXLEN,
 			"clientip=%s%sclientmac=%s%sgatewayname=%s%stok=%s%sgatewayaddress=%s%sauthdir=%s%soriginurl=%s",
@@ -866,6 +897,7 @@ static char *construct_querystring(t_client *client, char *originurl, char *quer
 			config->gw_address, QUERYSEPARATOR,
 			config->authdir, QUERYSEPARATOR,
 			originurl);
+
 	} else {
 		snprintf(querystr, QUERYMAXLEN, "?clientip=%s&gatewayname=%s", client->ip, config->gw_name);
 	}
@@ -901,15 +933,23 @@ int send_redirect_temp(struct MHD_Connection *connection, const char *url)
 	char *redirect = NULL;
 
 	const char *redirect_body = "<html><head></head><body><a href='%s'>Click here to continue to<br>%s</a></body></html>";
+
 	safe_asprintf(&redirect, redirect_body, url, url);
 
-	response = MHD_create_response_from_buffer(strlen(redirect), redirect, MHD_RESPMEM_MUST_FREE);
+	response = MHD_create_response_from_buffer(strlen(redirect), redirect, MHD_RESPMEM_MUST_COPY);
+	free (redirect);
+
 	if (!response) {
 		return send_error(connection, 503);
 	}
 
 	// MHD_set_response_options(response, MHD_RF_HTTP_VERSION_1_0_ONLY, MHD_RO_END);
-	MHD_add_response_header(response, "Location", url);
+	ret = MHD_add_response_header(response, "Location", url);
+
+	if (ret == MHD_NO) {
+		debug(LOG_DEBUG, "Error adding Location header");
+	}
+
 	MHD_add_response_header(response, "Connection", "close");
 	ret = MHD_queue_response(connection, MHD_HTTP_TEMPORARY_REDIRECT, response);
 	MHD_destroy_response(response);

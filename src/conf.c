@@ -215,6 +215,7 @@ config_init(void)
 	config.fas_remotefqdn = NULL;
 	config.fas_url = NULL;
 	config.fas_ssl = NULL;
+	config.fas_hid = NULL;
 	config.fas_path = DEFAULT_FASPATH;
 	config.webroot = safe_strdup(DEFAULT_WEBROOT);
 	config.splashpage = safe_strdup(DEFAULT_SPLASHPAGE);
