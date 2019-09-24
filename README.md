@@ -18,7 +18,7 @@ how to customize its behavior for your application.
 
 ## 1. Overview
 
-**Nodogspash** (NDS) is a high performance, small footprint Captive Portal, offering by default a simple splash page restricted Internet connection, yet incorporates an API that allows the creation of sophisticated authentication applications.
+**Nodogsplash** (NDS) is a high performance, small footprint Captive Portal, offering by default a simple splash page restricted Internet connection, yet incorporates an API that allows the creation of sophisticated authentication applications.
 
 **If you want to provide simple and immediate public access** to an Internet connection with users giving some acknowledgment of the service, Nodogsplash does this by default.
 Customising the page seen by users is a simple matter of editing the simple default html splash page file.
