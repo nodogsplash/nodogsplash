@@ -7,7 +7,7 @@
  1. fasport: Set to the port number the remote webserver is using (typically port 80)
 
  2. faspath: This is the path from the FAS Web Root to the location of this FAS script (not from the file system root).
-	eg. /nds/fas-aes.php
+	eg. /nds/fas-hid.php
 
  3. fasremoteip: The remote IPv4 address of the remote server eg. 46.32.240.41
 
@@ -21,23 +21,13 @@
 	It can be any combination of A-Z, a-z and 0-9, up to 16 characters with no white space.
 	eg 1234567890
 
- 6. fas_secure_enabled:  set to level 2
-	The NDS parameters: clientip, clientmac, gatewayname, client token, gatewayaddress, authdir and originurl
-	are encrypted using fas_key and passed to FAS in the query string.
+ 6. fas_secure_enabled:  set to level 1
+	The NDS parameters: clientip, clientmac, gatewayname, hid and redir
+	are passed to FAS in the query string.
 
-	The query string will also contain a randomly generated initialization vector to be used by the FAS for decryption.
-	
-	The "php-cli" package and the "php-openssl" module must both be installed for fas_secure level 2.
-
- Nodogsplash does not have "php-cli" and "php-openssl" as dependencies, but will exit gracefully at runtime if this package and module
- are not installed when fas_secure_enabled is set to level 2.
-
- The FAS must use the initialisation vector passed with the query string and the pre shared faskey to decrypt the required information.
-
- The remote web server (that runs this script) must have the "php-openssl" module installed (standard for most hosting services).
 
  This script requires the client user to enter their Fullname and email address. This information is stored in a log file kept
- in the same folder as this script.
+ in /tmp or the same folder as this script.
 
  This script requests the client CPD to display the NDS splash.jpg image directly from the 
 	/etc/nodogsplash/htdocs/images folder of the NDS device.
@@ -50,6 +40,7 @@
 */
 
 $key="1234567890";
+$authdir="nodogsplash_auth";
 
 date_default_timezone_set("UTC");
 
@@ -59,39 +50,33 @@ if (isset($_SERVER['HTTPS'])) {
 	$protocol="http://";
 }
 
-$fullname=$email=$invalid="";
-$cipher="AES-256-CBC";
+$fullname=$email=$clientip=$gatewayname=$gatewayaddress=$redir="";
+
 $docroot=$_SERVER['DOCUMENT_ROOT'];
 $me=$_SERVER['SCRIPT_NAME'];
 $home=str_replace(basename($_SERVER['SCRIPT_NAME']),"",$_SERVER['SCRIPT_NAME']);
 
 $header="NDS Captive Portal";
 
+$invalid=false;
 
-if (isset($_GET['fas']) and isset($_GET['iv']))  {
-	$string=$_GET['fas'];
-	$iv=$_GET['iv'];
-	$decrypted=openssl_decrypt( base64_decode( $string ), $cipher, $key, 0, $iv );
-	$dec_r=explode(", ",$decrypted);
-
-	foreach ($dec_r as $dec) {
-		list($name,$value)=explode("=",$dec);
-		if ($name == "clientip") {$clientip=$value;}
-		if ($name == "clientmac") {$clientmac=$value;}
-		if ($name == "gatewayname") {$gatewayname=$value;}
-		if ($name == "tok") {$tok=$value;}
-		if ($name == "gatewayaddress") {$gatewayaddress=$value;}
-		if ($name == "authdir") {$authdir=$value;}
-		if ($name == "originurl") {$originurl=$value;}
-	}
-
-} else if (isset($_GET["status"])) {
-	$gatewayname=$_GET["gatewayname"];
-	$gatewayaddress=$_GET["gatewayaddress"];
-	$originurl="";
-	$loggedin=true;
+if (isset($_GET['hid']))  {
+	$hid=$_GET['hid'];
+	$clientip=$_GET['clientip'];
+	$gatewayname=$_GET['gatewayname'];
+	$gatewayaddress=$_GET['gatewayaddress'];
+	$redir=$_GET['redir'];
 } else {
 	$invalid=true;
+}
+
+if (isset($_GET["status"])) {
+	$clientip=$_GET['clientip'];
+	$gatewayname=$_GET['gatewayname'];
+	$gatewayaddress=$_GET['gatewayaddress'];
+	$redir="";
+	$loggedin=true;
+	$invalid=false;
 }
 
 if (!isset($gatewayname)) {
@@ -101,11 +86,12 @@ if (!isset($gatewayname)) {
 $landing=false;
 $terms=false;
 
-if (isset($_GET["originurl"])) {
-	$originurl=$_GET["originurl"];
-	$landing=true;
-} else if (isset($_GET["terms"])) {
-	$gatewayname=$_GET["gatewayname"];
+if (isset($_GET["redir"])) {
+	$redir=$_GET["redir"];
+	#$landing=true;
+}
+
+if (isset($_GET["terms"])) {
 	$terms=true;
 }
 
@@ -114,20 +100,17 @@ header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
 header("Cache-Control: no-cache");
 header("Pragma: no-cache");
 
-if (isset($gatewayaddress)) {
-	$imagepath="http://".$gatewayaddress."/images/splash.jpg";
-} else {
-	$imagepath="";
-}
+
+$imagepath="http://".$gatewayaddress."/images/splash.jpg";
+
 
 //Output our responsive page
 echo"<!DOCTYPE html>\n<html>\n<head>\n".
 	"<meta charset=\"utf-8\" />\n".
 	"<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n";
 
-if (isset($gatewayaddress)) {
-	echo "<link rel=\"shortcut icon\" href=".$imagepath." type=\"image/x-icon\">";
-}
+echo "<link rel=\"shortcut icon\" href=".$imagepath." type=\"image/x-icon\">";
+
 
 echo "<title>".$header."</title>\n"."<style>\n";
 insert_css();
@@ -139,9 +122,7 @@ echo "<hr><b style=\"color:blue;\">".$gatewayname.
 	" </b><br><b>".$header."</b><br><hr>\n";
 echo"<div class=\"insert\">\n";
 
-if (isset($gatewayaddress)) {
-	echo "<img style=\"float:left; width:4em; height:4em;\" src=\"".$imagepath."\">";
-}
+echo "<img style=\"float:left; width:4em; height:4em;\" src=\"".$imagepath."\">";
 
 if ($terms == true) {
 	display_terms();
@@ -153,7 +134,8 @@ if ($landing == true) {
 	echo "<p><big-red>You are now logged in and have access to the Internet.</big-red></p>";
 	echo "<hr>";
 	echo "<p><italic-black>You can use your Browser, Email and other network Apps as you normally would.</italic-black></p>";
-	echo "\n<form>\n<input type=\"button\" VALUE=\"Continue\" onClick=\"location.href='".$originurl."'\" >\n</form>\n";
+	echo "\n<form>\n<input type=\"button\" VALUE=\"Continue\" onClick=\"location.href='".$redir."'\" >\n</form>\n";
+	read_terms($me, $clientip, $gatewayname, $gatewayaddress, $hid, $redir);
 	footer();
 	exit(0);
 }
@@ -163,7 +145,8 @@ if (isset($_GET["status"])) {
 		echo "<p><big-red>You are already logged in and have access to the Internet.</big-red></p>";
 		echo "<hr>";
 		echo "<p><italic-black>You can use your Browser, Email and other network Apps as you normally would.</italic-black></p>";
-		read_terms($me,$gatewayname);
+		$hid=$redir="status";
+		read_terms($me, $clientip, $gatewayname, $gatewayaddress, $hid, $redir);
 		footer();
 		exit(0);
 	}
@@ -184,10 +167,13 @@ if ($fullname == "" or $email == "") {
 	if ($invalid == true) {
 		echo "<br><b style=\"color:red;\">ERROR! Incomplete data passed from NDS</b>\n";
 	} else {
-		read_terms($me, $gatewayname);
+		read_terms($me, $clientip, $gatewayname, $gatewayaddress, $hid, $redir);
 		echo "<form action=\"".$me."\" method=\"get\" >\n";
-		echo "<input type=\"hidden\" name=\"fas\" value=\"".$string."\">\n";
-		echo "<input type=\"hidden\" name=\"iv\" value=\"".$iv."\">\n";
+		echo "<input type=\"hidden\" name=\"clientip\" value=\"".$clientip."\">\n";
+		echo "<input type=\"hidden\" name=\"gatewayname\" value=\"".$gatewayname."\">\n";
+		echo "<input type=\"hidden\" name=\"gatewayaddress\" value=\"".$gatewayaddress."\">\n";
+		echo "<input type=\"hidden\" name=\"hid\" value=\"".$hid."\">\n";
+		echo "<input type=\"hidden\" name=\"redir\" value=\"".$redir."\">\n";
 		echo "<hr>Full Name:<br>\n";
 		echo "<input type=\"text\" name=\"fullname\" value=\"".$fullname."\">\n<br>\n";
 		echo "Email Address:<br>\n";
@@ -200,20 +186,22 @@ if ($fullname == "" or $email == "") {
 	# Be aware that many devices will close the login browser as soon as
 	# the client taps continue, so now is the time to deliver your message.
 	$authaction="http://".$gatewayaddress."/".$authdir."/";
+	$tok=hash('sha256', $hid.$key);
 
 	echo "<big-red>Thankyou!</big-red>\n".
-	"<br><b>Welcome $fullname</b>\n".
-	"<br><italic-black> Your News or Advertising could be here, contact the owners of this Hotspot to find out how!</italic-black>\n".
-	"<form action=\"".$authaction."\" method=\"get\">\n".
-	"<input type=\"hidden\" name=\"tok\" value=\"".$tok."\">\n".
-	"<input type=\"hidden\" name=\"redir\" value=\"".$originurl."\"><br>\n".
-	"<input type=\"submit\" value=\"Continue\" >\n".
-	"</form><hr>\n";
-	read_terms($me,$gatewayname);
+		"<br><b>Welcome $fullname</b>\n".
+		"<br><italic-black> Your News or Advertising could be here, contact the owners of this Hotspot to find out how!</italic-black>\n".
+		"<form action=\"".$authaction."\" method=\"get\">\n".
+		"<input type=\"hidden\" name=\"tok\" value=\"".$tok."\">\n".
+		"<input type=\"hidden\" name=\"redir\" value=\"".$redir."\"><br>\n".
+		"<input type=\"submit\" value=\"Continue\" >\n".
+		"</form><hr>\n";
+	read_terms($me, $clientip, $gatewayname, $gatewayaddress, $hid, $redir);
 
 	# In this example we have decided to log all clients who are granted access
 	# Note: the web server daemon must have read and write permissions to the folder defined in $logpath
-	# By default $logpath is null so the logfile will be written to the folder this script resides in.
+	# By default $logpath is null so the logfile will be written to the folder this script resides in,
+	# or if it exists /tmp/
 
 	$logpath="";
 
@@ -221,7 +209,7 @@ if ($fullname == "" or $email == "") {
 		$logpath="/tmp/";
 	}
 
-	$log=date('d/m/Y H:i:s', $_SERVER['REQUEST_TIME'])." Username=".$fullname." emailaddress=".$email." macaddress=".$clientmac."\n";
+	$log=date('d/m/Y H:i:s', $_SERVER['REQUEST_TIME'])." Username=".$fullname." emailaddress=".$email."\n";
 
 	$gwname=str_replace(" ", "_", trim($gatewayname));
 	$logfile=$logpath.$gwname."_log.php";
@@ -250,11 +238,15 @@ function footer() {
 	echo "</body>\n</html>\n";
 }
 
-function read_terms($me, $gatewayname) {
+function read_terms($me, $clientip, $gatewayname, $gatewayaddress, $hid, $redir) {
 	//terms of service button
 	echo "<form action=\"".$me."\" method=\"get\" >\n".
 		"<input type=\"hidden\" name=\"terms\" value=\"terms\">\n".
+		"<input type=\"hidden\" name=\"clientip\" value=\"".$clientip."\">\n".
 		"<input type=\"hidden\" name=\"gatewayname\" value=\"".$gatewayname."\">\n".
+		"<input type=\"hidden\" name=\"gatewayaddress\" value=\"".$gatewayaddress."\">\n".
+		"<input type=\"hidden\" name=\"hid\" value=\"".$hid."\">\n".
+		"<input type=\"hidden\" name=\"redir\" value=\"".$redir."\">\n".
 		"<input type=\"submit\" value=\"Read Terms of Service\" >\n".
 		"</form>\n";
 }
