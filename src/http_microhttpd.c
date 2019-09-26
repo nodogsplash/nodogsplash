@@ -609,8 +609,8 @@ static int show_preauthpage(struct MHD_Connection *connection, const char *query
 	const char *user_agent = NULL;
 	char enc_user_agent[256] = {0};
 
-	// Encoded querystring could be up to 3 times the size of unencoded version
-	char enc_query[QUERYMAXLEN * 3] = {0};
+	// Encoded querystring couild be bigger than the unencoded version
+	char enc_query[QUERYMAXLEN + QUERYMAXLEN/4] = {0};
 
 	int rc;
 	int ret;
