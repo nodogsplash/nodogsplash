@@ -213,11 +213,12 @@ if ($fullname == "" or $email == "") {
 
 	# In this example we have decided to log all clients who are granted access
 	# Note: the web server daemon must have read and write permissions to the folder defined in $logpath
-	# By default $logpath is null so the logfile will be written to the folder this script resides in.
+	# By default $logpath is null so the logfile will be written to the folder this script resides in,
+	# or the /tmp directory if on the NDS router
 
 	$logpath="";
 
-	if (is_writable("/tmp")) {
+	if (file_exists("/etc/nodogsplash")) {
 		$logpath="/tmp/";
 	}
 

@@ -30,7 +30,7 @@
 #define MAX_BUF 4096
 
 /* Max length of a query string in bytes */
-#define QUERYMAXLEN 4096
+#define QUERYMAXLEN 2048
 
 /* Separator for Preauth query string */
 #define QUERYSEPARATOR ", "
