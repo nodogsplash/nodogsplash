@@ -37,11 +37,11 @@ Security
 
 **If FAS Secure is enabled** (Levels 1 (default), and 2), the client authentication token is kept secret until FAS verification is complete.
 
-   **If set to "0"** the client token is sent to the FAS in clear text in the query string of the
-   redirect along with authaction and redir.
+   **If set to "0"** the client token is sent to the FAS in clear text in the query string of the redirect along with authaction and redir.
 
-   **If set to "1"**
-   authaction and the client token are not revealed and it is the responsibility of the FAS to request the token from NDSCTL.
+   **If set to "1"** When the sha256sum command is available AND faskey is set, the client token will be hashed and sent to the FAS identified as "hid" in the query string. The gatewayaddress is also sent on the query string, allowing the FAS to construct the authaction parameter. FAS must return the sha256sum of the concatenation of the original hid and faskey to be used by NDS for client authentication. This is returned in the normal way in the query string identified as "tok". NDS will automatically detect whether hid mode is active or the raw token is being returned.
+
+   Should sha256sum not be available or faskey is not set, then it is the responsibility of the FAS to request the token from NDSCTL.
 
    **If set to "2"**
    clientip, clientmac, gatewayname, client token, gatewayaddress, authdir and originurl are encrypted using faskey and passed to FAS in the query string.
@@ -56,7 +56,7 @@ Security
 
    The FAS must use the query string passed initialisation vector and the pre shared fas_key to decrypt the query string. An example FAS level 2 php script is preinstalled in the /etc/nodogsplash directory and also supplied in the source code.
 
-**Option faskey must be set** if fas secure is set to level 2.
+**Option faskey must be set** if fas secure is set to level 2 but is optional for level 1.
 
   Option faskey is used to encrypt the data sent by NDS to FAS.
   It can be any combination of A-Z, a-z and 0-9, up to 16 characters with no white space.
@@ -80,6 +80,14 @@ Example FAS Query strings
 
   **Level 1** (fas_secure_enabled = 1), NDS sends only information required to identify, the instance of NDS, the client and the client's originally requested URL.
 
+  **If faskey is set**, NDS sends a digest of the random client token:
+
+  `http://fasremotefqdn:fasport/faspath?hid=[hash_id]&gatewayname=[gatewayname]&clientip=[clientip]&redir=[requested-url]`
+
+   The FAS must return the hash of the concatenated hid value and the value of faskey identified in the query string as "tok". NDS will automatically detect this.
+
+  **If faskey is not set** the following is sent:
+
   `http://fasremotefqdn:fasport/faspath?gatewayname=[gatewayname]&clientip=[clientip]&redir=[requested-url]`
 
    It is the responsibility of FAS to obtain the unique client token allocated by NDS as well as constructing the return URL to NDS.
@@ -92,7 +100,7 @@ Example FAS Query strings
 
    `ndsctl json $clientip | grep token | cut -c 10- | cut -c -8`
 
-  A more sophisticated json parser could be used to extract all the client variables supplied by ndsctl, an example can be found in the default PreAuth Login script in /usr/lib/nogogsplash/login.sh.
+   A more sophisticated json parser could be used to extract all the client variables supplied by ndsctl, an example can be found in the default PreAuth Login script in /usr/lib/nogogsplash/login.sh.
 
   **Level 2** (fas_secure_enabled = 2), NDS sends enrypted information to FAS.
 
