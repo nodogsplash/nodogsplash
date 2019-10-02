@@ -129,7 +129,7 @@ Example FAS Query strings
 After Successful Verification by FAS
 ************************************
 
-If the client is successfully verified by the FAS, FAS will return the unique token to NDS to finally allow the client access to the Internet.
+If the client is successfully verified by the FAS, FAS will return the unique token, or its hashed equivalent to NDS to finally allow the client access to the Internet.
 
 
 Post FAS processing
