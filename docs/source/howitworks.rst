@@ -1,42 +1,75 @@
-How Nodogsplash (NDS) works
+How NoDogSplash (NDS) works
 ###########################
 
-A wireless router, typically running OpenWrt or some other Linux distribution, has two or more interfaces; NDS manages one of them. This will typically be br-lan, the bridge to both the wireless and wired LAN; or could be for example wlan0 if you wanted NDS to work just on the wireless interface.
+NoDogSplash is a Captive Portal Engine. Any Captive Portal, including NDS, will have two main components:
+
+ * Something that does the capturing, and
+ * Something to provide a Portal for client users to log in.
+
+A wireless router will typically be running OpenWrt or some other Linux distribution.
+
+A router, by definition, will have two or more interfaces, at least one to connect to the wide area network (WAN) or Internet feed, and at least one connecting to the local area network (LAN).
+
+Each LAN interface must also act as the Default IP Gateway for its LAN, ideally with the interface serving IP addresses to client devices using DHCP.
+
+Multiple LAN interfaces can be combined into a single bridge interface. For example, ethernet, 2.4Ghz and 5Ghz networks are typically combined into a single bridge interface. Logical interface names will be assigned such as eth0, wlan0, wlan1 etc. with the combined bridge interface named as br-lan.
+
+NDS will manage one or more of them of them. This will typically be br-lan, the bridge to both the wireless and wired LAN, but could be, for example, wlan0 if you wanted NDS to work just on the wireless interface.
 
 Summary of Operation
 ********************
 
- By default, NDS blocks everything, but intercepts port 80 requests.
+By default, NDS blocks everything, but intercepts port 80 requests.
 
- An initial port 80 request will be generated on a client device, either by the user manually browsing to an http web page, or automatically by the client device's built in Captive Portal Detection (CPD).
+An initial port 80 request will be generated on a client device, usually automatically by the client device's built in Captive Portal Detection (CPD), or possibly by the user manually browsing to an http web page.
 
- As soon as this initial port 80 request is received, NDS will redirect the client to a "splash" page.
+This request will of course **be routed by the client device to the Default Gateway** of the local network. The Default Gateway will, as we have seen, be the router interface that NDS is managing.
 
- This splash page is either one of the two standard options or a custom configuration provided by the user (See FAS, PreAuth).
+The Thing That Does the Capturing
+=================================
 
- The user of the client device will then be expected to complete some actions on the splash page, such as accepting terms of service, entering a username and password etc.
+ As soon as this initial port 80 request is received on the default gateway interface, NDS will "Capture" it, make a note of the client device identity, allocate a unique token for the client device, then redirect the client browser to the Portal component of NDS.
+
+The Thing That Provides the Portal
+==================================
+
+ The client browser is redirected to the Portal component. This is a web service that is configured to know how to communicate with the core engine of NDS.
+
+ This is commonly known as the Splash Page.
+
+ NDS has its own web server built in and this can be used to serve the Portal "Splash" pages to the client browser, or a separate web server can be used.
+ 
+ NDS comes with two standard Splash Page options pre-installed.
+
+ One provides a trivial Click to Continue splash page with template variables and the other provides a Client User form requiring Name and Email address to be entered.
+
+ Both of these can be customised or a complete specialised Portal can be written by the installer (See FAS, PreAuth).
+
+ FAS, or Forward Authentication Service may use the web server embedded in NDS, a separate web server installed on the NDS router, a web server residing on the local network or an Internet hosted web server.
+
+ The user of the client device will always be expected to complete some actions on the splash page.
 
  Once the user on the client device has successfully completed the splash page actions, that page then links directly back to NDS.
 
  For security, NDS expects to receive the same valid token it allocated when the client issued its initial port 80 request. If the token received is valid, NDS then "authenticates" the client device, allowing access to the Internet.
 
- Post authentication processing extensions may be added to NDS (See BinAuth). Once NDS has received a valid token it calls a Binauth script.
+ Post authentication processing extensions may be added to NDS (See BinAuth). Once NDS has received a valid token it calls a BinAuth script.
 
  If the BinAuth script returns positively (ie return code 0), NDS then "authenticates" the client device, allowing access to the Internet.
 
- In FAS secure modes are provided (levels 1, 2 and 3), where the client token and other required variables are kept securely hidden from the Client, ensuring verification cannot be bypassed.
+ Where FAS is used, secure modes are provided (levels 1 and 2), where the client token and other required variables are kept securely hidden from the Client, ensuring verification cannot be bypassed.
 
 .. note::
 
- FAS and Binauth can be enabled together. This can give great flexibility with FAS providing authentication and Binauth providing post authentication processing closely linked to  NDS.
+ FAS and Binauth can be enabled together. This can give great flexibility, with FAS providing remote verification and Binauth providing local post authentication processing closely linked to  NDS.
 
 
 Captive Portal Detection (CPD)
 ******************************
 
-    All modern mobile devices, most desktop operating systems and most browsers now have a CPD process that automatically issues a port 80 request on connection to a network. NDS detects this and serves a special “splash” web page to the connecting client device.
+All modern mobile devices, most desktop operating systems and most browsers now have a CPD process that automatically issues a port 80 request on connection to a network. NDS detects this and serves a special “splash” web page to the connecting client device.
 
-    The port 80 html request made by the client CPD can be one of many vendor specific URLs.
+The port 80 html request made by the client CPD can be one of many vendor specific URLs.
 
     Typical CPD URLs used are, for example:
 
@@ -92,9 +125,9 @@ Nodogsplash considers four kinds of packets coming into the router over the mana
  4. **Preauthenticated**. Any other packet. These packets are accepted and routed to a limited set of addresses and ports (see FirewallRuleSet      preauthenticated-users and FirewallRuleSet users-to-router in the nodogsplash.conf configuration file). Any other packet is dropped, except that a packet for destination port 80 at any address is redirected to port 2050 on the router, where nodogsplash's built in libhttpd-based web server is listening. This begins the 'authentication' process. The server will serve a splash page back to the source IP address of the packet. The user clicking the appropriate link on the splash page will complete the process, causing future packets from this IP/MAC address to be marked as Authenticated until the inactive or forced timeout is reached, and its packets revert to being Preauthenticated.
 
 
- Nodogsplash implements these actions by inserting rules in the router's iptables mangle PREROUTING chain to mark packets, and by inserting rules in the nat PREROUTING, filter INPUT and filter FORWARD chains which match on those marks.
+NoDogSplash implements these actions by inserting rules in the router's iptables mangle PREROUTING chain to mark packets, and by inserting rules in the nat PREROUTING, filter INPUT and filter FORWARD chains which match on those marks.
 
- Because it inserts its rules at the beginning of existing chains, nodogsplash should be insensitive to most typical existing firewall configurations.
+Because it inserts its rules at the beginning of existing chains, NoDogSplash should be insensitive to most typical existing firewall configurations.
 
 Traffic control
 ***************

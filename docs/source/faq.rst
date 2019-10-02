@@ -14,11 +14,11 @@ for v0.9.
 
  * **FAS**
 
-  A forwarding authentication service. FAS supports development of "Credential Verification" running on any dynamic web serving platform, on the same device as Nodogsplash, on another device on the local network, or on an Internet hosted web server.
+  A forwarding authentication service. FAS supports development of "Credential Verification" running on any dynamic web serving platform, on the same device as NoDogSplash, on another device on the local network, or on an Internet hosted web server.
 
  * **PreAuth**
 
-  An implementation of FAS running on the same device as Nodogsplash and using Nogogsplash's own web server to generate dynamic web pages. Any scripting language or even a compiled application program can be used. This has the advantage of not requiring the resources of a separate web server.
+  An implementation of FAS running on the same device as Nodogsplash and using NoDogSplash's own web server to generate dynamic web pages. Any scripting language or even a compiled application program can be used. This has the advantage of not requiring the resources of a separate web server.
 
  * **BinAuth**
 
@@ -28,11 +28,16 @@ for v0.9.
 
 **v4** continues to add enhancements towards improving NDS as a Captive Portal Engine that can be used in the development of custom solutions.
 
- Two major new features are introduced.
+ Three major new features are introduced.
 
  * **FAS FQDN**
 
   Enabling simple configuration for a FAS running on a remote shared web hosting server.
+
+ * **FAS secure level 1 enhancement**
+
+  From v4.3.0 onwards,  FAS secure level 1 supports token hashing. This enhances security and mitigates issues accessing ndsctl remotely to obtain the client token. This is particularly useful on legacy router devices with small flash and ram capacity.
+
 
  * **FAS secure level 2**
 
