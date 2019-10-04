@@ -3,6 +3,30 @@
 #Copyright (C) Blue Wave Projects and Services 2015-2019
 #This software is released under the GNU GPL license.
 
+# functions:
+
+write_log () {
+	logfile="/tmp/ndslog.log"
+	min_freespace_to_log_ratio=10
+	datetime=$(date)
+
+	if [ ! -f $logfile ]; then
+		echo "$datetime, New log file created" > $logfile
+	fi
+
+	ndspid=$(ps | grep nodogsplash | awk -F ' ' 'NR==2 {print $1}')
+	filesize=$(ls -s -1 $logfile | awk -F' ' '{print $1}')
+	available=$(df |grep /tmp | awk -F ' ' '{print $4}')
+	sizeratio=$(($available/$filesize))
+
+	if [ $sizeratio -ge $min_freespace_to_log_ratio ]; then
+		echo "$datetime, Username=$username, Email Address=$emailaddr, mac address=$clientmac, user_agent=$user_agent" \
+			>> $logfile
+	else
+		echo "PreAuth - log file too big, please archive contents" | logger -p "daemon.err" -s -t "nodogsplash[$ndspid]: "
+	fi
+}
+
 # Get the urlencoded querystring and user_agent
 query_enc="$1"
 user_agent_enc="$2"
@@ -217,7 +241,7 @@ else
 	echo "</form><hr>"
 
 	# In this example we have decided to log all clients who are granted access
-	echo "$(date), Username=$username, Email Address=$emailaddr, mac address=$clientmac, user_agent=$user_agent" >> /tmp/ndslog.log
+	write_log
 fi
 
 # Output the page footer
@@ -225,4 +249,5 @@ echo -e $footer
 
 # The output of this script could of course be much more complex and
 # could easily be used to conduct a dialogue with the client user.
-# 
+#
+
