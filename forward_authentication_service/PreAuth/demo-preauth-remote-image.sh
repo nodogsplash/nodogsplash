@@ -5,6 +5,30 @@
 
 ### functions
 
+
+write_log () {
+	logfile="/tmp/ndslog.log"
+	min_freespace_to_log_ratio=10
+	datetime=$(date)
+
+	if [ ! -f $logfile ]; then
+		echo "$datetime, New log file created" > $logfile
+	fi
+
+	ndspid=$(ps | grep nodogsplash | awk -F ' ' 'NR==2 {print $1}')
+	filesize=$(ls -s -1 $logfile | awk -F' ' '{print $1}')
+	available=$(df |grep /tmp | awk -F ' ' '{print $4}')
+	sizeratio=$(($available/$filesize))
+
+	if [ $sizeratio -ge $min_freespace_to_log_ratio ]; then
+		echo "PreAuth - writing log to $logfile" | logger -p "daemon.notice" -s -t "nodogsplash[$ndspid]: "
+		echo "$datetime, Username=$username, Email Address=$emailaddr, mac address=$clientmac, user_agent=$user_agent" \
+			>> $logfile
+	else
+		echo "PreAuth - log file too big, please archive contents" | logger -p "daemon.err" -s -t "nodogsplash[$ndspid]: "
+	fi
+}
+
 get_image_file() {
 	imagepath="/etc/nodogsplash/htdocs/images/remote"
 	mkdir "/tmp/remote"
@@ -247,7 +271,7 @@ else
 	echo "</form><hr>"
 
 	# In this example we have decided to log all clients who are granted access
-	echo "$(date), Username=$username, Email Address=$emailaddr, mac address=$clientmac, ip=$clientip, user_agent=$user_agent" >> /tmp/ndslog.log
+	write_log
 fi
 
 # Output the page footer
