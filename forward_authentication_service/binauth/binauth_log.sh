@@ -16,8 +16,28 @@
 # 3. FAS
 #
 
-# Get the current Date/Time for the log
-date=$(date)
+# functions:
+
+write_log () {
+	logfile="/tmp/binauth.log"
+	min_freespace_to_log_ratio=10
+	datetime=$(date)
+
+	if [ ! -f $logfile ]; then
+		echo "$datetime, New log file created" > $logfile
+	fi
+
+	ndspid=$(ps | grep nodogsplash | awk -F ' ' 'NR==2 {print $1}')
+	filesize=$(ls -s -1 $logfile | awk -F' ' '{print $1}')
+	available=$(df |grep /tmp | awk -F ' ' '{print $4}')
+	sizeratio=$(($available/$filesize))
+
+	if [ $sizeratio -ge $min_freespace_to_log_ratio ]; then
+		echo "$datetime, $log_entry" >> $logfile
+	else
+		echo "BinAuth - log file too big, please archive contents" | logger -p "daemon.err" -s -t "nodogsplash[$ndspid]: "
+	fi
+}
 
 #
 # Get the action method from NDS ie the first command line argument.
@@ -59,13 +79,13 @@ if [ $action == "auth_client" ]; then
 	useragent_enc=$6
 	useragent=$(printf "${useragent_enc//%/\\x}")
 
-	# Append to the log.
-
-	echo "$date, method=$1, clientmac=$2, clientip=$7, username=$3, password=$4, redir=$redir, useragent=$useragent" >> /tmp/binauth.log
+	log_entry="method=$1, clientmac=$2, clientip=$7, username=$3, password=$4, redir=$redir, useragent=$useragent"
 else
-	echo "$date, method=$1, clientmac=$2, bytes_incoming=$3, bytes_outgoing=$4, session_start=$5, session_end=$6" >> /tmp/binauth.log
+	log_entry="method=$1, clientmac=$2, bytes_incoming=$3, bytes_outgoing=$4, session_start=$5, session_end=$6"
 fi
 
+# Append to the log.
+write_log
 
 # Set length of session in seconds (eg 24 hours is 86400 seconds - if set to 0 then defaults to global sessiontimeout value):
 session_length=0
