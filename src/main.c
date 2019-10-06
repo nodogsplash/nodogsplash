@@ -36,7 +36,7 @@
 #include <signal.h>
 #include <errno.h>
 #include <time.h>
-
+#include <sys/stat.h>
 #include <arpa/inet.h>
 
 /* for strerror() */
@@ -227,6 +227,8 @@ main_loop(void)
 	char *fashid = NULL;
 	char *phpcmd = NULL;
 	char *preauth_dir = NULL;
+	struct stat sb;
+	char loginscript[] = "/usr/lib/nodogsplash/login.sh";
 	time_t sysuptime;
 
 	config = config_get_config();
@@ -277,6 +279,20 @@ main_loop(void)
 	}
 	/* TODO: set listening socket */
 	debug(LOG_NOTICE, "Created web server on %s", config->gw_address);
+
+	if (config->login_option_enabled > 0) {
+		debug(LOG_NOTICE, "Login option is Enabled.\n");
+		if (!((stat(loginscript, &sb) == 0) && S_ISREG(sb.st_mode) && (sb.st_mode & S_IXUSR))) {
+			debug(LOG_ERR, "Login script does not exist or is not executeable: %s", loginscript);
+			debug(LOG_ERR, "Exiting...");
+			exit(1);
+		} else {
+			config->preauth = loginscript;
+		}
+
+	} else {
+		debug(LOG_NOTICE, "Using config options for FAS or Templated Splash.\n");
+	}
 
 	if (config->preauth) {
 		debug(LOG_NOTICE, "Preauth is Enabled - Overiding FAS configuration.\n");
