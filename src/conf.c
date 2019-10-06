@@ -82,6 +82,7 @@ typedef enum {
 	oFasRemoteFQDN,
 	oFasURL,
 	oFasSSL,
+	oLoginOptionEnabled,
 	oFasSecureEnabled,
 	oHTTPDMaxConn,
 	oWebRoot,
@@ -137,6 +138,7 @@ static const struct {
 	{ "fasremotefqdn", oFasRemoteFQDN },
 	{ "fasurl", oFasURL },
 	{ "fasssl", oFasSSL },
+	{ "login_option_enabled", oLoginOptionEnabled },
 	{ "fas_secure_enabled", oFasSecureEnabled },
 	{ "faspath", oFasPath },
 	{ "webroot", oWebRoot },
@@ -210,6 +212,7 @@ config_init(void)
 	config.gw_port = DEFAULT_GATEWAYPORT;
 	config.fas_port = DEFAULT_FASPORT;
 	config.fas_key = NULL;
+	config.login_option_enabled = DEFAULT_LOGIN_OPTION_ENABLED;
 	config.fas_secure_enabled = DEFAULT_FAS_SECURE_ENABLED;
 	config.fas_remoteip = NULL;
 	config.fas_remotefqdn = NULL;
@@ -783,6 +786,13 @@ config_read(const char *filename)
 			break;
 		case oFasPort:
 			if (sscanf(p1, "%u", &config.fas_port) < 1) {
+				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
+				debug(LOG_ERR, "Exiting...");
+				exit(1);
+			}
+			break;
+		case oLoginOptionEnabled:
+			if (sscanf(p1, "%d", &config.login_option_enabled) < 1) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
 				exit(1);

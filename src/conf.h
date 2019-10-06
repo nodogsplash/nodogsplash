@@ -55,6 +55,7 @@
 #define DEFAULT_GATEWAYNAME "NoDogSplash"
 #define DEFAULT_GATEWAYPORT 2050
 #define DEFAULT_FASPORT 0
+#define DEFAULT_LOGIN_OPTION_ENABLED 0
 #define DEFAULT_FAS_SECURE_ENABLED 1
 #define DEFAULT_FASPATH "/"
 #define DEFAULT_REMOTE_AUTH_PORT 80
@@ -153,6 +154,7 @@ typedef struct {
 	char *gw_mac;			/**< @brief MAC address of the interface we manage */
 	unsigned int gw_port;		/**< @brief Port the webserver will run on */
 	unsigned int fas_port;		/**< @brief Port the fas server will run on */
+	int login_option_enabled;	/**< @brief Use default PreAuth Login script  */
 	int fas_secure_enabled;		/**< @brief Enable Secure FAS */
 	char *fas_path;			/**< @brief Path to forward authentication page of FAS */
 	char *fas_key;			/**< @brief AES key for FAS */
