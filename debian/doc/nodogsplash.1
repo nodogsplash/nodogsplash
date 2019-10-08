@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "NODOGSPLASH" "1" "Sep 13, 2019" "4.2.0" "NoDogSplash"
+.TH "NODOGSPLASH" "1" "Oct 07, 2019" "4.3.0" "NoDogSplash"
 .SH NAME
 nodogsplash \- nodogsplash Documentation
 .
@@ -214,45 +214,84 @@ dpkg\-buildpackage \-b \-rfakeroot \-us \-uc
 You will find the .deb packages in parent directory.
 .SH HOW NODOGSPLASH (NDS) WORKS
 .sp
-A wireless router, typically running OpenWrt or some other Linux distribution, has two or more interfaces; NDS manages one of them. This will typically be br\-lan, the bridge to both the wireless and wired LAN; or could be for example wlan0 if you wanted NDS to work just on the wireless interface.
-.SS Summary of Operation
+NoDogSplash is a Captive Portal Engine. Any Captive Portal, including NDS, will have two main components:
 .INDENT 0.0
 .INDENT 3.5
+.INDENT 0.0
+.IP \(bu 2
+Something that does the capturing, and
+.IP \(bu 2
+Something to provide a Portal for client users to log in.
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.sp
+A wireless router will typically be running OpenWrt or some other Linux distribution.
+.sp
+A router, by definition, will have two or more interfaces, at least one to connect to the wide area network (WAN) or Internet feed, and at least one connecting to the local area network (LAN).
+.sp
+Each LAN interface must also act as the Default IP Gateway for its LAN, ideally with the interface serving IP addresses to client devices using DHCP.
+.sp
+Multiple LAN interfaces can be combined into a single bridge interface. For example, ethernet, 2.4Ghz and 5Ghz networks are typically combined into a single bridge interface. Logical interface names will be assigned such as eth0, wlan0, wlan1 etc. with the combined bridge interface named as br\-lan.
+.sp
+NDS will manage one or more of them of them. This will typically be br\-lan, the bridge to both the wireless and wired LAN, but could be, for example, wlan0 if you wanted NDS to work just on the wireless interface.
+.SS Summary of Operation
+.sp
 By default, NDS blocks everything, but intercepts port 80 requests.
 .sp
-An initial port 80 request will be generated on a client device, either by the user manually browsing to an http web page, or automatically by the client device\(aqs built in Captive Portal Detection (CPD).
+An initial port 80 request will be generated on a client device, usually automatically by the client device\(aqs built in Captive Portal Detection (CPD), or possibly by the user manually browsing to an http web page.
 .sp
-As soon as this initial port 80 request is received, NDS will redirect the client to a "splash" page.
+This request will of course \fBbe routed by the client device to the Default Gateway\fP of the local network. The Default Gateway will, as we have seen, be the router interface that NDS is managing.
+.SS The Thing That Does the Capturing
+.INDENT 0.0
+.INDENT 3.5
+As soon as this initial port 80 request is received on the default gateway interface, NDS will "Capture" it, make a note of the client device identity, allocate a unique token for the client device, then redirect the client browser to the Portal component of NDS.
+.UNINDENT
+.UNINDENT
+.SS The Thing That Provides the Portal
+.INDENT 0.0
+.INDENT 3.5
+The client browser is redirected to the Portal component. This is a web service that is configured to know how to communicate with the core engine of NDS.
 .sp
-This splash page is either one of the two standard options or a custom configuration provided by the user (See FAS, PreAuth).
+This is commonly known as the Splash Page.
 .sp
-The user of the client device will then be expected to complete some actions on the splash page, such as accepting terms of service, entering a username and password etc.
+NDS has its own web server built in and this can be used to serve the Portal "Splash" pages to the client browser, or a separate web server can be used.
+.sp
+NDS comes with two standard Splash Page options pre\-installed.
+.sp
+One provides a trivial Click to Continue splash page with template variables and the other provides a Client User form requiring Name and Email address to be entered.
+.sp
+Both of these can be customised or a complete specialised Portal can be written by the installer (See FAS, PreAuth).
+.sp
+FAS, or Forward Authentication Service may use the web server embedded in NDS, a separate web server installed on the NDS router, a web server residing on the local network or an Internet hosted web server.
+.sp
+The user of the client device will always be expected to complete some actions on the splash page.
 .sp
 Once the user on the client device has successfully completed the splash page actions, that page then links directly back to NDS.
 .sp
 For security, NDS expects to receive the same valid token it allocated when the client issued its initial port 80 request. If the token received is valid, NDS then "authenticates" the client device, allowing access to the Internet.
 .sp
-Post authentication processing extensions may be added to NDS (See BinAuth). Once NDS has received a valid token it calls a Binauth script.
+Post authentication processing extensions may be added to NDS (See BinAuth). Once NDS has received a valid token it calls a BinAuth script.
 .sp
 If the BinAuth script returns positively (ie return code 0), NDS then "authenticates" the client device, allowing access to the Internet.
 .sp
-In FAS secure modes are provided (levels 1, 2 and 3), where the client token and other required variables are kept securely hidden from the Client, ensuring verification cannot be bypassed.
+Where FAS is used, secure modes are provided (levels 1 and 2), where the client token and other required variables are kept securely hidden from the Client, ensuring verification cannot be bypassed.
 .UNINDENT
 .UNINDENT
 .sp
 \fBNOTE:\fP
 .INDENT 0.0
 .INDENT 3.5
-FAS and Binauth can be enabled together. This can give great flexibility with FAS providing authentication and Binauth providing post authentication processing closely linked to  NDS.
+FAS and Binauth can be enabled together. This can give great flexibility, with FAS providing remote verification and Binauth providing local post authentication processing closely linked to  NDS.
 .UNINDENT
 .UNINDENT
 .SS Captive Portal Detection (CPD)
-.INDENT 0.0
-.INDENT 3.5
+.sp
 All modern mobile devices, most desktop operating systems and most browsers now have a CPD process that automatically issues a port 80 request on connection to a network. NDS detects this and serves a special “splash” web page to the connecting client device.
 .sp
 The port 80 html request made by the client CPD can be one of many vendor specific URLs.
-.sp
+.INDENT 0.0
+.INDENT 3.5
 Typical CPD URLs used are, for example:
 .INDENT 0.0
 .IP \(bu 2
@@ -319,12 +358,12 @@ Nodogsplash considers four kinds of packets coming into the router over the mana
 .IP 4. 3
 \fBPreauthenticated\fP\&. Any other packet. These packets are accepted and routed to a limited set of addresses and ports (see FirewallRuleSet      preauthenticated\-users and FirewallRuleSet users\-to\-router in the nodogsplash.conf configuration file). Any other packet is dropped, except that a packet for destination port 80 at any address is redirected to port 2050 on the router, where nodogsplash\(aqs built in libhttpd\-based web server is listening. This begins the \(aqauthentication\(aq process. The server will serve a splash page back to the source IP address of the packet. The user clicking the appropriate link on the splash page will complete the process, causing future packets from this IP/MAC address to be marked as Authenticated until the inactive or forced timeout is reached, and its packets revert to being Preauthenticated.
 .UNINDENT
-.sp
-Nodogsplash implements these actions by inserting rules in the router\(aqs iptables mangle PREROUTING chain to mark packets, and by inserting rules in the nat PREROUTING, filter INPUT and filter FORWARD chains which match on those marks.
-.sp
-Because it inserts its rules at the beginning of existing chains, nodogsplash should be insensitive to most typical existing firewall configurations.
 .UNINDENT
 .UNINDENT
+.sp
+NoDogSplash implements these actions by inserting rules in the router\(aqs iptables mangle PREROUTING chain to mark packets, and by inserting rules in the nat PREROUTING, filter INPUT and filter FORWARD chains which match on those marks.
+.sp
+Because it inserts its rules at the beginning of existing chains, NoDogSplash should be insensitive to most typical existing firewall configurations.
 .SS Traffic control
 .sp
 Data rate control on an IP connection basis can be achieved using Smart Queue Management (SQM) configured separately, with NDS being fully compatible.
@@ -447,11 +486,11 @@ The FAS can be on the same device as NDS, on the same local area network as NDS,
 \fBIf FAS Secure is enabled\fP (Levels 1 (default), and 2), the client authentication token is kept secret until FAS verification is complete.
 .INDENT 0.0
 .INDENT 3.5
-\fBIf set to "0"\fP the client token is sent to the FAS in clear text in the query string of the
-redirect along with authaction and redir.
+\fBIf set to "0"\fP the client token is sent to the FAS in clear text in the query string of the redirect along with authaction and redir.
 .sp
-\fBIf set to "1"\fP
-authaction and the client token are not revealed and it is the responsibility of the FAS to request the token from NDSCTL.
+\fBIf set to "1"\fP When the sha256sum command is available AND faskey is set, the client token will be hashed and sent to the FAS identified as "hid" in the query string. The gatewayaddress is also sent on the query string, allowing the FAS to construct the authaction parameter. FAS must return the sha256sum of the concatenation of the original hid and faskey to be used by NDS for client authentication. This is returned in the normal way in the query string identified as "tok". NDS will automatically detect whether hid mode is active or the raw token is being returned.
+.sp
+Should sha256sum not be available or faskey is not set, then it is the responsibility of the FAS to request the token from NDSCTL.
 .sp
 \fBIf set to "2"\fP
 clientip, clientmac, gatewayname, client token, gatewayaddress, authdir and originurl are encrypted using faskey and passed to FAS in the query string.
@@ -468,7 +507,7 @@ The FAS must use the query string passed initialisation vector and the pre share
 .UNINDENT
 .UNINDENT
 .sp
-\fBOption faskey must be set\fP if fas secure is set to level 2.
+\fBOption faskey must be set\fP if fas secure is set to level 2 but is optional for level 1.
 .INDENT 0.0
 .INDENT 3.5
 Option faskey is used to encrypt the data sent by NDS to FAS.
@@ -495,6 +534,17 @@ Although the simplest to set up, a knowledgeable user could bypass FAS, so runni
 .sp
 \fBLevel 1\fP (fas_secure_enabled = 1), NDS sends only information required to identify, the instance of NDS, the client and the client\(aqs originally requested URL.
 .sp
+\fBIf faskey is set\fP, NDS sends a digest of the random client token:
+.sp
+\fIhttp://fasremotefqdn:fasport/faspath?hid=[hash_id]&gatewayname=[gatewayname]&clientip=[clientip]&redir=[requested\-url]\fP
+.INDENT 0.0
+.INDENT 3.5
+The FAS must return the hash of the concatenated hid value and the value of faskey identified in the query string as "tok". NDS will automatically detect this.
+.UNINDENT
+.UNINDENT
+.sp
+\fBIf faskey is not set\fP the following is sent:
+.sp
 \fIhttp://fasremotefqdn:fasport/faspath?gatewayname=[gatewayname]&clientip=[clientip]&redir=[requested\-url]\fP
 .INDENT 0.0
 .INDENT 3.5
@@ -507,10 +557,10 @@ The client\(aqs unique access token will be obtained from NDS by the FAS making 
 For example, the following command returns just the token:
 .sp
 \fIndsctl json $clientip | grep token | cut \-c 10\- | cut \-c \-8\fP
-.UNINDENT
-.UNINDENT
 .sp
 A more sophisticated json parser could be used to extract all the client variables supplied by ndsctl, an example can be found in the default PreAuth Login script in /usr/lib/nogogsplash/login.sh.
+.UNINDENT
+.UNINDENT
 .sp
 \fBLevel 2\fP (fas_secure_enabled = 2), NDS sends enrypted information to FAS.
 .sp
@@ -544,7 +594,7 @@ Future versions of NDS may send additional variables and the order of the variab
 .UNINDENT
 .SS After Successful Verification by FAS
 .sp
-If the client is successfully verified by the FAS, FAS will return the unique token to NDS to finally allow the client access to the Internet.
+If the client is successfully verified by the FAS, FAS will return the unique token, or its hashed equivalent to NDS to finally allow the client access to the Internet.
 .SS Post FAS processing
 .sp
 Once the client has been authenticated by the FAS, NDS must then be informed to allow the client to have access to the Internet.
@@ -687,7 +737,7 @@ The value of option faskey should of course be changed, but must also be pre\-sh
 \fBNOTE:\fP
 .INDENT 0.0
 .INDENT 3.5
-From version 3.3.1 onwards, a PreAuth login script is pre\-installed. This generates a page asking for username and email address. Logins are recorded in a log file. It is enabled by un\-commenting just 3 lines in the config file. \fBFrom version 4.0.2 onwards\fP it is enabled by a single line in the config file that overrides any other FAS configuration.
+From version 3.3.1 onwards, a PreAuth login script is pre\-installed. This generates a page asking for username and email address. Logins are recorded in a log file. It is enabled by un\-commenting just 3 lines in the config file. \fBFrom version 4.0.2 onwards\fP it is enabled by a single line in the config file that overrides any other FAS configuration.  \fBFrom version 4.3.0 onwards\fP it is enabled by setting config option login_option_enabled to "1"
 .UNINDENT
 .UNINDENT
 .sp
@@ -698,6 +748,15 @@ From version 3.3.1 onwards, a PreAuth login script is pre\-installed. This gener
 A PreAuth program could be, for example, a compiled program written in C or any other language that has a compiler available for the platform.
 .sp
 The PreAuth script or program will parse the url encoded command line (query string) passed to it and output html depending on the contents of the query string it receives from NDS. In turn, NDS will serve this html to the client device that is attempting to access the Internet.
+.SS Selecting Pre\-Installed Username / Email Login Script (v4.3.0 onwards)
+.sp
+The default preauth login script is installed as part of the NoDogSplash package providing username/emailaddress login as an alternative to the basic splash page.
+.sp
+It is enabled by setting in config:
+.sp
+option login_option_enabled = \(aq1\(aq
+.sp
+No additional FAS or PreAuth config settings are required.
 .SS Using PreAuth version 4.0.2 onwards
 .INDENT 0.0
 .TP
@@ -1756,6 +1815,7 @@ uci commit nodogsplash
 .UNINDENT
 .SS The Default Click and Go Splash Page
 .sp
+Enabled by setting option login_option_enabled = "0" (default)
 The default default splash page can be found at:
 .INDENT 0.0
 .INDENT 3.5
@@ -1857,8 +1917,16 @@ Prohibit the execution of javascript.
 .sp
 Also, note that any images you reference should reside in the subdirectory /etc/nodogsplash/htdocs/images/.
 .SS Dynamic Splash Pages
+.SS Pre\-Installed User Login Dynamic Splash Page
 .sp
-Dynamically generated splash pages are supported using FAS and PreAuth (including the included alternative username/email login script).
+The pre\-installed dynamic splash page is enabled by setting option login_option_enabled = "1".
+.sp
+It generates a login page asking for username and email address.
+User logins are recorded in the log file /tmp/ndslog.log
+Details of how the script works are contained in comments in the script itself.
+.SS Custom Dynamic Splash Pages
+.sp
+Custom designed dynamically generated splash pages are supported using FAS and PreAuth (such as the included alternative username/email login script).
 .sp
 For details see the FAS and PreAuth chapters.
 .SH FREQUENTLY ASKED QUESTIONS
@@ -1879,7 +1947,7 @@ for v0.9.
 .UNINDENT
 .INDENT 0.0
 .INDENT 3.5
-A forwarding authentication service. FAS supports development of "Credential Verification" running on any dynamic web serving platform, on the same device as Nodogsplash, on another device on the local network, or on an Internet hosted web server.
+A forwarding authentication service. FAS supports development of "Credential Verification" running on any dynamic web serving platform, on the same device as NoDogSplash, on another device on the local network, or on an Internet hosted web server.
 .UNINDENT
 .UNINDENT
 .INDENT 0.0
@@ -1888,7 +1956,7 @@ A forwarding authentication service. FAS supports development of "Credential Ver
 .UNINDENT
 .INDENT 0.0
 .INDENT 3.5
-An implementation of FAS running on the same device as Nodogsplash and using Nogogsplash\(aqs own web server to generate dynamic web pages. Any scripting language or even a compiled application program can be used. This has the advantage of not requiring the resources of a separate web server.
+An implementation of FAS running on the same device as Nodogsplash and using NoDogSplash\(aqs own web server to generate dynamic web pages. Any scripting language or even a compiled application program can be used. This has the advantage of not requiring the resources of a separate web server.
 .UNINDENT
 .UNINDENT
 .INDENT 0.0
@@ -1908,7 +1976,7 @@ In addition, in v3, the ClientTimeout setting was split into PreauthIdleTimeout 
 \fBv4\fP continues to add enhancements towards improving NDS as a Captive Portal Engine that can be used in the development of custom solutions.
 .INDENT 0.0
 .INDENT 3.5
-Two major new features are introduced.
+Three major new features are introduced.
 .INDENT 0.0
 .IP \(bu 2
 \fBFAS FQDN\fP
@@ -1916,6 +1984,15 @@ Two major new features are introduced.
 .INDENT 0.0
 .INDENT 3.5
 Enabling simple configuration for a FAS running on a remote shared web hosting server.
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.IP \(bu 2
+\fBFAS secure level 1 enhancement\fP
+.UNINDENT
+.INDENT 0.0
+.INDENT 3.5
+From v4.3.0 onwards,  FAS secure level 1 supports token hashing. This enhances security and mitigates issues accessing ndsctl remotely to obtain the client token. This is particularly useful on legacy router devices with small flash and ram capacity.
 .UNINDENT
 .UNINDENT
 .INDENT 0.0
