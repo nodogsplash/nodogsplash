@@ -43,6 +43,7 @@ install:
 	cp resources/splash.css $(DESTDIR)/etc/nodogsplash/htdocs/
 	cp resources/status.html $(DESTDIR)/etc/nodogsplash/htdocs/
 	cp resources/splash.jpg $(DESTDIR)/etc/nodogsplash/htdocs/images/
+	mkdir -p $(DESTDIR)/usr/lib/nodogsplash
 	cp forward_authentication_service/PreAuth/demo-preauth.sh $(DESTDIR)/usr/lib/nodogsplash/login.sh
 	cp forward_authentication_service/fas-aes/fas-aes.php $(DESTDIR)/etc/nodogsplash/
 
