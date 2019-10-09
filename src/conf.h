@@ -29,7 +29,7 @@
 #ifndef _CONF_H_
 #define _CONF_H_
 
-#define VERSION "4.3.1beta"
+#define VERSION "4.3.1"
 
 /*@{*/
 /** Defines */
