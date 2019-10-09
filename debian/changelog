@@ -1,3 +1,9 @@
+nodogsplash (4.3.1) stable; urgency=medium
+
+  * Fix missing line in Makefile causing failure of Debian package creation [bluewavenet]
+
+ -- Rob White <dot@blue-wave.net>  Wed, 09 Oct 2019 14:40:31 +0000
+
 nodogsplash (4.3.0-1) stable; urgency=medium
 
   * Create switch option to select preinstalled templated splash or preauth login [bluewavenet]
