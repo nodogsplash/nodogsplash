@@ -98,7 +98,8 @@ static struct argument arguments[] = {
 };
 
 static const struct argument*
-find_argument(const char *cmd) {
+find_argument(const char *cmd)
+{
 	int i;
 
 	for (i = 0; arguments[i].cmd; i++) {
@@ -196,7 +197,7 @@ ndsctl_do(const char *socket, const struct argument *arg, const char *param)
 		len = 0;
 		memset(buffer, 0, sizeof(buffer));
 		while ((len < sizeof(buffer)) && ((rlen = read(sock, (buffer + len),
-			(sizeof(buffer) - len))) > 0)) {
+										   (sizeof(buffer) - len))) > 0)) {
 			len += rlen;
 		}
 

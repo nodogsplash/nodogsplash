@@ -123,17 +123,17 @@ _iptables_init_marks()
 	FW_MARK_MASK = FW_MARK_BLOCKED | FW_MARK_TRUSTED | FW_MARK_AUTHENTICATED;
 
 	debug(LOG_INFO,"Iptables mark %s: 0x%x",
-		fw_connection_state_as_string(FW_MARK_PREAUTHENTICATED),
-		FW_MARK_PREAUTHENTICATED);
+		  fw_connection_state_as_string(FW_MARK_PREAUTHENTICATED),
+		  FW_MARK_PREAUTHENTICATED);
 	debug(LOG_INFO,"Iptables mark %s: 0x%x",
-		fw_connection_state_as_string(FW_MARK_AUTHENTICATED),
-		FW_MARK_AUTHENTICATED);
+		  fw_connection_state_as_string(FW_MARK_AUTHENTICATED),
+		  FW_MARK_AUTHENTICATED);
 	debug(LOG_INFO,"Iptables mark %s: 0x%x",
-		fw_connection_state_as_string(FW_MARK_TRUSTED),
-		FW_MARK_TRUSTED);
+		  fw_connection_state_as_string(FW_MARK_TRUSTED),
+		  FW_MARK_TRUSTED);
 	debug(LOG_INFO,"Iptables mark %s: 0x%x",
-		fw_connection_state_as_string(FW_MARK_BLOCKED),
-		FW_MARK_BLOCKED);
+		  fw_connection_state_as_string(FW_MARK_BLOCKED),
+		  FW_MARK_BLOCKED);
 
 	return 0;
 }
@@ -384,7 +384,7 @@ iptables_fw_init(void)
 	LOCK_CONFIG();
 	config = config_get_config();
 	gw_interface = safe_strdup(config->gw_interface); /* must free */
-	
+
 	/* ip4 vs ip6 differences */
 	const char *ICMP_TYPE;
 	if (config->ip6) {
@@ -395,7 +395,7 @@ iptables_fw_init(void)
 		gw_ip = safe_strdup(config->gw_ip);    /* must free */
 		ICMP_TYPE = "icmp";
 	}
-	
+
 	if (config->fas_port) {
 		fas_remoteip = safe_strdup(config->fas_remoteip);    /* must free */
 		fas_port = config->fas_port;
@@ -424,13 +424,13 @@ iptables_fw_init(void)
 
 	if (iptables_version < MIN_IPTABLES_VERSION) {
 		debug(LOG_ERR, "Unsupported iptables version v%d.%d.%d, needs at least v%d.%d.%d.",
-			(iptables_version / 10000),
-			(iptables_version % 10000) / 100,
-			(iptables_version % 100),
-			(MIN_IPTABLES_VERSION / 10000),
-			(MIN_IPTABLES_VERSION % 10000) / 100,
-			(MIN_IPTABLES_VERSION % 100)
-		);
+			  (iptables_version / 10000),
+			  (iptables_version % 10000) / 100,
+			  (iptables_version % 100),
+			  (MIN_IPTABLES_VERSION / 10000),
+			  (MIN_IPTABLES_VERSION % 10000) / 100,
+			  (MIN_IPTABLES_VERSION % 100)
+			 );
 		return -1;
 	}
 
@@ -502,7 +502,7 @@ iptables_fw_init(void)
 	 * Set up nat table chains and rules (ip4 only)
 	 *
 	 */
-	 
+
 	if (!config->ip6) {
 		/* Create new chains in nat table */
 		rc |= iptables_do_command("-t nat -N " CHAIN_OUTGOING);

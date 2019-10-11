@@ -59,14 +59,14 @@ static void binauth_action(t_client *client, const char *reason)
 
 	if (config->binauth) {
 		execute("%s %s %s %llu %llu %llu %llu",
-			config->binauth,
-			reason ? reason : "unknown",
-			client->mac,
-			client->counters.incoming,
-			client->counters.outgoing,
-			client->session_start,
-			client->session_end
-		);
+				config->binauth,
+				reason ? reason : "unknown",
+				client->mac,
+				client->counters.incoming,
+				client->counters.outgoing,
+				client->session_start,
+				client->session_end
+			   );
 	}
 }
 
@@ -163,26 +163,26 @@ fw_refresh_client_list(void)
 		if (cp1->session_end > 0 && cp1->session_end <= now) {
 			/* Session ended (only > 0 for FW_MARK_AUTHENTICATED by binauth) */
 			debug(LOG_NOTICE, "Force out user: %s %s, connected: %ds, in: %llukB, out: %llukB",
-				cp1->ip, cp1->mac, now - cp1->session_end,
-				cp1->counters.incoming / 1000, cp1->counters.outgoing / 1000);
+				  cp1->ip, cp1->mac, now - cp1->session_end,
+				  cp1->counters.incoming / 1000, cp1->counters.outgoing / 1000);
 
 			auth_change_state(cp1, FW_MARK_PREAUTHENTICATED, "timeout_deauth");
 		} else if (preauth_idle_timeout_secs > 0
-				&& conn_state == FW_MARK_PREAUTHENTICATED
-				&& (last_updated + preauth_idle_timeout_secs) <= now) {
+				   && conn_state == FW_MARK_PREAUTHENTICATED
+				   && (last_updated + preauth_idle_timeout_secs) <= now) {
 			/* Timeout inactive preauthenticated user */
 			debug(LOG_NOTICE, "Timeout preauthenticated idle user: %s %s, inactive: %ds, in: %llukB, out: %llukB",
-				cp1->ip, cp1->mac, now - last_updated,
-				cp1->counters.incoming / 1000, cp1->counters.outgoing / 1000);
+				  cp1->ip, cp1->mac, now - last_updated,
+				  cp1->counters.incoming / 1000, cp1->counters.outgoing / 1000);
 
 			client_list_delete(cp1);
 		} else if (auth_idle_timeout_secs > 0
-				&& conn_state == FW_MARK_AUTHENTICATED
-				&& (last_updated + auth_idle_timeout_secs) <= now) {
+				   && conn_state == FW_MARK_AUTHENTICATED
+				   && (last_updated + auth_idle_timeout_secs) <= now) {
 			/* Timeout inactive user */
 			debug(LOG_NOTICE, "Timeout authenticated idle user: %s %s, inactive: %ds, in: %llukB, out: %llukB",
-				cp1->ip, cp1->mac, now - last_updated,
-				cp1->counters.incoming / 1000, cp1->counters.outgoing / 1000);
+				  cp1->ip, cp1->mac, now - last_updated,
+				  cp1->counters.incoming / 1000, cp1->counters.outgoing / 1000);
 
 			auth_change_state(cp1, FW_MARK_PREAUTHENTICATED, "idle_deauth");
 		}
@@ -307,20 +307,20 @@ auth_client_untrust(const char *mac)
 
 	UNLOCK_CONFIG();
 
-/*
-	if (rc == 0) {
-		LOCK_CLIENT_LIST();
-		t_client * client = client_list_find_by_mac(mac);
-		if (client) {
-			rc = auth_change_state(client, FW_MARK_PREAUTHENTICATED, "manual_untrust");
-			if (rc == 0) {
-				client->session_start = 0;
-				client->session_end = 0;
+	/*
+		if (rc == 0) {
+			LOCK_CLIENT_LIST();
+			t_client * client = client_list_find_by_mac(mac);
+			if (client) {
+				rc = auth_change_state(client, FW_MARK_PREAUTHENTICATED, "manual_untrust");
+				if (rc == 0) {
+					client->session_start = 0;
+					client->session_end = 0;
+				}
 			}
+			UNLOCK_CLIENT_LIST();
 		}
-		UNLOCK_CLIENT_LIST();
-	}
-*/
+	*/
 
 	return rc;
 }

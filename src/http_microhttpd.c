@@ -76,7 +76,7 @@ static const char *lookup_mimetype(const char *filename);
 
 /* Call the BinAuth script */
 static int do_binauth(struct MHD_Connection *connection, const char *binauth, t_client *client,
-	int *seconds_ret, int *upload_ret, int *download_ret, const char *redirect_url)
+					  int *seconds_ret, int *upload_ret, int *download_ret, const char *redirect_url)
 {
 	char username_enc[64] = {0};
 	char password_enc[64] = {0};
@@ -114,7 +114,7 @@ static int do_binauth(struct MHD_Connection *connection, const char *binauth, t_
 
 	// Note: username, password and user_agent may contain spaces so argument should be quoted
 	safe_asprintf(&argv,"%s auth_client %s '%s' '%s' '%s' '%s' '%s'",
-		binauth, client->mac, username_enc, password_enc, redirect_url_enc_buf, enc_user_agent, client->ip);
+				  binauth, client->mac, username_enc, password_enc, redirect_url_enc_buf, enc_user_agent, client->ip);
 
 	debug(LOG_INFO, "BinAuth argv: %s", argv);
 	rc = execute_ret_url_encoded(msg, sizeof(msg) - 1, argv);
@@ -128,16 +128,16 @@ static int do_binauth(struct MHD_Connection *connection, const char *binauth, t_
 
 	// store assigned parameters
 	switch (rc) {
-		case 3:
-			*download_ret = MAX(download, 0);
-		case 2:
-			*upload_ret = MAX(upload, 0);
-		case 1:
-			*seconds_ret = MAX(seconds, 0);
-		case 0:
-			break;
-		default:
-			return -1;
+	case 3:
+		*download_ret = MAX(download, 0);
+	case 2:
+		*upload_ret = MAX(upload, 0);
+	case 1:
+		*seconds_ret = MAX(seconds, 0);
+	case 0:
+		break;
+	default:
+		return -1;
 	}
 
 	return 0;
@@ -320,11 +320,11 @@ get_client_ip(char ip_addr[INET6_ADDRSTRLEN], struct MHD_Connection *connection)
  */
 int
 libmicrohttpd_cb(void *cls,
-				struct MHD_Connection *connection,
-				const char *url,
-				const char *method,
-				const char *version,
-				const char *upload_data, size_t *upload_data_size, void **ptr)
+				 struct MHD_Connection *connection,
+				 const char *url,
+				 const char *method,
+				 const char *version,
+				 const char *upload_data, size_t *upload_data_size, void **ptr)
 {
 
 	t_client *client;
@@ -366,7 +366,7 @@ libmicrohttpd_cb(void *cls,
 	}
 
 	if (client && (client->fw_connection_state == FW_MARK_AUTHENTICATED ||
-			client->fw_connection_state == FW_MARK_TRUSTED)) {
+				   client->fw_connection_state == FW_MARK_TRUSTED)) {
 		/* client already authed - dangerous!!! This should never happen */
 		return authenticated(connection, url, client);
 	}
@@ -443,12 +443,12 @@ static int try_to_authenticate(struct MHD_Connection *connection, t_client *clie
 
 	debug(LOG_WARNING, "Token is invalid" );
 
-/*	//TODO: do we need denydir?
-	if (check_authdir_match(url, config->denydir)) {
-		// matched to deauth
-		return 0;
-	}
-*/
+	/*	//TODO: do we need denydir?
+		if (check_authdir_match(url, config->denydir)) {
+			// matched to deauth
+			return 0;
+		}
+	*/
 
 	return 0;
 }
@@ -462,8 +462,8 @@ static int try_to_authenticate(struct MHD_Connection *connection, t_client *clie
  * @return
  */
 static int authenticate_client(struct MHD_Connection *connection,
-							const char *redirect_url,
-							t_client *client)
+							   const char *redirect_url,
+							   t_client *client)
 {
 	s_config *config = config_get_config();
 	time_t now = time(NULL);
@@ -538,8 +538,8 @@ static int authenticate_client(struct MHD_Connection *connection,
  * - when a user calls deny url -> deauth it
  */
 static int authenticated(struct MHD_Connection *connection,
-						const char *url,
-						t_client *client)
+						 const char *url,
+						 t_client *client)
 {
 	s_config *config = config_get_config();
 	const char *host = NULL;
@@ -565,18 +565,18 @@ static int authenticated(struct MHD_Connection *connection,
 	if (check_authdir_match(url, config->authdir)) {
 		if (config->fas_port && !config->preauth) {
 			safe_asprintf(&fasurl, "%s?clientip=%s&gatewayname=%s&gatewayaddress=%s&status=authenticated",
-				config->fas_url, client->ip, config->gw_name, config->gw_address);
+						  config->fas_url, client->ip, config->gw_name, config->gw_address);
 			debug(LOG_DEBUG, "fasurl %s", fasurl);
 			ret = send_redirect_temp(connection, fasurl);
 			free(fasurl);
 			return ret;
 		} else if (config->fas_port && config->preauth) {
 			safe_asprintf(&fasurl, "?clientip=%s%sgatewayname=%s%sgatewayaddress%s%sstatus=authenticated",
-				client->ip, QUERYSEPARATOR, config->gw_name, QUERYSEPARATOR,  config->gw_address, QUERYSEPARATOR);
+						  client->ip, QUERYSEPARATOR, config->gw_name, QUERYSEPARATOR,  config->gw_address, QUERYSEPARATOR);
 			debug(LOG_DEBUG, "fasurl %s", fasurl);
 			ret = show_preauthpage(connection, fasurl);
 			free(fasurl);
-			return ret;	
+			return ret;
 		} else {
 			return show_statuspage(connection, client);
 		}
@@ -585,7 +585,7 @@ static int authenticated(struct MHD_Connection *connection,
 	if (check_authdir_match(url, config->preauthdir)) {
 		if (config->fas_port) {
 			safe_asprintf(&fasurl, "?clientip=%s&gatewayname=%s&gatewayaddress=%s&status=authenticated",
-				client->ip, config->gw_name, config->gw_address);
+						  client->ip, config->gw_name, config->gw_address);
 			debug(LOG_DEBUG, "fasurl %s", fasurl);
 			ret = show_preauthpage(connection, fasurl);
 			free(fasurl);
@@ -777,46 +777,46 @@ static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, 
 		// Note: config->fas_path contains a leading / as it is the path from the FAS web root.
 		if (config->fas_secure_enabled == 0) {
 			safe_asprintf(&splashpageurl, "%s?authaction=http://%s/%s/%s&redir=%s",
-				config->fas_url, config->gw_address, config->authdir, querystr, originurl);
+						  config->fas_url, config->gw_address, config->authdir, querystr, originurl);
 		} else if (config->fas_secure_enabled == 1) {
-				safe_asprintf(&splashpageurl, "%s%s&redir=%s",
-					config->fas_url, querystr, originurl);
+			safe_asprintf(&splashpageurl, "%s%s&redir=%s",
+						  config->fas_url, querystr, originurl);
 		} else if (config->fas_secure_enabled == 2) {
 			safe_asprintf(&phpcmd,
-				"echo '<?php \n"
-				"$key=\"%s\";\n"
-				"$string=\"%s\";\n"
-				"$cipher=\"aes-256-cbc\";\n"
+						  "echo '<?php \n"
+						  "$key=\"%s\";\n"
+						  "$string=\"%s\";\n"
+						  "$cipher=\"aes-256-cbc\";\n"
 
-				"if (in_array($cipher, openssl_get_cipher_methods())) {\n"
-					"$secret_iv = base64_encode(openssl_random_pseudo_bytes(\"8\"));\n"
-					"$iv = substr(openssl_digest($secret_iv, \"sha256\"), 0, 16 );\n"
-					"$string = base64_encode( openssl_encrypt( $string, $cipher, $key, 0, $iv ) );\n"
-					"echo \"?fas=\".$string.\"&iv=\".$iv;\n"
-				"}\n"
-				" ?>' "
-				" | %s\n",
-				config->fas_key, querystr, config->fas_ssl);
+						  "if (in_array($cipher, openssl_get_cipher_methods())) {\n"
+						  "$secret_iv = base64_encode(openssl_random_pseudo_bytes(\"8\"));\n"
+						  "$iv = substr(openssl_digest($secret_iv, \"sha256\"), 0, 16 );\n"
+						  "$string = base64_encode( openssl_encrypt( $string, $cipher, $key, 0, $iv ) );\n"
+						  "echo \"?fas=\".$string.\"&iv=\".$iv;\n"
+						  "}\n"
+						  " ?>' "
+						  " | %s\n",
+						  config->fas_key, querystr, config->fas_ssl);
 
 			debug(LOG_DEBUG, "phpcmd: %s", phpcmd);
 
 			if (execute_ret_url_encoded(msg, sizeof(msg) - 1, phpcmd) == 0) {
 				safe_asprintf(&splashpageurl, "%s%s",
-					config->fas_url, msg);
+							  config->fas_url, msg);
 				debug(LOG_DEBUG, "Encrypted query string=%s\n", msg);
 			} else {
 				safe_asprintf(&splashpageurl, "%s?redir=%s",
-					config->fas_url, originurl);
+							  config->fas_url, originurl);
 				debug(LOG_ERR, "Error encrypting query string. %s", msg);
 			}
 			free(phpcmd);
 		} else {
 			safe_asprintf(&splashpageurl, "%s%s&redir=%s",
-				config->fas_url, querystr, originurl);
+						  config->fas_url, querystr, originurl);
 		}
 	} else {
 		safe_asprintf(&splashpageurl, "http://%s/%s?redir=%s",
-			config->gw_address, config->splashpage, originurl);
+					  config->gw_address, config->splashpage, originurl);
 	}
 
 	debug(LOG_INFO, "splashpageurl: %s", splashpageurl);
@@ -868,7 +868,8 @@ static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *c
  * @brief construct_querystring
  * @return the querystring
  */
-static char *construct_querystring(t_client *client, char *originurl, char *querystr ) {
+static char *construct_querystring(t_client *client, char *originurl, char *querystr )
+{
 
 	char hash[128] = {0};
 
@@ -879,25 +880,25 @@ static char *construct_querystring(t_client *client, char *originurl, char *quer
 
 	} else if (config->fas_secure_enabled == 1) {
 
-			if (config->fas_hid) {
-				hash_str(hash, sizeof(hash), client->token);
-				debug(LOG_INFO, "hid=%s", hash);
-				snprintf(querystr, QUERYMAXLEN, "?clientip=%s&gatewayname=%s&hid=%s&gatewayaddress=%s",
-					client->ip, config->gw_name, hash, config->gw_address);
-			} else {
-				snprintf(querystr, QUERYMAXLEN, "?clientip=%s&gatewayname=%s", client->ip, config->gw_name);
-			}
+		if (config->fas_hid) {
+			hash_str(hash, sizeof(hash), client->token);
+			debug(LOG_INFO, "hid=%s", hash);
+			snprintf(querystr, QUERYMAXLEN, "?clientip=%s&gatewayname=%s&hid=%s&gatewayaddress=%s",
+					 client->ip, config->gw_name, hash, config->gw_address);
+		} else {
+			snprintf(querystr, QUERYMAXLEN, "?clientip=%s&gatewayname=%s", client->ip, config->gw_name);
+		}
 
 	} else if (config->fas_secure_enabled == 2) {
 		snprintf(querystr, QUERYMAXLEN,
-			"clientip=%s%sclientmac=%s%sgatewayname=%s%stok=%s%sgatewayaddress=%s%sauthdir=%s%soriginurl=%s",
-			client->ip, QUERYSEPARATOR,
-			client->mac, QUERYSEPARATOR,
-			config->gw_name, QUERYSEPARATOR,
-			client->token, QUERYSEPARATOR,
-			config->gw_address, QUERYSEPARATOR,
-			config->authdir, QUERYSEPARATOR,
-			originurl);
+				 "clientip=%s%sclientmac=%s%sgatewayname=%s%stok=%s%sgatewayaddress=%s%sauthdir=%s%soriginurl=%s",
+				 client->ip, QUERYSEPARATOR,
+				 client->mac, QUERYSEPARATOR,
+				 config->gw_name, QUERYSEPARATOR,
+				 client->token, QUERYSEPARATOR,
+				 config->gw_address, QUERYSEPARATOR,
+				 config->authdir, QUERYSEPARATOR,
+				 originurl);
 
 	} else {
 		snprintf(querystr, QUERYMAXLEN, "?clientip=%s&gatewayname=%s", client->ip, config->gw_name);
@@ -1206,7 +1207,7 @@ static void replace_variables(
 	safe_asprintf(&denyaction, "http://%s/%s/", config->gw_address, config->denydir);
 	safe_asprintf(&authaction, "http://%s/%s/", config->gw_address, config->authdir);
 	safe_asprintf(&authtarget, "http://%s/%s/?tok=%s&amp;redir=%s",
-		config->gw_address, config->authdir, client->token, redirect_url);
+				  config->gw_address, config->authdir, client->token, redirect_url);
 
 	struct template vars[] = {
 		{"authaction", authaction},
@@ -1404,7 +1405,7 @@ static int serve_file(struct MHD_Connection *connection, t_client *client, const
 		/* ignore links */
 		if (!S_ISLNK(stat_buf.st_mode))
 #endif /* S_ISLNK */
-		return send_error(connection, 404);
+			return send_error(connection, 404);
 	}
 
 	int fd = open(filename, O_RDONLY);

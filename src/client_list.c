@@ -136,7 +136,7 @@ _client_list_append(const char mac[], const char ip[])
 	client->id = client_id;
 
 	debug(LOG_NOTICE, "Adding %s %s token %s to client list",
-		client->ip, client->mac, client->token ? client->token : "none");
+		  client->ip, client->mac, client->token ? client->token : "none");
 
 	if (prevclient == NULL) {
 		firstclient = client;

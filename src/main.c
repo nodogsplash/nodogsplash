@@ -267,13 +267,13 @@ main_loop(void)
 
 	/* Initializes the web server */
 	if ((webserver = MHD_start_daemon(
-						MHD_USE_EPOLL_INTERNALLY | MHD_USE_TCP_FASTOPEN,
-						config->gw_port,
-						NULL, NULL,
-						libmicrohttpd_cb, NULL,
-						MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 120,
-						MHD_OPTION_LISTENING_ADDRESS_REUSE, 1,
-						MHD_OPTION_END)) == NULL) {
+						 MHD_USE_EPOLL_INTERNALLY | MHD_USE_TCP_FASTOPEN,
+						 config->gw_port,
+						 NULL, NULL,
+						 libmicrohttpd_cb, NULL,
+						 MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 120,
+						 MHD_OPTION_LISTENING_ADDRESS_REUSE, 1,
+						 MHD_OPTION_END)) == NULL) {
 		debug(LOG_ERR, "Could not create web server: %s", strerror(errno));
 		exit(1);
 	}
@@ -359,9 +359,9 @@ main_loop(void)
 			config->fas_ssl = safe_strdup(fasssl);
 			free(fasssl);
 			safe_asprintf(&phpcmd,
-				"echo '<?php "
-				"if (!extension_loaded (openssl)) {exit(1);"
-				"} ?>' | %s", config->fas_ssl);
+						  "echo '<?php "
+						  "if (!extension_loaded (openssl)) {exit(1);"
+						  "} ?>' | %s", config->fas_ssl);
 			if (execute_ret(msg, sizeof(msg) - 1, phpcmd) == 0) {
 				debug(LOG_NOTICE, "OpenSSL module is loaded\n");
 			} else {
@@ -385,11 +385,11 @@ main_loop(void)
 
 		if (config->fas_remotefqdn) {
 			safe_asprintf(&fasurl, "http://%s:%u%s",
-				config->fas_remotefqdn, config->fas_port, config->fas_path);
+						  config->fas_remotefqdn, config->fas_port, config->fas_path);
 			config->fas_url = safe_strdup(fasurl);
 		} else {
 			safe_asprintf(&fasurl, "http://%s:%u%s",
-				config->fas_remoteip, config->fas_port, config->fas_path);
+						  config->fas_remoteip, config->fas_port, config->fas_path);
 			config->fas_url = safe_strdup(fasurl);
 		}
 		debug(LOG_NOTICE, "FAS URL is %s\n", config->fas_url);

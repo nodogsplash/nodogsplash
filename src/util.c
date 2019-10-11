@@ -260,9 +260,9 @@ get_iface_mac(const char ifname[])
 	hwaddr = ifr.ifr_hwaddr.sa_data;
 	close(s);
 	snprintf(mac, sizeof(mac), "%02x:%02x:%02x:%02x:%02x:%02x",
-		hwaddr[0] & 0xFF, hwaddr[1] & 0xFF, hwaddr[2] & 0xFF,
-		hwaddr[3] & 0xFF, hwaddr[4] & 0xFF, hwaddr[5] & 0xFF
-	);
+			 hwaddr[0] & 0xFF, hwaddr[1] & 0xFF, hwaddr[2] & 0xFF,
+			 hwaddr[3] & 0xFF, hwaddr[4] & 0xFF, hwaddr[5] & 0xFF
+			);
 
 	return safe_strdup(mac);
 #elif defined(__NetBSD__)
@@ -390,7 +390,8 @@ format_time(time_t time, char buf[64])
 	return buf;
 }
 
-char * get_uptime_string(char buf[64]) {
+char * get_uptime_string(char buf[64])
+{
 	time_t sysuptime;
 	unsigned long int now, uptimesecs;
 
@@ -408,7 +409,8 @@ char * get_uptime_string(char buf[64]) {
 	return format_duration((now - uptimesecs), now, buf);
 }
 
-time_t get_system_uptime() {
+time_t get_system_uptime()
+{
 	time_t sysuptime;
 	char buf[64];
 	FILE *pfp;
@@ -428,12 +430,13 @@ time_t get_system_uptime() {
 }
 
 
-int is_addr(const char* addr) {
+int is_addr(const char* addr)
+{
 	struct sockaddr_in sa;
 	struct sockaddr_in6 sa6;
 
 	return (inet_pton(AF_INET, addr, &sa.sin_addr) == 1) ||
-		(inet_pton(AF_INET6, addr, &sa6.sin6_addr) == 1);
+		   (inet_pton(AF_INET6, addr, &sa6.sin6_addr) == 1);
 }
 
 void
@@ -489,8 +492,8 @@ ndsctl_status(FILE *fp)
 
 	if (config->fas_port) {
 		fprintf(fp, "FAS: Secure Level %u, URL: %s\n",
-			config->fas_secure_enabled,
-			config->fas_url);
+				config->fas_secure_enabled,
+				config->fas_url);
 	} else {
 		fprintf(fp, "FAS: Disabled\n");
 	}

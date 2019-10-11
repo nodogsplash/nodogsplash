@@ -36,25 +36,26 @@
 #include "debug.h"
 
 
-static int do_log(int level, int debuglevel) {
+static int do_log(int level, int debuglevel)
+{
 	switch (level) {
-		case LOG_EMERG:
-		case LOG_ERR:
-			// quiet
-			return (debuglevel >= 0);
-		case LOG_WARNING:
-		case LOG_NOTICE:
-			// default
-			return (debuglevel >= 1);
-		case LOG_INFO:
-			// verbose
-			return (debuglevel >= 2);
-		case LOG_DEBUG:
-			// debug
-			return (debuglevel >= 3);
-		default:
-			debug(LOG_ERR, "Unhandled debug level: %d", level);
-			return 1;
+	case LOG_EMERG:
+	case LOG_ERR:
+		// quiet
+		return (debuglevel >= 0);
+	case LOG_WARNING:
+	case LOG_NOTICE:
+		// default
+		return (debuglevel >= 1);
+	case LOG_INFO:
+		// verbose
+		return (debuglevel >= 2);
+	case LOG_DEBUG:
+		// debug
+		return (debuglevel >= 3);
+	default:
+		debug(LOG_ERR, "Unhandled debug level: %d", level);
+		return 1;
 	}
 }
 

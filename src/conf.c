@@ -748,7 +748,7 @@ config_read(const char *filename)
 		case oDebugLevel:
 			if (sscanf(p1, "%d", &config.debuglevel) < 1 || config.debuglevel < DEBUGLEVEL_MIN) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s. Valid levels are %d...%d.",
-					p1, s, linenum, filename, DEBUGLEVEL_MIN, DEBUGLEVEL_MAX);
+					  p1, s, linenum, filename, DEBUGLEVEL_MIN, DEBUGLEVEL_MAX);
 				debug(LOG_ERR, "Exiting...");
 				exit(1);
 			} else if (config.debuglevel > DEBUGLEVEL_MAX) {
@@ -1439,13 +1439,13 @@ config_validate(void)
 
 	if (config.preauth_idle_timeout > 0 && config.checkinterval >= (60 * config.preauth_idle_timeout) / 2) {
 		debug(LOG_ERR, "Setting checkinterval (%ds) must be smaller than half of preauth_idle_timeout (%ds)",
-			config.checkinterval, 60 * config.preauth_idle_timeout);
+			  config.checkinterval, 60 * config.preauth_idle_timeout);
 		exit(1);
 	}
 
 	if (config.auth_idle_timeout > 0 && config.checkinterval >= (60 * config.auth_idle_timeout) / 2) {
 		debug(LOG_ERR, "Setting checkinterval (%ds) must be smaller than half of auth_idle_timeout (%ds)",
-			config.checkinterval, 60 * config.auth_idle_timeout);
+			  config.checkinterval, 60 * config.auth_idle_timeout);
 		exit(1);
 	}
 }

@@ -45,16 +45,16 @@ static void
 usage(void)
 {
 	printf("Usage: nodogsplash [options]\n"
-		"\n"
-		"  -c <path>   Use configuration file\n"
-		"  -f          Run in foreground\n"
-		"  -d <level>  Debug level (%d-%d)\n"
-		"  -s          Log to syslog\n"
-		"  -w <path>   Ndsctl socket path\n"
-		"  -h          Print this help\n"
-		"  -v          Print version\n"
-		"\n", DEBUGLEVEL_MIN, DEBUGLEVEL_MAX
-	);
+		   "\n"
+		   "  -c <path>   Use configuration file\n"
+		   "  -f          Run in foreground\n"
+		   "  -d <level>  Debug level (%d-%d)\n"
+		   "  -s          Log to syslog\n"
+		   "  -w <path>   Ndsctl socket path\n"
+		   "  -h          Print this help\n"
+		   "  -v          Print version\n"
+		   "\n", DEBUGLEVEL_MIN, DEBUGLEVEL_MAX
+		  );
 }
 
 /** Uses getopt() to parse the command line and set configuration values
