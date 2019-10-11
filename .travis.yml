@@ -1,6 +1,6 @@
 language: c
 sudo: false
-dist: trusty
+dist: bionic
 
 before_script:
   - bash ./resources/build_libmicrohttpd.sh --compile
