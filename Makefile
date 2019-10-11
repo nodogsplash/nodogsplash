@@ -65,7 +65,6 @@ checkstyle: checkastyle
 fixstyle: checkastyle
 	@echo "\033[1;34mChecking style ...\033[00m"
 	@if astyle \
-		--dry-run \
 		--lineend=linux \
 		--suffix=none \
 		--style=kr \
