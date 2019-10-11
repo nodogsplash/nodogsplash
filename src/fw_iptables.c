@@ -999,6 +999,8 @@ iptables_fw_counters_update(void)
 	config = config_get_config();
 	af = config->ip6 ? AF_INET6 : AF_INET;
 
+	LOCK_CLIENT_LIST();
+
 	/* Look for outgoing traffic of authenticated clients. */
 	safe_asprintf(&script, "%s %s", "iptables", "-v -n -x -t mangle -L " CHAIN_OUTGOING);
 	output = popen(script, "r");
@@ -1023,7 +1025,6 @@ iptables_fw_counters_update(void)
 				continue;
 			}
 			debug(LOG_DEBUG, "Read outgoing traffic for %s: Bytes=%llu", ip, counter);
-			LOCK_CLIENT_LIST();
 			if ((p1 = client_list_find_by_ip(ip))) {
 				if (p1->counters.outgoing < counter) {
 					p1->counters.outgoing = counter;
@@ -1033,7 +1034,6 @@ iptables_fw_counters_update(void)
 			} else {
 				debug(LOG_WARNING, "Could not find %s in client list", ip);
 			}
-			UNLOCK_CLIENT_LIST();
 		}
 	}
 	pclose(output);
@@ -1062,7 +1062,6 @@ iptables_fw_counters_update(void)
 				continue;
 			}
 			debug(LOG_DEBUG, "Read incoming traffic for %s: Bytes=%llu", ip, counter);
-			LOCK_CLIENT_LIST();
 			if ((p1 = client_list_find_by_ip(ip))) {
 				if (p1->counters.incoming < counter) {
 					p1->counters.incoming = counter;
@@ -1071,10 +1070,10 @@ iptables_fw_counters_update(void)
 			} else {
 				debug(LOG_WARNING, "Could not find %s in client list", ip);
 			}
-			UNLOCK_CLIENT_LIST();
 		}
 	}
 	pclose(output);
+	UNLOCK_CLIENT_LIST();
 
 	return 0;
 }
