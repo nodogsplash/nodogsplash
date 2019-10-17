@@ -304,14 +304,15 @@ ndsctl_auth(FILE *fp, char *arg)
 	LOCK_CLIENT_LIST();
 	client = client_list_find_by_any(arg, arg, arg);
 	id = client ? client->id : 0;
-	UNLOCK_CLIENT_LIST();
 
 	if (id) {
-		rc = auth_client_auth(id, "ndsctl_auth");
+		rc = auth_client_auth_nolock(id, "ndsctl_auth");
 	} else {
 		debug(LOG_DEBUG, "Client not found.");
 		rc = -1;
 	}
+	UNLOCK_CLIENT_LIST();
+
 
 	if (rc == 0) {
 		fprintf(fp, "Yes");

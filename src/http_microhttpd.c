@@ -64,7 +64,7 @@ static int show_preauthpage(struct MHD_Connection *connection, const char *query
 static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, t_client *client, const char *originurl, const char *querystr);
 static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *client, const char *host, const char *url);
 static int send_error(struct MHD_Connection *connection, int error);
-static int send_redirect_temp(struct MHD_Connection *connection, const char *url);
+static int send_redirect_temp(struct MHD_Connection *connection, t_client *client, const char *url);
 static int send_refresh(struct MHD_Connection *connection);
 static int is_foreign_hosts(struct MHD_Connection *connection, const char *host);
 static int is_splashpage(const char *host, const char *url);
@@ -337,7 +337,7 @@ libmicrohttpd_cb(void *cls,
 	/* only allow get */
 	if (0 != strcmp(method, "GET")) {
 		debug(LOG_DEBUG, "Unsupported http method %s", method);
-		return send_error(connection, 503);
+		return send_error(connection, 403);
 	}
 
 	/* switch between preauth, authenticated */
@@ -361,7 +361,7 @@ libmicrohttpd_cb(void *cls,
 	if (!client) {
 		client = add_client(mac, ip);
 		if (!client) {
-			return send_error(connection, 503);
+			return send_error(connection, 403);
 		}
 	}
 
@@ -516,7 +516,7 @@ static int authenticate_client(struct MHD_Connection *connection,
 	}
 
 	if (redirect_url) {
-		return send_redirect_temp(connection, redirect_url);
+		return send_redirect_temp(connection, client, redirect_url);
 	} else {
 		return send_error(connection, 200);
 	}
@@ -547,7 +547,12 @@ static int authenticated(struct MHD_Connection *connection,
 	char *fasurl = NULL;
 	int ret;
 
-	MHD_get_connection_values(connection, MHD_HEADER_KIND, get_host_value_callback, &host);
+	ret = MHD_get_connection_values(connection, MHD_HEADER_KIND, get_host_value_callback, &host);
+
+	if (ret < 1) {
+		debug(LOG_ERR, "authenticated: Error getting host");
+		return ret;
+	}
 
 	/* check if this is a late request, meaning the user tries to get the internet, but ended up here,
 	 * because the iptables rule came too late */
@@ -559,7 +564,7 @@ static int authenticated(struct MHD_Connection *connection,
 	if (check_authdir_match(url, config->denydir)) {
 		auth_client_deauth(client->id, "client_deauth");
 		snprintf(redirect_to_us, sizeof(redirect_to_us), "http://%s/", config->gw_address);
-		return send_redirect_temp(connection, redirect_to_us);
+		return send_redirect_temp(connection, client, redirect_to_us);
 	}
 
 	if (check_authdir_match(url, config->authdir)) {
@@ -567,7 +572,7 @@ static int authenticated(struct MHD_Connection *connection,
 			safe_asprintf(&fasurl, "%s?clientip=%s&gatewayname=%s&gatewayaddress=%s&status=authenticated",
 				config->fas_url, client->ip, config->gw_name, config->gw_address);
 			debug(LOG_DEBUG, "fasurl %s", fasurl);
-			ret = send_redirect_temp(connection, fasurl);
+			ret = send_redirect_temp(connection, client, fasurl);
 			free(fasurl);
 			return ret;
 		} else if (config->fas_port && config->preauth) {
@@ -610,7 +615,7 @@ static int show_preauthpage(struct MHD_Connection *connection, const char *query
 	char enc_user_agent[256] = {0};
 
 	// Encoded querystring could be bigger than the unencoded version
-	char enc_query[QUERYMAXLEN + QUERYMAXLEN/4] = {0};
+	char enc_query[QUERYMAXLEN + QUERYMAXLEN/2] = {0};
 
 	int rc;
 	int ret;
@@ -682,26 +687,31 @@ static int preauthenticated(struct MHD_Connection *connection,
 		return ret;
 	}
 
-	MHD_get_connection_values(connection, MHD_HEADER_KIND, get_host_value_callback, &host);
+	ret = MHD_get_connection_values(connection, MHD_HEADER_KIND, get_host_value_callback, &host);
 
-	debug(LOG_DEBUG, "Preauthenticated - Requested Host is [ %s ]", host);
-	debug(LOG_DEBUG, "Preauthenticated - Requested url is [ %s ]", url);
-	debug(LOG_DEBUG, "Preauthenticated - Gateway Address is [ %s ]", config->gw_address);
-	debug(LOG_DEBUG, "Preauthenticated - Gateway Port is [ %u ]", config->gw_port);
+	if (ret < 1) {
+		debug(LOG_ERR, "preauthenticated: Error getting host");
+		return ret;
+	}
+
+	debug(LOG_DEBUG, "preauthenticated: Requested Host is [ %s ]", host);
+	debug(LOG_DEBUG, "preauthenticated: Requested url is [ %s ]", url);
+	debug(LOG_DEBUG, "preauthenticated: Gateway Address is [ %s ]", config->gw_address);
+	debug(LOG_DEBUG, "preauthenticated: Gateway Port is [ %u ]", config->gw_port);
 
 	/* check if this is an attempt to directly access the basic splash page when FAS is enabled  */
 	if (config->fas_port) {
 		snprintf(portstr, MAX_HOSTPORTLEN, ":%u", config->gw_port);
 
-		debug(LOG_DEBUG, "Preauthenticated - FAS is enabled");
-		debug(LOG_DEBUG, "Preauthenticated - NDS port ID is [ %s ]", portstr);
-		debug(LOG_DEBUG, "Preauthenticated - NDS port ID search result is [ %s ]", strstr(host, portstr));
+		debug(LOG_DEBUG, "preauthenticated: FAS is enabled");
+		debug(LOG_DEBUG, "preauthenticated: NDS port ID is [ %s ]", portstr);
+		debug(LOG_DEBUG, "preauthenticated: NDS port ID search result is [ %s ]", strstr(host, portstr));
 
 		if (check_authdir_match(url, config->authdir) || strstr(host, "/splash.css") == NULL) {
-			debug(LOG_DEBUG, "Preauthenticated - splash.css or authdir detected");
+			debug(LOG_DEBUG, "preauthenticated: splash.css or authdir detected");
 		} else {
 			if (strstr(host, portstr) != NULL) {
-				debug(LOG_DEBUG, "Preauthenticated -  403 Direct Access Forbidden");
+				debug(LOG_DEBUG, "preauthenticated:  403 Direct Access Forbidden");
 				ret = send_error(connection, 403);
 				return ret;
 			}
@@ -821,7 +831,7 @@ static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, 
 
 	debug(LOG_INFO, "splashpageurl: %s", splashpageurl);
 
-	ret = send_redirect_temp(connection, splashpageurl);
+	ret = send_redirect_temp(connection, client, splashpageurl);
 	free(splashpageurl);
 	return ret;
 }
@@ -927,7 +937,7 @@ add_client(const char *mac, const char *ip)
 	return client;
 }
 
-int send_redirect_temp(struct MHD_Connection *connection, const char *url)
+int send_redirect_temp(struct MHD_Connection *connection, t_client *client, const char *url)
 {
 	struct MHD_Response *response;
 	int ret;
@@ -937,8 +947,9 @@ int send_redirect_temp(struct MHD_Connection *connection, const char *url)
 
 	safe_asprintf(&redirect, redirect_body, url, url);
 
-	response = MHD_create_response_from_buffer(strlen(redirect), redirect, MHD_RESPMEM_MUST_COPY);
-	free (redirect);
+	debug(LOG_DEBUG, "send_redirect_temp: MHD_create_response_from_buffer");
+
+	response = MHD_create_response_from_buffer(strlen(redirect), redirect, MHD_RESPMEM_MUST_FREE);
 
 	if (!response) {
 		return send_error(connection, 503);
@@ -948,11 +959,25 @@ int send_redirect_temp(struct MHD_Connection *connection, const char *url)
 	ret = MHD_add_response_header(response, "Location", url);
 
 	if (ret == MHD_NO) {
-		debug(LOG_DEBUG, "Error adding Location header");
+		debug(LOG_ERR, "send_redirect_temp: Error adding Location header to redirection page");
 	}
 
-	MHD_add_response_header(response, "Connection", "close");
+	ret = MHD_add_response_header(response, "Connection", "close");
+
+	if (ret == MHD_NO) {
+		debug(LOG_ERR, "send_redirect_temp: Error adding Connection header to redirection page");
+	}
+
+	debug(LOG_INFO, "send_redirect_temp: Queueing response for %s, %s", client->ip, client->mac);
+
 	ret = MHD_queue_response(connection, MHD_HTTP_TEMPORARY_REDIRECT, response);
+
+	if (ret == MHD_NO) {
+		debug(LOG_ERR, "send_redirect_temp: Error queueing response for %s, %s", client->ip, client->mac);
+	} else {
+		debug(LOG_DEBUG, "send_redirect_temp: Response is Queued");
+	}
+
 	MHD_destroy_response(response);
 
 	return ret;

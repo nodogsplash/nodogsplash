@@ -249,30 +249,42 @@ end:
 	return rc;
 }
 
+
+/**
+ * @brief auth_client_auth_nolock authenticate a client without holding the CLIENT_LIST lock
+ * @param id the client id
+ * @param reason can be NULL
+ * @return 0 on success
+ */
 int
-auth_client_auth(const unsigned id, const char *reason)
+auth_client_auth_nolock(const unsigned id, const char *reason)
 {
 	t_client *client;
 	int rc;
-
-	LOCK_CLIENT_LIST();
 
 	client = client_list_find_by_id(id);
 
 	/* Client should already have hit the server and be on the client list */
 	if (client == NULL) {
 		debug(LOG_ERR, "Client %u to authenticate is not on client list", id);
-		rc = -1;
-		goto end;
+		return -1;
 	}
 
 	rc = auth_change_state(client, FW_MARK_AUTHENTICATED, reason);
-
 	if (rc == 0) {
 		authenticated_since_start++;
 	}
 
-end:
+	return rc;
+}
+
+int
+auth_client_auth(const unsigned id, const char *reason)
+{
+	int rc;
+
+	LOCK_CLIENT_LIST();
+	rc = auth_client_auth_nolock(id, reason);
 	UNLOCK_CLIENT_LIST();
 
 	return rc;
