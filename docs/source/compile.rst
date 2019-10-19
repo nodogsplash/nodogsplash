@@ -1,10 +1,10 @@
-How to compile Nodogsplash
+How to Compile Nodogsplash
 ##########################
 
 Linux/Unix
 **********
 
-Install libmicrohttpd including the header files (often call -dev package).
+The Libmicrohttpd library is a dependency of NoDogSplash so you must first iInstall libmicrohttpd including the header files (often called -dev package). Then proceed to download the NoDogSplash source files: 
 
 .. code::
 
@@ -19,12 +19,15 @@ replace path in the make call with
 
    make CFLAGS="-I/tmp/libmicrohttpd_install/include" LDFLAGS="-L/tmp/libmicrohttpd_install/lib"
 
-After compiling you can call ``make install`` to install nodogsplash to /usr/
+After compiling you can call ``make install`` to install NoDogSplash to /usr/
 
-OpenWrt
-*******
+Making a Package for Installation
+*********************************
 
-To compile nodogsplash please use the package definition from the feeds package.
+OpenWrt Package
+===============
+
+To compile NoDogSplash and create its installable package, please use the package definition from the feeds package.
 
 .. code::
 
@@ -41,3 +44,13 @@ Select the appropriate "Target System" and "Target Profile" in the menuconfig me
    make defconfig
    make menuconfig
    make
+
+Debian Package
+==============
+
+First you must compile NoDogSplash as described above for Linux/Unix.
+Then run the command:
+
+.. code::
+
+   make deb
