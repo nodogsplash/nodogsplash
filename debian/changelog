@@ -1,3 +1,13 @@
+nodogsplash (4.3.3-1) stable; urgency=medium
+
+  * Fix Memory corruption at high loads [bluewavenet]
+  * Prevent iptables and ndsctl deadlocks [lynxis]
+  * Prevent query string truncation for deauthenticated client when client is using some types of vpn software [bluewavenet]
+  * Add debuglevel logging for case of firewall restart in OpenWrt [bluewavenet]
+  * Return error 403(forbidden) when client attempts to use a forbidden http method [bluewavenet]
+
+ -- Rob White <dot@blue-wave.net>  Sat, 19 Oct 2019 13:42:16 +0000
+
 nodogsplash (4.3.2-1) stable; urgency=medium
 
   * Fix deb package build error [martignoni]

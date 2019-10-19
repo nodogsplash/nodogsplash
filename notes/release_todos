@@ -10,7 +10,7 @@ When ready to do a release, do the following:
 8. resources/splash.html and resources/status.html - update copyright dates as required eg current year
 9. "cd docs" then "make man". Copy resulting docs/build/man/nodogsplash.1 to overwrite old debian/doc/nodogsplash.1
 10. remove /docs/build directory created in step 9
-11. Push to origin
+11. Commit and Push to origin
 12. Github - Create Pull Request and Merge to master
 13. Github proceed to "Draft New Release"
 14. Github tag release as eg. v3.3.0 (remembering the leading "v"")
