@@ -3,6 +3,25 @@
 #Copyright &copy; Blue Wave Projects and Services 2015-2019
 #This software is released under the GNU GPL license.
 
+#############################################################################################
+#
+# !!!Dependencies!!!
+#
+# If the remote image is served from an https site, ssl/tls support for wget is required.
+#
+# On OpenWrt this is provided by the following packages:
+#
+# libustream-mbedtls
+#
+# and
+#
+# ca-bundle
+#
+# On other operating systems the equivalent must be provided, eg wget-ssl and ca-bundle
+#
+#############################################################################################
+
+
 ### functions
 
 
@@ -39,7 +58,7 @@ get_image_file() {
 
 	md5=$(echo -e $imageurl | md5sum);
 	filename=$(echo -e $md5 | awk -F" -" {'print($1)'});
-	filename=$filename".png"
+	filename="$filename.$imagetype"
 
 	if [ ! -f "$imagepath/$filename" ]; then
 		wget -q -P $imagepath -O $filename $imageurl
@@ -166,10 +185,13 @@ year="$(date | awk -F ' ' '{print $(6)}')"
 
 # We want to display an image from a remote server
 # Remote server can be https if required
-# All we need is the image url
+# All we need is the image url and image type (jpg, png etc.)
 # In this example the image is only refreshed after a reboot
-# But this is easy to change in get_image_file
+# But this is easy to change in get_image_file function
+
 imageurl="https://avatars0.githubusercontent.com/u/4403602"
+imagetype="png"
+
 get_image_file
 
 footer="
