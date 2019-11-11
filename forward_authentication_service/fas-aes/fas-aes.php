@@ -206,7 +206,7 @@ if ($fullname == "" or $email == "") {
 	"<br><italic-black> Your News or Advertising could be here, contact the owners of this Hotspot to find out how!</italic-black>\n".
 	"<form action=\"".$authaction."\" method=\"get\">\n".
 	"<input type=\"hidden\" name=\"tok\" value=\"".$tok."\">\n".
-	"<input type=\"hidden\" name=\"redir\" value=\"".$originurl."\"><br>\n".
+	"<input type=\"hidden\" name=\"redir\" value=\"".urldecode($originurl)."\"><br>\n".
 	"<input type=\"submit\" value=\"Continue\" >\n".
 	"</form><hr>\n";
 	read_terms($me,$gatewayname);
