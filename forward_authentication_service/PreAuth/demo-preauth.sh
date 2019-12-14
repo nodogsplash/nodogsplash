@@ -87,15 +87,17 @@ user_agent=$(printf "${user_agent_enc//%/\\x}")
 # The query string will be truncated if it does exceed this length.
 
 
-# Parse for the system variables always sent by NDS:
+# Parse for the variables returned by NDS:
 queryvarlist="clientip gatewayname hid redir status username emailaddr"
 
 for var in $queryvarlist; do
-	eval $var=$(echo "$query_enc" | awk -F "$var%3d" '{print $2}' | awk -F "%2c%20" '{print $1}')
+	nextvar=$(echo $queryvarlist | awk '{for(i=1;i<=NF;i++) if ($i=="'$var'") printf $(i+1)}')
+	eval $var=$(echo "$query_enc" | awk -F "$var%3d" '{print $2}' | awk -F "%2c%20$nextvar%3d" '{print $1}')
 done
 
 # URL decode vars that need it:
 requested=$(printf "${redir//%/\\x}")
+gatewayname=$(printf "${gatewayname//%/\\x}")
 username=$(printf "${username//%/\\x}")
 emailaddr=$(printf "${emailaddr//%/\\x}")
 
@@ -129,11 +131,11 @@ header="
 	<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
 	<link rel=\"shortcut icon\" href=\"/images/splash.jpg\" type=\"image/x-icon\">
 	<link rel=\"stylesheet\" type=\"text/css\" href=\"/splash.css\">
-	<title>$gatewayname Captive Portal.</title>
+	<title>$gatewayname.</title>
 	</head>
 	<body>
 	<div class=\"offset\">
-	<med-blue>$gatewayname Captive Portal.</med-blue>
+	<med-blue>$gatewayname.</med-blue>
 	<div class=\"insert\" style=\"max-width:100%;\">
 	<hr>
 "
