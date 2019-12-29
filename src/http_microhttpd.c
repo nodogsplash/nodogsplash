@@ -881,6 +881,7 @@ static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *c
 static char *construct_querystring(t_client *client, char *originurl, char *querystr ) {
 
 	char hash[128] = {0};
+	char clientif[64] = {0};
 
 	s_config *config = config_get_config();
 
@@ -899,15 +900,17 @@ static char *construct_querystring(t_client *client, char *originurl, char *quer
 			}
 
 	} else if (config->fas_secure_enabled == 2) {
+		get_client_interface(clientif, sizeof(clientif), client->mac);
 		snprintf(querystr, QUERYMAXLEN,
-			"clientip=%s%sclientmac=%s%sgatewayname=%s%stok=%s%sgatewayaddress=%s%sauthdir=%s%soriginurl=%s",
+			"clientip=%s%sclientmac=%s%sgatewayname=%s%stok=%s%sgatewayaddress=%s%sauthdir=%s%soriginurl=%s%sclientif=%s",
 			client->ip, QUERYSEPARATOR,
 			client->mac, QUERYSEPARATOR,
 			config->gw_name, QUERYSEPARATOR,
 			client->token, QUERYSEPARATOR,
 			config->gw_address, QUERYSEPARATOR,
 			config->authdir, QUERYSEPARATOR,
-			originurl);
+			originurl, QUERYSEPARATOR,
+			clientif);
 
 	} else {
 		snprintf(querystr, QUERYMAXLEN, "?clientip=%s&gatewayname=%s", client->ip, config->gw_name);

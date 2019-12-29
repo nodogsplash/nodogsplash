@@ -42,9 +42,9 @@ fi
 
 # Get default interface
 # This will be the interface NDS is bound to eg. br-lan
-clientif=$(ip -4 neigh | awk -F ' ' 'match($s,"'"$mac"' ")>0 {printf $3}')
+clientlocalif=$(ip -4 neigh | awk -F ' ' 'match($s,"'"$mac"' ")>0 {printf $3}')
 
-if [ -z $clientif ]; then
+if [ -z $clientlocalif ]; then
 	# The client has gone offline eg battery saving or switched to another ssid
 	echo "Client $mac is not online" | logger -p "daemon.info" -s -t "NDS-Library[$pid]"
 	exit 1
@@ -57,17 +57,20 @@ interface_list=$(iw dev | awk -F 'Interface ' 'NF>1{printf $2" "}')
 
 # Scan the wireless interfaces on this device for the client mac
 for interface in $interface_list; do
-	macscan=$(iw dev $interface station dump | awk -F " " 'match($s, "'"$mac"'")>0{print $2}')
-	meshmac=$(iw dev $interface mpp dump | awk -F "$mac " 'NF>1{print $2}')
+	macscan=$(iw dev $interface station dump | awk -F " " 'match($s, "'"$mac"'")>0{printf $2}')
+	meshmac=$(iw dev $interface mpp dump | awk -F "$mac " 'NF>1{printf $2}')
 
-	if [ ! -z $macscan ]; then
-		clientif=$interface
-		break
+	if [ ! -z "$macscan" ]; then
+		clientlocalif=$interface
+	fi
+
+	if [ ! -z "$meshmac" ]; then
+		clientmeshif=$meshmac
 	fi
 done
 
 # Return the local interface the client is using, the mesh node mac address and the local mesh interface
-echo "$clientif $meshmac"
+echo "$clientlocalif $clientmeshif"
 
 exit 0
 

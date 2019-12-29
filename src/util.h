@@ -68,6 +68,12 @@ time_t get_system_uptime();
 /* @brief Returns the hash of a string */
 int hash_str(char *buf, int hash_len, const char *src);
 
+/* @brief Returns the client local interface,
+ * meshnode mac address (null if mesh not present) and
+ * local mesh interface (null if mesh not present)
+ */
+int get_client_interface(char* clientif, int clientif_len, const char *climac);
+
 /*
  * @brief Mallocs and returns nodogsplash uptime string
  */
