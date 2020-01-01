@@ -31,7 +31,7 @@ config nodogsplash
 	# Both modes may be customised or a full custom system can be developed using FAS and BinAuth
 	# See documentation at: https://nodogsplashdocs.readthedocs.io/
 	#
-	#option login_option_enabled '1'
+	option login_option_enabled '0'
 
 	# WebRoot
 	# Default: /etc/nodogsplash/htdocs
