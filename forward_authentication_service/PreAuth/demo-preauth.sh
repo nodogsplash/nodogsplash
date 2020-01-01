@@ -1,6 +1,6 @@
 #!/bin/sh
-#Copyright (C) The Nodogsplash Contributors 2004-2019
-#Copyright (C) Blue Wave Projects and Services 2015-2019
+#Copyright (C) The Nodogsplash Contributors 2004-2020
+#Copyright (C) Blue Wave Projects and Services 2015-2020
 #This software is released under the GNU GPL license.
 
 # functions:

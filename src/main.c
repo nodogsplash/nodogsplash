@@ -51,6 +51,7 @@
 
 #include "common.h"
 #include "http_microhttpd.h"
+#include "http_microhttpd_utils.h"
 #include "safe.h"
 #include "debug.h"
 #include "conf.h"
@@ -266,14 +267,14 @@ main_loop(void)
 	debug(LOG_NOTICE, "Detected gateway %s at %s (%s)", config->gw_interface, config->gw_ip, config->gw_mac);
 
 	/* Initializes the web server */
-	if ((webserver = MHD_start_daemon(
-						MHD_USE_EPOLL_INTERNALLY | MHD_USE_TCP_FASTOPEN,
-						config->gw_port,
-						NULL, NULL,
-						libmicrohttpd_cb, NULL,
-						MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 120,
-						MHD_OPTION_LISTENING_ADDRESS_REUSE, 1,
-						MHD_OPTION_END)) == NULL) {
+	if ((webserver = MHD_start_daemon(MHD_USE_EPOLL_INTERNALLY | MHD_USE_TCP_FASTOPEN,
+							config->gw_port,
+							NULL, NULL,
+							libmicrohttpd_cb, NULL,
+							MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 120,
+							MHD_OPTION_LISTENING_ADDRESS_REUSE, 1,
+							MHD_OPTION_UNESCAPE_CALLBACK, unescape,
+							MHD_OPTION_END)) == NULL) {
 		debug(LOG_ERR, "Could not create web server: %s", strerror(errno));
 		exit(1);
 	}
