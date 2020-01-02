@@ -42,6 +42,9 @@ fi
 
 # Get default interface
 # This will be the interface NDS is bound to eg. br-lan
+#clientlocalip=$(ip -4 neigh | awk -F ' ' 'match($s,"'"$mac"' ")>0 {printf $1}')
+#ping=$(ping -W 1 -c 1 $clientlocalip)
+#clientlocalif=$(ip -4 neigh | awk -F ' ' 'match($s,"'"$mac"' REACHABLE")>0 {printf $3}')
 clientlocalif=$(ip -4 neigh | awk -F ' ' 'match($s,"'"$mac"' ")>0 {printf $3}')
 
 if [ -z $clientlocalif ]; then
@@ -58,14 +61,18 @@ interface_list=$(iw dev | awk -F 'Interface ' 'NF>1{printf $2" "}')
 # Scan the wireless interfaces on this device for the client mac
 for interface in $interface_list; do
 	macscan=$(iw dev $interface station dump | awk -F " " 'match($s, "'"$mac"'")>0{printf $2}')
-	meshmac=$(iw dev $interface mpp dump | awk -F "$mac " 'NF>1{printf $2}')
 
 	if [ ! -z "$macscan" ]; then
+		clientmeshif=""
 		clientlocalif=$interface
-	fi
-
-	if [ ! -z "$meshmac" ]; then
-		clientmeshif=$meshmac
+		break
+	else
+		clientlocalip=$(ip -4 neigh | awk -F ' ' 'match($s,"'"$mac"' ")>0 {printf $1}')
+		ping=$(ping -W 1 -c 1 $clientlocalip)
+		meshmac=$(iw dev $interface mpp dump | awk -F "$mac " 'NF>1{printf $2}')
+		if [ ! -z "$meshmac" ]; then
+			clientmeshif=$meshmac
+		fi
 	fi
 done
 
