@@ -1,6 +1,6 @@
 #!/bin/sh
-#Copyright &copy; The Nodogsplash Contributors 2004-2019
-#Copyright &copy; Blue Wave Projects and Services 2015-2019
+#Copyright (C) The Nodogsplash Contributors 2004-2020
+#Copyright (C) Blue Wave Projects and Services 2015-2020
 #This software is released under the GNU GPL license.
 
 #############################################################################################
@@ -21,32 +21,7 @@
 #
 #############################################################################################
 
-
-### functions
-
-
-write_log () {
-	logfile="/tmp/ndslog.log"
-	min_freespace_to_log_ratio=10
-	datetime=$(date)
-
-	if [ ! -f $logfile ]; then
-		echo "$datetime, New log file created" > $logfile
-	fi
-
-	ndspid=$(ps | grep nodogsplash | awk -F ' ' 'NR==2 {print $1}')
-	filesize=$(ls -s -1 $logfile | awk -F' ' '{print $1}')
-	available=$(df |grep /tmp | awk -F ' ' '{print $4}')
-	sizeratio=$(($available/$filesize))
-
-	if [ $sizeratio -ge $min_freespace_to_log_ratio ]; then
-		echo "PreAuth - writing log to $logfile" | logger -p "daemon.notice" -s -t "nodogsplash[$ndspid]: "
-		echo "$datetime, Username=$username, Email Address=$emailaddr, mac address=$clientmac, user_agent=$user_agent" \
-			>> $logfile
-	else
-		echo "PreAuth - log file too big, please archive contents" | logger -p "daemon.err" -s -t "nodogsplash[$ndspid]: "
-	fi
-}
+# functions:
 
 get_image_file() {
 	imagepath="/etc/nodogsplash/htdocs/images/remote"
@@ -65,13 +40,54 @@ get_image_file() {
 	fi
 }
 
+get_client_zone () {
+	# Gets the client zone, ie the connction the client is using, such as:
+	# local interface (br-lan, wlan0, wlan0-1 etc.,
+	# or remote mesh node mac address
+	# This zone name is only displayed here but could be used to customise the login form for each zone
+
+	client_mac=$(ip -4 neigh |grep "$clientip" | awk '{print $5}')
+	client_if_string=$(/usr/lib/nodogsplash/get_client_interface.sh $client_mac)
+	client_if=$(echo $client_if_string | awk '{printf $1}')
+	client_meshnode=$(echo $client_if_string | awk '{printf $2}' | awk -F ':' '{print $1$2$3$4$5$6}')
+	local_mesh_if=$(echo $client_if_string | awk '{printf $3}')
+
+	if [ ! -z "$client_meshnode" ]; then
+		client_zone="MeshZone:$client_meshnode"
+	else
+		client_zone="LocalZone:$client_if"
+	fi
+}
+
+write_log () {
+	logfile="/tmp/ndslog.log"
+	min_freespace_to_log_ratio=10
+	datetime=$(date)
+
+	if [ ! -f $logfile ]; then
+		echo "$datetime, New log file created" > $logfile
+	fi
+
+	ndspid=$(ps | grep nodogsplash | awk -F ' ' 'NR==2 {print $1}')
+	filesize=$(ls -s -1 $logfile | awk -F' ' '{print $1}')
+	available=$(df |grep /tmp | awk -F ' ' '{print $4}')
+	sizeratio=$(($available/$filesize))
+
+	if [ $sizeratio -ge $min_freespace_to_log_ratio ]; then
+		echo "$datetime, Username=$username, Email Address=$emailaddr, mac address=$clientmac, user_agent=$user_agent" \
+			>> $logfile
+	else
+		echo "PreAuth - log file too big, please archive contents" | logger -p "daemon.err" -s -t "nodogsplash[$ndspid]: "
+	fi
+}
+
 # Get the urlencoded querystring and user_agent
 query_enc="$1"
 user_agent_enc="$2"
 
 # The query string is sent to us from NDS in a urlencoded form,
-# so we must decode it here so we can parse it:
-query=$(printf "${query_enc//%/\\x}")
+# we can decode it or parts of it using something like the following:
+# query=$(printf "${query_enc//%/\\x}")
 
 # The User Agent string is sent urlencoded also:
 user_agent=$(printf "${user_agent_enc//%/\\x}")
@@ -125,20 +141,24 @@ user_agent=$(printf "${user_agent_enc//%/\\x}")
 # The query string will be truncated if it does exceed this length.
 
 
-# Parse for the system variables always sent by NDS:
-clientip="$(echo $query | awk -F ', ' '{print $1;}' | awk -F 'clientip=' '{print $2;}')"
-gatewayname="$(echo $query | awk -F ', ' '{print $2;}' | awk -F 'gatewayname=' '{print $2;}')"
+# Parse for the variables returned by NDS:
+queryvarlist="clientip gatewayname hid redir status username emailaddr"
 
-# The third system variable is either the originally requested url:
-requested="$(echo $query | awk -F ', ' '{print $3;}' | awk -F 'redir=' '{print $2;}')"
+for var in $queryvarlist; do
+	nextvar=$(echo $queryvarlist | awk '{for(i=1;i<=NF;i++) if ($i=="'$var'") printf $(i+1)}')
+	eval $var=$(echo "$query_enc" | awk -F "$var%3d" '{print $2}' | awk -F "%2c%20$nextvar%3d" '{print $1}')
+done
 
-# or it is a status message:
-status="$(echo $query | awk -F ', ' '{print $3;}' | awk -F 'status=' '{print $2;}')"
+# URL decode vars that need it:
+gatewayname=$(printf "${gatewayname//%/\\x}")
+username=$(printf "${username//%/\\x}")
+emailaddr=$(printf "${emailaddr//%/\\x}")
 
-# Parse for additional variables we define in this script, in this case username and emailaddr
-username="$(echo $query | awk -F ', ' '{print $4;}' | awk -F 'username=' '{print $2;}')"
-emailaddr="$(echo $query | awk -F ', ' '{print $5;}' | awk -F 'emailaddr=' '{print $2;}')"
+#requested might have trailing comma space separated, user defined parameters - so remove them as well as decoding
+requested=$(printf "${redir//%/\\x}" | awk -F ', ' '{print $1}')
 
+#Get the client zone, local wired, local wireless or remote mesh node
+get_client_zone
 
 # Define some common html as the first part of the page to be served by NDS
 #
@@ -170,18 +190,14 @@ header="
 	<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
 	<link rel=\"shortcut icon\" href=\"/images/splash.jpg\" type=\"image/x-icon\">
 	<link rel=\"stylesheet\" type=\"text/css\" href=\"/splash.css\">
-	<title>$gatewayname Captive Portal.</title>
+	<title>$gatewayname.</title>
 	</head>
 	<body>
 	<div class=\"offset\">
-	<med-blue>$gatewayname Captive Portal.</med-blue>
+	<med-blue>$gatewayname.</med-blue>
 	<div class=\"insert\" style=\"max-width:100%;\">
 	<hr>
 "
-
-# Define a common footer for every page served
-version="$(ndsctl status | grep Version)"
-year="$(date | awk -F ' ' '{print $(6)}')"
 
 # We want to display an image from a remote server
 # Remote server can be https if required
@@ -212,6 +228,7 @@ login_form="
 	<form action=\"/nodogsplash_preauth/\" method=\"get\">
 	<input type=\"hidden\" name=\"clientip\" value=\"$clientip\">
 	<input type=\"hidden\" name=\"gatewayname\" value=\"$gatewayname\">
+	<input type=\"hidden\" name=\"hid\" value=\"$hid\">
 	<input type=\"hidden\" name=\"redir\" value=\"$requested\">
 	<input type=\"text\" name=\"username\" value=\"$username\" autocomplete=\"on\" ><br>Name<br><br>
 	<input type=\"email\" name=\"emailaddr\" value=\"$emailaddr\" autocomplete=\"on\" ><br>Email<br><br>
@@ -242,7 +259,9 @@ fi
 # Note also $clientip, $gatewayname and $requested (redir) must always be preserved
 #
 if [ -z $username ] || [ -z $emailaddr ]; then
-	echo "<big-red>Welcome!</big-red><italic-black> To access the Internet you must enter your Name and Email Address</italic-black><hr>"
+	echo "<big-red>Welcome!</big-red><br>
+		<med-blue>You are connected to $client_zone</med-blue><br>
+		<italic-black>To access the Internet you must enter your Name and Email Address</italic-black><hr>"
 	echo -e $login_form
 else
 	# If we got here, we have both the username and emailaddr fields as completed on the login page on the client,
@@ -302,7 +321,4 @@ echo -e $footer
 # The output of this script could of course be much more complex and
 # could easily be used to conduct a dialogue with the client user.
 #
-
-
-
 

@@ -5,6 +5,25 @@
 
 # functions:
 
+get_client_zone () {
+	# Gets the client zone, ie the connction the client is using, such as:
+	# local interface (br-lan, wlan0, wlan0-1 etc.,
+	# or remote mesh node mac address
+	# This zone name is only displayed here but could be used to customise the login form for each zone
+
+	client_mac=$(ip -4 neigh |grep "$clientip" | awk '{print $5}')
+	client_if_string=$(/usr/lib/nodogsplash/get_client_interface.sh $client_mac)
+	client_if=$(echo $client_if_string | awk '{printf $1}')
+	client_meshnode=$(echo $client_if_string | awk '{printf $2}' | awk -F ':' '{print $1$2$3$4$5$6}')
+	local_mesh_if=$(echo $client_if_string | awk '{printf $3}')
+
+	if [ ! -z "$client_meshnode" ]; then
+		client_zone="MeshZone:$client_meshnode"
+	else
+		client_zone="LocalZone:$client_if"
+	fi
+}
+
 write_log () {
 	logfile="/tmp/ndslog.log"
 	min_freespace_to_log_ratio=10
@@ -96,10 +115,15 @@ for var in $queryvarlist; do
 done
 
 # URL decode vars that need it:
-requested=$(printf "${redir//%/\\x}")
 gatewayname=$(printf "${gatewayname//%/\\x}")
 username=$(printf "${username//%/\\x}")
 emailaddr=$(printf "${emailaddr//%/\\x}")
+
+#requested might have trailing comma space separated, user defined parameters - so remove them as well as decoding
+requested=$(printf "${redir//%/\\x}" | awk -F ', ' '{print $1}')
+
+#Get the client zone, local wired, local wireless or remote mesh node
+get_client_zone
 
 # Define some common html as the first part of the page to be served by NDS
 #
@@ -192,7 +216,9 @@ fi
 # Note also $clientip, $gatewayname and $requested (redir) must always be preserved
 #
 if [ -z $username ] || [ -z $emailaddr ]; then
-	echo "<big-red>Welcome!</big-red><italic-black> To access the Internet you must enter your Name and Email Address</italic-black><hr>"
+	echo "<big-red>Welcome!</big-red><br>
+		<med-blue>You are connected to $client_zone</med-blue><br>
+		<italic-black>To access the Internet you must enter your Name and Email Address</italic-black><hr>"
 	echo -e $login_form
 else
 	# If we got here, we have both the username and emailaddr fields as completed on the login page on the client,

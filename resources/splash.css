@@ -42,12 +42,19 @@
 	}
 
 	input[type=text], input[type=email], input[type=password] {
+		font-size: 1em;
+		line-height: 2.0em;
+		height: 2.0em;
 		color: black;
 		background: lightgrey;
 	}
 
 	input[type=submit], input[type=button] {
+		font-size: 1em;
+		line-height: 2.0em;
+		height: 2.0em;
 		color: black;
+		font-weight: bold;
 		background: lightblue;
 	}
 
