@@ -47,6 +47,12 @@
  The script is provided as a fully functional alternative to the basic NDS splash page.
  In its present trivial form it does not do any verification, but serves as an example for customisation projects.
 
+ The script retreives the clientif string sent from NDS and displays it on the login form.
+ "clientif" is of the form [client_local_interface] [remote_meshnode_mac] [local_mesh_if]
+ The returned values can be used to dynamically modify the login form presented to the client,
+ depending on the interface the client is connected to.
+ eg. The login form can be different for an ethernet connection, a private wifi, a public wifi or a remote mesh network zone. 
+
 */
 
 $key="1234567890";
@@ -83,6 +89,14 @@ if (isset($_GET['fas']) and isset($_GET['iv']))  {
 		if ($name == "gatewayaddress") {$gatewayaddress=$value;}
 		if ($name == "authdir") {$authdir=$value;}
 		if ($name == "originurl") {$originurl=$value;}
+		if ($name == "clientif") {$clientif=$value;}
+	}
+	$client_zone_r=explode(" ",trim($clientif));
+
+	if ($client_zone_r[1] == "") {
+		$client_zone="LocalZone:".$client_zone_r[0];
+	} else {
+		$client_zone="MeshZone:".str_replace(":","",$client_zone_r[1]);
 	}
 
 } else if (isset($_GET["status"])) {
@@ -121,55 +135,75 @@ if (isset($gatewayaddress)) {
 }
 
 //Output our responsive page
-echo"<!DOCTYPE html>\n<html>\n<head>\n".
-	"<meta charset=\"utf-8\" />\n".
-	"<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n";
 
+$css=insert_css();
+$header="
+	<!DOCTYPE html>
+	<html>
+	<head>
+	<meta http-equiv=\"Cache-Control\" content=\"no-cache, no-store, must-revalidate\">
+	<meta http-equiv=\"Pragma\" content=\"no-cache\">
+	<meta http-equiv=\"Expires\" content=\"0\">
+	<meta charset=\"utf-8\">
+	<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
+	<link rel=\"shortcut icon\" href=".$imagepath." type=\"image/x-icon\">
+	<style>$css</style>
+	<title>$gatewayname.</title>
+	</head>
+	<body>
+	<div class=\"offset\">
+	<med-blue>$gatewayname.</med-blue>
+	<div class=\"insert\" style=\"max-width:100%;\">
+	<hr>
+";
+
+#footer
 if (isset($gatewayaddress)) {
-	echo "<link rel=\"shortcut icon\" href=".$imagepath." type=\"image/x-icon\">";
+	$image="<img style=\"float:left; width:7em; height:7em;\" src=\"".$imagepath."\">";
 }
 
-echo "<title>".$header."</title>\n"."<style>\n";
-insert_css();
-echo"\n</style>\n</head>\n<body>\n";
+$footer="<hr>
+	<div style=\"font-size:0.5em;\">
+	$image
+	&copy; The Nodogsplash Contributors 2004-".date("Y")."<br>
+	&copy; Blue Wave Projects and Services 2015-".date("Y")."<br>
+	This software is released under the GNU GPL license.<br><br><br><br><br>
+	</div>
+	</div>
+	</div>
+	</body>
+	</html>";
 
-//page header
-echo "<div class=\"offset\">\n";
-echo "<hr><b style=\"color:blue;\">".$gatewayname.
-	" </b><br><b>".$header."</b><br><hr>\n";
-echo"<div class=\"insert\">\n";
 
-if (isset($gatewayaddress)) {
-	echo "<img style=\"float:left; width:4em; height:4em;\" src=\"".$imagepath."\">";
-}
+echo $header;
 
 if ($terms == true) {
 	display_terms();
-	footer();
+	echo $footer;
 	exit(0);
 }
 
 if ($landing == true) {
-	echo "<p><big-red>You are now logged in and have access to the Internet.</big-red></p>";
-	echo "<hr>";
-	echo "<p><italic-black>You can use your Browser, Email and other network Apps as you normally would.</italic-black></p>";
-	echo "\n<form>\n<input type=\"button\" VALUE=\"Continue\" onClick=\"location.href='".$originurl."'\" >\n</form>\n";
-	footer();
+	echo "<p><big-red>You are now logged in and have access to the Internet.</big-red></p>
+		<hr>
+		<p><italic-black>You can use your Browser, Email and other network Apps as you normally would.</italic-black></p>
+		<form>\n<input type=\"button\" VALUE=\"Continue\" onClick=\"location.href='".$originurl."'\" >\n</form>\n";
+	echo $footer;
 	exit(0);
 }
 
 if (isset($_GET["status"])) {
 	if ($_GET["status"] == "authenticated") {
-		echo "<p><big-red>You are already logged in and have access to the Internet.</big-red></p>";
-		echo "<hr>";
-		echo "<p><italic-black>You can use your Browser, Email and other network Apps as you normally would.</italic-black></p>";
+		echo "<p><big-red>You are already logged in and have access to the Internet.</big-red></p>
+			<hr>
+			<p><italic-black>You can use your Browser, Email and other network Apps as you normally would.</italic-black></p>";
 		read_terms($me,$gatewayname);
-		footer();
+		echo $footer;
 		exit(0);
 	}
 }
 if (isset($_GET["fullname"])) {
-	$fullname=ucwords($_GET["fullname"]);
+	$fullname=ucwords(htmlentities($_GET["fullname"]));
 }
 
 if (isset($_GET["email"])) {
@@ -179,20 +213,23 @@ if (isset($_GET["email"])) {
 
 //Initial Form
 if ($fullname == "" or $email == "") {
-	echo "<b>Enter Full Name and Email Address</b>\n";
+	echo "<big-red>Welcome!</big-red><br>
+		<med-blue>You are connected to $client_zone</med-blue><br>";
 	$me=$_SERVER['SCRIPT_NAME'];
 	if ($invalid == true) {
 		echo "<br><b style=\"color:red;\">ERROR! Incomplete data passed from NDS</b>\n";
 	} else {
 		read_terms($me, $gatewayname);
-		echo "<form action=\"".$me."\" method=\"get\" >\n";
-		echo "<input type=\"hidden\" name=\"fas\" value=\"".$string."\">\n";
-		echo "<input type=\"hidden\" name=\"iv\" value=\"".$iv."\">\n";
-		echo "<hr>Full Name:<br>\n";
-		echo "<input type=\"text\" name=\"fullname\" value=\"".$fullname."\">\n<br>\n";
-		echo "Email Address:<br>\n";
-		echo "<input type=\"email\" name=\"email\" value=\"".$email."\">\n<br><br>\n";
-		echo "<input type=\"submit\" value=\"Accept Terms of Service\">\n</form>\n";
+		echo "<form action=\"$me\" method=\"get\" >
+			<input type=\"hidden\" name=\"fas\" value=\"$string\">
+			<input type=\"hidden\" name=\"iv\" value=\"$iv\">
+			<hr>Full Name:<br>
+			<input type=\"text\" name=\"fullname\" value=\"$fullname\">
+			<br>
+			Email Address:<br>
+			<input type=\"email\" name=\"email\" value=\"$email\">
+			<br><br>
+			<input type=\"submit\" value=\"Accept Terms of Service\">\n</form>\n";
 	}
 } else {
 	# Output the "Thankyou page" with a continue button
@@ -201,14 +238,14 @@ if ($fullname == "" or $email == "") {
 	# the client taps continue, so now is the time to deliver your message.
 	$authaction="http://".$gatewayaddress."/".$authdir."/";
 
-	echo "<big-red>Thankyou!</big-red>\n".
-	"<br><b>Welcome $fullname</b>\n".
-	"<br><italic-black> Your News or Advertising could be here, contact the owners of this Hotspot to find out how!</italic-black>\n".
-	"<form action=\"".$authaction."\" method=\"get\">\n".
-	"<input type=\"hidden\" name=\"tok\" value=\"".$tok."\">\n".
-	"<input type=\"hidden\" name=\"redir\" value=\"".urldecode($originurl)."\"><br>\n".
-	"<input type=\"submit\" value=\"Continue\" >\n".
-	"</form><hr>\n";
+	echo "<big-red>Thankyou!</big-red>
+		<br><b>Welcome $fullname</b>
+		<br><italic-black> Your News or Advertising could be here, contact the owners of this Hotspot to find out how!</italic-black>
+		<form action=\"$authaction\" method=\"get\">
+		<input type=\"hidden\" name=\"tok\" value=\"$tok\">
+		<input type=\"hidden\" name=\"redir\" value=\"".urldecode($originurl)."\"><br>
+		<input type=\"submit\" value=\"Continue\" >
+		</form><hr>\n";
 	read_terms($me,$gatewayname);
 
 	# In this example we have decided to log all clients who are granted access
@@ -236,28 +273,16 @@ if ($fullname == "" or $email == "") {
 	}
 }
 
-footer();
+echo $footer;
 
 // Functions:
 
-function footer() {
-	echo "<hr>\n</div>\n";
-	echo "<div style=\"font-size:0.7em;\">\n";
-	echo "&copy; The Nodogsplash Contributors 2004-".date("Y")."<br>";
-	echo "&copy; Blue Wave Projects and Services 2015-".date("Y")."<br>".
-		"This software is released under the GNU GPL license.\n";
-	echo "</div>\n";
-	echo "</div>\n";
-	echo "</body>\n</html>\n";
-}
-
 function read_terms($me, $gatewayname) {
 	//terms of service button
-	echo "<form action=\"".$me."\" method=\"get\" >\n".
-		"<input type=\"hidden\" name=\"terms\" value=\"terms\">\n".
-		"<input type=\"hidden\" name=\"gatewayname\" value=\"".$gatewayname."\">\n".
-		"<input type=\"submit\" value=\"Read Terms of Service\" >\n".
-		"</form>\n";
+	echo "<form action=\"$me\" method=\"get\" >
+		<input type=\"hidden\" name=\"terms\" value=\"terms\">
+		<input type=\"hidden\" name=\"gatewayname\" value=\"$gatewayname\">
+		<input type=\"submit\" value=\"Read Terms of Service\" >\n</form>\n";
 }
 
 function display_terms () {
@@ -347,7 +372,7 @@ function display_terms () {
 }
 
 function insert_css() {
-	echo "
+	$css="
 	body {
 		background-color: lightgrey;
 		color: black;
@@ -391,12 +416,18 @@ function insert_css() {
 		margin-right: 5%;
 	}
 
-	input[type=text], input[type=email] {
+	input[type=text], input[type=email], input[type=password] {
+		font-size: 1em;
+		line-height: 2.0em;
+		height: 2.0em;
 		color: black;
 		background: lightgrey;
 	}
 
 	input[type=submit], input[type=button] {
+		font-size: 1em;
+		line-height: 2.0em;
+		height: 2.0em;
 		color: black;
 		background: lightblue;
 	}
@@ -429,6 +460,7 @@ function insert_css() {
 	}
 
 	";
+	return $css;
 }
 
 ?>
