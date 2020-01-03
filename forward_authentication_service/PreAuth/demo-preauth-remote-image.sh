@@ -210,6 +210,9 @@ imagetype="png"
 
 get_image_file
 
+version="$(ndsctl status | grep Version)"
+year="$(date | awk -F ' ' '{print $(6)}')"
+
 footer="
 	<img style=\"height:60px; width:60px; float:left;\" src=\"/images/remote/$filename\" alt=\"Splash Page: For access to the Internet.\">
 
