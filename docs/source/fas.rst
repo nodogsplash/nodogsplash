@@ -44,7 +44,7 @@ Security
    Should sha256sum not be available or faskey is not set, then it is the responsibility of the FAS to request the token from NDSCTL.
 
    **If set to "2"**
-   clientip, clientmac, gatewayname, client token, gatewayaddress, authdir and originurl are encrypted using faskey and passed to FAS in the query string.
+   clientip, clientmac, gatewayname, client token, gatewayaddress, authdir, originurl and clientif are encrypted using faskey and passed to FAS in the query string.
 
    The query string will also contain a randomly generated initialization vector to be used by the FAS for decryption.
 
@@ -98,11 +98,15 @@ Example FAS Query strings
 
    For example, the following command returns just the token:
 
-   `ndsctl json $clientip | grep token | cut -c 10- | cut -c -8`
+   ``ndsctl json $clientip | grep token | cut -c 10- | cut -c -8``
+
+   or alternatively:
+
+   ``ndsctl json $clientip | awk -F '"' '$2=="token"{print $4}'``
 
    A more sophisticated json parser could be used to extract all the client variables supplied by ndsctl, an example can be found in the default PreAuth Login script in /usr/lib/nogogsplash/login.sh.
 
-  **Level 2** (fas_secure_enabled = 2), NDS sends enrypted information to FAS.
+  **Level 2** (fas_secure_enabled = 2), NDS sends encrypted information to FAS.
 
   `http://fasremotefqdn:fasport/faspath?fas=[aes-256-cbc data]&iv=[random initialisation vector]`
 
@@ -115,7 +119,7 @@ Example FAS Query strings
 
   Variables sent by NDS in the encrypted string in NDS v4.0.0 are as follows:
 
-  **clientip clientmac gatewayname tok gatewayaddress authdir originurl**
+  **clientip clientmac gatewayname tok gatewayaddress authdir originurl clientif**
 
   Where:
    **tok** is the client token
@@ -124,13 +128,45 @@ Example FAS Query strings
 
    **authdir** is the NDS virtual authentication directory
 
+   **clientif** is the interface string identifying the interface the client is connected to in the form of:
+    [local interface] [meshnode mac] [local mesh interface]
+
+
   Future versions of NDS may send additional variables and the order of the variables in the decrypted string may also vary, so it is the responsiblity of FAS to parse the decrypted string for the variables it requires.
+
+Network Zones - Determining the Interface the Client is Connected To
+********************************************************************
+
+The Network coverage of a Captive Portal can take many forms, from a single SSID through to an extensive mesh network.
+
+Using FAS, it is quite simple to dynamically adapt the Client Login page depending on the Network Zone a client is connected to.
+NDS can determine the local interface or 802.11s mesh network node a client is using. A simple lookup table can then be included in a custom FAS, relating interfaces or mesh nodes to sensibly named coverage zones.
+
+A very simple example would be a captive portal set up with a wireless network for "Staff", another for "Guests" and office machines connected via ethernet.
+
+ * Ethernet connected office machines would gain access by simply clicking "Continue".
+ * Staff mobiles connect to the Staff WiFi using a standard access code then clicking "Continue".
+ * Guests connect to the open Guest Wifi and are required to enter details such as Name, email address etc.
+
+NDS is aware of the interface or mesh node a client is using.
+
+For a FAS using `fas_secure_enabled = 2`, an additional variable, clientif, is sent to the FAS in the encrypted query string (local or remote FAS).
+
+For all other levels of fas_secure_enabled, PreAuth and BinAuth, the library utility "get_client_interface" is required to be used by the relevant script (local FAS only).
+
+Working examples can be found in the included scripts:
+
+ * fas-aes.php
+ * login.sh
+ * demo-preauth.sh
+ * demo-preauth-remote-image.sh
+
+For details of the clientif variable and how to use get_client_interface, see the section **Library Utilities**.
 
 After Successful Verification by FAS
 ************************************
 
 If the client is successfully verified by the FAS, FAS will return the unique token, or its hashed equivalent to NDS to finally allow the client access to the Internet.
-
 
 Post FAS processing
 *******************
