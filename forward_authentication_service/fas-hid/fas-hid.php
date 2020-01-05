@@ -1,5 +1,5 @@
 <?php
-/* (c) Blue Wave Projects and Services 2015-2019. This software is released under the GNU GPL license.
+/* (c) Blue Wave Projects and Services 2015-2020. This software is released under the GNU GPL license.
 
  This is a FAS script providing an example of remote Forward Authentication for Nodogsplash (NDS) on an http web server supporting PHP.
 

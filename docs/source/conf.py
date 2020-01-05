@@ -52,7 +52,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'NoDogSplash'
-copyright = '2016 - 2019, The Nodogsplash Contributors'
+copyright = '2016 - 2020, The Nodogsplash Contributors'
 author = 'The Nodogsplash Contributors'
 
 # The version info for the project you're documenting, acts as replacement for

@@ -24,7 +24,7 @@
     @author Copyright (C) 2007 Paul Kube <nodogsplash@kokoro.ucsd.edu>
 */
 
-#define COPYRIGHT "NodogSplash, Copyright (C) 2016 - 2019, The Nodogsplash Contributors"
+#define COPYRIGHT "NodogSplash, Copyright (C) 2016 - 2020, The Nodogsplash Contributors"
 
 #ifndef _CONF_H_
 #define _CONF_H_
