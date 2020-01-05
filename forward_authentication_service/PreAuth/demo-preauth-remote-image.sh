@@ -74,8 +74,9 @@ write_log () {
 	sizeratio=$(($available/$filesize))
 
 	if [ $sizeratio -ge $min_freespace_to_log_ratio ]; then
-		echo "$datetime, Username=$username, Email Address=$emailaddr, mac address=$clientmac, user_agent=$user_agent" \
-			>> $logfile
+		userinfo="username=$username, emailAddress=$emailaddr"
+		clientinfo="macaddress=$clientmac, clientzone=$client_zone, useragent=$user_agent"
+		echo "$datetime, $userinfo, $clientinfo" >> $logfile
 	else
 		echo "PreAuth - log file too big, please archive contents" | logger -p "daemon.err" -s -t "nodogsplash[$ndspid]: "
 	fi
