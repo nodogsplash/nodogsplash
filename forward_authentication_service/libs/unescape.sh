@@ -5,9 +5,23 @@
 
 option="$1"
 inputstr="$2"
+usage="
+  Usage: unescape.sh [-option] [escapedstring]
+
+  Returns: [unescapedstring]
+
+  Where:
+    [-option] is unescape type, currently -url only
+"
 
 if [ "$option" == "-url" ]; then
 	printf "${inputstr//%/\\x}"
+	exit 0
+fi
+
+if [ "$option" == "" ] || [ "$option" == "-h" ] || [ "$option" == "-help" ]; then
+	echo "$usage"
+	exit 0
 else
 	echo "Invalid option"
 	exit 1

@@ -23,7 +23,7 @@ mac=$1
 
 if [  $(echo $mac | awk -F ':' '{print NF}') != 6 ]; then
 	echo "
-  Usage: get_client_interface [clientmac]
+  Usage: get_client_interface.sh [clientmac]
 
   Returns: [local_interface] [meshnode_mac] [local_mesh_interface]
 
