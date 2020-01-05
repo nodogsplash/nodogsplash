@@ -33,6 +33,7 @@ Contents:
    fas
    preauth
    binauth
+   libraries
    traffic
    ndsctl
    customize

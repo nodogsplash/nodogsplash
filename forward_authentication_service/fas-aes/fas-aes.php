@@ -259,7 +259,8 @@ if ($fullname == "" or $email == "") {
 		$logpath="/tmp/";
 	}
 
-	$log=date('d/m/Y H:i:s', $_SERVER['REQUEST_TIME'])." Username=".$fullname." emailaddress=".$email." macaddress=".$clientmac."\n";
+	$log=date('d/m/Y H:i:s', $_SERVER['REQUEST_TIME'])." Username=". html_entity_decode($fullname)." emailaddress=".$email.
+		" macaddress=".$clientmac." clientzone=".$client_zone." useragent=".$_SERVER['HTTP_USER_AGENT']."\n";
 
 	$gwname=str_replace(" ", "_", trim($gatewayname));
 	$logfile=$logpath.$gwname."_log.php";

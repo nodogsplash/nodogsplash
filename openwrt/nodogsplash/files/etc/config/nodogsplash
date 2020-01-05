@@ -170,7 +170,7 @@ config nodogsplash
 	# Should sha256sum not be available to NDS when faskey is set, NDS will exit gracefully, logging the error in syslog.
 	#
 	# *****If set to 2****
-	# clientip, clientmac, gatewayname, client token, gatewayaddress, authdir and originurl
+	# clientip, clientmac, gatewayname, client token, gatewayaddress, authdir, originurl and clientif
 	# are encrypted using faskey and passed to FAS in the query string.
 	# The query string will also contain a randomly generated initialization vector to be used by the FAS for decryption.
 	# The "php-cli" package and the "php-openssl" module must both be installed for fas_secure level 2.
