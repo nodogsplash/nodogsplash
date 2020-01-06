@@ -24,13 +24,12 @@ It is used by NDS when fas secure level 2 is set. Its output is sent to FAS in t
   Returns: [local_interface] [meshnode_mac] [local_mesh_interface]
 
   Where:
+
     [local_interface] is the local interface the client is using.
 
-    [meshnode_mac] is the mac address of the 802.11s meshnode the
-      client is using (null if mesh not present).
+    [meshnode_mac] is the mac address of the 802.11s meshnode the client is using (null if mesh not present).
 
-    [local_mesh_interface] is the local 802.11s interface the
-      client is using (null if mesh not present).
+    [local_mesh_interface] is the local 802.11s interface the client is using (null if mesh not present).
 
 
 unescape.sh
@@ -44,5 +43,6 @@ It is used by NDS as the unescape callback for libmicrohttpd.
   Returns: [unescapedstring]
 
   Where:
+  
     [-option] is unescape type, currently -url only
 

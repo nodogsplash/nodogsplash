@@ -6,6 +6,8 @@ NoDogSplash is a Captive Portal Engine. Any Captive Portal, including NDS, will 
  * Something that does the capturing, and
  * Something to provide a Portal for client users to log in.
 
+NoDogSplash MUST run on a device configured as an IPv4 router.
+
 A wireless router will typically be running OpenWrt or some other Linux distribution.
 
 A router, by definition, will have two or more interfaces, at least one to connect to the wide area network (WAN) or Internet feed, and at least one connecting to the local area network (LAN).
@@ -25,13 +27,13 @@ An initial port 80 request will be generated on a client device, usually automat
 
 This request will of course **be routed by the client device to the Default Gateway** of the local network. The Default Gateway will, as we have seen, be the router interface that NDS is managing.
 
-The Thing That Does the Capturing
-=================================
+The Thing That Does the Capturing (NDS)
+=======================================
 
  As soon as this initial port 80 request is received on the default gateway interface, NDS will "Capture" it, make a note of the client device identity, allocate a unique token for the client device, then redirect the client browser to the Portal component of NDS.
 
-The Thing That Provides the Portal
-==================================
+The Thing That Provides the Portal (Splash, FAS or PreAuth)
+===========================================================
 
  The client browser is redirected to the Portal component. This is a web service that is configured to know how to communicate with the core engine of NDS.
 
@@ -113,6 +115,24 @@ This IS how it is supposed to work, but does involve some compromises.
 The best solution is to set the session timeout to a value greater than the expected length of time a client device is likely to be present. Experience shows a limit of 24 hours covers most situations eg bars, clubs, coffee shops, motels etc. If for example an hotel has guests regularly staying for a few days, then increase the session timeout as required.
 
 Staff at the venue could have their devices added to the Trusted List if appropriate, but experience shows, it is better not to do this as they very soon learn what to do and can help guests who encounter the issue. (Anything that reduces support calls is good!)
+
+Network Zone Detection (Where is the Client Connected?)
+*******************************************************
+
+Client devices can be connected to one of a number of local WiFi SSIDs, connected directly or indirectly by ethernet, or connected via a wireless mesh network. Each connection type available is considered as a Network Zone.
+
+NDS detects which zone each client is connected to. This information can be used to dynamically customise the login for each zone.
+
+For example a coffee shop might have two SSIDs configured:
+
+ * Staff (Secure SSID ie with access code)
+ * Customers (open SSID with login form)
+
+In this example SSID "Staff" is configured on interface wlan0, and considered as Zone "Private".
+
+However, SSID "Customers" is configured on virtual interface wlan0-1, and considered as Zone "Public".
+
+NDS detects which zone is being used by a client and a relevant login page can be served.
 
 Packet filtering
 ****************
