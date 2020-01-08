@@ -1,3 +1,20 @@
+nodogsplash (4.4.0)
+
+  * Add Client Network Zone detection supporting local interfaces and 802.11s mesh [bluewavenet]
+  * Add client zone and user agent to FAS/PreAuth logs [bluewavenet]
+  * Add requirements for retrieving https remote image for login page [bluewavenet]
+  * Implement unescape callback for MHD allowing url special characters to be used in login forms [bluewavenet]
+  * Create get_client_interface library utility [bluewavenet]
+  * Create unescape library utility [bluewavenet]
+  * Update demo-preauth, login-option and fas scripts [bluewavenet]
+  * Update fwhook restart - do not use ndsctl to check if nds is running [bluewavenet]
+  * Update config files [bluewavenet]
+  * Fix - allow comma space to be used in PreAuth variables [bluewavenet]
+  * Fix - final redirect for fas-aes [bluewavenet]
+  * Documentation updates [bluewavenet]
+
+ -- Rob White <dot@blue-wave.net> Mon, 06 Jan 2020 16:01:11 +0000
+
 nodogsplash (4.3.3)
 
   * Fix Memory corruption at high loads [bluewavenet]
