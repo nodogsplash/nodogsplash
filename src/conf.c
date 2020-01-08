@@ -1014,8 +1014,9 @@ int add_to_trusted_mac_list(const char possiblemac[])
 
 	/* check for valid format */
 	if (!check_mac_format(possiblemac)) {
-		debug(LOG_NOTICE, "[%s] not a valid MAC address to trust", possiblemac);
-		return -1;
+		debug(LOG_WARNING, "[%s] is not a valid MAC address", possiblemac);
+		debug(LOG_WARNING, "[%s]  - please remove from trustedmac list in config file", possiblemac);
+		return 1;
 	}
 
 	sscanf(possiblemac, "%17[A-Fa-f0-9:]", mac);
