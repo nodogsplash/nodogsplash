@@ -1,4 +1,7 @@
 #!/bin/sh
+#Copyright (C) The Nodogsplash Contributors 2004-2020
+#Copyright (C) BlueWave Projects and Services 2015-2020
+#This software is released under the GNU GPL license.
 
 # This is an example script for BinAuth
 # It can set the session duration per client and writes a local log.

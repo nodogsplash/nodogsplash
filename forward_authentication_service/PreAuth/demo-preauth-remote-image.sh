@@ -40,6 +40,24 @@ get_image_file() {
 	fi
 }
 
+htmlentityencode() {
+	entitylist="s/\"/\&quot;/ s/>/\&gt;/ s/</\&lt;/"
+	local buffer="$1"
+	for entity in $entitylist; do
+		entityencoded=$(echo $buffer | sed $entity)
+		buffer=$entityencoded
+	done
+}
+
+htmlentitydecode() {
+	entitylist="s/\&quot;/\"/ s/\&gt;/>/ s/\&lt;/</"
+	local buffer="$1"
+	for entity in $entitylist; do
+		entitydecoded=$(echo $buffer | sed $entity)
+		buffer=$entitydecoded
+	done
+}
+
 get_client_zone () {
 	# Gets the client zone, ie the connction the client is using, such as:
 	# local interface (br-lan, wlan0, wlan0-1 etc.,
@@ -74,7 +92,8 @@ write_log () {
 	sizeratio=$(($available/$filesize))
 
 	if [ $sizeratio -ge $min_freespace_to_log_ratio ]; then
-		userinfo="username=$username, emailAddress=$emailaddr"
+		htmlentitydecode $username
+		userinfo="username=$entitydecoded, emailAddress=$emailaddr"
 		clientinfo="macaddress=$clientmac, clientzone=$client_zone, useragent=$user_agent"
 		echo "$datetime, $userinfo, $clientinfo" >> $logfile
 	else
@@ -153,6 +172,8 @@ done
 # URL decode vars that need it:
 gatewayname=$(printf "${gatewayname//%/\\x}")
 username=$(printf "${username//%/\\x}")
+htmlentityencode $username
+username=$entityencoded
 emailaddr=$(printf "${emailaddr//%/\\x}")
 
 #requested might have trailing comma space separated, user defined parameters - so remove them as well as decoding

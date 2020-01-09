@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "NODOGSPLASH" "1" "Oct 19, 2019" "4.3.3" "NoDogSplash"
+.TH "NODOGSPLASH" "1" "Jan 08, 2020" "4.4.0" "NoDogSplash"
 .SH NAME
 nodogsplash \- nodogsplash Documentation
 .
@@ -188,6 +188,8 @@ Something to provide a Portal for client users to log in.
 .UNINDENT
 .UNINDENT
 .sp
+NoDogSplash MUST run on a device configured as an IPv4 router.
+.sp
 A wireless router will typically be running OpenWrt or some other Linux distribution.
 .sp
 A router, by definition, will have two or more interfaces, at least one to connect to the wide area network (WAN) or Internet feed, and at least one connecting to the local area network (LAN).
@@ -204,13 +206,13 @@ By default, NDS blocks everything, but intercepts port 80 requests.
 An initial port 80 request will be generated on a client device, usually automatically by the client device\(aqs built in Captive Portal Detection (CPD), or possibly by the user manually browsing to an http web page.
 .sp
 This request will of course \fBbe routed by the client device to the Default Gateway\fP of the local network. The Default Gateway will, as we have seen, be the router interface that NDS is managing.
-.SS The Thing That Does the Capturing
+.SS The Thing That Does the Capturing (NDS)
 .INDENT 0.0
 .INDENT 3.5
 As soon as this initial port 80 request is received on the default gateway interface, NDS will "Capture" it, make a note of the client device identity, allocate a unique token for the client device, then redirect the client browser to the Portal component of NDS.
 .UNINDENT
 .UNINDENT
-.SS The Thing That Provides the Portal
+.SS The Thing That Provides the Portal (Splash, FAS or PreAuth)
 .INDENT 0.0
 .INDENT 3.5
 The client browser is redirected to the Portal component. This is a web service that is configured to know how to communicate with the core engine of NDS.
@@ -305,6 +307,29 @@ This IS how it is supposed to work, but does involve some compromises.
 The best solution is to set the session timeout to a value greater than the expected length of time a client device is likely to be present. Experience shows a limit of 24 hours covers most situations eg bars, clubs, coffee shops, motels etc. If for example an hotel has guests regularly staying for a few days, then increase the session timeout as required.
 .sp
 Staff at the venue could have their devices added to the Trusted List if appropriate, but experience shows, it is better not to do this as they very soon learn what to do and can help guests who encounter the issue. (Anything that reduces support calls is good!)
+.SS Network Zone Detection (Where is the Client Connected?)
+.sp
+Client devices can be connected to one of a number of local WiFi SSIDs, connected directly or indirectly by ethernet, or connected via a wireless mesh network. Each connection type available is considered as a Network Zone.
+.sp
+NDS detects which zone each client is connected to. This information can be used to dynamically customise the login for each zone.
+.sp
+For example a coffee shop might have two SSIDs configured:
+.INDENT 0.0
+.INDENT 3.5
+.INDENT 0.0
+.IP \(bu 2
+Staff (Secure SSID ie with access code)
+.IP \(bu 2
+Customers (open SSID with login form)
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.sp
+In this example SSID "Staff" is configured on interface wlan0, and considered as Zone "Private".
+.sp
+However, SSID "Customers" is configured on virtual interface wlan0\-1, and considered as Zone "Public".
+.sp
+NDS detects which zone is being used by a client and a relevant login page can be served.
 .SS Packet filtering
 .sp
 Nodogsplash considers four kinds of packets coming into the router over the managed interface. Each packet is one of these kinds:
@@ -455,7 +480,7 @@ The FAS can be on the same device as NDS, on the same local area network as NDS,
 Should sha256sum not be available or faskey is not set, then it is the responsibility of the FAS to request the token from NDSCTL.
 .sp
 \fBIf set to "2"\fP
-clientip, clientmac, gatewayname, client token, gatewayaddress, authdir and originurl are encrypted using faskey and passed to FAS in the query string.
+clientip, clientmac, gatewayname, client token, gatewayaddress, authdir, originurl and clientif are encrypted using faskey and passed to FAS in the query string.
 .sp
 The query string will also contain a randomly generated initialization vector to be used by the FAS for decryption.
 .sp
@@ -518,13 +543,17 @@ The client\(aqs unique access token will be obtained from NDS by the FAS making 
 .sp
 For example, the following command returns just the token:
 .sp
-\fIndsctl json $clientip | grep token | cut \-c 10\- | cut \-c \-8\fP
+\fBndsctl json $clientip | grep token | cut \-c 10\- | cut \-c \-8\fP
+.sp
+or alternatively:
+.sp
+\fBndsctl json $clientip | awk \-F \(aq"\(aq \(aq$2=="token"{print $4}\(aq\fP
 .sp
 A more sophisticated json parser could be used to extract all the client variables supplied by ndsctl, an example can be found in the default PreAuth Login script in /usr/lib/nogogsplash/login.sh.
 .UNINDENT
 .UNINDENT
 .sp
-\fBLevel 2\fP (fas_secure_enabled = 2), NDS sends enrypted information to FAS.
+\fBLevel 2\fP (fas_secure_enabled = 2), NDS sends encrypted information to FAS.
 .sp
 \fIhttp://fasremotefqdn:fasport/faspath?fas=[aes\-256\-cbc data]&iv=[random initialisation vector]\fP
 .INDENT 0.0
@@ -540,7 +569,7 @@ eg \fIclientip=192.168.8.23, clientmac=04:15:52:6a:e4:ad, tok=770bfe05, originur
 .sp
 Variables sent by NDS in the encrypted string in NDS v4.0.0 are as follows:
 .sp
-\fBclientip clientmac gatewayname tok gatewayaddress authdir originurl\fP
+\fBclientip clientmac gatewayname tok gatewayaddress authdir originurl clientif\fP
 .INDENT 0.0
 .TP
 .B Where:
@@ -549,11 +578,60 @@ Variables sent by NDS in the encrypted string in NDS v4.0.0 are as follows:
 \fBgatewayaddress\fP is authentication address of NDS ie [nds_ip]:[nds_port]
 .sp
 \fBauthdir\fP is the NDS virtual authentication directory
+.INDENT 7.0
+.TP
+\fBclientif\fP is the interface string identifying the interface the client is connected to in the form of:
+[local interface] [meshnode mac] [local mesh interface]
+.UNINDENT
 .UNINDENT
 .sp
 Future versions of NDS may send additional variables and the order of the variables in the decrypted string may also vary, so it is the responsiblity of FAS to parse the decrypted string for the variables it requires.
 .UNINDENT
 .UNINDENT
+.SS Network Zones \- Determining the Interface the Client is Connected To
+.sp
+The Network coverage of a Captive Portal can take many forms, from a single SSID through to an extensive mesh network.
+.sp
+Using FAS, it is quite simple to dynamically adapt the Client Login page depending on the Network Zone a client is connected to.
+NDS can determine the local interface or 802.11s mesh network node a client is using. A simple lookup table can then be included in a custom FAS, relating interfaces or mesh nodes to sensibly named coverage zones.
+.sp
+A very simple example would be a captive portal set up with a wireless network for "Staff", another for "Guests" and office machines connected via ethernet.
+.INDENT 0.0
+.INDENT 3.5
+.INDENT 0.0
+.IP \(bu 2
+Ethernet connected office machines would gain access by simply clicking "Continue".
+.IP \(bu 2
+Staff mobiles connect to the Staff WiFi using a standard access code then clicking "Continue".
+.IP \(bu 2
+Guests connect to the open Guest Wifi and are required to enter details such as Name, email address etc.
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.sp
+NDS is aware of the interface or mesh node a client is using.
+.sp
+For a FAS using \fIfas_secure_enabled = 2\fP, an additional variable, clientif, is sent to the FAS in the encrypted query string (local or remote FAS).
+.sp
+For all other levels of fas_secure_enabled, PreAuth and BinAuth, the library utility "get_client_interface" is required to be used by the relevant script (local FAS only).
+.sp
+Working examples can be found in the included scripts:
+.INDENT 0.0
+.INDENT 3.5
+.INDENT 0.0
+.IP \(bu 2
+fas\-aes.php
+.IP \(bu 2
+login.sh
+.IP \(bu 2
+demo\-preauth.sh
+.IP \(bu 2
+demo\-preauth\-remote\-image.sh
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.sp
+For details of the clientif variable and how to use get_client_interface, see the section \fBLibrary Utilities\fP\&.
 .SS After Successful Verification by FAS
 .sp
 If the client is successfully verified by the FAS, FAS will return the unique token, or its hashed equivalent to NDS to finally allow the client access to the Internet.
@@ -1399,6 +1477,57 @@ exit 0
 .fi
 .UNINDENT
 .UNINDENT
+.SH LIBRARY UTILITIES
+.SS Overview
+.sp
+A number of library utilities are included. These may be used by NDS itself, FAS, Preauth and BinAuth. These may in the future, be enhanced, have additional functionality added.
+.sp
+By default, library utilities will be installed in the folder
+.sp
+\fB/usr/lib/nodogsplash/\fP
+.SS List of Library Utilities
+.SS get_client_interface.sh
+.sp
+This utility allows the interface a client is using to be determined from the client mac address.
+.sp
+It is used by NDS when fas secure level 2 is set. Its output is sent to FAS in the encrypted query string as the variable "clientif"
+.INDENT 0.0
+.INDENT 3.5
+Usage: get_client_interface.sh [clientmac]
+.sp
+Returns: [local_interface] [meshnode_mac] [local_mesh_interface]
+.sp
+Where:
+.INDENT 0.0
+.INDENT 3.5
+[local_interface] is the local interface the client is using.
+.sp
+[meshnode_mac] is the mac address of the 802.11s meshnode the client is using (null if mesh not present).
+.sp
+[local_mesh_interface] is the local 802.11s interface the client is using (null if mesh not present).
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS unescape.sh
+.sp
+This utility allows an input string to be unescaped. It currently only supports url\-decoding.
+.sp
+It is used by NDS as the unescape callback for libmicrohttpd.
+.INDENT 0.0
+.INDENT 3.5
+Usage: unescape.sh [\-option] [escapedstring]
+.sp
+Returns: [unescapedstring]
+.sp
+Where:
+.INDENT 0.0
+.INDENT 3.5
+[\-option] is unescape type, currently \-url only
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.UNINDENT
 .SH TRAFFIC CONTROL
 .SS Overview
 .sp
@@ -2225,6 +2354,6 @@ search
 .SH AUTHOR
 The Nodogsplash Contributors
 .SH COPYRIGHT
-2016 - 2019, The Nodogsplash Contributors
+2016 - 2020, The Nodogsplash Contributors
 .\" Generated by docutils manpage writer.
 .
