@@ -94,17 +94,11 @@ Example FAS Query strings
 
    The return url will be constructed by FAS from predetermined knowledge of the configuration of NDS using gatewayname as an identifier.
 
-   The client's unique access token will be obtained from NDS by the FAS making a call to the ndsctl tool.
+   The client's unique access token will be obtained from NDS by the FAS making a call to the get_client_token library utility:
 
-   For example, the following command returns just the token:
+   ``/usr/lib/nodogsplash/./get_client_token $clientip``
 
-   ``ndsctl json $clientip | grep token | cut -c 10- | cut -c -8``
-
-   or alternatively:
-
-   ``ndsctl json $clientip | awk -F '"' '$2=="token"{print $4}'``
-
-   A more sophisticated json parser could be used to extract all the client variables supplied by ndsctl, an example can be found in the default PreAuth Login script in /usr/lib/nogogsplash/login.sh.
+   A json parser could be used to extract all the client variables supplied by ndsctl, an example can be found in the default PreAuth Login script in /usr/lib/nogogsplash/login.sh.
 
   **Level 2** (fas_secure_enabled = 2), NDS sends encrypted information to FAS.
 
