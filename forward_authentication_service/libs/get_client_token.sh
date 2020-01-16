@@ -22,7 +22,7 @@ fi
 
 
 wait_for_ndsctl () {
-	local timeout=3
+	timeout=3
 
 	for i in $(seq $timeout); do
 
