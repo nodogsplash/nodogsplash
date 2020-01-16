@@ -20,7 +20,7 @@ if [ "$option" = "-url" ]; then
 	exit 0
 fi
 
-if [ "$option" == "" ] || [ "$option" == "-h" ] || [ "$option" == "-help" ]; then
+if [ "$option" = "" ] || [ "$option" = "-h" ] || [ "$option" = "-help" ]; then
 	echo "$usage"
 	exit 0
 else
