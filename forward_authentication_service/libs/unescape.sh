@@ -15,8 +15,8 @@ usage="
 "
 
 if [ "$option" = "-url" ]; then
-   # shellcheck disable=SC2059  # we actually want to interpret escape chars
-	printf "$(echo "${inputstr}" | sed -e 's/%/\\x/g')"
+	input_hexescaped=$(echo "${inputstr}" | sed -e 's/%/\\x/g')
+	awk "BEGIN { printf \"$input_hexescaped\" }"  # TODO /xHH is not supported under POSIX awk!
 	exit 0
 fi
 
