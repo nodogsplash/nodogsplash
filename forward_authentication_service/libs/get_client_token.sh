@@ -8,7 +8,7 @@ clientip=$1
 
 # exit if ip not passed
 
-if [  $(echo $clientip | awk -F '.' '{print NF}') != 4 ]; then
+if [  "$(echo "$clientip" | awk -F '.' '{print NF}')" != "4" ]; then
 	echo "
   Usage: get_client_token.sh [clientip]
 
@@ -32,7 +32,7 @@ wait_for_ndsctl () {
 
 		sleep 1
 
-		if [ $i == $timeout ] ; then
+		if [ "$i" = "$timeout" ] ; then
 			pid=$(pgrep get_client_token | awk 'NR==2 {print $1}')
 			echo "ndsctl is busy or locked" | logger -p "daemon.warn" -s -t "NDS-Library[$pid]"
 			exit 1
@@ -42,13 +42,13 @@ wait_for_ndsctl () {
 }
 
 wait_for_ndsctl
-client_token=$(ndsctl json $clientip | awk -F '"' '$2=="token"{printf $4}')
+client_token=$(ndsctl json "$clientip" | awk -F '"' '$2=="token"{printf $4}')
 
-if [ -z $client_token ]; then
+if [ -z "$client_token" ]; then
 	pid=$(pgrep get_client_token | awk 'NR==2 {print $1}')
 	echo "client at [$clientip] is not preauthenticated" | logger -p "daemon.warn" -s -t "NDS-Library[$pid]"
 	exit 1
 else
-	echo $client_token
+	echo "$client_token"
 fi
 exit 0
