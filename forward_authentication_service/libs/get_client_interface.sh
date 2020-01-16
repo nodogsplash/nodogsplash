@@ -69,7 +69,7 @@ for interface in $interface_list; do
 		break
 	else
 		clientlocalip=$(ip -4 neigh | awk -F ' ' 'match($s,"'"$mac"' ")>0 {printf $1}')
-		ping=$(ping -W 1 -c 1 $clientlocalip)
+		ping -W 1 -c 1 "$clientlocalip"
 		meshmac=$(iw dev "$interface" mpp dump | awk -F "$mac " 'NF>1{printf $2}')
 		if [ -n "$meshmac" ]; then
 			clientmeshif=$meshmac
