@@ -14,8 +14,9 @@ usage="
     [-option] is unescape type, currently -url only
 "
 
-if [ "$option" == "-url" ]; then
-	printf "${inputstr//%/\\x}"
+if [ "$option" = "-url" ]; then
+   # shellcheck disable=SC2059  # we actually want to interpret escape chars
+	printf "$(echo "${inputstr}" | sed -e 's/%/\\x/g')"
 	exit 0
 fi
 
