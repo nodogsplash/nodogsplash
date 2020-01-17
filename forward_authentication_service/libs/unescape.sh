@@ -14,13 +14,12 @@ usage="
     [-option] is unescape type, currently -url only
 "
 
-if [ "$option" = "-url" ]; then
-	input_hexescaped=$(echo "${inputstr}" | sed -e 's/%/\\x/g')
-	awk "BEGIN { printf \"$input_hexescaped\" }"  # TODO /xHH is not supported under POSIX awk!
+if [ "$option" == "-url" ]; then
+	printf "${inputstr//%/\\x}"
 	exit 0
 fi
 
-if [ "$option" = "" ] || [ "$option" = "-h" ] || [ "$option" = "-help" ]; then
+if [ "$option" == "" ] || [ "$option" == "-h" ] || [ "$option" == "-help" ]; then
 	echo "$usage"
 	exit 0
 else
