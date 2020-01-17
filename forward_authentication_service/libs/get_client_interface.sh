@@ -3,7 +3,7 @@
 #Copyright (C) Blue Wave Projects and Services 2015-2019
 #This software is released under the GNU GPL license.
 
-pid=$(pgrep get_client_interface | awk 'NR==2 {print $1}')
+pid=$(pgrep -f get_client_interface | awk 'NR==2 {print $1}')
 
 # This script requires the iw and ip packages (usually available by default)
 
