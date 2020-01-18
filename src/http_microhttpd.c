@@ -1463,7 +1463,7 @@ size_t unescape(void * cls, struct MHD_Connection *c, char *src)
 	char msg[QUERYMAXLEN] = {0};
 
 	debug(LOG_INFO, "Escaped string=%s\n", src);
-	snprintf(unescapecmd, QUERYMAXLEN, "/usr/lib/nodogsplash/./unescape.sh -url \"%s\"", src);
+	snprintf(unescapecmd, QUERYMAXLEN, "/usr/lib/nodogsplash/unescape.sh -url \"%s\"", src);
 	debug(LOG_DEBUG, "unescapecmd=%s\n", unescapecmd);
 
 	if (execute_ret_url_encoded(msg, sizeof(msg) - 1, unescapecmd) == 0) {

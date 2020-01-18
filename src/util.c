@@ -84,7 +84,7 @@ int get_client_interface(char* clientif, int clientif_len, const char *climac)
 {
 	char *clifcmd = NULL;
 
-	safe_asprintf(&clifcmd, "/usr/lib/nodogsplash/./get_client_interface.sh %s", climac);
+	safe_asprintf(&clifcmd, "/usr/lib/nodogsplash/get_client_interface.sh %s", climac);
 
 	if (execute_ret_url_encoded(clientif, clientif_len - 1, clifcmd) == 0) {
 		debug(LOG_DEBUG, "Client Mac Address: %s", climac);
