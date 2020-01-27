@@ -31,8 +31,8 @@ get_image_file() {
 		ln -s /tmp/remote /etc/nodogsplash/htdocs/images/remote
 	fi
 
-	md5=$(echo -e $imageurl | md5sum);
-	filename=$(echo -e $md5 | awk -F" -" {'print($1)'});
+	md5=$(echo -e "$imageurl" | md5sum);
+	filename=$(echo -e "$md5" | awk -F" -" {'print($1)'});
 	filename="$filename.$imagetype"
 
 	if [ ! -f "$imagepath/$filename" ]; then
@@ -44,7 +44,7 @@ htmlentityencode() {
 	entitylist="s/\"/\&quot;/ s/>/\&gt;/ s/</\&lt;/"
 	local buffer="$1"
 	for entity in $entitylist; do
-		entityencoded=$(echo $buffer | sed $entity)
+		entityencoded=$(echo "$buffer" | sed "$entity")
 		buffer=$entityencoded
 	done
 }
@@ -53,7 +53,7 @@ htmlentitydecode() {
 	entitylist="s/\&quot;/\"/ s/\&gt;/>/ s/\&lt;/</"
 	local buffer="$1"
 	for entity in $entitylist; do
-		entitydecoded=$(echo $buffer | sed $entity)
+		entitydecoded=$(echo "$buffer" | sed "$entity")
 		buffer=$entitydecoded
 	done
 }
@@ -66,9 +66,9 @@ get_client_zone () {
 
 	client_mac=$(ip -4 neigh |grep "$clientip" | awk '{print $5}')
 	client_if_string=$(/usr/lib/nodogsplash/get_client_interface.sh $client_mac)
-	client_if=$(echo $client_if_string | awk '{printf $1}')
-	client_meshnode=$(echo $client_if_string | awk '{printf $2}' | awk -F ':' '{print $1$2$3$4$5$6}')
-	local_mesh_if=$(echo $client_if_string | awk '{printf $3}')
+	client_if=$(echo "$client_if_string" | awk '{printf $1}')
+	client_meshnode=$(echo "$client_if_string" | awk '{printf $2}' | awk -F ':' '{print $1$2$3$4$5$6}')
+	local_mesh_if=$(echo "$client_if_string" | awk '{printf $3}')
 
 	if [ ! -z "$client_meshnode" ]; then
 		client_zone="MeshZone:$client_meshnode"
@@ -82,17 +82,17 @@ write_log () {
 	min_freespace_to_log_ratio=10
 	datetime=$(date)
 
-	if [ ! -f $logfile ]; then
+	if [ ! -f "$logfile" ]; then
 		echo "$datetime, New log file created" > $logfile
 	fi
 
 	ndspid=$(ps | grep nodogsplash | awk -F ' ' 'NR==2 {print $1}')
 	filesize=$(ls -s -1 $logfile | awk -F' ' '{print $1}')
-	available=$(df |grep /tmp | awk -F ' ' '{print $4}')
+	available=$(df |grep /tmp | awk -F ' ' '$6=="/tmp"{print $4}')
 	sizeratio=$(($available/$filesize))
 
 	if [ $sizeratio -ge $min_freespace_to_log_ratio ]; then
-		htmlentitydecode $username
+		htmlentitydecode "$username"
 		userinfo="username=$entitydecoded, emailAddress=$emailaddr"
 		clientinfo="macaddress=$clientmac, clientzone=$client_zone, useragent=$user_agent"
 		echo "$datetime, $userinfo, $clientinfo" >> $logfile
@@ -162,17 +162,24 @@ user_agent=$(printf "${user_agent_enc//%/\\x}")
 
 
 # Parse for the variables returned by NDS:
-queryvarlist="clientip gatewayname hid redir status username emailaddr"
+hid_present=$(echo "$query_enc" | grep "hid")
+
+if [ -z "$hid_present" ]; then
+	queryvarlist="clientip gatewayname redir status username emailaddr"
+else
+	queryvarlist="clientip gatewayname hid redir status username emailaddr"
+fi
 
 for var in $queryvarlist; do
-	nextvar=$(echo $queryvarlist | awk '{for(i=1;i<=NF;i++) if ($i=="'$var'") printf $(i+1)}')
+	nextvar=$(echo "$queryvarlist" | awk '{for(i=1;i<=NF;i++) if ($i=="'$var'") printf $(i+1)}')
 	eval $var=$(echo "$query_enc" | awk -F "$var%3d" '{print $2}' | awk -F "%2c%20$nextvar%3d" '{print $1}')
 done
 
 # URL decode vars that need it:
+
 gatewayname=$(printf "${gatewayname//%/\\x}")
 username=$(printf "${username//%/\\x}")
-htmlentityencode $username
+htmlentityencode "$username"
 username=$entityencoded
 emailaddr=$(printf "${emailaddr//%/\\x}")
 
@@ -262,15 +269,15 @@ login_form="
 "
 
 # Output the page common header
-echo -e $header
+echo -e "$header"
 
 # Check if the client is already logged in and has tapped "back" on their browser
 # Make this a friendly message explaining they are good to go
-if [ $status == "authenticated" ]; then
+if [ "$status" == "authenticated" ]; then
 	echo "<p><big-red>You are already logged in and have access to the Internet.</big-red></p>"
 	echo "<hr>"
 	echo "<p><italic-black>You can use your Browser, Email and other network Apps as you normally would.</italic-black></p>"
-	echo -e $footer
+	echo -e "$footer"
 	exit 0
 fi
 
@@ -283,11 +290,11 @@ fi
 #
 # Note also $clientip, $gatewayname and $requested (redir) must always be preserved
 #
-if [ -z $username ] || [ -z $emailaddr ]; then
+if [ -z "$username" ] || [ -z "$emailaddr" ]; then
 	echo "<big-red>Welcome!</big-red><br>
 		<med-blue>You are connected to $client_zone</med-blue><br>
 		<italic-black>To access the Internet you must enter your Name and Email Address</italic-black><hr>"
-	echo -e $login_form
+	echo -e "$login_form"
 else
 	# If we got here, we have both the username and emailaddr fields as completed on the login page on the client,
 	# so we will now call ndsctl to get client data we need to authenticate and add to our log.
@@ -300,10 +307,10 @@ else
 	varlist="id ip mac added active duration token state downloaded avg_down_speed uploaded avg_up_speed"
 	clientinfo=$(ndsctl json $clientip)
 
-	if [ -z $clientinfo ]; then
+	if [ -z "$clientinfo" ]; then
 		echo "<big-red>Sorry!</big-red><italic-black> The portal is busy, please try again.</italic-black><hr>"
-		echo -e $login_form
-		echo -e $footer
+		echo -e "$login_form"
+		echo -e "$footer"
 		exit 0
 	else
 		for var in $varlist; do
@@ -341,7 +348,7 @@ else
 fi
 
 # Output the page footer
-echo -e $footer
+echo -e "$footer"
 
 # The output of this script could of course be much more complex and
 # could easily be used to conduct a dialogue with the client user.

@@ -22,7 +22,7 @@ mac=$1
 
 # exit if mac not passed
 
-if [  $(echo $mac | awk -F ':' '{print NF}') != 6 ]; then
+if [  $(echo "$mac" | awk -F ':' '{print NF}') != 6 ]; then
 	echo "
   Usage: get_client_interface.sh [clientmac]
 
@@ -43,12 +43,10 @@ fi
 
 # Get default interface
 # This will be the interface NDS is bound to eg. br-lan
-#clientlocalip=$(ip -4 neigh | awk -F ' ' 'match($s,"'"$mac"' ")>0 {printf $1}')
-#ping=$(ping -W 1 -c 1 $clientlocalip)
-#clientlocalif=$(ip -4 neigh | awk -F ' ' 'match($s,"'"$mac"' REACHABLE")>0 {printf $3}')
+
 clientlocalif=$(ip -4 neigh | awk -F ' ' 'match($s,"'"$mac"' ")>0 {printf $3}')
 
-if [ -z $clientlocalif ]; then
+if [ -z "$clientlocalif" ]; then
 	# The client has gone offline eg battery saving or switched to another ssid
 	echo "Client $mac is not online" | logger -p "daemon.info" -s -t "NDS-Library[$pid]"
 	exit 1
