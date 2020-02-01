@@ -20,6 +20,68 @@
 #include <ctype.h>
 #include "debug.h"
 
+/* blen is the size of buf; slen is the length of src.	The input-string need
+** not be, and the output string will not be, null-terminated.	Returns the
+** length of the encoded string, or -1 on error (buffer overflow) */
+int htmlentityencode(char *buf, int blen, const char *src, int slen)
+{
+	int i;
+	int len = 0;
+	static const char hex[] = "0123456789abcdef";
+
+	for (i = 0; (i < slen) && (len < blen); i++) {
+
+		if ((len+5) <= blen) {
+			if (src[i] == '"') {
+				buf[len++] = '&';
+				buf[len++] = '#';
+				buf[len++] = '3';
+				buf[len++] = '4';
+				buf[len++] = ';';
+
+			} else if (src[i] == '#') {
+				buf[len++] = '&';
+				buf[len++] = '#';
+				buf[len++] = '3';
+				buf[len++] = '5';
+				buf[len++] = ';';
+
+			} else if (src[i] == '\'') {
+				buf[len++] = '&';
+				buf[len++] = '#';
+				buf[len++] = '3';
+				buf[len++] = '9';
+				buf[len++] = ';';
+
+			} else if (src[i] == '<') {
+				buf[len++] = '&';
+				buf[len++] = '#';
+				buf[len++] = '6';
+				buf[len++] = '0';
+				buf[len++] = ';';
+
+			} else if (src[i] == '>') {
+				buf[len++] = '&';
+				buf[len++] = '#';
+				buf[len++] = '6';
+				buf[len++] = '2';
+				buf[len++] = ';';
+
+			} else {
+				buf[len++] = src[i];
+			}
+		} else {
+			len = -1;
+			debug(LOG_ERR, "Buffer overflow in htmlentityencode");
+			break;
+		}
+	}
+
+	debug(LOG_INFO, "HTML Entity encoded string: %s, length: %d", buf, len);
+	return (i == slen) ? len : -1;
+}
+
+
 /* blen is the size of buf; slen is the length of src. The input-string need
 ** not be, and the output string will not be, null-terminated. Returns the
 ** length of the decoded string, -1 on buffer overflow, -2 on malformed string. */
