@@ -576,7 +576,7 @@ static int authenticated(struct MHD_Connection *connection,
 			free(fasurl);
 			return ret;
 		} else if (config->fas_port && config->preauth) {
-			safe_asprintf(&fasurl, "?clientip=%s%sgatewayname=%s%sgatewayaddress%s%sstatus=authenticated",
+			safe_asprintf(&fasurl, "?clientip=%s%sgatewayname=%s%sgatewayaddress=%s%sstatus=authenticated",
 				client->ip, QUERYSEPARATOR, config->gw_name, QUERYSEPARATOR,  config->gw_address, QUERYSEPARATOR);
 			debug(LOG_DEBUG, "fasurl %s", fasurl);
 			ret = show_preauthpage(connection, fasurl);
@@ -646,7 +646,7 @@ static int show_preauthpage(struct MHD_Connection *connection, const char *query
 		return send_error(connection, 503);
 	}
 
-	MHD_add_response_header(response, "Content-Type", "text/html");
+	MHD_add_response_header(response, "Content-Type", "text/html; charset=utf-8");
 	ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
 	MHD_destroy_response(response);
 	return ret;
