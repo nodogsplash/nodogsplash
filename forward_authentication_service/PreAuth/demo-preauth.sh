@@ -128,11 +128,16 @@ user_agent=$(printf "${user_agent_enc//%/\\x}")
 
 # Parse for the variables returned by NDS:
 hid_present=$(echo "$query_enc" | grep "hid")
+status_present=$(echo "$query_enc" | grep "status")
 
-if [ -z "$hid_present" ]; then
-	queryvarlist="clientip gatewayname redir status username emailaddr"
+if [ ! -z "$status_present" ]; then
+	queryvarlist="clientip gatewayname gatewayaddress status"
+elif [ -z "$hid_present" ]; then
+	hid="0"
+	gatewayaddress="0"
+	queryvarlist="clientip gatewayname redir username emailaddr"
 else
-	queryvarlist="clientip gatewayname hid redir status username emailaddr"
+	queryvarlist="clientip gatewayname hid gatewayaddress redir username emailaddr"
 fi
 
 for var in $queryvarlist; do
@@ -141,7 +146,6 @@ for var in $queryvarlist; do
 done
 
 # URL decode vars that need it:
-
 gatewayname=$(printf "${gatewayname//%/\\x}")
 username=$(printf "${username//%/\\x}")
 htmlentityencode "$username"
@@ -173,8 +177,7 @@ get_client_zone
 
 
 
-header="
-	<!DOCTYPE html>
+header="<!DOCTYPE html>
 	<html>
 	<head>
 	<meta http-equiv=\"Cache-Control\" content=\"no-cache, no-store, must-revalidate\">
@@ -215,6 +218,7 @@ login_form="
 	<input type=\"hidden\" name=\"clientip\" value=\"$clientip\">
 	<input type=\"hidden\" name=\"gatewayname\" value=\"$gatewayname\">
 	<input type=\"hidden\" name=\"hid\" value=\"$hid\">
+	<input type=\"hidden\" name=\"gatewayaddress\" value=\"$gatewayaddress\">
 	<input type=\"hidden\" name=\"redir\" value=\"$requested\">
 	<input type=\"text\" name=\"username\" value=\"$username\" autocomplete=\"on\" ><br>Name<br><br>
 	<input type=\"email\" name=\"emailaddr\" value=\"$emailaddr\" autocomplete=\"on\" ><br>Email<br><br>
@@ -303,7 +307,6 @@ fi
 
 # Output the page footer
 echo -e "$footer"
-
 # The output of this script could of course be much more complex and
 # could easily be used to conduct a dialogue with the client user.
 #
