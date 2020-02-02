@@ -184,8 +184,10 @@ for var in $queryvarlist; do
 	eval $var=$(echo "$query_enc" | awk -F "$var%3d" '{print $2}' | awk -F "%2c%20$nextvar%3d" '{print $1}')
 done
 
-# URL decode vars that need it:
+# URL decode and htmlentity encode vars that need it:
 gatewayname=$(printf "${gatewayname//%/\\x}")
+htmlentityencode "$gatewayname"
+gatewaynamehtml=$entityencoded
 username=$(printf "${username//%/\\x}")
 htmlentityencode "$username"
 username=$entityencoded
@@ -226,11 +228,11 @@ header="<!DOCTYPE html>
 	<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
 	<link rel=\"shortcut icon\" href=\"/images/splash.jpg\" type=\"image/x-icon\">
 	<link rel=\"stylesheet\" type=\"text/css\" href=\"/splash.css\">
-	<title>$gatewayname.</title>
+	<title>$gatewaynamehtml.</title>
 	</head>
 	<body>
 	<div class=\"offset\">
-	<med-blue>$gatewayname.</med-blue>
+	<med-blue>$gatewaynamehtml.</med-blue>
 	<div class=\"insert\" style=\"max-width:100%;\">
 	<hr>
 "
