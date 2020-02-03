@@ -19,20 +19,57 @@
 # 3. FAS
 #
 
+
+
+# Customise the Logfile location:
+#
+# mountpoint is the mount point for the storage the log is to be kept on
+#
+# /tmp on OpenWrt is tmpfs (ram disk) and does not survive a reboot.
+#
+# /run on Raspbian is also tmpfs and also does not survive a reboot.
+#
+# These choices for OpenWrt and Raspbian are a good default for testing purposes
+# as long term use on internal flash could cause memory wear
+# In a production system, use the mount point of a usb drive for example
+#
+#
+# logdir is the directory path for the log file
+#
+#
+# logname is the name of the log file
+#
+
+#For Openwrt:
+mountpoint="/tmp"
+logdir="/tmp/ndslog/"
+logname="binauthlog.log"
+
+#For Raspbian:
+#mountpoint="/run"
+#logdir="/run/ndslog/"
+#logname="binauthlog.log"
+
 # functions:
 
 write_log () {
-	logfile="/tmp/binauth.log"
+
+	if [ ! -d "$logdir" ]; then
+		mkdir -p "$logdir"
+	fi
+
+	logfile="$logdir""$logname"
+	awkcmd="awk ""'\$6==""\"$mountpoint\"""{print \$4}'"
 	min_freespace_to_log_ratio=10
 	datetime=$(date)
 
-	if [ ! -f $logfile ]; then
+	if [ ! -f "$logfile" ]; then
 		echo "$datetime, New log file created" > $logfile
 	fi
 
 	ndspid=$(ps | grep nodogsplash | awk -F ' ' 'NR==2 {print $1}')
 	filesize=$(ls -s -1 $logfile | awk -F' ' '{print $1}')
-	available=$(df |grep /tmp | awk -F ' ' '{print $4}')
+	available=$(df | grep "$mountpoint" | eval "$awkcmd")
 	sizeratio=$(($available/$filesize))
 
 	if [ $sizeratio -ge $min_freespace_to_log_ratio ]; then
