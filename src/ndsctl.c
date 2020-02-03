@@ -163,23 +163,10 @@ ndsctl_do(const char *socket, const struct argument *arg, const char *param)
 	char request[128];
 	int len, rlen;
 	int ret;
-	char lockfile[] = "/tmp/ndsctl.lock";
-	FILE *fd;
 
 	setlogmask(LOG_UPTO (LOG_NOTICE));
-
-	if ((fd = fopen(lockfile, "r")) != NULL) {
-		openlog ("ndsctl", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
-		syslog (LOG_NOTICE, "ndsctl is locked by another process - try again later...");
-		closelog ();
-		fclose(fd);
-		return -1;
-	} else {
-		//Create lock
-		fd = fopen(lockfile, "w");
-	}
-
 	sock = connect_to_server(socket);
+
 	if (sock < 0) {
 		return 3;
 	}
@@ -223,8 +210,6 @@ ndsctl_do(const char *socket, const struct argument *arg, const char *param)
 
 	shutdown(sock, 2);
 	close(sock);
-	fclose(fd);
-	remove(lockfile);
 	return ret;
 }
 
@@ -234,16 +219,37 @@ main(int argc, char **argv)
 	const struct argument* arg;
 	const char *socket;
 	int i = 1;
+	int ret;
+	char lockfile[] = "/tmp/ndsctl.lock";
+	char line[128] = {0};
+	FILE *fd;
+
+	if ((fd = fopen(lockfile, "r")) != NULL) {
+		openlog ("ndsctl", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
+		syslog (LOG_NOTICE, "ndsctl is locked by another process");
+		printf ("ndsctl is locked by another process\n");
+		closelog ();
+		fclose(fd);
+		return 0;
+	} else {
+		//Create lock
+		fd = fopen(lockfile, "w");
+	}
+
 
 	socket = strdup(DEFAULT_SOCK);
 
 	if (argc <= i) {
 		usage();
+		fclose(fd);
+		remove(lockfile);
 		return 0;
 	}
 
 	if (strcmp(argv[1], "-h") == 0) {
 		usage();
+		fclose(fd);
+		remove(lockfile);
 		return 1;
 	}
 
@@ -253,6 +259,8 @@ main(int argc, char **argv)
 			i = 3;
 		} else {
 			usage();
+			fclose(fd);
+			remove(lockfile);
 			return 1;
 		}
 	}
@@ -260,6 +268,8 @@ main(int argc, char **argv)
 	// Too many arguments
 	if (argc > (i+2)) {
 		usage();
+		fclose(fd);
+		remove(lockfile);
 		return 1;
 	}
 
@@ -267,9 +277,14 @@ main(int argc, char **argv)
 
 	if (arg == NULL) {
 		fprintf(stderr, "Unknown command: %s\n", argv[i]);
+		fclose(fd);
+		remove(lockfile);
 		return 1;
 	}
 
 	// Send command, argv[i+1] may be NULL.
-	return ndsctl_do(socket, arg, argv[i+1]);
+	ret = ndsctl_do(socket, arg, argv[i+1]);
+	fclose(fd);
+	remove(lockfile);
+	return 0;
 }

@@ -53,11 +53,17 @@ unsigned int authenticated_since_start = 0;
 
 static void binauth_action(t_client *client, const char *reason)
 {
+	char lockfile[] = "/tmp/ndsctl.lock";
+	FILE *fd;
 	s_config *config;
 
 	config = config_get_config();
 
 	if (config->binauth) {
+		// ndsctl will deadlock if run within the BinAuth script so we must lock it
+		//Create lock
+		fd = fopen(lockfile, "w");
+
 		execute("%s %s %s %llu %llu %llu %llu",
 			config->binauth,
 			reason ? reason : "unknown",
@@ -67,6 +73,10 @@ static void binauth_action(t_client *client, const char *reason)
 			client->session_start,
 			client->session_end
 		);
+
+		// unlock ndsctl
+		fclose(fd);
+		remove(lockfile);
 	}
 }
 

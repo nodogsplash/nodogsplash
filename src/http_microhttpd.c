@@ -80,6 +80,8 @@ static int do_binauth(struct MHD_Connection *connection, const char *binauth, t_
 {
 	char username_enc[64] = {0};
 	char password_enc[64] = {0};
+	char lockfile[] = "/tmp/ndsctl.lock";
+	FILE *fd;
 	char redirect_url_enc_buf[QUERYMAXLEN] = {0};
 	const char *username;
 	const char *password;
@@ -117,8 +119,18 @@ static int do_binauth(struct MHD_Connection *connection, const char *binauth, t_
 		binauth, client->mac, username_enc, password_enc, redirect_url_enc_buf, enc_user_agent, client->ip);
 
 	debug(LOG_INFO, "BinAuth argv: %s", argv);
+
+	// ndsctl will deadlock if run within the BinAuth script so we must lock it
+	//Create lock
+	fd = fopen(lockfile, "w");
+
+	// execute the script
 	rc = execute_ret_url_encoded(msg, sizeof(msg) - 1, argv);
 	free(argv);
+
+	// unlock ndsctl
+	fclose(fd);
+	remove(lockfile);
 
 	if (rc != 0) {
 		return -1;
