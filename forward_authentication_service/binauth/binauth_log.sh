@@ -57,7 +57,7 @@ write_log () {
 #
 action=$1
 
-if [ $action == "auth_client" ]; then
+if [ $action = "auth_client" ]; then
 	#
 	# The redir parameter is sent to this script as the fifth command line argument in url-encoded form.
 	#

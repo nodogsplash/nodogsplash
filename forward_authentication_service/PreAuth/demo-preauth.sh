@@ -237,7 +237,7 @@ echo -e "$header"
 
 # Check if the client is already logged in and has tapped "back" on their browser
 # Make this a friendly message explaining they are good to go
-if [ "$status" == "authenticated" ]; then
+if [ "$status" = "authenticated" ]; then
 	echo "<p><big-red>You are already logged in and have access to the Internet.</big-red></p>"
 	echo "<hr>"
 	echo "<p><italic-black>You can use your Browser, Email and other network Apps as you normally would.</italic-black></p>"

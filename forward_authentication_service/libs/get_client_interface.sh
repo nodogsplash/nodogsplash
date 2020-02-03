@@ -27,7 +27,7 @@ mac=$1
 
 # exit if mac not passed
 
-if [  $(echo "$mac" | awk -F ':' '{print NF}') != 6 ]; then
+if [  $(echo "$mac" | awk -F ':' '{print NF}') -ne 6 ]; then
 	echo "
   Usage: get_client_interface.sh [clientmac]
 

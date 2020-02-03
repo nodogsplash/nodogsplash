@@ -36,7 +36,7 @@ wait_for_ndsctl () {
 
 		sleep 1
 
-		if [ $i == $timeout ] ; then
+		if [ $i = $timeout ] ; then
 			pid=$(ps | grep get_client_token | awk -F ' ' 'NR==2 {print $1}')
 			echo "ndsctl is busy or locked" | logger -p "daemon.warn" -s -t "NDS-Library[$pid]"
 			exit 1
