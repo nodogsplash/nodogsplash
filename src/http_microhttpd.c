@@ -80,6 +80,8 @@ static int do_binauth(struct MHD_Connection *connection, const char *binauth, t_
 {
 	char username_enc[64] = {0};
 	char password_enc[64] = {0};
+	char lockfile[] = "/tmp/ndsctl.lock";
+	FILE *fd;
 	char redirect_url_enc_buf[QUERYMAXLEN] = {0};
 	const char *username;
 	const char *password;
@@ -117,8 +119,18 @@ static int do_binauth(struct MHD_Connection *connection, const char *binauth, t_
 		binauth, client->mac, username_enc, password_enc, redirect_url_enc_buf, enc_user_agent, client->ip);
 
 	debug(LOG_INFO, "BinAuth argv: %s", argv);
+
+	// ndsctl will deadlock if run within the BinAuth script so we must lock it
+	//Create lock
+	fd = fopen(lockfile, "w");
+
+	// execute the script
 	rc = execute_ret_url_encoded(msg, sizeof(msg) - 1, argv);
 	free(argv);
+
+	// unlock ndsctl
+	fclose(fd);
+	remove(lockfile);
 
 	if (rc != 0) {
 		return -1;
@@ -576,7 +588,7 @@ static int authenticated(struct MHD_Connection *connection,
 			free(fasurl);
 			return ret;
 		} else if (config->fas_port && config->preauth) {
-			safe_asprintf(&fasurl, "?clientip=%s%sgatewayname=%s%sgatewayaddress%s%sstatus=authenticated",
+			safe_asprintf(&fasurl, "?clientip=%s%sgatewayname=%s%sgatewayaddress=%s%sstatus=authenticated",
 				client->ip, QUERYSEPARATOR, config->gw_name, QUERYSEPARATOR,  config->gw_address, QUERYSEPARATOR);
 			debug(LOG_DEBUG, "fasurl %s", fasurl);
 			ret = show_preauthpage(connection, fasurl);
@@ -646,7 +658,7 @@ static int show_preauthpage(struct MHD_Connection *connection, const char *query
 		return send_error(connection, 503);
 	}
 
-	MHD_add_response_header(response, "Content-Type", "text/html");
+	MHD_add_response_header(response, "Content-Type", "text/html; charset=utf-8");
 	ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
 	MHD_destroy_response(response);
 	return ret;
@@ -1222,6 +1234,7 @@ static void replace_variables(
 	char *denyaction = NULL;
 	char *authaction = NULL;
 	char *authtarget = NULL;
+	char htmlencoded[64] = {0};
 
 	sprintf(clientupload, "%llu", client->counters.outgoing);
 	sprintf(clientdownload, "%llu", client->counters.incoming);
@@ -1236,6 +1249,8 @@ static void replace_variables(
 	safe_asprintf(&authtarget, "http://%s/%s/?tok=%s&amp;redir=%s",
 		config->gw_address, config->authdir, client->token, redirect_url);
 
+	htmlentityencode(htmlencoded, sizeof(htmlencoded), config->gw_name, strlen(config->gw_name));
+
 	struct template vars[] = {
 		{"authaction", authaction},
 		{"denyaction", denyaction},
@@ -1245,7 +1260,7 @@ static void replace_variables(
 		{"clientupload", clientupload},
 		{"clientdownload", clientdownload},
 		{"gatewaymac", config->gw_mac},
-		{"gatewayname", config->gw_name},
+		{"gatewayname", htmlencoded},
 		{"maxclients", maxclients},
 		{"nclients", nclients},
 		{"redir", redirect_url},

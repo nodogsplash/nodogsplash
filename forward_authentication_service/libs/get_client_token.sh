@@ -1,7 +1,11 @@
 #!/bin/sh
 #Copyright (C) The Nodogsplash Contributors 2004-2020
-#Copyright (C) Blue Wave Projects and Services 2015-2019
+#Copyright (C) BlueWave Projects and Services 2015-2020
 #This software is released under the GNU GPL license.
+#
+# Warning - shebang sh is for compatibliity with busybox ash (eg on OpenWrt)
+# This is changed to bash automatically by Makefile for Debian
+#
 
 # ip address of client is passed as a command line argument
 clientip=$1
@@ -32,7 +36,7 @@ wait_for_ndsctl () {
 
 		sleep 1
 
-		if [ $i == $timeout ] ; then
+		if [ $i = $timeout ] ; then
 			pid=$(ps | grep get_client_token | awk -F ' ' 'NR==2 {print $1}')
 			echo "ndsctl is busy or locked" | logger -p "daemon.warn" -s -t "NDS-Library[$pid]"
 			exit 1

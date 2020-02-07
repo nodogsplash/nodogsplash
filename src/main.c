@@ -267,19 +267,39 @@ main_loop(void)
 	debug(LOG_NOTICE, "Detected gateway %s at %s (%s)", config->gw_interface, config->gw_ip, config->gw_mac);
 
 	/* Initializes the web server */
-	if ((webserver = MHD_start_daemon(MHD_USE_EPOLL_INTERNALLY | MHD_USE_TCP_FASTOPEN,
-							config->gw_port,
-							NULL, NULL,
-							libmicrohttpd_cb, NULL,
-							MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 120,
-							MHD_OPTION_LISTENING_ADDRESS_REUSE, 1,
-							MHD_OPTION_UNESCAPE_CALLBACK, unescape, NULL,
-							MHD_OPTION_END)) == NULL) {
-		debug(LOG_ERR, "Could not create web server: %s", strerror(errno));
-		exit(1);
+
+	if (config->unescape_callback_enabled == 0) {
+		debug(LOG_NOTICE, "MHD Unescape Callback is Disabled");
+		if ((webserver = MHD_start_daemon(MHD_USE_EPOLL_INTERNALLY | MHD_USE_TCP_FASTOPEN,
+								config->gw_port,
+								NULL, NULL,
+								libmicrohttpd_cb, NULL,
+								MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 120,
+								MHD_OPTION_LISTENING_ADDRESS_REUSE, 1,
+								MHD_OPTION_END)) == NULL) {
+			debug(LOG_ERR, "Could not create web server: %s", strerror(errno));
+			exit(1);
+		}
+
+	} else {
+		debug(LOG_NOTICE, "MHD Unescape Callback is Enabled");
+		if ((webserver = MHD_start_daemon(MHD_USE_EPOLL_INTERNALLY | MHD_USE_TCP_FASTOPEN,
+								config->gw_port,
+								NULL, NULL,
+								libmicrohttpd_cb, NULL,
+								MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 120,
+								MHD_OPTION_LISTENING_ADDRESS_REUSE, 1,
+								MHD_OPTION_UNESCAPE_CALLBACK, unescape, NULL,
+								MHD_OPTION_END)) == NULL) {
+			debug(LOG_ERR, "Could not create web server: %s", strerror(errno));
+			exit(1);
+		}
 	}
+
 	/* TODO: set listening socket */
 	debug(LOG_NOTICE, "Created web server on %s", config->gw_address);
+
+
 
 	if (config->login_option_enabled > 0) {
 		debug(LOG_NOTICE, "Login option is Enabled.\n");

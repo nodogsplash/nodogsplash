@@ -1,7 +1,12 @@
 #!/bin/sh
 #Copyright (C) The Nodogsplash Contributors 2004-2020
-#Copyright (C) Blue Wave Projects and Services 2015-2019
+#Copyright (C) BlueWave Projects and Services 2015-2020
 #This software is released under the GNU GPL license.
+#
+# Warning - shebang sh is for compatibliity with busybox ash (eg on OpenWrt)
+# This is changed to bash automatically by Makefile for Debian
+#
+
 
 pid=$(ps | grep get_client_interface | awk -F ' ' 'NR==2 {print $1}')
 
@@ -22,7 +27,7 @@ mac=$1
 
 # exit if mac not passed
 
-if [  $(echo "$mac" | awk -F ':' '{print NF}') != 6 ]; then
+if [  $(echo "$mac" | awk -F ':' '{print NF}') -ne 6 ]; then
 	echo "
   Usage: get_client_interface.sh [clientmac]
 

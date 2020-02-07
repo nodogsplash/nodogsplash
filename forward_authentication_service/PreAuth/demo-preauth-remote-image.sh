@@ -1,7 +1,11 @@
 #!/bin/sh
 #Copyright (C) The Nodogsplash Contributors 2004-2020
-#Copyright (C) Blue Wave Projects and Services 2015-2020
+#Copyright (C) BlueWave Projects and Services 2015-2020
 #This software is released under the GNU GPL license.
+#
+# Warning - shebang sh is for compatibliity with busybox ash (eg on OpenWrt)
+# This is changed to bash automatically by Makefile for Debian
+#
 
 #############################################################################################
 #
@@ -20,6 +24,38 @@
 # On other operating systems the equivalent must be provided, eg wget-ssl and ca-bundle
 #
 #############################################################################################
+
+
+
+# Customise the Logfile location:
+#
+# mountpoint is the mount point for the storage the log is to be kept on
+#
+# /tmp on OpenWrt is tmpfs (ram disk) and does not survive a reboot.
+#
+# /run on Raspbian is also tmpfs and also does not survive a reboot.
+#
+# These choices for OpenWrt and Raspbian are a good default for testing purposes
+# as long term use on internal flash could cause memory wear
+# In a production system, use the mount point of a usb drive for example
+#
+#
+# logdir is the directory path for the log file
+#
+#
+# logname is the name of the log file
+#
+
+#For Openwrt:
+mountpoint="/tmp"
+logdir="/tmp/ndslog/"
+logname="ndslog.log"
+
+#For Raspbian:
+#mountpoint="/run"
+#logdir="/run/ndslog/"
+#logname="ndslog.log"
+
 
 # functions:
 
@@ -78,7 +114,13 @@ get_client_zone () {
 }
 
 write_log () {
-	logfile="/tmp/ndslog.log"
+
+	if [ ! -d "$logdir" ]; then
+		mkdir -p "$logdir"
+	fi
+
+	logfile="$logdir""$logname"
+	awkcmd="awk ""'\$6==""\"$mountpoint\"""{print \$4}'"
 	min_freespace_to_log_ratio=10
 	datetime=$(date)
 
@@ -88,7 +130,7 @@ write_log () {
 
 	ndspid=$(ps | grep nodogsplash | awk -F ' ' 'NR==2 {print $1}')
 	filesize=$(ls -s -1 $logfile | awk -F' ' '{print $1}')
-	available=$(df |grep /tmp | awk -F ' ' '$6=="/tmp"{print $4}')
+	available=$(df | grep "$mountpoint" | eval "$awkcmd")
 	sizeratio=$(($available/$filesize))
 
 	if [ $sizeratio -ge $min_freespace_to_log_ratio ]; then
@@ -163,11 +205,16 @@ user_agent=$(printf "${user_agent_enc//%/\\x}")
 
 # Parse for the variables returned by NDS:
 hid_present=$(echo "$query_enc" | grep "hid")
+status_present=$(echo "$query_enc" | grep "status")
 
-if [ -z "$hid_present" ]; then
-	queryvarlist="clientip gatewayname redir status username emailaddr"
+if [ ! -z "$status_present" ]; then
+	queryvarlist="clientip gatewayname gatewayaddress status"
+elif [ -z "$hid_present" ]; then
+	hid="0"
+	gatewayaddress="0"
+	queryvarlist="clientip gatewayname redir username emailaddr"
 else
-	queryvarlist="clientip gatewayname hid redir status username emailaddr"
+	queryvarlist="clientip gatewayname hid gatewayaddress redir username emailaddr"
 fi
 
 for var in $queryvarlist; do
@@ -175,9 +222,10 @@ for var in $queryvarlist; do
 	eval $var=$(echo "$query_enc" | awk -F "$var%3d" '{print $2}' | awk -F "%2c%20$nextvar%3d" '{print $1}')
 done
 
-# URL decode vars that need it:
-
+# URL decode and htmlentity encode vars that need it:
 gatewayname=$(printf "${gatewayname//%/\\x}")
+htmlentityencode "$gatewayname"
+gatewaynamehtml=$entityencoded
 username=$(printf "${username//%/\\x}")
 htmlentityencode "$username"
 username=$entityencoded
@@ -208,8 +256,7 @@ get_client_zone
 
 
 
-header="
-	<!DOCTYPE html>
+header="<!DOCTYPE html>
 	<html>
 	<head>
 	<meta http-equiv=\"Cache-Control\" content=\"no-cache, no-store, must-revalidate\">
@@ -219,11 +266,11 @@ header="
 	<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
 	<link rel=\"shortcut icon\" href=\"/images/splash.jpg\" type=\"image/x-icon\">
 	<link rel=\"stylesheet\" type=\"text/css\" href=\"/splash.css\">
-	<title>$gatewayname.</title>
+	<title>$gatewaynamehtml.</title>
 	</head>
 	<body>
 	<div class=\"offset\">
-	<med-blue>$gatewayname.</med-blue>
+	<med-blue>$gatewaynamehtml.</med-blue>
 	<div class=\"insert\" style=\"max-width:100%;\">
 	<hr>
 "
@@ -261,6 +308,7 @@ login_form="
 	<input type=\"hidden\" name=\"clientip\" value=\"$clientip\">
 	<input type=\"hidden\" name=\"gatewayname\" value=\"$gatewayname\">
 	<input type=\"hidden\" name=\"hid\" value=\"$hid\">
+	<input type=\"hidden\" name=\"gatewayaddress\" value=\"$gatewayaddress\">
 	<input type=\"hidden\" name=\"redir\" value=\"$requested\">
 	<input type=\"text\" name=\"username\" value=\"$username\" autocomplete=\"on\" ><br>Name<br><br>
 	<input type=\"email\" name=\"emailaddr\" value=\"$emailaddr\" autocomplete=\"on\" ><br>Email<br><br>
@@ -273,7 +321,7 @@ echo -e "$header"
 
 # Check if the client is already logged in and has tapped "back" on their browser
 # Make this a friendly message explaining they are good to go
-if [ "$status" == "authenticated" ]; then
+if [ "$status" = "authenticated" ]; then
 	echo "<p><big-red>You are already logged in and have access to the Internet.</big-red></p>"
 	echo "<hr>"
 	echo "<p><italic-black>You can use your Browser, Email and other network Apps as you normally would.</italic-black></p>"
