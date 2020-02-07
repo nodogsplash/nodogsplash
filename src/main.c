@@ -267,9 +267,9 @@ main_loop(void)
 	debug(LOG_NOTICE, "Detected gateway %s at %s (%s)", config->gw_interface, config->gw_ip, config->gw_mac);
 
 	/* Initializes the web server */
-
 	if (config->unescape_callback_enabled == 0) {
 		debug(LOG_NOTICE, "MHD Unescape Callback is Disabled");
+
 		if ((webserver = MHD_start_daemon(MHD_USE_EPOLL_INTERNALLY | MHD_USE_TCP_FASTOPEN,
 								config->gw_port,
 								NULL, NULL,
@@ -283,6 +283,7 @@ main_loop(void)
 
 	} else {
 		debug(LOG_NOTICE, "MHD Unescape Callback is Enabled");
+
 		if ((webserver = MHD_start_daemon(MHD_USE_EPOLL_INTERNALLY | MHD_USE_TCP_FASTOPEN,
 								config->gw_port,
 								NULL, NULL,
@@ -299,10 +300,9 @@ main_loop(void)
 	/* TODO: set listening socket */
 	debug(LOG_NOTICE, "Created web server on %s", config->gw_address);
 
-
-
 	if (config->login_option_enabled > 0) {
 		debug(LOG_NOTICE, "Login option is Enabled.\n");
+
 		if (!((stat(loginscript, &sb) == 0) && S_ISREG(sb.st_mode) && (sb.st_mode & S_IXUSR))) {
 			debug(LOG_ERR, "Login script does not exist or is not executeable: %s", loginscript);
 			debug(LOG_ERR, "Exiting...");
