@@ -230,9 +230,13 @@ main_loop(void)
 	char *preauth_dir = NULL;
 	struct stat sb;
 	char loginscript[] = "/usr/lib/nodogsplash/login.sh";
+	char http_encoded[64] = {0};
 	time_t sysuptime;
 
 	config = config_get_config();
+
+	htmlentityencode(http_encoded, sizeof(http_encoded), config->gw_name, strlen(config->gw_name));
+	config->http_encoded_gw_name = http_encoded;
 
 	sysuptime = get_system_uptime ();
 	debug(LOG_INFO, "main: System Uptime is %li seconds", sysuptime);

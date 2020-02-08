@@ -147,7 +147,8 @@ typedef struct {
 	int daemon;			/**< @brief if daemon > 0, use daemon mode */
 	int debuglevel;			/**< @brief Debug information verbosity */
 	int maxclients;			/**< @brief Maximum number of clients allowed */
-	char *gw_name;			/**< @brief Name of the gateway; e.g. its SSID */
+	char *gw_name;			/**< @brief Name of the gateway; e.g. its SSID or a unique identifier for use in a remote FAS */
+	char *http_encoded_gw_name;	/**< @brief http encoded name of the gateway, used as a templated variable in splash.htm */
 	char *gw_interface;		/**< @brief Interface we will manage */
 	char *gw_iprange;		/**< @brief IP range on gw_interface we will manage */
 	char *gw_ip;			/**< @brief Internal IP (v4 or v6) for our web server */
