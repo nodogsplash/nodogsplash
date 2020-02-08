@@ -93,7 +93,7 @@ if (isset($_GET['fas']) and isset($_GET['iv']))  {
 	}
 	$client_zone_r=explode(" ",trim($clientif));
 
-	if ($client_zone_r[1] == "") {
+	if ( ! isset($client_zone_r[1])) {
 		$client_zone="LocalZone:".$client_zone_r[0];
 	} else {
 		$client_zone="MeshZone:".str_replace(":","",$client_zone_r[1]);
@@ -160,6 +160,8 @@ $header="
 #footer
 if (isset($gatewayaddress)) {
 	$image="<img style=\"float:left; width:7em; height:7em;\" src=\"".$imagepath."\">";
+} else {
+	$image="";
 }
 
 $footer="<hr>

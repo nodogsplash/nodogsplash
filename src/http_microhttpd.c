@@ -1234,7 +1234,6 @@ static void replace_variables(
 	char *denyaction = NULL;
 	char *authaction = NULL;
 	char *authtarget = NULL;
-	char htmlencoded[64] = {0};
 
 	sprintf(clientupload, "%llu", client->counters.outgoing);
 	sprintf(clientdownload, "%llu", client->counters.incoming);
@@ -1249,8 +1248,6 @@ static void replace_variables(
 	safe_asprintf(&authtarget, "http://%s/%s/?tok=%s&amp;redir=%s",
 		config->gw_address, config->authdir, client->token, redirect_url);
 
-	htmlentityencode(htmlencoded, sizeof(htmlencoded), config->gw_name, strlen(config->gw_name));
-
 	struct template vars[] = {
 		{"authaction", authaction},
 		{"denyaction", denyaction},
@@ -1260,7 +1257,7 @@ static void replace_variables(
 		{"clientupload", clientupload},
 		{"clientdownload", clientdownload},
 		{"gatewaymac", config->gw_mac},
-		{"gatewayname", htmlencoded},
+		{"gatewayname", config->http_encoded_gw_name},
 		{"maxclients", maxclients},
 		{"nclients", nclients},
 		{"redir", redirect_url},

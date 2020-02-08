@@ -27,11 +27,11 @@ int htmlentityencode(char *buf, int blen, const char *src, int slen)
 {
 	int i;
 	int len = 0;
-	static const char hex[] = "0123456789abcdef";
 
 	for (i = 0; (i < slen) && (len < blen); i++) {
 
 		if ((len+5) <= blen) {
+
 			if (src[i] == '"') {
 				buf[len++] = '&';
 				buf[len++] = '#';
@@ -68,9 +68,12 @@ int htmlentityencode(char *buf, int blen, const char *src, int slen)
 				buf[len++] = ';';
 
 			} else {
+
 				buf[len++] = src[i];
 			}
+
 		} else {
+
 			len = -1;
 			debug(LOG_ERR, "Buffer overflow in htmlentityencode");
 			break;
@@ -96,6 +99,7 @@ int uh_urldecode(char *buf, int blen, const char *src, int slen)
 			((x) - 'a' + 10)))
 
 	for (i = 0; (i < slen) && (len < blen); i++) {
+
 		if (src[i] != '%') {
 			buf[len++] = src[i];
 			continue;
@@ -107,6 +111,7 @@ int uh_urldecode(char *buf, int blen, const char *src, int slen)
 		buf[len++] = (char)(16 * hex(src[i+1]) + hex(src[i+2]));
 		i += 2;
 	}
+
 	buf[len] = 0;
 
 	return (i == slen) ? len : -1;
@@ -122,13 +127,16 @@ int uh_urlencode(char *buf, int blen, const char *src, int slen)
 	static const char hex[] = "0123456789abcdef";
 
 	for (i = 0; (i < slen) && (len < blen); i++) {
+
 		if (isalnum(src[i]) || (src[i] == '-') || (src[i] == '_') ||
 				(src[i] == '.') || (src[i] == '~')) {
 			buf[len++] = src[i];
+
 		} else if ((len+3) <= blen) {
 			buf[len++] = '%';
 			buf[len++] = hex[(src[i] >> 4) & 15];
 			buf[len++] = hex[ src[i] & 15];
+
 		} else {
 			len = -1;
 			debug(LOG_ERR, "Buffer overflow in uh_urlencode");
