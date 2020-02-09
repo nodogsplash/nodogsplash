@@ -65,9 +65,9 @@
 
 #include <microhttpd.h>
 
-// Check for libmicrohttp version >= 0.9.51
-#if MHD_VERSION < 0x00095100
-#error libmicrohttp version >= 0.9.51 required
+// Check for libmicrohttp version
+#if MHD_VERSION < 0x00096900
+#error libmicrohttp version >= 0.9.69 required
 #endif
 
 /** XXX Ugly hack

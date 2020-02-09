@@ -113,6 +113,43 @@ generate_uci_config() {
   local download
   local upload
 
+# Check libmicrohttpd version
+  local minversion="0.9.69"
+  local oldver="libmicrohttpd is out of date, please upgrade to at least version $minversion, Exiting...."
+
+  if [ -f "/usr/lib/opkg/info/libmicrohttpd-no-ssl.control" ]; then
+    local cpath="/usr/lib/opkg/info/libmicrohttpd-no-ssl.control"
+
+  elif [ -f "/usr/lib/opkg/info/libmicrohttpd-ssl.control" ]; then
+    local cpath="/usr/lib/opkg/info/libmicrohttpd-ssl.control"
+
+  else
+    echo "libmicrohttpd is not installed, Exiting...."
+    return 1
+  fi
+
+  local min_major=$(echo "$minversion" | awk -F '.' '{print $1}')
+  local min_minor=$(echo "$minversion" | awk -F '.' '{print $2}')
+  local min_patch=$(echo "$minversion" | awk -F '.' '{print $3}' | awk -F '-' '{print $1}' )
+
+  local mhdver=$(grep "Ver" "$cpath" | awk -F 'Version: ' '{print $2}')
+  local major=$(echo "$mhdver" | awk -F '.' '{print $1}')
+  local minor=$(echo "$mhdver" | awk -F '.' '{print $2}')
+  local patch=$(echo "$mhdver" | awk -F '.' '{print $3}' | awk -F '-' '{print $1}' )
+
+  if [ $major -lt $min_major ]; then
+    echo "$oldver"
+    return 1
+
+  elif [ $minor -lt $min_minor ]; then
+    echo "$oldver"
+    return 1
+
+  elif [ $patch -lt $min_patch ]; then
+    echo "$oldver"
+    return 1
+  fi
+
   # Init config file content
   CONFIG="# auto-generated config file from /etc/config/nodogsplash"
 
