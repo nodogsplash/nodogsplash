@@ -247,6 +247,7 @@ main_loop(void)
 	int major = 0;
 	int minor = 0;
 	int patch = 0;
+	int outdated = 0;
 	const char *version = MHD_get_version();
 
 	debug(LOG_NOTICE, "MHD version is %s", version);
@@ -254,24 +255,16 @@ main_loop(void)
 	if (sscanf(version, "%d.%d.%d", &major, &minor, &patch) == 3) {
 
 		if (major < MIN_MHD_MAJOR) {
-			debug(LOG_ERR, "libmicrohttpd is out of date, please upgrade to version %d.%d.%d or higher",
-				MIN_MHD_MAJOR, MIN_MHD_MINOR, MIN_MHD_PATCH);
-
-			if (config->use_outdated_mhd == 0) {
-				debug(LOG_ERR, "exiting...");
-				exit(1);
-			}
+			outdated = 1;
 
 		} else if (minor < MIN_MHD_MINOR) {
-			debug(LOG_ERR, "libmicrohttpd is out of date, please upgrade to version %d.%d.%d or higher",
-				MIN_MHD_MAJOR, MIN_MHD_MINOR, MIN_MHD_PATCH);
-
-			if (config->use_outdated_mhd == 0) {
-				debug(LOG_ERR, "exiting...");
-				exit(1);
-			}
+			outdated = 1;
 
 		} else if (patch < MIN_MHD_PATCH) {
+			outdated = 1;
+		}
+
+		if (outdated == 1) {
 			debug(LOG_ERR, "libmicrohttpd is out of date, please upgrade to version %d.%d.%d or higher",
 				MIN_MHD_MAJOR, MIN_MHD_MINOR, MIN_MHD_PATCH);
 
@@ -282,15 +275,14 @@ main_loop(void)
 		}
 	}
 
-
-
+	// Encode gatewayname
 	htmlentityencode(http_encoded, sizeof(http_encoded), config->gw_name, strlen(config->gw_name));
 	config->http_encoded_gw_name = http_encoded;
 
+	/* Set the time when nodogsplash started */
 	sysuptime = get_system_uptime ();
 	debug(LOG_INFO, "main: System Uptime is %li seconds", sysuptime);
 
-	/* Set the time when nodogsplash started */
 	if (!started_time) {
 		debug(LOG_INFO, "Setting started_time");
 		started_time = time(NULL);
