@@ -63,12 +63,12 @@ get_image_file() {
 	imagepath="/etc/nodogsplash/htdocs/images/remote"
 	mkdir "/tmp/remote"
 
-	if [ ! -f "$imagepath" ]; then
+	if [ ! -d "$imagepath" ]; then
 		ln -s /tmp/remote /etc/nodogsplash/htdocs/images/remote
 	fi
 
 	md5=$(echo -e "$imageurl" | md5sum);
-	filename=$(echo -e "$md5" | awk -F" -" {'print($1)'});
+	filename=$(echo -e "$md5" | awk {'print($1)'});
 	filename="$filename.$imagetype"
 
 	if [ ! -f "$imagepath/$filename" ]; then
