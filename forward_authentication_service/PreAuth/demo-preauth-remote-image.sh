@@ -134,8 +134,7 @@ write_log () {
 	sizeratio=$(($available/$filesize))
 
 	if [ $sizeratio -ge $min_freespace_to_log_ratio ]; then
-		htmlentitydecode "$username"
-		userinfo="username=$entitydecoded, emailAddress=$emailaddr"
+		userinfo="username=$username, emailAddress=$emailaddr"
 		clientinfo="macaddress=$clientmac, clientzone=$client_zone, useragent=$user_agent"
 		echo "$datetime, $userinfo, $clientinfo" >> $logfile
 	else
@@ -228,7 +227,7 @@ htmlentityencode "$gatewayname"
 gatewaynamehtml=$entityencoded
 username=$(printf "${username//%/\\x}")
 htmlentityencode "$username"
-username=$entityencoded
+usernamehtml=$entityencoded
 emailaddr=$(printf "${emailaddr//%/\\x}")
 
 #requested might have trailing comma space separated, user defined parameters - so remove them as well as decoding
@@ -310,7 +309,7 @@ login_form="
 	<input type=\"hidden\" name=\"hid\" value=\"$hid\">
 	<input type=\"hidden\" name=\"gatewayaddress\" value=\"$gatewayaddress\">
 	<input type=\"hidden\" name=\"redir\" value=\"$requested\">
-	<input type=\"text\" name=\"username\" value=\"$username\" autocomplete=\"on\" ><br>Name<br><br>
+	<input type=\"text\" name=\"username\" value=\"$usernamehtml\" autocomplete=\"on\" ><br>Name<br><br>
 	<input type=\"email\" name=\"emailaddr\" value=\"$emailaddr\" autocomplete=\"on\" ><br>Email<br><br>
 	<input type=\"submit\" value=\"Continue\" >
 	</form><hr>
