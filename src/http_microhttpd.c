@@ -582,14 +582,14 @@ static int authenticated(struct MHD_Connection *connection,
 	if (check_authdir_match(url, config->authdir)) {
 		if (config->fas_port && !config->preauth) {
 			safe_asprintf(&fasurl, "%s?clientip=%s&gatewayname=%s&gatewayaddress=%s&status=authenticated",
-				config->fas_url, client->ip, config->gw_name, config->gw_address);
+				config->fas_url, client->ip, config->url_encoded_gw_name, config->gw_address);
 			debug(LOG_DEBUG, "fasurl %s", fasurl);
 			ret = send_redirect_temp(connection, client, fasurl);
 			free(fasurl);
 			return ret;
 		} else if (config->fas_port && config->preauth) {
 			safe_asprintf(&fasurl, "?clientip=%s%sgatewayname=%s%sgatewayaddress=%s%sstatus=authenticated",
-				client->ip, QUERYSEPARATOR, config->gw_name, QUERYSEPARATOR,  config->gw_address, QUERYSEPARATOR);
+				client->ip, QUERYSEPARATOR, config->url_encoded_gw_name, QUERYSEPARATOR,  config->gw_address, QUERYSEPARATOR);
 			debug(LOG_DEBUG, "fasurl %s", fasurl);
 			ret = show_preauthpage(connection, fasurl);
 			free(fasurl);
@@ -602,7 +602,7 @@ static int authenticated(struct MHD_Connection *connection,
 	if (check_authdir_match(url, config->preauthdir)) {
 		if (config->fas_port) {
 			safe_asprintf(&fasurl, "?clientip=%s&gatewayname=%s&gatewayaddress=%s&status=authenticated",
-				client->ip, config->gw_name, config->gw_address);
+				client->ip, config->url_encoded_gw_name, config->gw_address);
 			debug(LOG_DEBUG, "fasurl %s", fasurl);
 			ret = show_preauthpage(connection, fasurl);
 			free(fasurl);
@@ -898,7 +898,7 @@ static char *construct_querystring(t_client *client, char *originurl, char *quer
 	s_config *config = config_get_config();
 
 	if (config->fas_secure_enabled == 0) {
-		snprintf(querystr, QUERYMAXLEN, "?clientip=%s&gatewayname=%s&tok=%s", client->ip, config->gw_name, client->token);
+		snprintf(querystr, QUERYMAXLEN, "?clientip=%s&gatewayname=%s&tok=%s", client->ip, config->url_encoded_gw_name, client->token);
 
 	} else if (config->fas_secure_enabled == 1) {
 
@@ -906,9 +906,9 @@ static char *construct_querystring(t_client *client, char *originurl, char *quer
 				hash_str(hash, sizeof(hash), client->token);
 				debug(LOG_INFO, "hid=%s", hash);
 				snprintf(querystr, QUERYMAXLEN, "?clientip=%s&gatewayname=%s&hid=%s&gatewayaddress=%s",
-					client->ip, config->gw_name, hash, config->gw_address);
+					client->ip, config->url_encoded_gw_name, hash, config->gw_address);
 			} else {
-				snprintf(querystr, QUERYMAXLEN, "?clientip=%s&gatewayname=%s", client->ip, config->gw_name);
+				snprintf(querystr, QUERYMAXLEN, "?clientip=%s&gatewayname=%s", client->ip, config->url_encoded_gw_name);
 			}
 
 	} else if (config->fas_secure_enabled == 2) {
@@ -925,7 +925,7 @@ static char *construct_querystring(t_client *client, char *originurl, char *quer
 			clientif);
 
 	} else {
-		snprintf(querystr, QUERYMAXLEN, "?clientip=%s&gatewayname=%s", client->ip, config->gw_name);
+		snprintf(querystr, QUERYMAXLEN, "?clientip=%s&gatewayname=%s", client->ip, config->url_encoded_gw_name);
 	}
 
 	return querystr;

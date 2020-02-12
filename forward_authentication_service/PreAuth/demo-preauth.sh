@@ -98,8 +98,7 @@ write_log () {
 	sizeratio=$(($available/$filesize))
 
 	if [ $sizeratio -ge $min_freespace_to_log_ratio ]; then
-		htmlentitydecode "$username"
-		userinfo="username=$entitydecoded, emailAddress=$emailaddr"
+		userinfo="username=$username, emailAddress=$emailaddr"
 		clientinfo="macaddress=$clientmac, clientzone=$client_zone, useragent=$user_agent"
 		echo "$datetime, $userinfo, $clientinfo" >> $logfile
 	else
@@ -192,7 +191,7 @@ htmlentityencode "$gatewayname"
 gatewaynamehtml=$entityencoded
 username=$(printf "${username//%/\\x}")
 htmlentityencode "$username"
-username=$entityencoded
+usernamehtml=$entityencoded
 emailaddr=$(printf "${emailaddr//%/\\x}")
 
 #requested might have trailing comma space separated, user defined parameters - so remove them as well as decoding
@@ -331,7 +330,7 @@ else
 	# the client user continues, so now is the time to deliver your message.
 
 	echo "<big-red>Thankyou!</big-red>"
-	echo "<br><b>Welcome $username</b>"
+	echo "<br><b>Welcome $usernamehtml</b>"
 
 	# Add your message here:
 	# You could retrieve text or images from a remote server using wget or curl
