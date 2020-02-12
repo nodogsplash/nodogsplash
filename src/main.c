@@ -65,10 +65,18 @@
 
 #include <microhttpd.h>
 
-// Check for libmicrohttp version >= 0.9.51
+/* Check for libmicrohttp version in compiler
+ *0.9.51 is the minimum version for NDS to work
+ */
 #if MHD_VERSION < 0x00095100
 #error libmicrohttp version >= 0.9.51 required
 #endif
+/* Check for libmicrohttp version at runtime
+ *0.9.69 is the minimum version to prevent loss of special characters in form data (BinAuth and PreAuth) 
+ */
+#define MIN_MHD_MAJOR 0
+#define MIN_MHD_MINOR 9
+#define MIN_MHD_PATCH 69
 
 /** XXX Ugly hack
  * We need to remember the thread IDs of threads that simulate wait with pthread_cond_timedwait
@@ -235,13 +243,46 @@ main_loop(void)
 
 	config = config_get_config();
 
+	// Check for libmicrohttp version at runtime, ie actual installed version
+	int major = 0;
+	int minor = 0;
+	int patch = 0;
+	int outdated = 0;
+	const char *version = MHD_get_version();
+
+	debug(LOG_NOTICE, "MHD version is %s", version);
+
+	if (sscanf(version, "%d.%d.%d", &major, &minor, &patch) == 3) {
+
+		if (major < MIN_MHD_MAJOR) {
+			outdated = 1;
+
+		} else if (minor < MIN_MHD_MINOR) {
+			outdated = 1;
+
+		} else if (patch < MIN_MHD_PATCH) {
+			outdated = 1;
+		}
+
+		if (outdated == 1) {
+			debug(LOG_ERR, "libmicrohttpd is out of date, please upgrade to version %d.%d.%d or higher",
+				MIN_MHD_MAJOR, MIN_MHD_MINOR, MIN_MHD_PATCH);
+
+			if (config->use_outdated_mhd == 0) {
+				debug(LOG_ERR, "exiting...");
+				exit(1);
+			}
+		}
+	}
+
+	// Encode gatewayname
 	htmlentityencode(http_encoded, sizeof(http_encoded), config->gw_name, strlen(config->gw_name));
 	config->http_encoded_gw_name = http_encoded;
 
+	/* Set the time when nodogsplash started */
 	sysuptime = get_system_uptime ();
 	debug(LOG_INFO, "main: System Uptime is %li seconds", sysuptime);
 
-	/* Set the time when nodogsplash started */
 	if (!started_time) {
 		debug(LOG_INFO, "Setting started_time");
 		started_time = time(NULL);
