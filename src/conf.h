@@ -150,6 +150,7 @@ typedef struct {
 	int maxclients;			/**< @brief Maximum number of clients allowed */
 	char *gw_name;			/**< @brief Name of the gateway; e.g. its SSID or a unique identifier for use in a remote FAS */
 	char *http_encoded_gw_name;	/**< @brief http encoded name of the gateway, used as a templated variable in splash.htm */
+	char *url_encoded_gw_name;	/**< @brief url encoded name of the gateway used as variable in Preauth */
 	char *gw_interface;		/**< @brief Interface we will manage */
 	char *gw_iprange;		/**< @brief IP range on gw_interface we will manage */
 	char *gw_ip;			/**< @brief Internal IP (v4 or v6) for our web server */
