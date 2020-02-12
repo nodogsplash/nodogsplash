@@ -46,11 +46,25 @@ int htmlentityencode(char *buf, int blen, const char *src, int slen)
 				buf[len++] = '5';
 				buf[len++] = ';';
 
+			} else if (src[i] == '&') {
+				buf[len++] = '&';
+				buf[len++] = '#';
+				buf[len++] = '3';
+				buf[len++] = '8';
+				buf[len++] = ';';
+
 			} else if (src[i] == '\'') {
 				buf[len++] = '&';
 				buf[len++] = '#';
 				buf[len++] = '3';
 				buf[len++] = '9';
+				buf[len++] = ';';
+
+			} else if (src[i] == '+') {
+				buf[len++] = '&';
+				buf[len++] = '#';
+				buf[len++] = '4';
+				buf[len++] = '3';
 				buf[len++] = ';';
 
 			} else if (src[i] == '<') {
