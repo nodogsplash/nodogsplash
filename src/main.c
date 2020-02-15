@@ -238,7 +238,8 @@ main_loop(void)
 	char *preauth_dir = NULL;
 	struct stat sb;
 	char loginscript[] = "/usr/lib/nodogsplash/login.sh";
-	char gw_name_encoded[64] = {0};
+	char gw_name_entityencoded[QUERYMAXLEN] = {0};
+	char gw_name_urlencoded[QUERYMAXLEN] = {0};
 	time_t sysuptime;
 
 	config = config_get_config();
@@ -276,11 +277,11 @@ main_loop(void)
 	}
 
 	// Encode gatewayname
-	htmlentityencode(gw_name_encoded, sizeof(gw_name_encoded), config->gw_name, strlen(config->gw_name));
-	config->http_encoded_gw_name = gw_name_encoded;
+	htmlentityencode(gw_name_entityencoded, sizeof(gw_name_entityencoded), config->gw_name, strlen(config->gw_name));
+	config->http_encoded_gw_name = gw_name_entityencoded;
 
-	uh_urlencode(gw_name_encoded, sizeof(gw_name_encoded), config->gw_name, strlen(config->gw_name));
-	config->url_encoded_gw_name = gw_name_encoded;
+	uh_urlencode(gw_name_urlencoded, sizeof(gw_name_urlencoded), config->gw_name, strlen(config->gw_name));
+	config->url_encoded_gw_name = gw_name_urlencoded;
 
 	/* Set the time when nodogsplash started */
 	sysuptime = get_system_uptime ();

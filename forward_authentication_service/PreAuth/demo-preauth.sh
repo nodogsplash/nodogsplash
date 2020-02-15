@@ -258,11 +258,11 @@ footer="
 login_form="
 	<form action=\"/nodogsplash_preauth/\" method=\"get\">
 	<input type=\"hidden\" name=\"clientip\" value=\"$clientip\">
-	<input type=\"hidden\" name=\"gatewayname\" value=\"$gatewayname\">
+	<input type=\"hidden\" name=\"gatewayname\" value=\"$gatewaynamehtml\">
 	<input type=\"hidden\" name=\"hid\" value=\"$hid\">
 	<input type=\"hidden\" name=\"gatewayaddress\" value=\"$gatewayaddress\">
 	<input type=\"hidden\" name=\"redir\" value=\"$requested\">
-	<input type=\"text\" name=\"username\" value=\"$username\" autocomplete=\"on\" ><br>Name<br><br>
+	<input type=\"text\" name=\"username\" value=\"$usernamehtml\" autocomplete=\"on\" ><br>Name<br><br>
 	<input type=\"email\" name=\"emailaddr\" value=\"$emailaddr\" autocomplete=\"on\" ><br>Email<br><br>
 	<input type=\"submit\" value=\"Continue\" >
 	</form><hr>
