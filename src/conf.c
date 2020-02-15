@@ -661,25 +661,17 @@ Return a pointer to the first nonspace char in the string.
 static char*
 _strip_whitespace(char* p1)
 {
-	char *p2, *p3;
-
-	p3 = p1;
-	while ((p2 = strchr(p3,'#')) != 0) {  /* strip the comment */
-		/* but allow # to be escaped by \ */
-		if (p2 > p1 && (*(p2 - 1) == '\\')) {
-			p3 = p2 + 1;
-			continue;
-		}
-		*p2 = '\0';
-		break;
-	}
-
 	/* strip leading whitespace */
 	while(isspace(p1[0])) p1++;
+
+	/* strip comment lines */
+	if (p1[0] == '#') {
+		p1[0] = '\0';
+	}
+
 	/* strip trailing whitespace */
 	while(p1[0] != '\0' && isspace(p1[strlen(p1)-1]))
 		p1[strlen(p1)-1] = '\0';
-
 	return p1;
 }
 

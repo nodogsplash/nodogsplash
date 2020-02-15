@@ -305,7 +305,7 @@ footer="
 login_form="
 	<form action=\"/nodogsplash_preauth/\" method=\"get\">
 	<input type=\"hidden\" name=\"clientip\" value=\"$clientip\">
-	<input type=\"hidden\" name=\"gatewayname\" value=\"$gatewayname\">
+	<input type=\"hidden\" name=\"gatewayname\" value=\"$gatewaynamehtml\">
 	<input type=\"hidden\" name=\"hid\" value=\"$hid\">
 	<input type=\"hidden\" name=\"gatewayaddress\" value=\"$gatewayaddress\">
 	<input type=\"hidden\" name=\"redir\" value=\"$requested\">

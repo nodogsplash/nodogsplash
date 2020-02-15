@@ -74,8 +74,31 @@ config nodogsplash
 	#
 	#option gatewayport '2050'
 
-
+	# GatewayName
+	# Default: NoDogSplash
+	#
+	# gatewayname is used as an identifier for the instance of NoDogSplash
+	#
+	# It is displayed on the default static splash page and the default preauth login script.
+	#
+	# It is particularly useful in the case of a singe remote FAS server that serves multiple
+	# NoDogSplash sites, allowing the FAS to customise its response for each site.
+	#
+	# Note: The single quote (or apostrophe) character ('), cannot be used in the gatewayname.
+	# If it is required, use the htmlentity &#39; instead.
+	#
+	# For example:
+	# option gatewayname 'Bill's WiFi' is invalid.
+	# Instead use:
+	# option gatewayname 'Bill&#39;s WiFi'
+	#
 	option gatewayname 'OpenWrt Nodogsplash'
+
+	# MaxClients
+	# Default 20
+	# The maximum number of clients allowed to connect
+	# This should be less than or equal to the number of allowed DHCP leases
+	# For example:
 	option maxclients '250'
 
 	# Enables debug output (0-3)
