@@ -761,8 +761,13 @@ ndsctl_json_all(FILE *fp)
 {
 	t_client *client;
 	time_t now;
+	t_MAC *trust_mac;
+	s_config *config;
+	int count = 0;
 
 	now = time(NULL);
+
+	config = config_get_config();
 
 	/* Update the client's counters so info is current */
 	iptables_fw_counters_update();
@@ -790,6 +795,31 @@ ndsctl_json_all(FILE *fp)
 	fprintf(fp, "}\n}\n");
 
 	UNLOCK_CLIENT_LIST();
+
+	// Trusted mac list
+	if (config->trustedmaclist != NULL) {
+
+		// count the number of trusted mac addresses
+		for (trust_mac = config->trustedmaclist; trust_mac != NULL; trust_mac = trust_mac->next) {
+			count++;
+		}
+
+		// output the count of trusted macs and list them in json array format
+		fprintf(fp, "{\n\"trusted_list_length\": \"%d\",\n", count);
+		fprintf(fp, "\"trusted\":[\n");
+
+		for (trust_mac = config->trustedmaclist; trust_mac != NULL; trust_mac = trust_mac->next) {
+
+			if (count > 1) {
+				fprintf(fp, "\"%s\",\n", trust_mac->mac);
+				count--;
+			} else {
+				fprintf(fp, "\"%s\"\n", trust_mac->mac);
+			}
+		}
+
+		fprintf(fp, "]\n}\n");
+	}
 }
 
 void
