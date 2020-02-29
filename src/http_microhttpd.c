@@ -803,7 +803,7 @@ static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, 
 		} else if (config->fas_secure_enabled == 1) {
 				safe_asprintf(&splashpageurl, "%s%s&redir=%s",
 					config->fas_url, querystr, originurl);
-		} else if (config->fas_secure_enabled == 2) {
+		} else if (config->fas_secure_enabled == 2 || config->fas_secure_enabled == 3) {
 			safe_asprintf(&phpcmd,
 				"echo '<?php \n"
 				"$key=\"%s\";\n"
@@ -833,7 +833,7 @@ static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, 
 			}
 			free(phpcmd);
 		} else {
-			safe_asprintf(&splashpageurl, "%s%s&redir=%s",
+			safe_asprintf(&splashpageurl, "%s?%s&redir=%s",
 				config->fas_url, querystr, originurl);
 		}
 	} else {
@@ -911,7 +911,7 @@ static char *construct_querystring(t_client *client, char *originurl, char *quer
 				snprintf(querystr, QUERYMAXLEN, "?clientip=%s&gatewayname=%s", client->ip, config->url_encoded_gw_name);
 			}
 
-	} else if (config->fas_secure_enabled == 2) {
+	} else if (config->fas_secure_enabled == 2 || config->fas_secure_enabled == 3) {
 		get_client_interface(clientif, sizeof(clientif), client->mac);
 		snprintf(querystr, QUERYMAXLEN,
 			"clientip=%s%sclientmac=%s%sgatewayname=%s%stok=%s%sgatewayaddress=%s%sauthdir=%s%soriginurl=%s%sclientif=%s",

@@ -52,7 +52,10 @@ install:
 	sed -i 's/#!\/bin\/sh/#!\/bin\/bash/' $(DESTDIR)/usr/lib/nodogsplash/get_client_token.sh
 	cp forward_authentication_service/libs/unescape.sh $(DESTDIR)/usr/lib/nodogsplash/
 	sed -i 's/#!\/bin\/sh/#!\/bin\/bash/' $(DESTDIR)/usr/lib/nodogsplash/unescape.sh
+	cp forward_authentication_service/libs/authmon.sh $(DESTDIR)/usr/lib/nodogsplash/
+	sed -i 's/#!\/bin\/sh/#!\/bin\/bash/' $(DESTDIR)/usr/lib/nodogsplash/authmon.sh
 	cp forward_authentication_service/fas-aes/fas-aes.php $(DESTDIR)/etc/nodogsplash/
+	cp forward_authentication_service/fas-aes/fas-aes-https.php $(DESTDIR)/etc/nodogsplash/
 
 
 

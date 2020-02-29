@@ -136,6 +136,7 @@ void
 termination_handler(int s)
 {
 	static pthread_mutex_t sigterm_mutex = PTHREAD_MUTEX_INITIALIZER;
+	char *fasssl = NULL;
 
 	debug(LOG_NOTICE, "Handler for termination caught signal %d", s);
 
@@ -146,6 +147,12 @@ termination_handler(int s)
 	} else {
 		debug(LOG_INFO, "Cleaning up and exiting");
 	}
+
+	// Check if authmon is already running and if it is, kill it
+	debug(LOG_INFO, "Explicitly killing the authmon daemon");
+	safe_asprintf(&fasssl, "kill $(pgrep -f authmon) > /dev/null 2>&1");
+	system(fasssl);
+	free(fasssl);
 
 	auth_client_deauth_all();
 
@@ -230,9 +237,12 @@ main_loop(void)
 	int result = 0;
 	pthread_t tid;
 	s_config *config;
+	char protocol[8] ={0};
 	char msg[255] = {0};
+	char gwhash[255] = {0};
 	char *fasurl = NULL;
 	char *fasssl = NULL;
+	char *gatewayhash = NULL;
 	char *fashid = NULL;
 	char *phpcmd = NULL;
 	char *preauth_dir = NULL;
@@ -379,6 +389,7 @@ main_loop(void)
 	}
 
 	if (config->fas_port) {
+		debug(LOG_INFO, "fas_secure_enabled is set to level %d", config->fas_secure_enabled);
 
 		if (config->fas_remoteip) {
 			if (is_addr(config->fas_remoteip) == 1) {
@@ -410,7 +421,7 @@ main_loop(void)
 			free(fashid);
 		}
 
-		if (config->fas_key && config->fas_secure_enabled == 2) {
+		if (config->fas_key && config->fas_secure_enabled >= 2) {
 			/* PHP cli command can be php or php-cli depending on Linux version. */
 			if (execute_ret(msg, sizeof(msg) - 1, "php -v") == 0) {
 				safe_asprintf(&fasssl, "php");
@@ -431,7 +442,9 @@ main_loop(void)
 			safe_asprintf(&phpcmd,
 				"echo '<?php "
 				"if (!extension_loaded (openssl)) {exit(1);"
-				"} ?>' | %s", config->fas_ssl);
+				"} ?>' | %s", config->fas_ssl
+			);
+
 			if (execute_ret(msg, sizeof(msg) - 1, phpcmd) == 0) {
 				debug(LOG_NOTICE, "OpenSSL module is loaded\n");
 			} else {
@@ -440,6 +453,68 @@ main_loop(void)
 				exit(1);
 			}
 			free(phpcmd);
+		}
+
+		// set the protocol
+		if (config->fas_secure_enabled == 3) {
+			snprintf(protocol, sizeof(protocol), "https");
+		} else {
+			snprintf(protocol, sizeof(protocol), "http");
+		}
+
+		if (config->fas_remotefqdn) {
+			safe_asprintf(&fasurl, "%s://%s:%u%s",
+				protocol, config->fas_remotefqdn, config->fas_port, config->fas_path);
+			config->fas_url = safe_strdup(fasurl);
+		} else {
+			safe_asprintf(&fasurl, "%s://%s:%u%s",
+				protocol, config->fas_remoteip, config->fas_port, config->fas_path);
+			config->fas_url = safe_strdup(fasurl);
+		}
+		debug(LOG_NOTICE, "FAS URL is %s\n", config->fas_url);
+		free(fasurl);
+
+		if (config->fas_key && config->fas_secure_enabled == 3) {
+			// Check if authmon is already running and if it is, kill it
+			safe_asprintf(&fasssl, "kill $(pgrep -f authmon) > /dev/null 2>&1");
+			system(fasssl);
+			free(fasssl);
+
+			// Get the sha256 digest of gatewayname
+			safe_asprintf(&fasssl,
+				"echo \"<?php echo openssl_digest('%s', 'sha256'); ?>\" | %s",
+				config->gw_name,
+				config->fas_ssl
+			);
+
+			if (execute_ret_url_encoded(gwhash, sizeof(gwhash) - 1, fasssl) == 0) {
+				safe_asprintf(&gatewayhash, "%s", gwhash);
+				debug(LOG_INFO, "gatewayname digest is: %s\n", gwhash);
+			} else {
+				debug(LOG_ERR, "Error hashing gatewayname");
+				debug(LOG_ERR, "Exiting...");
+				exit(1);
+			}
+			free(fasssl);
+
+			// Start authmon in the background
+			safe_asprintf(&fasssl,
+				"/usr/lib/nodogsplash/authmon.sh \"%s\" \"%s\" \"%s\" &",
+				config->fas_url,
+				gatewayhash,
+				config->fas_ssl
+			);
+
+			if (system(fasssl) == -1) {
+				debug(LOG_ERR, "authmon daemon failed to load\n");
+				debug(LOG_ERR, "Exiting...");
+				exit(1);
+			} else {
+				debug(LOG_NOTICE, "authmon daemon is loaded\n");
+			}
+
+			free(fasssl);
+			free(gatewayhash);
 		}
 
 		/* Make sure fas_remoteip is set. Note: This does not enable FAS. */
@@ -453,23 +528,12 @@ main_loop(void)
 
 		debug(LOG_NOTICE, "Forwarding Authentication is Enabled.\n");
 
-		if (config->fas_remotefqdn) {
-			safe_asprintf(&fasurl, "http://%s:%u%s",
-				config->fas_remotefqdn, config->fas_port, config->fas_path);
-			config->fas_url = safe_strdup(fasurl);
-		} else {
-			safe_asprintf(&fasurl, "http://%s:%u%s",
-				config->fas_remoteip, config->fas_port, config->fas_path);
-			config->fas_url = safe_strdup(fasurl);
-		}
-		debug(LOG_NOTICE, "FAS URL is %s\n", config->fas_url);
-		free(fasurl);
 
 		if (config->fas_secure_enabled == 0) {
 			debug(LOG_NOTICE, "Warning - Forwarding Authentication - Security is DISABLED.\n");
 		}
 
-		if (config->fas_secure_enabled == 2 && config->fas_key == NULL) {
+		if (config->fas_secure_enabled >= 2 && config->fas_key == NULL) {
 			debug(LOG_ERR, "Error - faskey is not set - exiting...\n");
 			exit(1);
 		}

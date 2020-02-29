@@ -7,6 +7,7 @@ Overview
 **BinAuth provides a method of running a post authentication script** or extension program. BinAuth is ALWAYS local to NDS and as such will have access to all the resources of the local system.
 
 **BinAuth works with, but does not require FAS** and in a simple system can be used to provide site-wide username/password access.
+BinAuth is not available when FAS is used at fas_secure_enabled = 3.
 
 **With FAS, the redir variable forwarded to BinAuth** can contain an embedded payload of custom variables defined by the FAS. As FAS is typically remote from the NDS router, this provides a link to the local system.
 

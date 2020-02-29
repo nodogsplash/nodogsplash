@@ -295,9 +295,16 @@ ndsctl_handler(int fd)
 static void
 ndsctl_auth(FILE *fp, char *arg)
 {
+	s_config *config = config_get_config();
 	t_client *client;
 	unsigned id;
 	int rc;
+	int seconds = 60 * config->session_timeout;
+	int upload = 0;
+	int download = 0;
+	time_t now = time(NULL);
+
+	//TODO - support for setting alternate values for seconds, upload and download can be implemented here by calling a BinAuth script
 
 	debug(LOG_DEBUG, "Entering ndsctl_auth [%s]", arg);
 
@@ -312,6 +319,17 @@ ndsctl_auth(FILE *fp, char *arg)
 		rc = -1;
 	}
 	UNLOCK_CLIENT_LIST();
+
+	/* set client values */
+	client->download_limit = download;
+	client->upload_limit = upload;
+	client->session_start = now;
+
+	if (seconds) {
+		client->session_end = now + seconds;
+	} else {
+		client->session_end = 0;
+	}
 
 
 	if (rc == 0) {
