@@ -229,15 +229,13 @@ init_signals(void)
 }
 
 /**@internal
- * Main execution loop
+ * Setup from Configuration values
  */
 static void
-main_loop(void)
+setup_from_config(void)
 {
-	int result = 0;
-	pthread_t tid;
-	s_config *config;
-	char protocol[8] ={0};
+	char protocol[8] = {0};
+	char port[8] = {0};
 	char msg[255] = {0};
 	char gwhash[255] = {0};
 	char *fasurl = NULL;
@@ -246,11 +244,12 @@ main_loop(void)
 	char *fashid = NULL;
 	char *phpcmd = NULL;
 	char *preauth_dir = NULL;
-	struct stat sb;
 	char loginscript[] = "/usr/lib/nodogsplash/login.sh";
 	char gw_name_entityencoded[QUERYMAXLEN] = {0};
 	char gw_name_urlencoded[QUERYMAXLEN] = {0};
+	struct stat sb;
 	time_t sysuptime;
+	s_config *config;
 
 	config = config_get_config();
 
@@ -325,6 +324,11 @@ main_loop(void)
 	}
 	debug(LOG_NOTICE, "Detected gateway %s at %s (%s)", config->gw_interface, config->gw_ip, config->gw_mac);
 
+	// Make sure fas_remoteip is set. Note: This does not enable FAS.
+	if (!config->fas_remoteip) {
+		config->fas_remoteip = safe_strdup(config->gw_ip);
+	}
+
 	/* Initializes the web server */
 	if (config->unescape_callback_enabled == 0) {
 		debug(LOG_NOTICE, "MHD Unescape Callback is Disabled");
@@ -355,10 +359,10 @@ main_loop(void)
 			exit(1);
 		}
 	}
-
 	/* TODO: set listening socket */
 	debug(LOG_NOTICE, "Created web server on %s", config->gw_address);
 
+	/* If login script is enabled, check if the script actually exists */
 	if (config->login_option_enabled > 0) {
 		debug(LOG_NOTICE, "Login option is Enabled.\n");
 
@@ -374,6 +378,7 @@ main_loop(void)
 		debug(LOG_NOTICE, "Using config options for FAS or Templated Splash.\n");
 	}
 
+	/* If PreAuth is enabled, override any FAS configuration*/
 	if (config->preauth) {
 		debug(LOG_NOTICE, "Preauth is Enabled - Overiding FAS configuration.\n");
 		debug(LOG_NOTICE, "Preauth Script is %s\n", config->preauth);
@@ -388,9 +393,11 @@ main_loop(void)
 		free(preauth_dir);
 	}
 
+	/* If FAS is enabled then set it up */
 	if (config->fas_port) {
 		debug(LOG_INFO, "fas_secure_enabled is set to level %d", config->fas_secure_enabled);
 
+		// Check the FAS remote IP address
 		if (config->fas_remoteip) {
 			if (is_addr(config->fas_remoteip) == 1) {
 				debug(LOG_INFO, "fasremoteip - %s - is a valid IPv4 address...", config->fas_remoteip);
@@ -399,14 +406,20 @@ main_loop(void)
 				debug(LOG_ERR, "Exiting...");
 				exit(1);
 			}
-		} else {
-			if (config->fas_port == 80) {
-				debug(LOG_ERR, "Invalid fasport - port 80 is reserved and cannot be used for local FAS...");
-				debug(LOG_ERR, "Exiting...");
-				exit(1);
-			}
 		}
 
+		// Block fas port 80 if local FAS
+		snprintf(port, sizeof(port), "%u", config->fas_port);
+
+		if((strcmp(config->gw_ip, config->fas_remoteip) == 0) && (strcmp(port, "80") == 0)) {
+			debug(LOG_ERR, "Invalid fasport - port 80 is reserved and cannot be used for local FAS...");
+			debug(LOG_ERR, "Exiting...");
+			exit(1);
+		}
+
+		// If FAS key is set, then check the prerequisites
+
+		// FAS secure Level 1
 		if (config->fas_key && config->fas_secure_enabled == 1) {
 			/* Check sha256sum command is available */
 			if (execute_ret_url_encoded(msg, sizeof(msg) - 1, "printf 'test' | sha256sum") == 0) {
@@ -421,6 +434,7 @@ main_loop(void)
 			free(fashid);
 		}
 
+		// FAS secure Level 2 and 3
 		if (config->fas_key && config->fas_secure_enabled >= 2) {
 			/* PHP cli command can be php or php-cli depending on Linux version. */
 			if (execute_ret(msg, sizeof(msg) - 1, "php -v") == 0) {
@@ -455,13 +469,14 @@ main_loop(void)
 			free(phpcmd);
 		}
 
-		// set the protocol
+		// set the protocol used, enforcing https for Level 3
 		if (config->fas_secure_enabled == 3) {
 			snprintf(protocol, sizeof(protocol), "https");
 		} else {
 			snprintf(protocol, sizeof(protocol), "http");
 		}
 
+		// Setup the FAS URL
 		if (config->fas_remotefqdn) {
 			safe_asprintf(&fasurl, "%s://%s:%u%s",
 				protocol, config->fas_remotefqdn, config->fas_port, config->fas_path);
@@ -474,6 +489,7 @@ main_loop(void)
 		debug(LOG_NOTICE, "FAS URL is %s\n", config->fas_url);
 		free(fasurl);
 
+		// Start the authmon daemon if configured for Level 3
 		if (config->fas_key && config->fas_secure_enabled == 3) {
 			// Check if authmon is already running and if it is, kill it
 			safe_asprintf(&fasssl, "kill $(pgrep -f authmon) > /dev/null 2>&1");
@@ -517,28 +533,26 @@ main_loop(void)
 			free(gatewayhash);
 		}
 
-		/* Make sure fas_remoteip is set. Note: This does not enable FAS. */
-		if (!config->fas_remoteip) {
-			config->fas_remoteip = safe_strdup(config->gw_ip);
-		}
-
+		// Report the FAS FQDN
 		if (config->fas_remotefqdn) {
 			debug(LOG_NOTICE, "FAS FQDN is: %s\n", config->fas_remotefqdn);
 		}
 
-		debug(LOG_NOTICE, "Forwarding Authentication is Enabled.\n");
-
-
+		// Report security warning
 		if (config->fas_secure_enabled == 0) {
 			debug(LOG_NOTICE, "Warning - Forwarding Authentication - Security is DISABLED.\n");
 		}
 
+		// Report the Pre-Shared key is not available
 		if (config->fas_secure_enabled >= 2 && config->fas_key == NULL) {
 			debug(LOG_ERR, "Error - faskey is not set - exiting...\n");
 			exit(1);
 		}
+
+		debug(LOG_NOTICE, "Forwarding Authentication is Enabled.\n");
 	}
 
+	// Report if BinAuth is enabled
 	if (config->binauth) {
 		debug(LOG_NOTICE, "Binauth is Enabled.\n");
 		debug(LOG_NOTICE, "Binauth Script is %s\n", config->binauth);
@@ -554,6 +568,22 @@ main_loop(void)
 		debug(LOG_ERR, "Exiting because of error initializing firewall rules");
 		exit(1);
 	}
+}
+
+/**@internal
+ * Main execution loop
+ */
+static void
+main_loop(void)
+{
+	int result = 0;
+	pthread_t tid;
+	s_config *config;
+
+	config = config_get_config();
+
+	/* Set up everything we need based on the configuration */
+	setup_from_config();
 
 	/* Start client statistics and timeout clean-up thread */
 	result = pthread_create(&tid_client_check, NULL, thread_client_timeout_check, NULL);
