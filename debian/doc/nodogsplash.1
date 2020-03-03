@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "NODOGSPLASH" "1" "Jan 08, 2020" "4.4.0" "NoDogSplash"
+.TH "NODOGSPLASH" "1" "Mar 03, 2020" "4.5.0" "NoDogSplash"
 .SH NAME
 nodogsplash \- nodogsplash Documentation
 .
@@ -442,9 +442,9 @@ Nodogsplash (NDS) has the ability to forward requests to a third party authentic
 .IP 4. 3
 \fBfaspath\fP\&. This is the path from the FAS Web Root (not the file system root) to the FAS login page.
 .IP 5. 3
-\fBfas_secure_enable\fP\&. This can have three values, "0", "1", or "2" providing different levels of security.
+\fBfas_secure_enable\fP\&. This can have four values, "0", "1", "2" or "3" providing different levels of security.
 .IP 6. 3
-\fBfaskey\fP Used in combination with fas_secure_enable level 2, this is a key phrase for NDS to encrypt the query string sent to FAS.
+\fBfaskey\fP Used in combination with fas_secure_enable level 1, 2 and 3, this is a key phrase for NDS to encrypt data sent to FAS.
 .UNINDENT
 .UNINDENT
 .sp
@@ -461,7 +461,7 @@ All addresses (with the exception of fasremoteip) are relative to the \fIclient\
 .sp
 When FAS is enabled, NDS automatically configures firewall access to the FAS service.
 .sp
-The FAS service must serve an http splash of its own to replace the NDS splash.html.
+The FAS service must serve a splash page of its own to replace the NDS splash.html. For fas_secure_enable "0", "1", and "2" this is enforced as http. For fas_secure_enable level "3", it is enforced as https.
 .sp
 Typically, the FAS service will be written in PHP or any other language that can provide dynamic web content.
 .sp
@@ -470,16 +470,19 @@ FAS can then provide an action form for the client, typically requesting login, 
 The FAS can be on the same device as NDS, on the same local area network as NDS, or on an Internet hosted web server.
 .SS Security
 .sp
-\fBIf FAS Secure is enabled\fP (Levels 1 (default), and 2), the client authentication token is kept secret until FAS verification is complete.
+\fBIf FAS Secure is enabled\fP (Levels 1 (default), 2 and 3), the client authentication token is kept secret until FAS verification is complete.
 .INDENT 0.0
 .INDENT 3.5
-\fBIf set to "0"\fP the client token is sent to the FAS in clear text in the query string of the redirect along with authaction and redir.
+\fBIf set to "0"\fP The FAS is enforced by NDS to use \fBhttp\fP protocol.
+The client token is sent to the FAS in clear text in the query string of the redirect along with authaction and redir.
 .sp
-\fBIf set to "1"\fP When the sha256sum command is available AND faskey is set, the client token will be hashed and sent to the FAS identified as "hid" in the query string. The gatewayaddress is also sent on the query string, allowing the FAS to construct the authaction parameter. FAS must return the sha256sum of the concatenation of the original hid and faskey to be used by NDS for client authentication. This is returned in the normal way in the query string identified as "tok". NDS will automatically detect whether hid mode is active or the raw token is being returned.
+\fBIf set to "1"\fP The FAS is enforced by NDS to use \fBhttp\fP protocol.
+When the sha256sum command is available AND faskey is set, the client token will be hashed and sent to the FAS identified as "hid" in the query string. The gatewayaddress is also sent on the query string, allowing the FAS to construct the authaction parameter. FAS must return the sha256sum of the concatenation of the original hid and faskey to be used by NDS for client authentication. This is returned in the normal way in the query string identified as "tok". NDS will automatically detect whether hid mode is active or the raw token is being returned.
 .sp
 Should sha256sum not be available or faskey is not set, then it is the responsibility of the FAS to request the token from NDSCTL.
 .sp
-\fBIf set to "2"\fP
+\fBIf set to "2"\fP The FAS is enforced by NDS to use \fBhttp\fP protocol.
+.sp
 clientip, clientmac, gatewayname, client token, gatewayaddress, authdir, originurl and clientif are encrypted using faskey and passed to FAS in the query string.
 .sp
 The query string will also contain a randomly generated initialization vector to be used by the FAS for decryption.
@@ -490,11 +493,14 @@ The "php\-cli" package and the "php\-openssl" module must both be installed for 
 .sp
 Nodogsplash does not depend on this package and module, but will exit gracefully if this package and module are not installed when this level is set.
 .sp
-The FAS must use the query string passed initialisation vector and the pre shared fas_key to decrypt the query string. An example FAS level 2 php script is preinstalled in the /etc/nodogsplash directory and also supplied in the source code.
+The FAS must use the query string passed initialisation vector and the pre shared fas_key to decrypt the query string. An example FAS level 2 php script (fas\-aes.php) is preinstalled in the /etc/nodogsplash directory and also supplied in the source code.
+.sp
+\fBIf set to "3"\fP The FAS is enforced by NDS to use \fBhttps\fP protocol.
+Level 3 is the same as level 2 except the use of https protocol is enforced for FAS. In addition, the "authmon" daemon is loaded. This allows the external FAS, after client verification, to effectively traverse inbound firewalls and address translation to achieve NDS authentication without generating browser security warnings or errors. An example FAS level 3 php script (fas\-aes\-https.php) is preinstalled in the /etc/nodogsplash directory and also supplied in the source code.
 .UNINDENT
 .UNINDENT
 .sp
-\fBOption faskey must be set\fP if fas secure is set to level 2 but is optional for level 1.
+\fBOption faskey must be set\fP if fas secure is set to levels 2 and 3 but is optional for level 1.
 .INDENT 0.0
 .INDENT 3.5
 Option faskey is used to encrypt the data sent by NDS to FAS.
@@ -539,23 +545,19 @@ It is the responsibility of FAS to obtain the unique client token allocated by N
 .sp
 The return url will be constructed by FAS from predetermined knowledge of the configuration of NDS using gatewayname as an identifier.
 .sp
-The client\(aqs unique access token will be obtained from NDS by the FAS making a call to the ndsctl tool.
+The client\(aqs unique access token will be obtained from NDS by the FAS making a call to the get_client_token library utility:
 .sp
-For example, the following command returns just the token:
+\fB/usr/lib/nodogsplash/./get_client_token $clientip\fP
 .sp
-\fBndsctl json $clientip | grep token | cut \-c 10\- | cut \-c \-8\fP
-.sp
-or alternatively:
-.sp
-\fBndsctl json $clientip | awk \-F \(aq"\(aq \(aq$2=="token"{print $4}\(aq\fP
-.sp
-A more sophisticated json parser could be used to extract all the client variables supplied by ndsctl, an example can be found in the default PreAuth Login script in /usr/lib/nogogsplash/login.sh.
+A json parser could be used to extract all the client variables supplied by ndsctl, an example can be found in the default PreAuth Login script in /usr/lib/nogogsplash/login.sh.
 .UNINDENT
 .UNINDENT
 .sp
-\fBLevel 2\fP (fas_secure_enabled = 2), NDS sends encrypted information to FAS.
+\fBLevels 2 and 3\fP (fas_secure_enabled = 2 and fas_secure_enabled = 3), NDS sends encrypted information to FAS.
 .sp
-\fIhttp://fasremotefqdn:fasport/faspath?fas=[aes\-256\-cbc data]&iv=[random initialisation vector]\fP
+\fIhttp://fasremotefqdn:fasport/faspath?fas=[aes\-256\-cbc data]&iv=[random initialisation vector]\fP (level 2)
+.sp
+\fIhttps://fasremotefqdn:fasport/faspath?fas=[aes\-256\-cbc data]&iv=[random initialisation vector]\fP (level 3)
 .INDENT 0.0
 .INDENT 3.5
 It is the responsibility of FAS to decrypt the aes\-256\-cbc data it receives, using the pre shared faskey and the random initialisation vector.
@@ -567,7 +569,7 @@ The decrypted string received by FAS will be of the form:
 .sp
 eg \fIclientip=192.168.8.23, clientmac=04:15:52:6a:e4:ad, tok=770bfe05, originurl=.....\fP
 .sp
-Variables sent by NDS in the encrypted string in NDS v4.0.0 are as follows:
+Variables sent by NDS in the encrypted string in NDS v4.0.0 and above are as follows:
 .sp
 \fBclientip clientmac gatewayname tok gatewayaddress authdir originurl clientif\fP
 .INDENT 0.0
@@ -722,9 +724,12 @@ fasremotefqdn = the \fBFully Qualified Domain name\fP of the remote server
 .UNINDENT
 .UNINDENT
 .UNINDENT
-.SS Using the FAS Example Script
+.SS Using the FAS Example Scripts (fas\-aes.php and fas\-aes\-https.php)
 .sp
-You can run the FAS example script locally on the same OpenWrt device that is running NDS (A minimum of 64MB of ram may be enough, but 128MB is recommended).
+You can run the FAS example script, fas\-aes.php, locally on the same OpenWrt device that is running NDS (A minimum of 64MB of ram may be enough, but 128MB is recommended), or remotely on an Internet based FAS server. The use of http protocol is enforced.
+.sp
+You can run the FAS example script, fas\-aes\-https.php, remotely on an Internet based https FAS server. The use of https protocol is enforced.
+.SS Example Script File fas\-aes.php
 .sp
 Assuming you have installed your web server of choice, configured it for port 2080 and added PHP support using the package php7\-cgi, you can do the following.
 .INDENT 0.0
@@ -734,7 +739,7 @@ Assuming you have installed your web server of choice, configured it for port 20
 .IP \(bu 2
 Install the packages php7\-cli and php7\-mod\-openssl
 .IP \(bu 2
-Create a folder /[server\-web\-root]/nds/
+Create a folder for the FAs script eg: /[server\-web\-root]/nds/ on the Internet FAS server
 .IP \(bu 2
 Place the file fas\-aes.php in /[server\-web\-root]/nds/
 .sp
@@ -760,7 +765,51 @@ adding the lines:
 .UNINDENT
 .INDENT 0.0
 .IP \(bu 2
-Restart NDS using the command "service nodogsplash restart".
+Restart NDS using the command \fBservice nodogsplash restart\fP
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS Example Script File fas\-aes\-https.php
+.sp
+Assuming you have access to an Internet based https web server you can do the following.
+.INDENT 0.0
+.INDENT 3.5
+(Under other operating systems you may need to edit the nodogsplash.conf file in /etc/nodogsplash instead, but the process is very similar.)
+.INDENT 0.0
+.IP \(bu 2
+Install the packages php7\-cli and php7\-mod\-openssl on your NDS router
+.IP \(bu 2
+Create a folder for the FAs script eg: /[server\-web\-root]/nds/ on the Internet FAS server
+.IP \(bu 2
+Place the file fas\-aes.php in /[server\-web\-root]/nds/
+.sp
+(You can find it in the /etc/nodogsplash directory.)
+.IP \(bu 2
+Edit the file /etc/config/nodogsplash
+.UNINDENT
+.INDENT 0.0
+.INDENT 3.5
+adding the lines:
+.INDENT 0.0
+.INDENT 3.5
+\fBoption fasport \(aq443\(aq\fP (or the actual port in use if different)
+.sp
+\fBoption faspath \(aq/nds/fas\-aes\-https.php\(aq\fP
+.sp
+\fBoption fas_secure_enabled \(aq3\(aq\fP
+.sp
+\fBoption faskey \(aq1234567890\(aq\fP
+.sp
+\fBoption fasremoteip \(aq46.32.240.41\(aq\fP (change this to the actual ip address of the remote server)
+.sp
+\fBoption fasremotefqdn \(aqblue\-wave.net\(aq\fP (change this to the actual FQDN of the remote server)
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.IP \(bu 2
+Restart NDS using the command \fBservice nodogsplash restart\fP
 .UNINDENT
 .UNINDENT
 .UNINDENT
@@ -1084,6 +1133,7 @@ The example displays the NodogSplash avatar image dynamically retrieved from Git
 \fBBinAuth provides a method of running a post authentication script\fP or extension program. BinAuth is ALWAYS local to NDS and as such will have access to all the resources of the local system.
 .sp
 \fBBinAuth works with, but does not require FAS\fP and in a simple system can be used to provide site\-wide username/password access.
+BinAuth is not available when FAS is used at fas_secure_enabled = 3.
 .sp
 \fBWith FAS, the redir variable forwarded to BinAuth\fP can contain an embedded payload of custom variables defined by the FAS. As FAS is typically remote from the NDS router, this provides a link to the local system.
 .sp
@@ -1486,6 +1536,23 @@ By default, library utilities will be installed in the folder
 .sp
 \fB/usr/lib/nodogsplash/\fP
 .SS List of Library Utilities
+.SS get_client_token.sh
+.sp
+This utility allows the unique token of a client to be determined from the client ip address.
+.sp
+It can be used in BinAuth, PreAuth and local FAS scripts.
+.INDENT 0.0
+.INDENT 3.5
+Usage: get_client_token.sh [clientip]
+.sp
+Returns: [client token]
+.INDENT 0.0
+.TP
+.B Where:
+[client token] is the unique client token string.
+.UNINDENT
+.UNINDENT
+.UNINDENT
 .SS get_client_interface.sh
 .sp
 This utility allows the interface a client is using to be determined from the client mac address.
@@ -1513,9 +1580,23 @@ Where:
 .sp
 This utility allows an input string to be unescaped. It currently only supports url\-decoding.
 .sp
-It is used by NDS as the unescape callback for libmicrohttpd.
+It can be used by NDS as the unescape callback for libmicrohttpd.
+.sp
+To enable, set the unescape_callback_enabled option to "1"
+.sp
+To disable, set the unescape_callback_enabled option to "0"
+.sp
+The default is disabled (use internal MHD unescape)
+.sp
+eg In the OpenWrt configuration file
 .INDENT 0.0
 .INDENT 3.5
+.INDENT 0.0
+.INDENT 3.5
+\fBoption unescape_callback_enabled \(aq0\(aq\fP
+.UNINDENT
+.UNINDENT
+.sp
 Usage: unescape.sh [\-option] [escapedstring]
 .sp
 Returns: [unescapedstring]
@@ -1725,7 +1806,7 @@ To print to stdout the list of clients in human readable format:
 .UNINDENT
 .UNINDENT
 .IP \(bu 2
-To print to stdout the list of clients in json format:
+To print to stdout the list of clients and trusted devices in json format:
 .INDENT 2.0
 .INDENT 3.5
 \fB/usr/bin/ndsctl json\fP
@@ -2079,7 +2160,7 @@ Enabling simple configuration for a FAS running on a remote shared web hosting s
 .UNINDENT
 .INDENT 0.0
 .IP \(bu 2
-\fBFAS secure level 1 enhancement\fP
+\fBFAS secure level 1\fP
 .UNINDENT
 .INDENT 0.0
 .INDENT 3.5
@@ -2092,7 +2173,18 @@ From v4.3.0 onwards,  FAS secure level 1 supports token hashing. This enhances s
 .UNINDENT
 .INDENT 0.0
 .INDENT 3.5
-Enabling aes256cbc encryption on NDS data transferred to remote FAS, thus preventing knowledgable client users from bypassing verification.
+Enabling aes256cbc encryption of NDS data transferred to remote FAS, thus preventing knowledgable client users from bypassing verification. Access to the FAS server using \fBhttp\fP protocol is enforced.
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.IP \(bu 2
+\fBFAS secure level 3\fP
+.UNINDENT
+.INDENT 0.0
+.INDENT 3.5
+Enabling https access to a remote, Internet based FAS server, ensuring the client device does not receive any security warnings or errors. Access to the FAS server using \fBhttps\fP protocol is enforced.
+.sp
+Level 3 otherwise functions in the same way as level 2 with aes256cbc encryption of NDS data.
 .UNINDENT
 .UNINDENT
 .UNINDENT
