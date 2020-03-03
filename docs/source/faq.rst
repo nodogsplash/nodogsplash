@@ -34,14 +34,20 @@ for v0.9.
 
   Enabling simple configuration for a FAS running on a remote shared web hosting server.
 
- * **FAS secure level 1 enhancement**
+ * **FAS secure level 1**
 
   From v4.3.0 onwards,  FAS secure level 1 supports token hashing. This enhances security and mitigates issues accessing ndsctl remotely to obtain the client token. This is particularly useful on legacy router devices with small flash and ram capacity.
 
 
  * **FAS secure level 2**
 
-  Enabling aes256cbc encryption on NDS data transferred to remote FAS, thus preventing knowledgable client users from bypassing verification.
+  Enabling aes256cbc encryption of NDS data transferred to remote FAS, thus preventing knowledgable client users from bypassing verification. Access to the FAS server using **http** protocol is enforced.
+
+ * **FAS secure level 3**
+
+  Enabling https access to a remote, Internet based FAS server, ensuring the client device does not receive any security warnings or errors. Access to the FAS server using **https** protocol is enforced.
+
+  Level 3 otherwise functions in the same way as level 2 with aes256cbc encryption of NDS data.
 
 Can I update from v0.9 to v1?
 *****************************

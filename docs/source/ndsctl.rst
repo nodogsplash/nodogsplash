@@ -11,7 +11,7 @@ A nodogsplash install includes ndsctl, a separate application which provides som
 
     ``/usr/bin/ndsctl clients``
 
-* To print to stdout the list of clients in json format:
+* To print to stdout the list of clients and trusted devices in json format:
 
     ``/usr/bin/ndsctl json``
 
