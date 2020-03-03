@@ -247,10 +247,15 @@ Using a Shared Hosting Server for a Remote FAS
 
   fasremotefqdn = the **Fully Qualified Domain name** of the remote server
 
-Using the FAS Example Script
-****************************
+Using the FAS Example Scripts (fas-aes.php and fas-aes-https.php)
+*****************************************************************
 
-You can run the FAS example script locally on the same OpenWrt device that is running NDS (A minimum of 64MB of ram may be enough, but 128MB is recommended).
+You can run the FAS example script, fas-aes.php, locally on the same OpenWrt device that is running NDS (A minimum of 64MB of ram may be enough, but 128MB is recommended), or remotely on an Internet based FAS server. The use of http protocol is enforced.
+
+You can run the FAS example script, fas-aes-https.php, remotely on an Internet based https FAS server. The use of https protocol is enforced.
+
+Example Script File fas-aes.php
+===============================
 
 Assuming you have installed your web server of choice, configured it for port 2080 and added PHP support using the package php7-cgi, you can do the following.
 
@@ -258,7 +263,7 @@ Assuming you have installed your web server of choice, configured it for port 20
 
  * Install the packages php7-cli and php7-mod-openssl
 
- * Create a folder /[server-web-root]/nds/
+ * Create a folder for the FAs script eg: /[server-web-root]/nds/ on the Internet FAS server
 
  * Place the file fas-aes.php in /[server-web-root]/nds/
 
@@ -268,7 +273,7 @@ Assuming you have installed your web server of choice, configured it for port 20
 
   adding the lines:
 
-    ``option fasport '2080'``
+    ``option fasport '2080'`` 
 
     ``option faspath '/nds/fas-aes.php'``
 
@@ -276,7 +281,41 @@ Assuming you have installed your web server of choice, configured it for port 20
 
     ``option faskey '1234567890'``
 
- * Restart NDS using the command "service nodogsplash restart".
+ * Restart NDS using the command ``service nodogsplash restart``
+
+Example Script File fas-aes-https.php
+=====================================
+
+Assuming you have access to an Internet based https web server you can do the following.
+
+ (Under other operating systems you may need to edit the nodogsplash.conf file in /etc/nodogsplash instead, but the process is very similar.)
+
+ * Install the packages php7-cli and php7-mod-openssl on your NDS router
+
+ * Create a folder for the FAs script eg: /[server-web-root]/nds/ on the Internet FAS server
+
+ * Place the file fas-aes.php in /[server-web-root]/nds/
+
+   (You can find it in the /etc/nodogsplash directory.)
+
+ * Edit the file /etc/config/nodogsplash
+
+  adding the lines:
+
+    ``option fasport '443'`` (or the actual port in use if different)
+
+    ``option faspath '/nds/fas-aes-https.php'``
+
+    ``option fas_secure_enabled '3'``
+
+    ``option faskey '1234567890'``
+    
+    ``option fasremoteip '46.32.240.41'`` (change this to the actual ip address of the remote server)
+
+    ``option fasremotefqdn 'blue-wave.net'`` (change this to the actual FQDN of the remote server)
+
+ * Restart NDS using the command ``service nodogsplash restart``
+
 
 Changing faskey
 ***************
