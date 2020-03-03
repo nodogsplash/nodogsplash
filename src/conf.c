@@ -72,7 +72,7 @@ typedef enum {
 	oGatewayInterface,
 	oGatewayIPRange,
 	oGatewayIP,
-	/* TODO: deprecate oGatewayAddress option */
+	// TODO: deprecate oGatewayAddress option
 	oGatewayAddress,
 	oGatewayPort,
 	oFasPort,
@@ -131,7 +131,7 @@ static const struct {
 	{ "gatewayinterface", oGatewayInterface },
 	{ "gatewayiprange", oGatewayIPRange },
 	{ "gatewayip", oGatewayIP },
-	/* TODO: remove/deprecate gatewayaddress keyword */
+	// TODO: remove/deprecate gatewayaddress keyword
 	{ "gatewayaddress", oGatewayAddress },
 	{ "gatewayport", oGatewayPort },
 	{ "fasport", oFasPort },
@@ -197,7 +197,7 @@ config_get_config(void)
 	return &config;
 }
 
-/** Sets the default config parameters and initialises the configuration system */
+// Sets the default config parameters and initialises the configuration system
 void
 config_init(void)
 {
@@ -261,7 +261,7 @@ config_init(void)
 	config.binauth = NULL;
 	config.preauth = NULL;
 
-	/* Set up default FirewallRuleSets, and their empty ruleset policies */
+	// Set up default FirewallRuleSets, and their empty ruleset policies
 	rs = add_ruleset("trusted-users");
 	rs->emptyrulesetpolicy = safe_strdup(DEFAULT_EMPTY_TRUSTED_USERS_POLICY);
 	rs = add_ruleset("trusted-users-to-router");
@@ -342,7 +342,7 @@ add_ruleset(const char rulesetname[])
 
 	debug(LOG_DEBUG, "add_ruleset(): Creating FirewallRuleSet %s.", rulesetname);
 
-	/* Create and place at head of config.rulesets */
+	// Create and place at head of config.rulesets
 	ruleset = safe_malloc(sizeof(t_firewall_ruleset));
 	memset(ruleset, 0, sizeof(t_firewall_ruleset));
 	ruleset->name = safe_strdup(rulesetname);
@@ -361,13 +361,13 @@ parse_empty_ruleset_policy(char *ptr, const char *filename, int lineno)
 	char *rulesetname, *policy;
 	t_firewall_ruleset *ruleset;
 
-	/* find first whitespace delimited word; this is ruleset name */
+	// find first whitespace delimited word; this is ruleset name
 	while ((*ptr != '\0') && (isblank(*ptr))) ptr++;
 	rulesetname = ptr;
 	while ((*ptr != '\0') && (!isblank(*ptr))) ptr++;
 	*ptr = '\0';
 
-	/* get the ruleset struct with this name; error if it doesn't exist */
+	// get the ruleset struct with this name; error if it doesn't exist
 	debug(LOG_DEBUG, "Parsing EmptyRuleSetPolicy for %s", rulesetname);
 	ruleset = get_ruleset(rulesetname);
 	if (ruleset == NULL) {
@@ -376,7 +376,7 @@ parse_empty_ruleset_policy(char *ptr, const char *filename, int lineno)
 		exit(1);
 	}
 
-	/* find next whitespace delimited word; this is policy name */
+	// find next whitespace delimited word; this is policy name
 	ptr++;
 	while ((*ptr != '\0') && (isblank(*ptr))) ptr++;
 	policy = ptr;
@@ -416,7 +416,7 @@ parse_firewall_ruleset(const char *rulesetname, FILE *fd, const char *filename, 
 	t_firewall_ruleset *ruleset;
 	int opcode;
 
-	/* find whitespace delimited word in ruleset string; this is its name */
+	// find whitespace delimited word in ruleset string; this is its name
 	p1 = strchr(rulesetname,' ');
 	if (p1) *p1 = '\0';
 	p1 = strchr(rulesetname,'\t');
@@ -430,36 +430,36 @@ parse_firewall_ruleset(const char *rulesetname, FILE *fd, const char *filename, 
 		exit(1);
 	}
 
-	/* Parsing the rules in the set */
+	// Parsing the rules in the set
 	while (fgets(line, MAX_BUF, fd)) {
 		(*linenum)++;
 		p1 = _strip_whitespace(line);
 
-		/* if nothing left, get next line */
+		// if nothing left, get next line
 		if (p1[0] == '\0') continue;
 
-		/* if closing brace, we are done */
+		// if closing brace, we are done
 		if (p1[0] == '}') break;
 
-		/* next, we coopt the parsing of the regular config */
+		// next, we coopt the parsing of the regular config
 
-		/* keep going until word boundary is found. */
+		// keep going until word boundary is found.
 		p2 = p1;
 		while ((*p2 != '\0') && (!isblank(*p2))) p2++;
-		/* if this is end of line, it's a problem */
+		// if this is end of line, it's a problem
 		if (p2[0] == '\0') {
 			debug(LOG_ERR, "FirewallRule incomplete on line %d in %s", *linenum, filename);
 			debug(LOG_ERR, "Exiting...");
 			exit(1);
 		}
-		/* terminate first word, point past it */
+		// terminate first word, point past it
 		*p2 = '\0';
 		p2++;
 
-		/* skip whitespace to point at arg */
+		// skip whitespace to point at arg
 		while (isblank(*p2)) p2++;
 
-		/* Get opcode */
+		// Get opcode
 		opcode = config_parse_opcode(p1, filename, *linenum);
 
 		debug(LOG_DEBUG, "p1 = [%s]; p2 = [%s]", p1, p2);
@@ -487,27 +487,25 @@ static void
 _parse_firewall_rule(t_firewall_ruleset *ruleset, char *leftover)
 {
 	int i;
-	t_firewall_target target = TARGET_REJECT; /**< firewall target */
-	int all_nums = 1; /**< If 0, word contained illegal chars */
-	int finished = 0; /**< reached end of line */
-	char *token = NULL; /**< First word */
-	char *port = NULL; /**< port(s) to allow/block */
-	char *protocol = NULL; /**< protocol to allow/block: tcp/udp/icmp/all */
-	char *mask = NULL; /**< Netmask */
-	char *ipset = NULL; /**< ipset */
-	char *other_kw = NULL; /**< other key word */
+	t_firewall_target target = TARGET_REJECT; // firewall target
+	int all_nums = 1; // If 0, word contained illegal chars
+	int finished = 0; // reached end of line
+	char *token = NULL; // First word
+	char *port = NULL; // port(s) to allow/block
+	char *protocol = NULL; // protocol to allow/block: tcp/udp/icmp/all
+	char *mask = NULL; // Netmask
+	char *ipset = NULL; // ipset
+	char *other_kw = NULL; // other key word
 	t_firewall_rule *tmp;
 	t_firewall_rule *tmp2;
 
-	/* debug(LOG_DEBUG, "leftover: %s", leftover); */
-
-	/* lowercase everything */
+	// lowercase everything
 	for (i = 0; *(leftover + i) != '\0'
 			&& (*(leftover + i) = tolower((unsigned char)*(leftover + i))); i++);
 	token = leftover;
 	TO_NEXT_WORD(leftover, finished);
 
-	/* Parse token */
+	// Parse token
 	if (!strcasecmp(token, "block")) {
 		target = TARGET_REJECT;
 	} else if (!strcasecmp(token, "drop")) {
@@ -524,9 +522,9 @@ _parse_firewall_rule(t_firewall_ruleset *ruleset, char *leftover)
 		exit(1);
 	}
 
-	/* Parse the remainder */
+	// Parse the remainder
 
-	/* Get the optional protocol */
+	// Get the optional protocol
 	if (strncmp(leftover, "tcp", 3) == 0
 			|| strncmp(leftover, "udp", 3) == 0
 			|| strncmp(leftover, "all", 3) == 0
@@ -535,7 +533,7 @@ _parse_firewall_rule(t_firewall_ruleset *ruleset, char *leftover)
 		TO_NEXT_WORD(leftover, finished);
 	}
 
-	/* Get the optional port or port range */
+	// Get the optional port or port range
 	if (strncmp(leftover, "port", 4) == 0) {
 		if (protocol == NULL ||
 				!(strncmp(protocol, "tcp", 3) == 0 || strncmp(protocol, "udp", 3) == 0)) {
@@ -543,12 +541,12 @@ _parse_firewall_rule(t_firewall_ruleset *ruleset, char *leftover)
 			exit(1);
 		}
 		TO_NEXT_WORD(leftover, finished);
-		/* Get port now */
+		// Get port now
 		port = leftover;
 		TO_NEXT_WORD(leftover, finished);
 		for (i = 0; *(port + i) != '\0'; i++)
 			if (!isdigit((unsigned char)*(port + i)) && ((unsigned char)*(port + i) != ':'))
-				all_nums = 0; /*< No longer only digits or : */
+				all_nums = 0; // No longer only digits or
 		if (!all_nums) {
 			debug(LOG_ERR, "Invalid port %s", port);
 			exit(1);
@@ -557,16 +555,16 @@ _parse_firewall_rule(t_firewall_ruleset *ruleset, char *leftover)
 
 	if (strncmp(leftover, "ipset", 5) == 0) {
 		TO_NEXT_WORD(leftover, finished);
-		/* Get ipset now */
+		// Get ipset now
 		ipset = leftover;
 		TO_NEXT_WORD(leftover, finished);
 
-		/* TODO check if ipset exists */
+		// TODO check if ipset exists
 	}
 
-	/* Now, look for optional IP address/mask */
+	// Now, look for optional IP address/mask
 	if (!finished) {
-		/* should be exactly "to" */
+		// should be exactly "to"
 		other_kw = leftover;
 		TO_NEXT_WORD(leftover, finished);
 		if (strcmp(other_kw, "to") || finished) {
@@ -575,21 +573,21 @@ _parse_firewall_rule(t_firewall_ruleset *ruleset, char *leftover)
 			exit(1);
 		}
 
-		/* Get IP address/mask now */
+		// Get IP address/mask now
 		mask = leftover;
 		TO_NEXT_WORD(leftover, finished);
 		all_nums = 1;
 		for (i = 0; *(mask + i) != '\0'; i++)
 			if (!isdigit((unsigned char)*(mask + i)) && (*(mask + i) != '.')
 					&& (*(mask + i) != '/'))
-				all_nums = 0; /*< No longer only digits or . or / */
+				all_nums = 0; // No longer only digits or . or /
 		if (!all_nums) {
 			debug(LOG_ERR, "Invalid mask %s", mask);
 			exit(1);
 		}
 	}
 
-	/* Generate rule record */
+	// Generate rule record
 	tmp = safe_malloc(sizeof(t_firewall_rule));
 	memset((void *)tmp, 0, sizeof(t_firewall_rule));
 	tmp->target = target;
@@ -606,9 +604,9 @@ _parse_firewall_rule(t_firewall_ruleset *ruleset, char *leftover)
 
 	debug(LOG_DEBUG, "Adding FirewallRule %s %s port %s to %s to FirewallRuleset %s", token, tmp->protocol, tmp->port, tmp->mask, ruleset->name);
 
-	/* Add the rule record */
+	// Add the rule record
 	if (ruleset->rules == NULL) {
-		/* No rules... */
+		// No rules...
 		ruleset->rules = tmp;
 	} else {
 		tmp2 = ruleset->rules;
@@ -661,15 +659,15 @@ Return a pointer to the first nonspace char in the string.
 static char*
 _strip_whitespace(char* p1)
 {
-	/* strip leading whitespace */
+	// strip leading whitespace
 	while(isspace(p1[0])) p1++;
 
-	/* strip comment lines */
+	// strip comment lines
 	if (p1[0] == '#') {
 		p1[0] = '\0';
 	}
 
-	/* strip trailing whitespace */
+	// strip trailing whitespace
 	while(p1[0] != '\0' && isspace(p1[strlen(p1)-1]))
 		p1[strlen(p1)-1] = '\0';
 	return p1;
@@ -705,28 +703,28 @@ config_read(const char *filename)
 		linenum++;
 		s = _strip_whitespace(line);
 
-		/* if nothing left, get next line */
+		// if nothing left, get next line
 		if (s[0] == '\0') continue;
 
 		/* now we require the line must have form: <option><whitespace><arg>
 		 * even if <arg> is just a left brace, for example
 		 */
 
-		/* find first word (i.e. option) end boundary */
+		// find first word (i.e. option) end boundary
 		p1 = s;
 		while ((*p1 != '\0') && (!isspace(*p1))) p1++;
-		/* if this is end of line, it's a problem */
+		// if this is end of line, it's a problem
 		if (p1[0] == '\0') {
 			debug(LOG_ERR, "Option %s requires argument on line %d in %s", s, linenum, filename);
 			debug(LOG_ERR, "Exiting...");
 			exit(1);
 		}
 
-		/* terminate option, point past it */
+		// terminate option, point past it
 		*p1 = '\0';
 		p1++;
 
-		/* skip any additional leading whitespace, make p1 point at start of arg */
+		// skip any additional leading whitespace, make p1 point at start of arg
 		while (isblank(*p1)) p1++;
 
 		debug(LOG_DEBUG, "Parsing option: %s, arg: %s", s, p1);
@@ -772,7 +770,7 @@ config_read(const char *filename)
 		case oGatewayIPRange:
 			config.gw_iprange = safe_strdup(p1);
 			break;
-		/* TODO: deprecate oGatewayAddress option */
+		// TODO: deprecate oGatewayAddress option
 		case oGatewayAddress:
 		case oGatewayIP:
 			config.gw_ip = safe_strdup(p1);
@@ -874,7 +872,7 @@ config_read(const char *filename)
 			}
 			break;
 		case oWebRoot:
-			/* remove any trailing slashes from webroot path */
+			// remove any trailing slashes from webroot path
 			while((p2 = strrchr(p1,'/')) == (p1 + strlen(p1) - 1)) *p2 = '\0';
 			config.webroot = safe_strdup(p1);
 			break;
@@ -1031,14 +1029,14 @@ parse_boolean(const char *line)
 	return -1;
 }
 
-/* Parse a string to see if it is valid decimal dotted quad IP V4 format */
+// Parse a string to see if it is valid decimal dotted quad IP V4 format
 int check_ip_format(const char *possibleip)
 {
 	unsigned char buf[sizeof(struct in6_addr)];
 	return inet_pton(AF_INET, possibleip, buf) > 0;
 }
 
-/* Parse a string to see if it is valid MAC address format */
+// Parse a string to see if it is valid MAC address format
 int check_mac_format(const char possiblemac[])
 {
 	return ether_aton(possiblemac) != NULL;
@@ -1049,7 +1047,7 @@ int add_to_trusted_mac_list(const char possiblemac[])
 	char mac[18];
 	t_MAC *p = NULL;
 
-	/* check for valid format */
+	// check for valid format
 	if (!check_mac_format(possiblemac)) {
 		debug(LOG_WARNING, "[%s] is not a valid MAC address", possiblemac);
 		debug(LOG_WARNING, "[%s]  - please remove from trustedmac list in config file", possiblemac);
@@ -1058,7 +1056,7 @@ int add_to_trusted_mac_list(const char possiblemac[])
 
 	sscanf(possiblemac, "%17[A-Fa-f0-9:]", mac);
 
-	/* See if MAC is already on the list; don't add duplicates */
+	// See if MAC is already on the list; don't add duplicates
 	for (p = config.trustedmaclist; p != NULL; p = p->next) {
 		if (!strcasecmp(p->mac, mac)) {
 			debug(LOG_INFO, "MAC address [%s] already on trusted list", mac);
@@ -1066,7 +1064,7 @@ int add_to_trusted_mac_list(const char possiblemac[])
 		}
 	}
 
-	/* Add MAC to head of list */
+	// Add MAC to head of list
 	p = safe_malloc(sizeof(t_MAC));
 	p->mac = safe_strdup(mac);
 	p->next = config.trustedmaclist;
@@ -1085,7 +1083,7 @@ int remove_from_trusted_mac_list(const char possiblemac[])
 	t_MAC **p = NULL;
 	t_MAC *del = NULL;
 
-	/* check for valid format */
+	// check for valid format
 	if (!check_mac_format(possiblemac)) {
 		debug(LOG_NOTICE, "[%s] not a valid MAC address", possiblemac);
 		return -1;
@@ -1093,16 +1091,16 @@ int remove_from_trusted_mac_list(const char possiblemac[])
 
 	sscanf(possiblemac, "%17[A-Fa-f0-9:]", mac);
 
-	/* If empty list, nothing to do */
+	// If empty list, nothing to do
 	if (config.trustedmaclist == NULL) {
 		debug(LOG_INFO, "MAC address [%s] not on empty trusted list", mac);
 		return -1;
 	}
 
-	/* Find MAC on the list, remove it */
+	// Find MAC on the list, remove it
 	for (p = &(config.trustedmaclist); *p != NULL; p = &((*p)->next)) {
 		if (!strcasecmp((*p)->mac, mac)) {
-			/* found it */
+			// found it
 			del = *p;
 			*p = del->next;
 			debug(LOG_INFO, "Removed MAC address [%s] from trusted list", mac);
@@ -1111,7 +1109,7 @@ int remove_from_trusted_mac_list(const char possiblemac[])
 		}
 	}
 
-	/* MAC was not on list */
+	// MAC was not on list
 	debug(LOG_INFO, "MAC address [%s] not on  trusted list", mac);
 	return -1;
 }
@@ -1127,7 +1125,7 @@ void parse_trusted_mac_list(const char ptr[])
 
 	debug(LOG_DEBUG, "Parsing string [%s] for trusted MAC addresses", ptr);
 
-	/* strsep modifies original, so let's make a copy */
+	// strsep modifies original, so let's make a copy
 	ptrcopyptr = ptrcopy = safe_strdup(ptr);
 
 	while ((possiblemac = strsep(&ptrcopy, ", \t"))) {
@@ -1202,13 +1200,13 @@ int add_to_blocked_mac_list(const char possiblemac[])
 	char mac[18];
 	t_MAC *p = NULL;
 
-	/* check for valid format */
+	// check for valid format
 	if (!check_mac_format(possiblemac)) {
 		debug(LOG_NOTICE, "[%s] not a valid MAC address to block", possiblemac);
 		return -1;
 	}
 
-	/* abort if not using BLOCK mechanism */
+	// abort if not using BLOCK mechanism
 	if (MAC_BLOCK != config.macmechanism) {
 		debug(LOG_NOTICE, "Attempt to access blocked MAC list but control mechanism != block");
 		return -1;
@@ -1216,7 +1214,7 @@ int add_to_blocked_mac_list(const char possiblemac[])
 
 	sscanf(possiblemac, "%17[A-Fa-f0-9:]", mac);
 
-	/* See if MAC is already on the list; don't add duplicates */
+	// See if MAC is already on the list; don't add duplicates
 	for (p = config.blockedmaclist; p != NULL; p = p->next) {
 		if (!strcasecmp(p->mac,mac)) {
 			debug(LOG_INFO, "MAC address [%s] already on blocked list", mac);
@@ -1224,7 +1222,7 @@ int add_to_blocked_mac_list(const char possiblemac[])
 		}
 	}
 
-	/* Add MAC to head of list */
+	// Add MAC to head of list
 	p = safe_malloc(sizeof(t_MAC));
 	p->mac = safe_strdup(mac);
 	p->next = config.blockedmaclist;
@@ -1243,13 +1241,13 @@ int remove_from_blocked_mac_list(const char possiblemac[])
 	t_MAC **p = NULL;
 	t_MAC *del = NULL;
 
-	/* check for valid format */
+	// check for valid format
 	if (!check_mac_format(possiblemac)) {
 		debug(LOG_NOTICE, "[%s] not a valid MAC address", possiblemac);
 		return -1;
 	}
 
-	/* abort if not using BLOCK mechanism */
+	// abort if not using BLOCK mechanism
 	if (MAC_BLOCK != config.macmechanism) {
 		debug(LOG_NOTICE, "Attempt to access blocked MAC list but control mechanism != block");
 		return -1;
@@ -1257,16 +1255,16 @@ int remove_from_blocked_mac_list(const char possiblemac[])
 
 	sscanf(possiblemac, "%17[A-Fa-f0-9:]", mac);
 
-	/* If empty list, nothing to do */
+	// If empty list, nothing to do
 	if (config.blockedmaclist == NULL) {
 		debug(LOG_INFO, "MAC address [%s] not on empty blocked list", mac);
 		return -1;
 	}
 
-	/* Find MAC on the list, remove it */
+	// Find MAC on the list, remove it
 	for (p = &config.blockedmaclist; *p != NULL; p = &((*p)->next)) {
 		if (!strcasecmp((*p)->mac,mac)) {
-			/* found it */
+			// found it
 			del = *p;
 			*p = del->next;
 			debug(LOG_INFO, "Removed MAC address [%s] from blocked list", mac);
@@ -1275,7 +1273,7 @@ int remove_from_blocked_mac_list(const char possiblemac[])
 		}
 	}
 
-	/* MAC was not on list */
+	// MAC was not on list
 	debug(LOG_INFO, "MAC address [%s] not on  blocked list", mac);
 	return -1;
 }
@@ -1291,7 +1289,7 @@ void parse_blocked_mac_list(const char ptr[])
 
 	debug(LOG_DEBUG, "Parsing string [%s] for MAC addresses to block", ptr);
 
-	/* strsep modifies original, so let's make a copy */
+	// strsep modifies original, so let's make a copy
 	ptrcopyptr = ptrcopy = safe_strdup(ptr);
 
 	while ((possiblemac = strsep(&ptrcopy, ", \t"))) {
@@ -1313,13 +1311,13 @@ int add_to_allowed_mac_list(const char possiblemac[])
 	char mac[18];
 	t_MAC *p = NULL;
 
-	/* check for valid format */
+	// check for valid format
 	if (!check_mac_format(possiblemac)) {
 		debug(LOG_NOTICE, "[%s] not a valid MAC address to allow", possiblemac);
 		return -1;
 	}
 
-	/* abort if not using ALLOW mechanism */
+	// abort if not using ALLOW mechanism
 	if (MAC_ALLOW != config.macmechanism) {
 		debug(LOG_NOTICE, "Attempt to access allowed MAC list but control mechanism != allow");
 		return -1;
@@ -1327,7 +1325,7 @@ int add_to_allowed_mac_list(const char possiblemac[])
 
 	sscanf(possiblemac, "%17[A-Fa-f0-9:]", mac);
 
-	/* See if MAC is already on the list; don't add duplicates */
+	// See if MAC is already on the list; don't add duplicates
 	for (p = config.allowedmaclist; p != NULL; p = p->next) {
 		if (!strcasecmp(p->mac, mac)) {
 			debug(LOG_INFO, "MAC address [%s] already on allowed list", mac);
@@ -1335,7 +1333,7 @@ int add_to_allowed_mac_list(const char possiblemac[])
 		}
 	}
 
-	/* Add MAC to head of list */
+	// Add MAC to head of list
 	p = safe_malloc(sizeof(t_MAC));
 	p->mac = safe_strdup(mac);
 	p->next = config.allowedmaclist;
@@ -1354,13 +1352,13 @@ int remove_from_allowed_mac_list(const char possiblemac[])
 	t_MAC **p = NULL;
 	t_MAC *del = NULL;
 
-	/* check for valid format */
+	// check for valid format
 	if (!check_mac_format(possiblemac)) {
 		debug(LOG_NOTICE, "[%s] not a valid MAC address", possiblemac);
 		return -1;
 	}
 
-	/* abort if not using ALLOW mechanism */
+	// abort if not using ALLOW mechanism
 	if (MAC_ALLOW != config.macmechanism) {
 		debug(LOG_NOTICE, "Attempt to access allowed MAC list but control mechanism != allow");
 		return -1;
@@ -1368,16 +1366,16 @@ int remove_from_allowed_mac_list(const char possiblemac[])
 
 	sscanf(possiblemac, "%17[A-Fa-f0-9:]", mac);
 
-	/* If empty list, nothing to do */
+	// If empty list, nothing to do
 	if (config.allowedmaclist == NULL) {
 		debug(LOG_INFO, "MAC address [%s] not on empty allowed list", mac);
 		return -1;
 	}
 
-	/* Find MAC on the list, remove it */
+	// Find MAC on the list, remove it
 	for (p = &(config.allowedmaclist); *p != NULL; p = &((*p)->next)) {
 		if (!strcasecmp((*p)->mac, mac)) {
-			/* found it */
+			// found it
 			del = *p;
 			*p = del->next;
 			debug(LOG_INFO, "Removed MAC address [%s] from allowed list", mac);
@@ -1386,7 +1384,7 @@ int remove_from_allowed_mac_list(const char possiblemac[])
 		}
 	}
 
-	/* MAC was not on list */
+	// MAC was not on list
 	debug(LOG_INFO, "MAC address [%s] not on  allowed list", mac);
 	return -1;
 }
@@ -1402,7 +1400,7 @@ void parse_allowed_mac_list(const char ptr[])
 
 	debug(LOG_DEBUG, "Parsing string [%s] for MAC addresses to allow", ptr);
 
-	/* strsep modifies original, so let's make a copy */
+	// strsep modifies original, so let's make a copy
 	ptrcopyptr = ptrcopy = safe_strdup(ptr);
 
 	while ((possiblemac = strsep(&ptrcopy, ", \t"))) {
@@ -1441,7 +1439,7 @@ int set_debuglevel(const char opt[])
 	}
 }
 
-/** Verifies if the configuration is complete and valid.  Terminates the program if it isn't */
+// Verifies if the configuration is complete and valid. Terminates the program if it isn't.
 void
 config_validate(void)
 {

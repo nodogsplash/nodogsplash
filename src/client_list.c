@@ -45,11 +45,11 @@
 #include "util.h"
 
 
-/** Client counter */
+// Client counter
 static int client_count = 0;
 static int client_id = 1;
 
-/** Global mutex to protect access to the client list */
+// Global mutex to protect access to the client list
 pthread_mutex_t client_list_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /** @internal
@@ -57,25 +57,21 @@ pthread_mutex_t client_list_mutex = PTHREAD_MUTEX_INITIALIZER;
  */
 static t_client *firstclient = NULL;
 
-/** Return current length of the client list
- */
+// Return current length of the client list
 int
 get_client_list_length()
 {
 	return client_count;
 }
 
-/** Get the first element of the client list
- */
+// Get the first element of the client list
 t_client *
 client_get_first_client(void)
 {
 	return firstclient;
 }
 
-/**
- * Initialize the list of connected clients
- */
+// Initialize the list of connected clients
 void
 client_list_init(void)
 {
@@ -124,7 +120,6 @@ _client_list_append(const char mac[], const char ip[])
 	client_reset(client);
 
 	// Blocked or Trusted client do not trigger the splash page.
-	// They must access the splash or status page manually.
 	if (is_blocked_mac(mac)) {
 		client->fw_connection_state = FW_MARK_BLOCKED;
 	} else if(is_allowed_mac(mac) || is_trusted_mac(mac)) {
@@ -181,13 +176,13 @@ client_list_add_client(const char mac[], const char ip[])
 	t_client *client;
 
 	if (!check_mac_format(mac)) {
-		/* Inappropriate format in IP address */
+		// Inappropriate format in IP address
 		debug(LOG_NOTICE, "Illegal MAC format [%s]", mac);
 		return NULL;
 	}
 
 	if (!check_ip_format(ip)) {
-		/* Inappropriate format in IP address */
+		// Inappropriate format in IP address
 		debug(LOG_NOTICE, "Illegal IP format [%s]", ip);
 		return NULL;
 	}
@@ -372,15 +367,15 @@ client_list_delete(t_client *client)
 		_client_list_free_node(client);
 		client_count--;
 	} else {
-		/* Loop forward until we reach our point in the list. */
+		// Loop forward until we reach our point in the list.
 		while (ptr->next != NULL && ptr->next != client) {
 			ptr = ptr->next;
 		}
-		/* If we reach the end before finding out element, complain. */
+		// If we reach the end before finding out element, complain.
 		if (ptr->next == NULL) {
 			debug(LOG_ERR, "Node to delete could not be found.");
 		} else {
-			/* Free element. */
+			// Free element.
 			debug(LOG_NOTICE, "Deleting %s %s token %s from client list",
 				  client->ip, client->mac, client->token ? client->token : "none");
 			ptr->next = client->next;

@@ -30,13 +30,13 @@ static const char *get_variable_value(const struct template *vars, const char *n
  */
 int tmpl_parse(struct template *vars, char *dst, size_t dst_len, const char *src, size_t src_len)
 {
-	int src_i = 0; /* track input buffer position */
+	int src_i = 0; // track input buffer position
 	int dst_i = 0;
 	int varlen;
 	int valuelen;
-	char varname[32]; /* contains the varname */
-	const char *varnameptr; /* intermediate pointer */
-	const char *value; /* value of a variable */
+	char varname[32]; // contains the varname
+	const char *varnameptr; // intermediate pointer
+	const char *value; // value of a variable
 
 	memset(dst, 0x0, dst_len);
 	while ((src_i < src_len) && (dst_i < dst_len)) {
@@ -47,20 +47,21 @@ int tmpl_parse(struct template *vars, char *dst, size_t dst_len, const char *src
 			continue;
 		}
 
-		/* we know it's a '$'. But we are interest in the next char */
+		// we know it's a '$'. But we are interested in the next char
 		src_i++;
 
-		/* read the whole variable name */
+		// read the whole variable name
 		varnameptr = src + src_i;
 		for (varlen = 0; (varlen < (src_len - src_i)) &&
 				(isalnum(varnameptr[varlen]) || varnameptr[varlen] == '_')
 				; varlen++)
 			;
 
-		/* variable too long, can't be a valid variable */
+		// variable too long, can't be a valid variable
 		if (varlen > (sizeof(varname) - 1)) {
 			/* we already parsed the varname and can skip these chars
-			 * but we need to copy these first to the output buffer */
+			 * but we need to copy these first to the output buffer
+			 */
 			memcpy(dst + dst_i, varnameptr, (varlen > (dst_len - dst_i)) ? (dst_len - dst_i) : varlen);
 			src_i += varlen;
 			dst_i += varlen;
@@ -71,16 +72,16 @@ int tmpl_parse(struct template *vars, char *dst, size_t dst_len, const char *src
 		strncpy(varname, varnameptr, varlen);
 		value = get_variable_value(vars, varname);
 
-		/* check if varname was found in valid variable names */
+		// check if varname was found in valid variable names
 		if (value == NULL) {
-			/* we already parsed the varname and can skip these chars */
+			// we already parsed the varname and can skip these chars
 			memcpy(dst + dst_i, varnameptr, (varlen > (dst_len - dst_i)) ? (dst_len - dst_i) : varlen);
 			src_i += varlen;
 			dst_i += varlen;
 			continue;
 		}
 
-		/* it's a valid varname and contains a variable replace it */
+		// it's a valid varname and contains a variable replace it
 		valuelen = strlen(value);
 		memcpy(dst + dst_i, value, (valuelen > (dst_len - dst_i)) ? (dst_len - dst_i) : valuelen);
 		dst_i += valuelen;

@@ -66,17 +66,17 @@
 #include "fw_iptables.h"
 
 
-/* Defined in main.c */
+// Defined in main.c
 extern time_t started_time;
 
-/* Defined in clientlist.c */
+// Defined in clientlist.c
 extern pthread_mutex_t client_list_mutex;
 extern pthread_mutex_t config_mutex;
 
-/* Defined in auth.c */
+// Defined in auth.c
 extern unsigned int authenticated_since_start;
 
-/* Defined in main.c */
+// Defined in main.c
 extern int created_httpd_threads;
 extern int current_httpd_threads;
 
@@ -128,7 +128,7 @@ static int _execute_ret(char* msg, int msg_len, const char *cmd)
 
 	debug(LOG_DEBUG, "Executing command: %s", cmd);
 
-	/* Temporarily get rid of SIGCHLD handler (see main.c), until child exits. */
+	// Temporarily get rid of SIGCHLD handler (see main.c), until child exits.
 	debug(LOG_DEBUG,"Setting default SIGCHLD handler SIG_DFL");
 	sa.sa_handler = SIG_DFL;
 	sigemptyset(&sa.sa_mask);
@@ -158,7 +158,7 @@ static int _execute_ret(char* msg, int msg_len, const char *cmd)
 
 abort:
 
-	/* Restore signal handler */
+	// Restore signal handler
 	if (sigaction(SIGCHLD, &oldsa, NULL) == -1) {
 		debug(LOG_ERR, "sigaction() failed to restore SIGCHLD handler! Error %s", strerror(errno));
 	}
@@ -202,9 +202,10 @@ int execute_ret(char* msg, int msg_len, const char fmt[], ...)
 	return _execute_ret(msg, msg_len, cmd);
 }
 
-// Warning: Any client originated portion of the cmd string must be url encoded before calling this function.
-// It may not be desired to url encode the entire cmd string,
-// so it is our responsibility to encode the relevant parts (eg the clients original request url) before calling.
+/* Warning: Any client originated portion of the cmd string must be url encoded before calling this function.
+ It may not be desired to url encode the entire cmd string,
+ so it is our responsibility to encode the relevant parts (eg the clients original request url) before calling.
+ */
 int execute_ret_url_encoded(char* msg, int msg_len, const char *cmd)
 {
 	return _execute_ret(msg, msg_len, cmd);
@@ -223,10 +224,10 @@ get_iface_ip(const char ifname[], int ip6)
 		return NULL;
 	}
 
-	/* Set default address */
+	// Set default address
 	sprintf(addrbuf, ip6 ? "::" : "0.0.0.0");
 
-	/* Iterate all interfaces */
+	// Iterate all interfaces
 	cur = addrs;
 	while (cur != NULL) {
 		if ((cur->ifa_addr != NULL) && (strcmp( cur->ifa_name, ifname) == 0)) {
@@ -347,15 +348,15 @@ get_ext_iface(void)
 		fclose(input);
 		debug(LOG_ERR, "get_ext_iface(): Failed to detect the external interface after try %d (maybe the interface is not up yet?).  Retry limit: %d", i, NUM_EXT_INTERFACE_DETECT_RETRY);
 
-		/* Sleep for EXT_INTERFACE_DETECT_RETRY_INTERVAL seconds */
+		// Sleep for EXT_INTERFACE_DETECT_RETRY_INTERVAL seconds
 		timeout.tv_sec = time(NULL) + EXT_INTERFACE_DETECT_RETRY_INTERVAL;
 		timeout.tv_nsec = 0;
 
-		/* Mutex must be locked for pthread_cond_timedwait... */
+		// Mutex must be locked for pthread_cond_timedwait...
 		pthread_mutex_lock(&cond_mutex);
-		/* Thread safe "sleep" */
+		// Thread safe "sleep"
 		pthread_cond_timedwait(&cond, &cond_mutex, &timeout);
-		/* No longer needs to be locked */
+		// No longer needs to be locked
 		pthread_mutex_unlock(&cond_mutex);
 	}
 
@@ -546,7 +547,7 @@ ndsctl_status(FILE *fp)
 	fprintf(fp, "====\n");
 	fprintf(fp, "Client authentications since start: %u\n", authenticated_since_start);
 
-	/* Update the client's counters so info is current */
+	// Update the client's counters so info is current
 	iptables_fw_counters_update();
 
 	LOCK_CLIENT_LIST();
@@ -659,7 +660,7 @@ ndsctl_clients(FILE *fp)
 
 	now = time(NULL);
 
-	/* Update the client's counters so info is current */
+	// Update the client's counters so info is current
 	iptables_fw_counters_update();
 
 	LOCK_CLIENT_LIST();
@@ -738,7 +739,7 @@ ndsctl_json_one(FILE *fp, const char *arg)
 
 	now = time(NULL);
 
-	/* Update the client's counters so info is current */
+	// Update the client's counters so info is current
 	iptables_fw_counters_update();
 
 	LOCK_CLIENT_LIST();
@@ -769,7 +770,7 @@ ndsctl_json_all(FILE *fp)
 
 	config = config_get_config();
 
-	/* Update the client's counters so info is current */
+	// Update the client's counters so info is current
 	iptables_fw_counters_update();
 
 	LOCK_CLIENT_LIST();
@@ -841,7 +842,7 @@ rand16(void)
 		unsigned int seed = 0;
 		struct timeval now;
 
-		/* not a very good seed but what the heck, it needs to be quickly acquired */
+		// not a very good seed but what the heck, it needs to be quickly acquired
 		gettimeofday(&now, NULL);
 		seed = now.tv_sec ^ now.tv_usec ^ (getpid() << 16);
 
@@ -850,9 +851,9 @@ rand16(void)
 	}
 
 	/* Some rand() implementations have less randomness in low bits
-	 * than in high bits, so we only pay attention to the high ones.
-	 * But most implementations don't touch the high bit, so we
-	 * ignore that one.
-	 **/
+	 than in high bits, so we only pay attention to the high ones.
+	 But most implementations don't touch the high bit, so we
+	 ignore that one.
+	 */
 	return( (unsigned short) (rand() >> 15) );
 }

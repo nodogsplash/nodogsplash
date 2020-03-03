@@ -117,7 +117,7 @@ connect_to_server(const char sock_name[])
 	char lockfile[] = "/tmp/ndsctl.lock";
 	struct sockaddr_un sa_un;
 
-	/* Connect to socket */
+	// Connect to socket
 	sock = socket(AF_UNIX, SOCK_STREAM, 0);
 	memset(&sa_un, 0, sizeof(sa_un));
 	sa_un.sun_family = AF_UNIX;

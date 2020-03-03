@@ -21,8 +21,9 @@
 #include "debug.h"
 
 /* blen is the size of buf; slen is the length of src.	The input-string need
-** not be, and the output string will not be, null-terminated.	Returns the
-** length of the encoded string, or -1 on error (buffer overflow) */
+ * not be, and the output string will not be, null-terminated.	Returns the
+ * length of the encoded string, or -1 on error (buffer overflow)
+ */
 int htmlentityencode(char *buf, int blen, const char *src, int slen)
 {
 	int i;
@@ -132,8 +133,9 @@ int uh_urldecode(char *buf, int blen, const char *src, int slen)
 }
 
 /* blen is the size of buf; slen is the length of src.	The input-string need
-** not be, and the output string will not be, null-terminated.	Returns the
-** length of the encoded string, or -1 on error (buffer overflow) */
+ * not be, and the output string will not be, null-terminated.	Returns the
+ * length of the encoded string, or -1 on error (buffer overflow)
+ */
 int uh_urlencode(char *buf, int blen, const char *src, int slen)
 {
 	int i;
