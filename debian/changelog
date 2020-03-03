@@ -1,3 +1,33 @@
+nodogsplash (4.5.0-1) stable; urgency=medium
+
+  * Add - Enable https protocol for remote FAS [bluewavenet]
+  * Add - trusted devices list to ndsctl json output [bluewavenet]
+  * Add - option unescape_callback_enabled [bluewavenet]
+  * Add - get_client_token library utility [bluewavenet]
+  * Add - utf-8 to PreAuth header [bluewavenet]
+  * Add - PreAuth Support for hashed id (hid) if sent by NDS [bluewavenet]
+  * Add - library script shebang warning for systems not running Busybox [bluewavenet]
+  * Add - htmlentityencode function, encode gatewayname in templated splash page [bluewavenet]
+  * Add - htmlentity encode gatewayname on login page (PreAuth) [bluewavenet]
+  * Add - Simple customisation of log file location for PreAuth and BinAuth [bluewavenet]
+  * Add - option use_outdated_mhd [bluewavenet]
+  * Add - url-encode and htmlentity-encode gatewayname on startup [bluewavenet]
+  * Add - Allow special characters in username (PreAuth) [bluewavenet]
+  * Add - Documentation updates [bluewavenet]
+  * Add - Various style and cosmetic updates  [bluewavenet]
+  * Fix - Change library script shebang to bash in Debian [bluewavenet]
+  * Fix - Remove unnecessary characters causing script execution failure in Debian [bluewavenet]
+  * Fix - Add missing NULL parameter in MHD_OPTION_UNESCAPE_CALLBACK [skra72] [bluewavenet]
+  * Fix - Script failures running on Openwrt 19.07.0 [bluewavenet]
+  * Fix - Preauth, status=authenticated [bluewavenet]
+  * Fix - Prevent ndsctl from running if called from a Binauth script. [bluewavenet]
+  * Fix - Minor changes in Library scripts for better portability [bluewavenet]
+  * Fix - Prevent php notices on pedantic php servers [bluewavenet]
+  * Fix - broken remote image retrieval (PreAuth) [bluewavenet]
+  * Fix - Allow use of "#" in gatewayname [bluewavenet]
+
+ -- Rob White <dot@blue-wave.net>  Tue, 03 Mar 2020 20:30:00 +0000
+
 nodogsplash (4.4.0-1) stable; urgency=medium
 
   * Add Client Network Zone detection supporting local interfaces and 802.11s mesh [bluewavenet]
