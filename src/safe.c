@@ -97,7 +97,7 @@ pid_t safe_fork(void)
 		debug(LOG_CRIT, "Failed to fork: %s. Bailing out", strerror(errno));
 		abort();
 	} else if (result == 0) {
-		/* I'm the child - do some cleanup */
+		// I'm the child - do some cleanup
 	}
 
 	return result;

@@ -18,7 +18,7 @@
  *                                                                  *
 \********************************************************************/
 
-/** @file ndsctl_thread.c
+/* @file ndsctl_thread.c
     @brief Monitoring and control of nodogsplash, server part
     @author Copyright (C) 2004 Alexandre Carmel-Veilleux <acv@acv.ca>
     trivially modified for nodogsplash
@@ -56,7 +56,7 @@
 
 #define MAX_EVENT_SIZE 30
 
-/* Defined in clientlist.c */
+// Defined in clientlist.c
 extern pthread_mutex_t client_list_mutex;
 extern pthread_mutex_t config_mutex;
 
@@ -73,10 +73,10 @@ static void ndsctl_debuglevel(FILE *fp, char *arg);
 
 static int socket_set_non_blocking(int sockfd);
 
-/** Launches a thread that monitors the control socket for request
-@param arg Must contain a pointer to a string containing the Unix domain socket to open
-@todo This thread loops infinitely, need a watchdog to verify that it is still running?
-*/
+/* Launches a thread that monitors the control socket for request
+ @param arg Must contain a pointer to a string containing the Unix domain socket to open
+ @todo This thread loops infinitely, need a watchdog to verify that it is still running?
+ */
 void*
 thread_ndsctl(void *arg)
 {
@@ -97,7 +97,7 @@ thread_ndsctl(void *arg)
 	debug(LOG_DEBUG, "Socket name: %s", sock_name);
 
 	if (strlen(sock_name) > (sizeof(sa_un.sun_path) - 1)) {
-		/* TODO: Die handler with logging.... */
+		// TODO: Die handler with logging....
 		debug(LOG_ERR, "NDSCTL socket name too long");
 		exit(1);
 	}
@@ -107,16 +107,16 @@ thread_ndsctl(void *arg)
 
 	debug(LOG_DEBUG, "Got server socket %d", sock);
 
-	/* If it exists, delete... Not the cleanest way to deal. */
+	// If it exists, delete... Not the cleanest way to deal.
 	unlink(sock_name);
 
 	debug(LOG_DEBUG, "Filling sockaddr_un");
-	strcpy(sa_un.sun_path, sock_name); /* XXX No size check because we check a few lines before. */
+	strcpy(sa_un.sun_path, sock_name); // XXX No size check because we check a few lines before.
 	sa_un.sun_family = AF_UNIX;
 
 	debug(LOG_DEBUG, "Binding socket (%s) (%d)", sa_un.sun_path, strlen(sock_name));
 
-	/* Which to use, AF_UNIX, PF_UNIX, AF_LOCAL, PF_LOCAL? */
+	// Which to use, AF_UNIX, PF_UNIX, AF_LOCAL, PF_LOCAL?
 	if (bind(sock, (struct sockaddr *)&sa_un, strlen(sock_name) + sizeof(sa_un.sun_family))) {
 		debug(LOG_ERR, "Could not bind control socket: %s", strerror(errno));
 		pthread_exit(NULL);
@@ -154,7 +154,7 @@ thread_ndsctl(void *arg)
 		number_of_count = epoll_wait(epoll_fd, events, current_fd_count, -1);
 
 		if (number_of_count == -1) {
-			/* interupted is not an error */
+			// interupted is not an error
 			if (errno == EINTR)
 				continue;
 
@@ -204,7 +204,7 @@ thread_ndsctl(void *arg)
 				epoll_ctl(epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, &ev);
 				current_fd_count -= 1;
 
-				/* socket was closed on 'ndsctl_handler' */
+				// socket was closed on 'ndsctl_handler'
 				if (events[i].data.fd > 0) {
 					events[i].data.fd = 0;
 				}
@@ -227,17 +227,17 @@ ndsctl_handler(int fd)
 	debug(LOG_DEBUG, "Entering thread_ndsctl_handler....");
 	debug(LOG_DEBUG, "Read bytes and stuff from descriptor %d", fd);
 
-	/* Init variables */
+	// Init variables
 	read_bytes = 0;
 	done = 0;
 	memset(request, 0, sizeof(request));
 	fp = fdopen(fd, "w");
 
-	/* Read.... */
+	// Read....
 	while (!done && read_bytes < (sizeof(request) - 1)) {
 		len = read(fd, request + read_bytes, sizeof(request) - read_bytes);
 
-		/* Have we gotten a command yet? */
+		// Have we gotten a command yet?
 		for (i = read_bytes; i < (read_bytes + len); i++) {
 			if (request[i] == '\r' || request[i] == '\n') {
 				request[i] = '\0';
@@ -245,7 +245,7 @@ ndsctl_handler(int fd)
 			}
 		}
 
-		/* Increment position */
+		// Increment position
 		read_bytes += len;
 	}
 
@@ -258,7 +258,7 @@ ndsctl_handler(int fd)
 	} else if (strncmp(request, "json", 4) == 0) {
 		ndsctl_json(fp, (request + 5));
 	} else if (strncmp(request, "stop", 4) == 0) {
-		/* tell the caller to stop the thread */
+		// tell the caller to stop the thread
 		ret = 1;
 	} else if (strncmp(request, "block", 5) == 0) {
 		ndsctl_block(fp, (request + 6));
@@ -287,7 +287,7 @@ ndsctl_handler(int fd)
 	debug(LOG_DEBUG, "ndsctl request processed: [%s]", request);
 	debug(LOG_DEBUG, "Exiting thread_ndsctl_handler....");
 
-	/* Close and flush fp, also closes underlying fd */
+	// Close and flush fp, also closes underlying fd
 	fclose(fp);
 	return ret;
 }
@@ -320,7 +320,7 @@ ndsctl_auth(FILE *fp, char *arg)
 	}
 	UNLOCK_CLIENT_LIST();
 
-	/* set client values */
+	// set client values
 	client->download_limit = download;
 	client->upload_limit = upload;
 	client->session_start = now;

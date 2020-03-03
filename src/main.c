@@ -39,13 +39,13 @@
 #include <sys/stat.h>
 #include <arpa/inet.h>
 
-/* for strerror() */
+// for strerror()
 #include <string.h>
 
-/* for wait() */
+// for wait()
 #include <sys/wait.h>
 
-/* for unix socket communication*/
+// for unix socket communication
 #include <sys/socket.h>
 #include <sys/un.h>
 
@@ -84,10 +84,10 @@
  */
 static pthread_t tid_client_check = 0;
 
-/* The internal web server */
+// The internal web server
 struct MHD_Daemon * webserver = NULL;
 
-/* Time when nodogsplash started  */
+// Time when nodogsplash started
 time_t started_time = 0;
 
 /**@internal
@@ -131,7 +131,8 @@ sigchld_handler(int s)
 }
 
 /** Exits cleanly after cleaning up the firewall.
- *  Use this function anytime you need to exit after firewall initialization */
+ *  Use this function anytime you need to exit after firewall initialization
+ */
 void
 termination_handler(int s)
 {
@@ -140,7 +141,7 @@ termination_handler(int s)
 
 	debug(LOG_NOTICE, "Handler for termination caught signal %d", s);
 
-	/* Makes sure we only call iptables_fw_destroy() once. */
+	// Makes sure we only call iptables_fw_destroy() once.
 	if (pthread_mutex_trylock(&sigterm_mutex)) {
 		debug(LOG_INFO, "Another thread already began global termination handler. I'm exiting");
 		pthread_exit(NULL);
@@ -164,6 +165,7 @@ termination_handler(int s)
 	 * termination handler) from happening so we need to explicitly kill the threads
 	 * that use that
 	 */
+
 	if (tid_client_check) {
 		debug(LOG_INFO, "Explicitly killing the fw_counter thread");
 		pthread_kill(tid_client_check, SIGKILL);
@@ -191,12 +193,14 @@ init_signals(void)
 		exit(1);
 	}
 
-	/* Trap SIGPIPE */
+	// Trap SIGPIPE
+
 	/* This is done so that when libhttpd does a socket operation on
 	 * a disconnected socket (i.e.: Broken Pipes) we catch the signal
 	 * and do nothing. The alternative is to exit. SIGPIPE are harmless
 	 * if not desirable.
 	 */
+
 	debug(LOG_DEBUG, "Setting SIGPIPE  handler to SIG_IGN");
 	sa.sa_handler = SIG_IGN;
 	if (sigaction(SIGPIPE, &sa, NULL) == -1) {
@@ -209,19 +213,19 @@ init_signals(void)
 	sigemptyset(&sa.sa_mask);
 	sa.sa_flags = SA_RESTART;
 
-	/* Trap SIGTERM */
+	// Trap SIGTERM
 	if (sigaction(SIGTERM, &sa, NULL) == -1) {
 		debug(LOG_ERR, "sigaction(): %s", strerror(errno));
 		exit(1);
 	}
 
-	/* Trap SIGQUIT */
+	// Trap SIGQUIT
 	if (sigaction(SIGQUIT, &sa, NULL) == -1) {
 		debug(LOG_ERR, "sigaction(): %s", strerror(errno));
 		exit(1);
 	}
 
-	/* Trap SIGINT */
+	// Trap SIGINT
 	if (sigaction(SIGINT, &sa, NULL) == -1) {
 		debug(LOG_ERR, "sigaction(): %s", strerror(errno));
 		exit(1);
@@ -292,7 +296,7 @@ setup_from_config(void)
 	uh_urlencode(gw_name_urlencoded, sizeof(gw_name_urlencoded), config->gw_name, strlen(config->gw_name));
 	config->url_encoded_gw_name = gw_name_urlencoded;
 
-	/* Set the time when nodogsplash started */
+	// Set the time when nodogsplash started
 	sysuptime = get_system_uptime ();
 	debug(LOG_INFO, "main: System Uptime is %li seconds", sysuptime);
 
@@ -304,7 +308,7 @@ setup_from_config(void)
 		started_time = time(NULL);
 	}
 
-	/* If we don't have the Gateway IP address, get it. Exit on failure. */
+	// If we don't have the Gateway IP address, get it. Exit on failure.
 	if (!config->gw_ip) {
 		debug(LOG_DEBUG, "Finding IP address of %s", config->gw_interface);
 		config->gw_ip = get_iface_ip(config->gw_interface, config->ip6);
@@ -314,7 +318,7 @@ setup_from_config(void)
 		}
 	}
 
-	/* format gw_address accordingly depending on if gw_ip is v4 or v6 */
+	// format gw_address accordingly depending on if gw_ip is v4 or v6
 	const char *ipfmt = config->ip6 ? "[%s]:%d" : "%s:%d";
 	safe_asprintf(&config->gw_address, ipfmt, config->gw_ip, config->gw_port);
 
@@ -329,7 +333,7 @@ setup_from_config(void)
 		config->fas_remoteip = safe_strdup(config->gw_ip);
 	}
 
-	/* Initializes the web server */
+	// Initializes the web server
 	if (config->unescape_callback_enabled == 0) {
 		debug(LOG_NOTICE, "MHD Unescape Callback is Disabled");
 
@@ -359,10 +363,12 @@ setup_from_config(void)
 			exit(1);
 		}
 	}
-	/* TODO: set listening socket */
+
+	// TODO: set listening socket - do we need it?
+
 	debug(LOG_NOTICE, "Created web server on %s", config->gw_address);
 
-	/* If login script is enabled, check if the script actually exists */
+	// If login script is enabled, check if the script actually exists
 	if (config->login_option_enabled > 0) {
 		debug(LOG_NOTICE, "Login option is Enabled.\n");
 
@@ -378,7 +384,7 @@ setup_from_config(void)
 		debug(LOG_NOTICE, "Using config options for FAS or Templated Splash.\n");
 	}
 
-	/* If PreAuth is enabled, override any FAS configuration*/
+	// If PreAuth is enabled, override any FAS configuration
 	if (config->preauth) {
 		debug(LOG_NOTICE, "Preauth is Enabled - Overiding FAS configuration.\n");
 		debug(LOG_NOTICE, "Preauth Script is %s\n", config->preauth);
@@ -393,7 +399,7 @@ setup_from_config(void)
 		free(preauth_dir);
 	}
 
-	/* If FAS is enabled then set it up */
+	// If FAS is enabled then set it up
 	if (config->fas_port) {
 		debug(LOG_INFO, "fas_secure_enabled is set to level %d", config->fas_secure_enabled);
 
@@ -421,7 +427,7 @@ setup_from_config(void)
 
 		// FAS secure Level 1
 		if (config->fas_key && config->fas_secure_enabled == 1) {
-			/* Check sha256sum command is available */
+			// Check sha256sum command is available
 			if (execute_ret_url_encoded(msg, sizeof(msg) - 1, "printf 'test' | sha256sum") == 0) {
 				safe_asprintf(&fashid, "sha256sum");
 				debug(LOG_NOTICE, "sha256sum provider is available");
@@ -436,7 +442,7 @@ setup_from_config(void)
 
 		// FAS secure Level 2 and 3
 		if (config->fas_key && config->fas_secure_enabled >= 2) {
-			/* PHP cli command can be php or php-cli depending on Linux version. */
+			// PHP cli command can be php or php-cli depending on Linux version.
 			if (execute_ret(msg, sizeof(msg) - 1, "php -v") == 0) {
 				safe_asprintf(&fasssl, "php");
 				debug(LOG_NOTICE, "SSL Provider is active");
@@ -558,10 +564,10 @@ setup_from_config(void)
 		debug(LOG_NOTICE, "Binauth Script is %s\n", config->binauth);
 	}
 
-	/* Reset the firewall (cleans it, in case we are restarting after nodogsplash crash) */
+	// Reset the firewall (cleans it, in case we are restarting after nodogsplash crash)
 	iptables_fw_destroy();
 
-	/* Then initialize it */
+	// Then initialize it
 	if (iptables_fw_init() != 0) {
 		debug(LOG_ERR, "Error initializing firewall rules! Cleaning up");
 		iptables_fw_destroy();
@@ -582,10 +588,10 @@ main_loop(void)
 
 	config = config_get_config();
 
-	/* Set up everything we need based on the configuration */
+	// Set up everything we need based on the configuration
 	setup_from_config();
 
-	/* Start client statistics and timeout clean-up thread */
+	// Start client statistics and timeout clean-up thread
 	result = pthread_create(&tid_client_check, NULL, thread_client_timeout_check, NULL);
 	if (result != 0) {
 		debug(LOG_ERR, "FATAL: Failed to create thread_client_timeout_check - exiting");
@@ -593,7 +599,7 @@ main_loop(void)
 	}
 	pthread_detach(tid_client_check);
 
-	/* Start control thread */
+	// Start control thread
 	result = pthread_create(&tid, NULL, thread_ndsctl, (void *)(config->ndsctl_sock));
 	if (result != 0) {
 		debug(LOG_ERR, "FATAL: Failed to create thread_ndsctl - exiting");
@@ -618,7 +624,7 @@ int main(int argc, char **argv)
 
 	parse_commandline(argc, argv);
 
-	/* Initialize the config */
+	// Initialize the config
 	debug(LOG_INFO, "Reading and validating configuration file %s", config->configfile);
 	config_read(config->configfile);
 	config_validate();

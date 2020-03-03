@@ -47,7 +47,7 @@
 extern pthread_mutex_t client_list_mutex;
 extern pthread_mutex_t config_mutex;
 
-/* Count number of authentications */
+// Count number of authentications
 unsigned int authenticated_since_start = 0;
 
 
@@ -151,7 +151,7 @@ fw_refresh_client_list(void)
 	const int auth_idle_timeout_secs = 60 * config->auth_idle_timeout;
 	const time_t now = time(NULL);
 
-	/* Update all the counters */
+	// Update all the counters
 	if (-1 == iptables_fw_counters_update()) {
 		debug(LOG_ERR, "Could not get counters from firewall!");
 		return;
@@ -171,7 +171,7 @@ fw_refresh_client_list(void)
 		time_t last_updated = cp1->counters.last_updated;
 
 		if (cp1->session_end > 0 && cp1->session_end <= now) {
-			/* Session ended (only > 0 for FW_MARK_AUTHENTICATED by binauth) */
+			// Session ended (only > 0 for FW_MARK_AUTHENTICATED by binauth)
 			debug(LOG_NOTICE, "Force out user: %s %s, connected: %ds, in: %llukB, out: %llukB",
 				cp1->ip, cp1->mac, now - cp1->session_end,
 				cp1->counters.incoming / 1000, cp1->counters.outgoing / 1000);
@@ -180,7 +180,7 @@ fw_refresh_client_list(void)
 		} else if (preauth_idle_timeout_secs > 0
 				&& conn_state == FW_MARK_PREAUTHENTICATED
 				&& (last_updated + preauth_idle_timeout_secs) <= now) {
-			/* Timeout inactive preauthenticated user */
+			// Timeout inactive preauthenticated user
 			debug(LOG_NOTICE, "Timeout preauthenticated idle user: %s %s, inactive: %ds, in: %llukB, out: %llukB",
 				cp1->ip, cp1->mac, now - last_updated,
 				cp1->counters.incoming / 1000, cp1->counters.outgoing / 1000);
@@ -189,7 +189,7 @@ fw_refresh_client_list(void)
 		} else if (auth_idle_timeout_secs > 0
 				&& conn_state == FW_MARK_AUTHENTICATED
 				&& (last_updated + auth_idle_timeout_secs) <= now) {
-			/* Timeout inactive user */
+			// Timeout inactive user
 			debug(LOG_NOTICE, "Timeout authenticated idle user: %s %s, inactive: %ds, in: %llukB, out: %llukB",
 				cp1->ip, cp1->mac, now - last_updated,
 				cp1->counters.incoming / 1000, cp1->counters.outgoing / 1000);
@@ -216,17 +216,17 @@ thread_client_timeout_check(void *arg)
 
 		fw_refresh_client_list();
 
-		/* Sleep for config.checkinterval seconds... */
+		// Sleep for config.checkinterval seconds...
 		timeout.tv_sec = time(NULL) + config_get_config()->checkinterval;
 		timeout.tv_nsec = 0;
 
-		/* Mutex must be locked for pthread_cond_timedwait... */
+		// Mutex must be locked for pthread_cond_timedwait...
 		pthread_mutex_lock(&cond_mutex);
 
-		/* Thread safe "sleep" */
+		// Thread safe "sleep"
 		pthread_cond_timedwait(&cond, &cond_mutex, &timeout);
 
-		/* No longer needs to be locked */
+		// No longer needs to be locked
 		pthread_mutex_unlock(&cond_mutex);
 	}
 
@@ -246,7 +246,7 @@ auth_client_deauth(const unsigned id, const char *reason)
 
 	client = client_list_find_by_id(id);
 
-	/* Client should already have hit the server and be on the client list */
+	// Client should already have hit the server and be on the client list
 	if (client == NULL) {
 		debug(LOG_ERR, "Client %u to deauthenticate is not on client list", id);
 		goto end;
@@ -274,7 +274,7 @@ auth_client_auth_nolock(const unsigned id, const char *reason)
 
 	client = client_list_find_by_id(id);
 
-	/* Client should already have hit the server and be on the client list */
+	// Client should already have hit the server and be on the client list
 	if (client == NULL) {
 		debug(LOG_ERR, "Client %u to authenticate is not on client list", id);
 		return -1;
@@ -329,7 +329,7 @@ auth_client_untrust(const char *mac)
 
 	UNLOCK_CONFIG();
 
-/*
+/* 
 	if (rc == 0) {
 		LOCK_CLIENT_LIST();
 		t_client * client = client_list_find_by_mac(mac);
