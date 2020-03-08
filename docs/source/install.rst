@@ -56,8 +56,8 @@ There isn't a package in the repository (yet). But we have support for a Debian 
 
 Requirements beside Debian tools are:
 
-- libmicrohttpd-dev (>= 0.9.51) [avaiable in **stretch**]
+- libmicrohttpd-dev (>= 0.9.69) [unfortunately not available in **stretch** nor **buster**]
 
-But you can also compile libmicrohttpd your self if you're still running jessie or older.
+You'll have to compile libmicrohttpd yourself if you're still running Debian.
 
 To compile NoDogSplash and create the Debian package, see the chapter "How to Compile Nodogsplash".

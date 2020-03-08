@@ -4,7 +4,7 @@ How to Compile Nodogsplash
 Linux/Unix
 **********
 
-The Libmicrohttpd library is a dependency of NoDogSplash so you must first iInstall libmicrohttpd including the header files (often called -dev package). Then proceed to download the NoDogSplash source files: 
+The Libmicrohttpd library is a dependency of NoDogSplash so you must first install libmicrohttpd including the header files (often called -dev package). Then proceed to download the NoDogSplash source files: 
 
 .. code::
 

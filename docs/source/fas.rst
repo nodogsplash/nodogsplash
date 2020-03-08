@@ -12,7 +12,7 @@ These options are:
  4. **faspath**. This is the path from the FAS Web Root (not the file system root) to the FAS login page.
  5. **fas_secure_enable**. This can have four values, "0", "1", "2" or "3" providing different levels of security.
  6. **faskey** Used in combination with fas_secure_enable level 1, 2 and 3, this is a key phrase for NDS to encrypt data sent to FAS.
- 
+
 .. note::
  FAS (and Preauth/FAS) enables pre authentication processing. NDS authentication is the process that NDS uses to allow a client device to access the Internet through the Firewall. In contrast, Forward Authentication is a process of "Credential Verification", after which FAS, if the verification process is successful, passes the client token to NDS for access to the Internet to be granted.
 
@@ -205,7 +205,7 @@ FAS should then serve a suitable error page informing the client user that they 
 Running FAS on your Nodogsplash router
 **************************************
 
-FAS has been tested using uhttpd, lighttpd, ngnix, apache and libmicrohttpd.
+FAS has been tested using uhttpd, lighttpd, nginx, apache and libmicrohttpd.
 
 **Running on OpenWrt with uhttpd/PHP**:
 
@@ -273,7 +273,7 @@ Assuming you have installed your web server of choice, configured it for port 20
 
   adding the lines:
 
-    ``option fasport '2080'`` 
+    ``option fasport '2080'``
 
     ``option faspath '/nds/fas-aes.php'``
 
@@ -309,7 +309,7 @@ Assuming you have access to an Internet based https web server you can do the fo
     ``option fas_secure_enabled '3'``
 
     ``option faskey '1234567890'``
-    
+
     ``option fasremoteip '46.32.240.41'`` (change this to the actual ip address of the remote server)
 
     ``option fasremotefqdn 'blue-wave.net'`` (change this to the actual FQDN of the remote server)
