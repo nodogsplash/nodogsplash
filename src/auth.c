@@ -50,36 +50,6 @@ extern pthread_mutex_t config_mutex;
 // Count number of authentications
 unsigned int authenticated_since_start = 0;
 
-
-static void binauth_action(t_client *client, const char *reason)
-{
-	char lockfile[] = "/tmp/ndsctl.lock";
-	FILE *fd;
-	s_config *config;
-
-	config = config_get_config();
-
-	if (config->binauth) {
-		// ndsctl will deadlock if run within the BinAuth script so we must lock it
-		//Create lock
-		fd = fopen(lockfile, "w");
-
-		execute("%s %s %s %llu %llu %llu %llu",
-			config->binauth,
-			reason ? reason : "unknown",
-			client->mac,
-			client->counters.incoming,
-			client->counters.outgoing,
-			client->session_start,
-			client->session_end
-		);
-
-		// unlock ndsctl
-		fclose(fd);
-		remove(lockfile);
-	}
-}
-
 static int auth_change_state(t_client *client, const unsigned int new_state, const char *reason)
 {
 	const unsigned int state = client->fw_connection_state;
@@ -89,7 +59,6 @@ static int auth_change_state(t_client *client, const unsigned int new_state, con
 	} else if (state == FW_MARK_PREAUTHENTICATED) {
 		if (new_state == FW_MARK_AUTHENTICATED) {
 			iptables_fw_authenticate(client);
-			binauth_action(client, reason);
 		} else if (new_state == FW_MARK_BLOCKED) {
 			return -1;
 		} else if (new_state == FW_MARK_TRUSTED) {
@@ -100,7 +69,6 @@ static int auth_change_state(t_client *client, const unsigned int new_state, con
 	} else if (state == FW_MARK_AUTHENTICATED) {
 		if (new_state == FW_MARK_PREAUTHENTICATED) {
 			iptables_fw_deauthenticate(client);
-			binauth_action(client, reason);
 			client_reset(client);
 		} else if (new_state == FW_MARK_BLOCKED) {
 			return -1;
@@ -171,7 +139,7 @@ fw_refresh_client_list(void)
 		time_t last_updated = cp1->counters.last_updated;
 
 		if (cp1->session_end > 0 && cp1->session_end <= now) {
-			// Session ended (only > 0 for FW_MARK_AUTHENTICATED by binauth)
+			// Session ended
 			debug(LOG_NOTICE, "Force out user: %s %s, connected: %ds, in: %llukB, out: %llukB",
 				cp1->ip, cp1->mac, now - cp1->session_end,
 				cp1->counters.incoming / 1000, cp1->counters.outgoing / 1000);

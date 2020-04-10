@@ -32,39 +32,22 @@ The Thing That Does the Capturing (NDS)
 
  As soon as this initial port 80 request is received on the default gateway interface, NDS will "Capture" it, make a note of the client device identity, allocate a unique token for the client device, then redirect the client browser to the Portal component of NDS.
 
-The Thing That Provides the Portal (Splash, FAS or PreAuth)
-===========================================================
+The Thing That Provides the Portal (the Splash page)
+====================================================
 
  The client browser is redirected to the Portal component. This is a web service that is configured to know how to communicate with the core engine of NDS.
 
  This is commonly known as the Splash Page.
 
- NDS has its own web server built in and this can be used to serve the Portal "Splash" pages to the client browser, or a separate web server can be used.
- 
- NDS comes with two standard Splash Page options pre-installed.
+ NDS has its own web server built in and this is used to serve the Portal "Splash" page to the client browser.
 
- One provides a trivial Click to Continue splash page with template variables and the other provides a Client User form requiring Name and Email address to be entered.
+ NDS comes with a standard Splash Page pre-installed.
 
- Both of these can be customised or a complete specialised Portal can be written by the installer (See FAS, PreAuth).
-
- FAS, or Forward Authentication Service may use the web server embedded in NDS, a separate web server installed on the NDS router, a web server residing on the local network or an Internet hosted web server.
-
- The user of the client device will always be expected to complete some actions on the splash page.
+ This is a trivial Click to Continue splash page with template variables.
 
  Once the user on the client device has successfully completed the splash page actions, that page then links directly back to NDS.
 
  For security, NDS expects to receive the same valid token it allocated when the client issued its initial port 80 request. If the token received is valid, NDS then "authenticates" the client device, allowing access to the Internet.
-
- Post authentication processing extensions may be added to NDS (See BinAuth). Once NDS has received a valid token it calls a BinAuth script.
-
- If the BinAuth script returns positively (ie return code 0), NDS then "authenticates" the client device, allowing access to the Internet.
-
- Where FAS is used, secure modes are provided (levels 1 and 2), where the client token and other required variables are kept securely hidden from the Client, ensuring verification cannot be bypassed.
-
-.. note::
-
- FAS and Binauth can be enabled together. This can give great flexibility, with FAS providing remote verification and Binauth providing local post authentication processing closely linked to  NDS.
-
 
 Captive Portal Detection (CPD)
 ******************************
@@ -113,26 +96,6 @@ For example, Gnome desktop has its own built in CPD browser with a default inter
 This IS how it is supposed to work, but does involve some compromises.
 
 The best solution is to set the session timeout to a value greater than the expected length of time a client device is likely to be present. Experience shows a limit of 24 hours covers most situations eg bars, clubs, coffee shops, motels etc. If for example an hotel has guests regularly staying for a few days, then increase the session timeout as required.
-
-Staff at the venue could have their devices added to the Trusted List if appropriate, but experience shows, it is better not to do this as they very soon learn what to do and can help guests who encounter the issue. (Anything that reduces support calls is good!)
-
-Network Zone Detection (Where is the Client Connected?)
-*******************************************************
-
-Client devices can be connected to one of a number of local WiFi SSIDs, connected directly or indirectly by ethernet, or connected via a wireless mesh network. Each connection type available is considered as a Network Zone.
-
-NDS detects which zone each client is connected to. This information can be used to dynamically customise the login for each zone.
-
-For example a coffee shop might have two SSIDs configured:
-
- * Staff (Secure SSID ie with access code)
- * Customers (open SSID with login form)
-
-In this example SSID "Staff" is configured on interface wlan0, and considered as Zone "Private".
-
-However, SSID "Customers" is configured on virtual interface wlan0-1, and considered as Zone "Public".
-
-NDS detects which zone is being used by a client and a relevant login page can be served.
 
 Packet filtering
 ****************

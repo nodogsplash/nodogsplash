@@ -71,12 +71,6 @@
 #if MHD_VERSION < 0x00095100
 #error libmicrohttp version >= 0.9.51 required
 #endif
-/* Check for libmicrohttp version at runtime
- *0.9.69 is the minimum version to prevent loss of special characters in form data (BinAuth and PreAuth) 
- */
-#define MIN_MHD_MAJOR 0
-#define MIN_MHD_MINOR 9
-#define MIN_MHD_PATCH 69
 
 /** XXX Ugly hack
  * We need to remember the thread IDs of threads that simulate wait with pthread_cond_timedwait
@@ -238,63 +232,17 @@ init_signals(void)
 static void
 setup_from_config(void)
 {
-	char protocol[8] = {0};
-	char port[8] = {0};
-	char msg[255] = {0};
-	char gwhash[255] = {0};
-	char *fasurl = NULL;
-	char *fasssl = NULL;
-	char *gatewayhash = NULL;
-	char *fashid = NULL;
-	char *phpcmd = NULL;
-	char *preauth_dir = NULL;
-	char loginscript[] = "/usr/lib/nodogsplash/login.sh";
 	char gw_name_entityencoded[QUERYMAXLEN] = {0};
-	char gw_name_urlencoded[QUERYMAXLEN] = {0};
 	struct stat sb;
 	time_t sysuptime;
 	s_config *config;
 
 	config = config_get_config();
 
-	// Check for libmicrohttp version at runtime, ie actual installed version
-	int major = 0;
-	int minor = 0;
-	int patch = 0;
-	int outdated = 0;
-	const char *version = MHD_get_version();
-
-	debug(LOG_NOTICE, "MHD version is %s", version);
-
-	if (sscanf(version, "%d.%d.%d", &major, &minor, &patch) == 3) {
-
-		if (major < MIN_MHD_MAJOR) {
-			outdated = 1;
-
-		} else if (minor < MIN_MHD_MINOR) {
-			outdated = 1;
-
-		} else if (patch < MIN_MHD_PATCH) {
-			outdated = 1;
-		}
-
-		if (outdated == 1) {
-			debug(LOG_ERR, "libmicrohttpd is out of date, please upgrade to version %d.%d.%d or higher",
-				MIN_MHD_MAJOR, MIN_MHD_MINOR, MIN_MHD_PATCH);
-
-			if (config->use_outdated_mhd == 0) {
-				debug(LOG_ERR, "exiting...");
-				exit(1);
-			}
-		}
-	}
 
 	// Encode gatewayname
 	htmlentityencode(gw_name_entityencoded, sizeof(gw_name_entityencoded), config->gw_name, strlen(config->gw_name));
 	config->http_encoded_gw_name = gw_name_entityencoded;
-
-	uh_urlencode(gw_name_urlencoded, sizeof(gw_name_urlencoded), config->gw_name, strlen(config->gw_name));
-	config->url_encoded_gw_name = gw_name_urlencoded;
 
 	// Set the time when nodogsplash started
 	sysuptime = get_system_uptime ();
@@ -328,241 +276,21 @@ setup_from_config(void)
 	}
 	debug(LOG_NOTICE, "Detected gateway %s at %s (%s)", config->gw_interface, config->gw_ip, config->gw_mac);
 
-	// Make sure fas_remoteip is set. Note: This does not enable FAS.
-	if (!config->fas_remoteip) {
-		config->fas_remoteip = safe_strdup(config->gw_ip);
-	}
-
 	// Initializes the web server
-	if (config->unescape_callback_enabled == 0) {
-		debug(LOG_NOTICE, "MHD Unescape Callback is Disabled");
-
-		if ((webserver = MHD_start_daemon(MHD_USE_EPOLL_INTERNALLY | MHD_USE_TCP_FASTOPEN,
-								config->gw_port,
-								NULL, NULL,
-								libmicrohttpd_cb, NULL,
-								MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 120,
-								MHD_OPTION_LISTENING_ADDRESS_REUSE, 1,
-								MHD_OPTION_END)) == NULL) {
-			debug(LOG_ERR, "Could not create web server: %s", strerror(errno));
-			exit(1);
-		}
-
-	} else {
-		debug(LOG_NOTICE, "MHD Unescape Callback is Enabled");
-
-		if ((webserver = MHD_start_daemon(MHD_USE_EPOLL_INTERNALLY | MHD_USE_TCP_FASTOPEN,
-								config->gw_port,
-								NULL, NULL,
-								libmicrohttpd_cb, NULL,
-								MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 120,
-								MHD_OPTION_LISTENING_ADDRESS_REUSE, 1,
-								MHD_OPTION_UNESCAPE_CALLBACK, unescape, NULL,
-								MHD_OPTION_END)) == NULL) {
-			debug(LOG_ERR, "Could not create web server: %s", strerror(errno));
-			exit(1);
-		}
+	if ((webserver = MHD_start_daemon(MHD_USE_EPOLL_INTERNALLY | MHD_USE_TCP_FASTOPEN,
+							config->gw_port,
+							NULL, NULL,
+							libmicrohttpd_cb, NULL,
+							MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 120,
+							MHD_OPTION_LISTENING_ADDRESS_REUSE, 1,
+							MHD_OPTION_END)) == NULL) {
+		debug(LOG_ERR, "Could not create web server: %s", strerror(errno));
+		exit(1);
 	}
 
 	// TODO: set listening socket - do we need it?
 
 	debug(LOG_NOTICE, "Created web server on %s", config->gw_address);
-
-	// If login script is enabled, check if the script actually exists
-	if (config->login_option_enabled > 0) {
-		debug(LOG_NOTICE, "Login option is Enabled.\n");
-
-		if (!((stat(loginscript, &sb) == 0) && S_ISREG(sb.st_mode) && (sb.st_mode & S_IXUSR))) {
-			debug(LOG_ERR, "Login script does not exist or is not executeable: %s", loginscript);
-			debug(LOG_ERR, "Exiting...");
-			exit(1);
-		} else {
-			config->preauth = loginscript;
-		}
-
-	} else {
-		debug(LOG_NOTICE, "Using config options for FAS or Templated Splash.\n");
-	}
-
-	// If PreAuth is enabled, override any FAS configuration
-	if (config->preauth) {
-		debug(LOG_NOTICE, "Preauth is Enabled - Overiding FAS configuration.\n");
-		debug(LOG_NOTICE, "Preauth Script is %s\n", config->preauth);
-
-		//override all other FAS settings
-		config->fas_remoteip = safe_strdup(config->gw_ip);
-		config->fas_remotefqdn = NULL;
-		config->fas_port = config->gw_port;
-		safe_asprintf(&preauth_dir, "/%s/", config->preauthdir);
-		config->fas_path = safe_strdup(preauth_dir);
-		config->fas_secure_enabled = 1;
-		free(preauth_dir);
-	}
-
-	// If FAS is enabled then set it up
-	if (config->fas_port) {
-		debug(LOG_INFO, "fas_secure_enabled is set to level %d", config->fas_secure_enabled);
-
-		// Check the FAS remote IP address
-		if (config->fas_remoteip) {
-			if (is_addr(config->fas_remoteip) == 1) {
-				debug(LOG_INFO, "fasremoteip - %s - is a valid IPv4 address...", config->fas_remoteip);
-			} else {
-				debug(LOG_ERR, "fasremoteip - %s - is NOT a valid IPv4 address format...", config->fas_remoteip);
-				debug(LOG_ERR, "Exiting...");
-				exit(1);
-			}
-		}
-
-		// Block fas port 80 if local FAS
-		snprintf(port, sizeof(port), "%u", config->fas_port);
-
-		if((strcmp(config->gw_ip, config->fas_remoteip) == 0) && (strcmp(port, "80") == 0)) {
-			debug(LOG_ERR, "Invalid fasport - port 80 is reserved and cannot be used for local FAS...");
-			debug(LOG_ERR, "Exiting...");
-			exit(1);
-		}
-
-		// If FAS key is set, then check the prerequisites
-
-		// FAS secure Level 1
-		if (config->fas_key && config->fas_secure_enabled == 1) {
-			// Check sha256sum command is available
-			if (execute_ret_url_encoded(msg, sizeof(msg) - 1, "printf 'test' | sha256sum") == 0) {
-				safe_asprintf(&fashid, "sha256sum");
-				debug(LOG_NOTICE, "sha256sum provider is available");
-			} else {
-				debug(LOG_ERR, "sha256sum provider not available - please install package to provide it");
-				debug(LOG_ERR, "Exiting...");
-				exit(1);
-			}
-			config->fas_hid = safe_strdup(fashid);
-			free(fashid);
-		}
-
-		// FAS secure Level 2 and 3
-		if (config->fas_key && config->fas_secure_enabled >= 2) {
-			// PHP cli command can be php or php-cli depending on Linux version.
-			if (execute_ret(msg, sizeof(msg) - 1, "php -v") == 0) {
-				safe_asprintf(&fasssl, "php");
-				debug(LOG_NOTICE, "SSL Provider is active");
-				debug(LOG_DEBUG, "SSL Provider: %s FAS key is: %s\n", &msg, config->fas_key);
-
-			} else if (execute_ret(msg, sizeof(msg) - 1, "php-cli -v") == 0) {
-				safe_asprintf(&fasssl, "php-cli");
-				debug(LOG_NOTICE, "SSL Provider is active");
-				debug(LOG_DEBUG, "SSL Provider: %s FAS key is: %s\n", &msg, config->fas_key);
-			} else {
-				debug(LOG_ERR, "PHP packages PHP CLI and PHP OpenSSL are required");
-				debug(LOG_ERR, "Exiting...");
-				exit(1);
-			}
-			config->fas_ssl = safe_strdup(fasssl);
-			free(fasssl);
-			safe_asprintf(&phpcmd,
-				"echo '<?php "
-				"if (!extension_loaded (openssl)) {exit(1);"
-				"} ?>' | %s", config->fas_ssl
-			);
-
-			if (execute_ret(msg, sizeof(msg) - 1, phpcmd) == 0) {
-				debug(LOG_NOTICE, "OpenSSL module is loaded\n");
-			} else {
-				debug(LOG_ERR, "OpenSSL PHP module is not loaded");
-				debug(LOG_ERR, "Exiting...");
-				exit(1);
-			}
-			free(phpcmd);
-		}
-
-		// set the protocol used, enforcing https for Level 3
-		if (config->fas_secure_enabled == 3) {
-			snprintf(protocol, sizeof(protocol), "https");
-		} else {
-			snprintf(protocol, sizeof(protocol), "http");
-		}
-
-		// Setup the FAS URL
-		if (config->fas_remotefqdn) {
-			safe_asprintf(&fasurl, "%s://%s:%u%s",
-				protocol, config->fas_remotefqdn, config->fas_port, config->fas_path);
-			config->fas_url = safe_strdup(fasurl);
-		} else {
-			safe_asprintf(&fasurl, "%s://%s:%u%s",
-				protocol, config->fas_remoteip, config->fas_port, config->fas_path);
-			config->fas_url = safe_strdup(fasurl);
-		}
-		debug(LOG_NOTICE, "FAS URL is %s\n", config->fas_url);
-		free(fasurl);
-
-		// Start the authmon daemon if configured for Level 3
-		if (config->fas_key && config->fas_secure_enabled == 3) {
-			// Check if authmon is already running and if it is, kill it
-			safe_asprintf(&fasssl, "kill $(pgrep -f authmon) > /dev/null 2>&1");
-			system(fasssl);
-			free(fasssl);
-
-			// Get the sha256 digest of gatewayname
-			safe_asprintf(&fasssl,
-				"echo \"<?php echo openssl_digest('%s', 'sha256'); ?>\" | %s",
-				config->gw_name,
-				config->fas_ssl
-			);
-
-			if (execute_ret_url_encoded(gwhash, sizeof(gwhash) - 1, fasssl) == 0) {
-				safe_asprintf(&gatewayhash, "%s", gwhash);
-				debug(LOG_INFO, "gatewayname digest is: %s\n", gwhash);
-			} else {
-				debug(LOG_ERR, "Error hashing gatewayname");
-				debug(LOG_ERR, "Exiting...");
-				exit(1);
-			}
-			free(fasssl);
-
-			// Start authmon in the background
-			safe_asprintf(&fasssl,
-				"/usr/lib/nodogsplash/authmon.sh \"%s\" \"%s\" \"%s\" &",
-				config->fas_url,
-				gatewayhash,
-				config->fas_ssl
-			);
-
-			if (system(fasssl) == -1) {
-				debug(LOG_ERR, "authmon daemon failed to load\n");
-				debug(LOG_ERR, "Exiting...");
-				exit(1);
-			} else {
-				debug(LOG_NOTICE, "authmon daemon is loaded\n");
-			}
-
-			free(fasssl);
-			free(gatewayhash);
-		}
-
-		// Report the FAS FQDN
-		if (config->fas_remotefqdn) {
-			debug(LOG_NOTICE, "FAS FQDN is: %s\n", config->fas_remotefqdn);
-		}
-
-		// Report security warning
-		if (config->fas_secure_enabled == 0) {
-			debug(LOG_NOTICE, "Warning - Forwarding Authentication - Security is DISABLED.\n");
-		}
-
-		// Report the Pre-Shared key is not available
-		if (config->fas_secure_enabled >= 2 && config->fas_key == NULL) {
-			debug(LOG_ERR, "Error - faskey is not set - exiting...\n");
-			exit(1);
-		}
-
-		debug(LOG_NOTICE, "Forwarding Authentication is Enabled.\n");
-	}
-
-	// Report if BinAuth is enabled
-	if (config->binauth) {
-		debug(LOG_NOTICE, "Binauth is Enabled.\n");
-		debug(LOG_NOTICE, "Binauth Script is %s\n", config->binauth);
-	}
 
 	// Reset the firewall (cleans it, in case we are restarting after nodogsplash crash)
 	iptables_fw_destroy();
@@ -625,6 +353,7 @@ int main(int argc, char **argv)
 	parse_commandline(argc, argv);
 
 	// Initialize the config
+	debug(LOG_NOTICE, "NoDogSplash Version %s \n", VERSION);
 	debug(LOG_INFO, "Reading and validating configuration file %s", config->configfile);
 	config_read(config->configfile);
 	config_validate();

@@ -141,8 +141,7 @@ generate_uci_config() {
 
   addline "GatewayInterface $ifname"
 
-  for option in preauth binauth fasport faskey fasremotefqdn fasremoteip faspath fas_secure_enabled \
-    login_option_enabled use_outdated_mhd unescape_callback_enabled daemon debuglevel maxclients gatewayname gatewayinterface gatewayiprange \
+  for option in daemon debuglevel maxclients gatewayname gatewayinterface gatewayiprange \
     gatewayaddress gatewayport webroot splashpage statuspage \
     redirecturl sessiontimeout preauthidletimeout authidletimeout checkinterval \
     setmss mssvalue trafficcontrol downloadlimit uploadlimit \

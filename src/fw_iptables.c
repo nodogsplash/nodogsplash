@@ -361,8 +361,6 @@ iptables_fw_init(void)
 	char *gw_address = NULL;
 	char *gw_iprange = NULL;
 	int gw_port = 0;
-	char *fas_remoteip = NULL;
-	int fas_port = 0;
 	int traffic_control;
 	int set_mss, mss_value;
 	t_MAC *pt;
@@ -388,11 +386,6 @@ iptables_fw_init(void)
 		ICMP_TYPE = "icmp";
 	}
 	
-	if (config->fas_port) {
-		fas_remoteip = safe_strdup(config->fas_remoteip);    // must free
-		fas_port = config->fas_port;
-	}
-
 	gw_address = safe_strdup(config->gw_address);    // must free
 	gw_iprange = safe_strdup(config->gw_iprange);    // must free
 	gw_port = config->gw_port;
@@ -511,12 +504,6 @@ iptables_fw_init(void)
 		rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -m mark --mark 0x%x%s -j RETURN", FW_MARK_AUTHENTICATED, markmask);
 		// CHAIN_OUTGOING, append the "preauthenticated-users" ruleset
 		rc |= _iptables_append_ruleset("nat", "preauthenticated-users", CHAIN_OUTGOING);
-
-		// Allow access to remote FAS - CHAIN_OUTGOING and CHAIN_TO_INTERNET packets for remote FAS, ACCEPT
-		if (fas_port && strcmp(fas_remoteip, gw_ip)) {
-			rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p tcp --destination %s --dport %d -j ACCEPT", fas_remoteip, fas_port);
-		}
-
 		// CHAIN_OUTGOING, packets for tcp port 80, redirect to gw_port on primary address for the iface
 		rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p tcp --dport 80 -j DNAT --to-destination %s", gw_address);
 		// CHAIN_OUTGOING, other packets ACCEPT
@@ -556,11 +543,6 @@ iptables_fw_init(void)
 
 	// CHAIN_TO_ROUTER, packets to HTTP listening on gw_port on router ACCEPT
 	rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -p tcp --dport %d -j ACCEPT", gw_port);
-
-	// CHAIN_TO_ROUTER, packets to HTTP listening on fas_port on router ACCEPT
-	if (fas_port && !strcmp(fas_remoteip, gw_ip)) {
-		rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -p tcp --dport %d -j ACCEPT", fas_port);
-	}
 
 	// CHAIN_TO_ROUTER, packets marked TRUSTED:
 
@@ -618,12 +600,6 @@ iptables_fw_init(void)
 		} else { // allow MSS as large as possible
 			rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu");
 		}
-	}
-
-
-	// Allow access to remote FAS - CHAIN_OUTGOING and CHAIN_TO_INTERNET packets for remote FAS, ACCEPT
-	if (fas_port && strcmp(fas_remoteip, gw_ip)) {
-		rc |= iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -p tcp --destination %s --dport %d -j ACCEPT", fas_remoteip, fas_port);
 	}
 
 	// CHAIN_TO_INTERNET, packets marked TRUSTED:
@@ -689,7 +665,6 @@ iptables_fw_init(void)
 	free(gw_iprange);
 	free(gw_ip);
 	free(gw_address);
-	free(fas_remoteip);
 
 	return rc;
 }

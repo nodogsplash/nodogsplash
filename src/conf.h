@@ -29,7 +29,7 @@
 #ifndef _CONF_H_
 #define _CONF_H_
 
-#define VERSION "4.5.1beta"
+#define VERSION "5.0.0"
 
 /*
  * Defines how many times should we try detecting the interface with the default route (in seconds).
@@ -54,12 +54,6 @@
 #define DEFAULT_GATEWAY_IPRANGE "0.0.0.0/0"
 #define DEFAULT_GATEWAYNAME "NoDogSplash"
 #define DEFAULT_GATEWAYPORT 2050
-#define DEFAULT_FASPORT 0
-#define DEFAULT_LOGIN_OPTION_ENABLED 0
-#define DEFAULT_USE_OUTDATED_MHD 0
-#define DEFAULT_UNESCAPE_CALLBACK_ENABLED 0
-#define DEFAULT_FAS_SECURE_ENABLED 1
-#define DEFAULT_FASPATH "/"
 #define DEFAULT_REMOTE_AUTH_PORT 80
 #define DEFAULT_CHECKINTERVAL 30
 #define DEFAULT_SESSION_TIMEOUT 0
@@ -70,7 +64,6 @@
 #define DEFAULT_STATUSPAGE "status.html"
 #define DEFAULT_AUTHDIR "nodogsplash_auth"
 #define DEFAULT_DENYDIR "nodogsplash_deny"
-#define DEFAULT_PREAUTHDIR "nodogsplash_preauth"
 #define DEFAULT_MACMECHANISM MAC_BLOCK
 #define DEFAULT_SET_MSS 1
 #define DEFAULT_MSS_VALUE 0
@@ -140,7 +133,6 @@ typedef struct {
 	int maxclients;				//@brief Maximum number of clients allowed
 	char *gw_name;				//@brief Name of the gateway; e.g. its SSID or a unique identifier for use in a remote FAS
 	char *http_encoded_gw_name;		//@brief http encoded name of the gateway, used as a templated variable in splash.htm
-	char *url_encoded_gw_name;		//@brief url encoded name of the gateway used as variable in Preauth
 	char *gw_interface;			//@brief Interface we will manage
 	char *gw_iprange;			//@brief IP range on gw_interface we will manage
 	char *gw_ip;				//@brief Internal IP (v4 or v6) for our web server
@@ -148,24 +140,12 @@ typedef struct {
 	char *gw_mac;				//@brief MAC address of the interface we manage
 	unsigned int gw_port;			//@brief Port the webserver will run on
 	unsigned int fas_port;			//@brief Port the fas server will run on
-	int login_option_enabled;		//@brief Use default PreAuth Login script
-	int use_outdated_mhd;			//@brief Use outdated libmicrohttpd
-	int unescape_callback_enabled;		//@brief Enable external MHD unescape callback script
-	int fas_secure_enabled;			//@brief Enable Secure FAS
-	char *fas_path;				//@brief Path to forward authentication page of FAS
-	char *fas_key;				//@brief AES key for FAS
-	char *fas_remoteip;			//@brief IP addess of a remote FAS
-	char *fas_remotefqdn;			//@brief FQDN of a remote FAS
-	char *fas_url;				//@brief URL of a remote FAS
-	char *fas_ssl;				//@brief SSL provider for FAS
-	char *fas_hid;				//@brief Hash provider for FAS
 	char *webroot;				//@brief Directory containing splash pages, etc.
 	char *splashpage;			//@brief Name of main splash page
 	char *statuspage;			//@brief Name of info status page
 	char *redirectURL;			//@brief URL to direct client to after authentication
 	char *authdir;				//@brief Notional relative dir for authentication URL
 	char *denydir;				//@brief Notional relative dir for denial URL
-	char *preauthdir;			//@brief Notional relative dir for preauth URL
 	int session_timeout;			//@brief Minutes of the default session length
 	int preauth_idle_timeout;		//@brief Minutes a preauthenticated client will be kept in the system
 	int auth_idle_timeout;			//@brief Minutes an authenticated client will be kept in the system
@@ -187,8 +167,6 @@ typedef struct {
 	unsigned int fw_mark_blocked;		//@brief iptables mark for blocked packets
 	unsigned int fw_mark_trusted;		//@brief iptables mark for trusted packets
 	int ip6;				//@brief enable IPv6
-	char *binauth;				//@brief external authentication program
-	char *preauth;				//@brief external preauthentication program
 } s_config;
 
 // @brief Get the current gateway configuration

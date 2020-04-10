@@ -30,10 +30,6 @@ Contents:
    install
    howitworks
    splash
-   fas
-   preauth
-   binauth
-   libraries
    traffic
    ndsctl
    customize

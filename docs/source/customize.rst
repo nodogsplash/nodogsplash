@@ -71,11 +71,11 @@ Finally you must tell UCI to commit your changes to the configuration file:
 
   uci commit nodogsplash
 
-The Default Click and Go Splash Page
-************************************
+The Click and Go Splash Page
+****************************
 
-Enabled by setting option login_option_enabled = "0" (default)
-The default default splash page can be found at:
+NoDogSplash provides a simple templated click and go splash page.
+This can be found at:
 
   ``/etc/nodogsplash/htdocs/splash.html``
 
@@ -146,20 +146,5 @@ Also, note that any images you reference should reside in the subdirectory /etc/
 Dynamic Splash Pages
 ********************
 
-Pre-Installed User Login Dynamic Splash Page
-============================================
-
-The pre-installed dynamic splash page is enabled by setting option login_option_enabled = "1".
-
-It generates a login page asking for username and email address.
-User logins are recorded in the log file /tmp/ndslog.log
-Details of how the script works are contained in comments in the script itself.
-
-
-Custom Dynamic Splash Pages
-===========================
-
-Custom designed dynamically generated splash pages are supported using FAS and PreAuth (such as the included alternative username/email login script).
-
-For details see the FAS and PreAuth chapters.
-
+From version 5.0.0 onwards, dynamic splash pages are supported by the openNDS package. See:
+https://github.com/openNDS/openNDS

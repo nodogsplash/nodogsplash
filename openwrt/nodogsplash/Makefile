@@ -7,7 +7,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=nodogsplash
 PKG_FIXUP:=autoreconf
-PKG_VERSION:=4.5.1beta
+PKG_VERSION:=5.0.0
 PKG_RELEASE:=1
 
 PKG_SOURCE_URL:=https://codeload.github.com/nodogsplash/nodogsplash/tar.gz/v$(PKG_VERSION)?
@@ -29,7 +29,7 @@ define Package/nodogsplash
 	DEPENDS:=+libpthread +iptables-mod-ipopt +libmicrohttpd-no-ssl
 	TITLE:=Open public network gateway daemon
 	URL:=https://github.com/nodogsplash/nodogsplash
-	CONFLICTS:=nodogsplash2
+	CONFLICTS:=nodogsplash2, opennds
 endef
 
 define Package/nodogsplash/description
@@ -59,14 +59,6 @@ define Package/nodogsplash/install
 	$(CP) $(PKG_BUILD_DIR)/openwrt/nodogsplash/files/etc/init.d/nodogsplash $(1)/etc/init.d/
 	$(CP) $(PKG_BUILD_DIR)/openwrt/nodogsplash/files/etc/uci-defaults/40_nodogsplash $(1)/etc/uci-defaults/
 	$(CP) $(PKG_BUILD_DIR)/openwrt/nodogsplash/files/usr/lib/nodogsplash/restart.sh $(1)/usr/lib/nodogsplash/
-	$(CP) $(PKG_BUILD_DIR)/forward_authentication_service/PreAuth/demo-preauth.sh $(1)/usr/lib/nodogsplash/login.sh
-	$(CP) $(PKG_BUILD_DIR)/forward_authentication_service/libs/get_client_interface.sh $(1)/usr/lib/nodogsplash/
-	$(CP) $(PKG_BUILD_DIR)/forward_authentication_service/libs/get_client_token.sh $(1)/usr/lib/nodogsplash/
-	$(CP) $(PKG_BUILD_DIR)/forward_authentication_service/libs/unescape.sh $(1)/usr/lib/nodogsplash/
-	$(CP) $(PKG_BUILD_DIR)/forward_authentication_service/libs/authmon.sh $(1)/usr/lib/nodogsplash/
-	$(CP) $(PKG_BUILD_DIR)/forward_authentication_service/libs/post-request.php $(1)/usr/lib/nodogsplash/
-	$(CP) $(PKG_BUILD_DIR)/forward_authentication_service/fas-aes/fas-aes.php $(1)/etc/nodogsplash/
-	$(CP) $(PKG_BUILD_DIR)/forward_authentication_service/fas-aes/fas-aes-https.php $(1)/etc/nodogsplash/
 endef
 
 define Package/nodogsplash/postrm

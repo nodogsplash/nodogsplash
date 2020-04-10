@@ -80,46 +80,6 @@ extern unsigned int authenticated_since_start;
 extern int created_httpd_threads;
 extern int current_httpd_threads;
 
-int get_client_interface(char* clientif, int clientif_len, const char *climac)
-{
-	char *clifcmd = NULL;
-
-	safe_asprintf(&clifcmd, "/usr/lib/nodogsplash/get_client_interface.sh %s", climac);
-
-	if (execute_ret_url_encoded(clientif, clientif_len - 1, clifcmd) == 0) {
-		debug(LOG_DEBUG, "Client Mac Address: %s", climac);
-		debug(LOG_DEBUG, "Client Connection(s) [localif] [remotemeshnodemac] [localmeshif]: %s", clientif);
-	} else {
-		debug(LOG_ERR, "Failed to get client connections - client probably offline");
-		free (clifcmd);
-		return -1;
-	}
-	free (clifcmd);
-	return 0;
-}
-
-
-int hash_str(char* hash, int hash_len, const char *src)
-{
-	char *hashcmd = NULL;
-
-	s_config *config = config_get_config();
-
-	safe_asprintf(&hashcmd, "printf '%s' | %s | awk -F' ' '{printf $1}'", src, config->fas_hid);
-
-	if (execute_ret_url_encoded(hash, hash_len - 1, hashcmd) == 0) {
-		debug(LOG_DEBUG, "Source string: %s", src);
-		debug(LOG_DEBUG, "Hashed string: %s", hash);
-	} else {
-		debug(LOG_ERR, "Failed to hash string");
-		free (hashcmd);
-		return -1;
-	}
-	free (hashcmd);
-	return 0;
-}
-
-
 static int _execute_ret(char* msg, int msg_len, const char *cmd)
 {
 	struct sigaction sa, oldsa;
@@ -493,27 +453,6 @@ ndsctl_status(FILE *fp)
 	fprintf(fp, "Managed interface: %s\n", config->gw_interface);
 	fprintf(fp, "Managed IP range: %s\n", config->gw_iprange);
 	fprintf(fp, "Server listening: http://%s\n", config->gw_address);
-
-	if (config->binauth) {
-		fprintf(fp, "Binauth Script: %s\n", config->binauth);
-	} else {
-		fprintf(fp, "Binauth: Disabled\n");
-	}
-
-	if (config->preauth) {
-		fprintf(fp, "Preauth Script: %s\n", config->preauth);
-	} else {
-		fprintf(fp, "Preauth: Disabled\n");
-	}
-
-	if (config->fas_port) {
-		fprintf(fp, "FAS: Secure Level %u, URL: %s\n",
-			config->fas_secure_enabled,
-			config->fas_url);
-	} else {
-		fprintf(fp, "FAS: Disabled\n");
-	}
-
 	fprintf(fp, "Client Check Interval: %ds\n", config->checkinterval);
 	fprintf(fp, "Preauth Idle Timeout: %dm\n", config->preauth_idle_timeout);
 	fprintf(fp, "Auth Idle Timeout: %dm\n", config->auth_idle_timeout);

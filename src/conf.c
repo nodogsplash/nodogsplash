@@ -75,17 +75,6 @@ typedef enum {
 	// TODO: deprecate oGatewayAddress option
 	oGatewayAddress,
 	oGatewayPort,
-	oFasPort,
-	oFasKey,
-	oFasPath,
-	oFasRemoteIP,
-	oFasRemoteFQDN,
-	oFasURL,
-	oFasSSL,
-	oLoginOptionEnabled,
-	oUseOutdatedMHD,
-	oUnescapeCallbackEnabled,
-	oFasSecureEnabled,
 	oHTTPDMaxConn,
 	oWebRoot,
 	oSplashPage,
@@ -111,9 +100,7 @@ typedef enum {
 	oAllowedMACList,
 	oFWMarkAuthenticated,
 	oFWMarkTrusted,
-	oFWMarkBlocked,
-	oBinAuth,
-	oPreAuth
+	oFWMarkBlocked
 } OpCodes;
 
 /** @internal
@@ -134,17 +121,6 @@ static const struct {
 	// TODO: remove/deprecate gatewayaddress keyword
 	{ "gatewayaddress", oGatewayAddress },
 	{ "gatewayport", oGatewayPort },
-	{ "fasport", oFasPort },
-	{ "faskey", oFasKey },
-	{ "fasremoteip", oFasRemoteIP },
-	{ "fasremotefqdn", oFasRemoteFQDN },
-	{ "fasurl", oFasURL },
-	{ "fasssl", oFasSSL },
-	{ "login_option_enabled", oLoginOptionEnabled },
-	{ "use_outdated_mhd", oUseOutdatedMHD },
-	{ "unescape_callback_enabled", oUnescapeCallbackEnabled },
-	{ "fas_secure_enabled", oFasSecureEnabled },
-	{ "faspath", oFasPath },
 	{ "webroot", oWebRoot },
 	{ "splashpage", oSplashPage },
 	{ "statuspage", oStatusPage },
@@ -170,8 +146,6 @@ static const struct {
 	{ "fw_mark_authenticated", oFWMarkAuthenticated },
 	{ "fw_mark_trusted", oFWMarkTrusted },
 	{ "fw_mark_blocked", oFWMarkBlocked },
-	{ "binauth", oBinAuth },
-	{ "preauth", oPreAuth },
 	{ NULL, oBadOption },
 };
 
@@ -210,30 +184,16 @@ config_init(void)
 	config.maxclients = DEFAULT_MAXCLIENTS;
 	config.gw_name = safe_strdup(DEFAULT_GATEWAYNAME);
 	config.http_encoded_gw_name = NULL;
-	config.url_encoded_gw_name = NULL;
 	config.gw_interface = NULL;
 	config.gw_iprange = safe_strdup(DEFAULT_GATEWAY_IPRANGE);
 	config.gw_address = NULL;
 	config.gw_ip = NULL;
 	config.gw_port = DEFAULT_GATEWAYPORT;
-	config.fas_port = DEFAULT_FASPORT;
-	config.fas_key = NULL;
-	config.login_option_enabled = DEFAULT_LOGIN_OPTION_ENABLED;
-	config.use_outdated_mhd = DEFAULT_USE_OUTDATED_MHD;
-	config.unescape_callback_enabled = DEFAULT_UNESCAPE_CALLBACK_ENABLED;
-	config.fas_secure_enabled = DEFAULT_FAS_SECURE_ENABLED;
-	config.fas_remoteip = NULL;
-	config.fas_remotefqdn = NULL;
-	config.fas_url = NULL;
-	config.fas_ssl = NULL;
-	config.fas_hid = NULL;
-	config.fas_path = DEFAULT_FASPATH;
 	config.webroot = safe_strdup(DEFAULT_WEBROOT);
 	config.splashpage = safe_strdup(DEFAULT_SPLASHPAGE);
 	config.statuspage = safe_strdup(DEFAULT_STATUSPAGE);
 	config.authdir = safe_strdup(DEFAULT_AUTHDIR);
 	config.denydir = safe_strdup(DEFAULT_DENYDIR);
-	config.preauthdir = safe_strdup(DEFAULT_PREAUTHDIR);
 	config.redirectURL = NULL;
 	config.preauth_idle_timeout = DEFAULT_PREAUTH_IDLE_TIMEOUT,
 	config.auth_idle_timeout = DEFAULT_AUTH_IDLE_TIMEOUT,
@@ -258,8 +218,6 @@ config_init(void)
 	config.fw_mark_trusted = DEFAULT_FW_MARK_TRUSTED;
 	config.fw_mark_blocked = DEFAULT_FW_MARK_BLOCKED;
 	config.ip6 = DEFAULT_IP6;
-	config.binauth = NULL;
-	config.preauth = NULL;
 
 	// Set up default FirewallRuleSets, and their empty ruleset policies
 	rs = add_ruleset("trusted-users");
@@ -782,69 +740,6 @@ config_read(const char *filename)
 				exit(1);
 			}
 			break;
-		case oFasPort:
-			if (sscanf(p1, "%u", &config.fas_port) < 1) {
-				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
-				debug(LOG_ERR, "Exiting...");
-				exit(1);
-			}
-			break;
-		case oLoginOptionEnabled:
-			if (sscanf(p1, "%d", &config.login_option_enabled) < 1) {
-				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
-				debug(LOG_ERR, "Exiting...");
-				exit(1);
-			}
-			break;
-		case oUseOutdatedMHD:
-			if (sscanf(p1, "%d", &config.use_outdated_mhd) < 1) {
-				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
-				debug(LOG_ERR, "Exiting...");
-				exit(1);
-			}
-			break;
-		case oUnescapeCallbackEnabled:
-			if (sscanf(p1, "%d", &config.unescape_callback_enabled) < 1) {
-				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
-				debug(LOG_ERR, "Exiting...");
-				exit(1);
-			}
-			break;
-		case oFasSecureEnabled:
-			if (sscanf(p1, "%d", &config.fas_secure_enabled) < 1) {
-				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
-				debug(LOG_ERR, "Exiting...");
-				exit(1);
-			}
-			break;
-		case oFasPath:
-			config.fas_path = safe_strdup(p1);
-			break;
-		case oFasKey:
-			config.fas_key = safe_strdup(p1);
-			break;
-		case oFasRemoteIP:
-			config.fas_remoteip = safe_strdup(p1);
-			break;
-		case oFasRemoteFQDN:
-			config.fas_remotefqdn = safe_strdup(p1);
-			break;
-		case oBinAuth:
-			config.binauth = safe_strdup(p1);
-			if (!((stat(p1, &sb) == 0) && S_ISREG(sb.st_mode) && (sb.st_mode & S_IXUSR))) {
-				debug(LOG_ERR, "binauth program does not exist or is not executeable: %s", p1);
-				debug(LOG_ERR, "Exiting...");
-				exit(1);
-			}
-			break;
-		case oPreAuth:
-			config.preauth = safe_strdup(p1);
-			if (!((stat(p1, &sb) == 0) && S_ISREG(sb.st_mode) && (sb.st_mode & S_IXUSR))) {
-				debug(LOG_ERR, "preauth program does not exist or is not executeable: %s", p1);
-				debug(LOG_ERR, "Exiting...");
-				exit(1);
-			}
-			break;
 		case oFirewallRuleSet:
 			parse_firewall_ruleset(p1, fd, filename, &linenum);
 			break;
@@ -886,7 +781,7 @@ config_read(const char *filename)
 		// TODO: Deprecate RedirectURL
 		case oRedirectURL:
 			config.redirectURL = safe_strdup(p1);
-			debug(LOG_WARNING, "RedirectURL is now deprecated, please use FAS to provide this functionality");
+			debug(LOG_WARNING, "RedirectURL is now deprecated as it is ignored by most clients after authentication");
 			break;
 		case oAuthIdleTimeout:
 			if (sscanf(p1, "%d", &config.auth_idle_timeout) < 1 || config.auth_idle_timeout < 0) {
