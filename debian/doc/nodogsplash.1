@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "NODOGSPLASH" "1" "Mar 03, 2020" "4.5.0" "NoDogSplash"
+.TH "NODOGSPLASH" "1" "Apr 10, 2020" "5.0.0" "NoDogSplash"
 .SH NAME
 nodogsplash \- nodogsplash Documentation
 .
@@ -54,7 +54,11 @@ how to customize its behavior for your application.
 Contents:
 .SH OVERVIEW
 .sp
-\fBNoDogSplash\fP (NDS) is a high performance, small footprint Captive Portal, offering by default a simple splash page restricted Internet connection, yet incorporates an API that allows the creation of sophisticated authentication applications.
+\fBNoDogSplash\fP (NDS) is a high performance, small footprint Captive Portal, offering a simple splash page restricted Internet connection.
+.sp
+The alternate openNDS package provides a powerful API for developing custom Captive portal login pages ranging from a simple user login through to sophisticated multi site systems.
+Details of openNDS can be found at:
+\fI\%https://opennds.readthedocs.io\fP
 .SS Captive Portal Detection (CPD)
 .INDENT 0.0
 .INDENT 3.5
@@ -64,31 +68,13 @@ All modern mobile devices, most desktop operating systems and most browsers now 
 .SS Provide simple and immediate public Internet access
 .INDENT 0.0
 .INDENT 3.5
-NDS provides two pre\-installed methods.
-.INDENT 0.0
-.IP \(bu 2
-\fBClick to Continue\fP\&. A simple static web page with template variables (\fIdefault\fP). This provides basic notification and a simple click/tap to continue button.
-.IP \(bu 2
-\fBusername/email\-address login\fP\&. A simple dynamic set of web pages that provide username/email\-address login, a welcome page and logs access by client users. (\fIInstalled by default and enabled by un\-commenting a line in the configuration file\fP)
-.UNINDENT
+NDS provides a simple templated splash page.
+.sp
+This splash page provides basic notification and a simple click/tap to continue button.
 .INDENT 0.0
 .INDENT 3.5
-Customising the page seen by users is a simple matter of editing the respective html or script files.
+Customising the page seen by users is a simple matter of editing the respective html.
 .UNINDENT
-.UNINDENT
-.UNINDENT
-.UNINDENT
-.SS Write Your Own Captive Portal.
-.INDENT 0.0
-.INDENT 3.5
-NDS can be used as the "Engine" behind the most sophisticated Captive Portal systems using the tools provided.
-.INDENT 0.0
-.IP \(bu 2
-\fBForward Authentication Service (FAS)\fP\&. FAS provides pre\-authentication user validation in the form of a set of dynamic web pages, typically served by a web service independent of NDS, located remotely on the Internet, on the local area network or on the NDS router.
-.IP \(bu 2
-\fBPreAuth\fP\&. A special case of FAS that runs locally on the NDS router with dynamic html served by NDS itself. This requires none of the overheads of a full FAS implementation and is ideal for NDS routers with limited RAM and Flash memory.
-.IP \(bu 2
-\fBBinAuth\fP\&. A method of running a post authentication script or extension program.
 .UNINDENT
 .UNINDENT
 .UNINDENT
@@ -100,7 +86,7 @@ Have a router working with OpenWrt. At the time of writing, Nodogsplash has been
 .IP \(bu 2
 It may or may not work on older versions of OpenWrt or on other kinds of Linux\-based router firmware.
 .IP \(bu 2
-Make sure your router is basically working before you try to install  Nodogsplash. In particular, make sure your DHCP daemon is serving addresses on the interface that nodogsplash will manage.
+Make sure your router is basically working before you try to install  NoDogSplash. In particular, make sure your DHCP daemon is serving addresses on the interface that NoDogSplash will manage.
 .sp
 The default is br\-lan but can be changed to any interface by editing the /etc/config/nodogsplash file.
 .IP \(bu 2
@@ -118,43 +104,43 @@ followed by
 .UNINDENT
 .UNINDENT
 .IP \(bu 2
-Nodogsplash is enabled by default and will start automatically on reboot or can be started and stopped manually.
+NoDogSplash is enabled by default and will start automatically on reboot or can be started and stopped manually.
 .IP \(bu 2
-If the interface that you want Nodogsplash to manage is not br\-lan,
+If the interface that you want NoDogSplash to manage is not br\-lan,
 edit /etc/config/nodogsplash and set GatewayInterface.
 .IP \(bu 2
-To start Nodogsplash, run the following, or just reboot the router:
+To start NoDogSplash, run the following, or just reboot the router:
 .INDENT 2.0
 .INDENT 3.5
 \fBservice nodogsplash start\fP
 .UNINDENT
 .UNINDENT
 .IP \(bu 2
-To test the installation, connect a client device to the interface on your router that is managed by Nodogsplash (for example, connect to the router\(aqs wireless lan).
+To test the installation, connect a client device to the interface on your router that is managed by NoDogSplash (for example, connect to the router\(aqs wireless lan).
 .UNINDENT
 .INDENT 0.0
 .INDENT 3.5
 Most client device operating systems and browsers support Captive Portal Detection (CPD) and the operating system or browser on that device will attempt to contact a pre defined port 80 web page.
 .sp
-CPD will trigger Nodogsplash to serve the default splash page where you can click or tap Continue to access the Internet.
+CPD will trigger NoDogSplash to serve the default splash page where you can click or tap Continue to access the Internet.
 .sp
 See the Authentication section for details of setting up a proper authentication process.
 .sp
 If your client device does not display the splash page it most likely does not support CPD.
 .sp
-You should then manually trigger Nodogsplash by trying to access a port 80 web site (for example, google.com:80 is a good choice).
+You should then manually trigger NoDogSplash by trying to access a port 80 web site (for example, google.com:80 is a good choice).
 .UNINDENT
 .UNINDENT
 .INDENT 0.0
 .IP \(bu 2
-To stop Nodogsplash:
+To stop NoDogSplash:
 .INDENT 2.0
 .INDENT 3.5
 \fBservice nodogsplash stop\fP
 .UNINDENT
 .UNINDENT
 .IP \(bu 2
-To uninstall Nodogsplash:
+To uninstall NoDogSplash:
 .INDENT 2.0
 .INDENT 3.5
 \fBopkg remove nodogsplash\fP
@@ -173,7 +159,7 @@ libmicrohttpd\-dev (>= 0.9.51) [avaiable in \fBstretch\fP]
 .sp
 But you can also compile libmicrohttpd your self if you\(aqre still running jessie or older.
 .sp
-To compile NoDogSplash and create the Debian package, see the chapter "How to Compile Nodogsplash".
+To compile NoDogSplash and create the Debian package, see the chapter "How to Compile NoDogSplash".
 .SH HOW NODOGSPLASH (NDS) WORKS
 .sp
 NoDogSplash is a Captive Portal Engine. Any Captive Portal, including NDS, will have two main components:
@@ -212,41 +198,22 @@ This request will of course \fBbe routed by the client device to the Default Gat
 As soon as this initial port 80 request is received on the default gateway interface, NDS will "Capture" it, make a note of the client device identity, allocate a unique token for the client device, then redirect the client browser to the Portal component of NDS.
 .UNINDENT
 .UNINDENT
-.SS The Thing That Provides the Portal (Splash, FAS or PreAuth)
+.SS The Thing That Provides the Portal (the Splash page)
 .INDENT 0.0
 .INDENT 3.5
 The client browser is redirected to the Portal component. This is a web service that is configured to know how to communicate with the core engine of NDS.
 .sp
 This is commonly known as the Splash Page.
 .sp
-NDS has its own web server built in and this can be used to serve the Portal "Splash" pages to the client browser, or a separate web server can be used.
+NDS has its own web server built in and this is used to serve the Portal "Splash" page to the client browser.
 .sp
-NDS comes with two standard Splash Page options pre\-installed.
+NDS comes with a standard Splash Page pre\-installed.
 .sp
-One provides a trivial Click to Continue splash page with template variables and the other provides a Client User form requiring Name and Email address to be entered.
-.sp
-Both of these can be customised or a complete specialised Portal can be written by the installer (See FAS, PreAuth).
-.sp
-FAS, or Forward Authentication Service may use the web server embedded in NDS, a separate web server installed on the NDS router, a web server residing on the local network or an Internet hosted web server.
-.sp
-The user of the client device will always be expected to complete some actions on the splash page.
+This is a trivial Click to Continue splash page with template variables.
 .sp
 Once the user on the client device has successfully completed the splash page actions, that page then links directly back to NDS.
 .sp
 For security, NDS expects to receive the same valid token it allocated when the client issued its initial port 80 request. If the token received is valid, NDS then "authenticates" the client device, allowing access to the Internet.
-.sp
-Post authentication processing extensions may be added to NDS (See BinAuth). Once NDS has received a valid token it calls a BinAuth script.
-.sp
-If the BinAuth script returns positively (ie return code 0), NDS then "authenticates" the client device, allowing access to the Internet.
-.sp
-Where FAS is used, secure modes are provided (levels 1 and 2), where the client token and other required variables are kept securely hidden from the Client, ensuring verification cannot be bypassed.
-.UNINDENT
-.UNINDENT
-.sp
-\fBNOTE:\fP
-.INDENT 0.0
-.INDENT 3.5
-FAS and Binauth can be enabled together. This can give great flexibility, with FAS providing remote verification and Binauth providing local post authentication processing closely linked to  NDS.
 .UNINDENT
 .UNINDENT
 .SS Captive Portal Detection (CPD)
@@ -305,31 +272,6 @@ For example, Gnome desktop has its own built in CPD browser with a default inter
 This IS how it is supposed to work, but does involve some compromises.
 .sp
 The best solution is to set the session timeout to a value greater than the expected length of time a client device is likely to be present. Experience shows a limit of 24 hours covers most situations eg bars, clubs, coffee shops, motels etc. If for example an hotel has guests regularly staying for a few days, then increase the session timeout as required.
-.sp
-Staff at the venue could have their devices added to the Trusted List if appropriate, but experience shows, it is better not to do this as they very soon learn what to do and can help guests who encounter the issue. (Anything that reduces support calls is good!)
-.SS Network Zone Detection (Where is the Client Connected?)
-.sp
-Client devices can be connected to one of a number of local WiFi SSIDs, connected directly or indirectly by ethernet, or connected via a wireless mesh network. Each connection type available is considered as a Network Zone.
-.sp
-NDS detects which zone each client is connected to. This information can be used to dynamically customise the login for each zone.
-.sp
-For example a coffee shop might have two SSIDs configured:
-.INDENT 0.0
-.INDENT 3.5
-.INDENT 0.0
-.IP \(bu 2
-Staff (Secure SSID ie with access code)
-.IP \(bu 2
-Customers (open SSID with login form)
-.UNINDENT
-.UNINDENT
-.UNINDENT
-.sp
-In this example SSID "Staff" is configured on interface wlan0, and considered as Zone "Private".
-.sp
-However, SSID "Customers" is configured on virtual interface wlan0\-1, and considered as Zone "Public".
-.sp
-NDS detects which zone is being used by a client and a relevant login page can be served.
 .SS Packet filtering
 .sp
 Nodogsplash considers four kinds of packets coming into the router over the managed interface. Each packet is one of these kinds:
@@ -361,1252 +303,10 @@ It should be noted that while setup options and BinAuth do accept traffic/quota 
 As you will see mentioned in the "How Nodogsplash (NDS) Works" section, an initial port 80 request is generated on a client device, either by the user manually browsing to an http web page, or, more usually, automatically by the client device\(aqs built in Captive Portal Detection (CPD).
 .sp
 This request is intercepted by NDS and an html Splash Page is served to the user of the client device to enable them to authenticate and obtain Internet access.
-.SS Types of Splash Page
-.sp
-This Splash page can be one of the following:
-.INDENT 0.0
-.IP \(bu 2
-\fBA Static Web Page served by NDS:\fP
-.UNINDENT
+.SS The NoDogSplash Templated Splash Page
 .INDENT 0.0
 .INDENT 3.5
-A page generated from the basic splash.html file installed with NDS and includes Template Variables (as listed in the splash.html file). \fIThis is the default configuration of a fresh installation of NDS.\fP
-.sp
-A script or executable file can optionally be called by NDS for post authentication processing (see \fBBinAuth\fP).
-.sp
-An example of the use of BinAuth is to check the Username and Password entered by a user into an authentication form supplied by the splash page.
-.UNINDENT
-.UNINDENT
-.INDENT 0.0
-.IP \(bu 2
-\fBA Dynamic Web Page served by NDS\fP
-.UNINDENT
-.INDENT 0.0
-.INDENT 3.5
-A script or executable file is called by NDS immediately (without serving splash.html). The called script or executable will generate html code for NDS to serve in place of splash.html. (see \fBPreAuth\fP).
-.sp
-This enables a dialogue with the client user, for dissemination of information, user response and authentication.
-.sp
-This is implemented using \fBFAS\fP, but \fIwithout the resource utilisation of a separate web server\fP, particularly useful for legacy devices with limited flash and RAM capacity.
-.UNINDENT
-.UNINDENT
-.INDENT 0.0
-.IP \(bu 2
-\fBA Dynamic Web Page served by an independent web server\fP on the same device as NDS, on the same Local Area Network as NDS, or on External Web Hosting Services.
-.sp
-A script or executable file is called by NDS immediately (without serving splash.html). The called script or executable will generate html code to be served by an independent Web Server. (see FAS).
-.UNINDENT
-.INDENT 0.0
-.INDENT 3.5
-This not only enables a dialogue with the client user, for dissemination of information, user response and authentication but also full flexibility in design and implementation of the captive portal functionality from a self contained system through to, for example, a fully integrated multi site system with a common database.
-.UNINDENT
-.UNINDENT
-.SS The Two Installed Basic Splash Pages
-.sp
-By default, two fully functional but basic "Splash" pages are installed. Simple config options allow you to choose which one to use.
-.INDENT 0.0
-.INDENT 3.5
-.INDENT 0.0
-.IP \(bu 2
-The Simple "Click to Continue" splash page. (Default)
-.IP \(bu 2
-The "Username/Email\-address" Login script.
-.UNINDENT
-.UNINDENT
-.UNINDENT
-.sp
-\fISee the chapter on PreAuth for details on how to switch between these splash page types.\fP
-.sp
-In many instances, one or other of these simple methods will be all that is required, but the power of FAS, PreAuth and BinAuth can be used to create very sophisticated Captive Portal Systems.
-.SS Displaying Remote Content
-.sp
-FASand PreAuth can be used to display remote content on the client user login screen.
-This is ideal for serving information, banner advertising etc.
-.sp
-An example is described in the \fBDisplaying Remote Banner Images\fP
-section of the PreAuth chapter.
-.SH FORWARDING AUTHENTICATION SERVICE (FAS)
-.SS Overview
-.sp
-Nodogsplash (NDS) has the ability to forward requests to a third party authentication service (FAS). This is enabled via simple configuration options.
-.INDENT 0.0
-.TP
-.B These options are:
-.INDENT 7.0
-.IP 1. 3
-\fBfasport\fP\&. This enables Forwarding Authentication Service (FAS). Redirection is changed from splash.html to a FAS. The value is the IP port number of the FAS.
-.IP 2. 3
-\fBfasremoteip\fP\&. If set, this is the remote ip address of the FAS, if not set it will take the value of the NDS gateway address.
-.IP 3. 3
-\fBfasremotefqdn\fP If set, this is the remote fully qualified domain name (FQDN) of the FAS
-.IP 4. 3
-\fBfaspath\fP\&. This is the path from the FAS Web Root (not the file system root) to the FAS login page.
-.IP 5. 3
-\fBfas_secure_enable\fP\&. This can have four values, "0", "1", "2" or "3" providing different levels of security.
-.IP 6. 3
-\fBfaskey\fP Used in combination with fas_secure_enable level 1, 2 and 3, this is a key phrase for NDS to encrypt data sent to FAS.
-.UNINDENT
-.UNINDENT
-.sp
-\fBNOTE:\fP
-.INDENT 0.0
-.INDENT 3.5
-FAS (and Preauth/FAS) enables pre authentication processing. NDS authentication is the process that NDS uses to allow a client device to access the Internet through the Firewall. In contrast, Forward Authentication is a process of "Credential Verification", after which FAS, if the verification process is successful, passes the client token to NDS for access to the Internet to be granted.
-.UNINDENT
-.UNINDENT
-.SS Using FAS
-.sp
-\fBNote\fP:
-All addresses (with the exception of fasremoteip) are relative to the \fIclient\fP device, even if the FAS is located remotely.
-.sp
-When FAS is enabled, NDS automatically configures firewall access to the FAS service.
-.sp
-The FAS service must serve a splash page of its own to replace the NDS splash.html. For fas_secure_enable "0", "1", and "2" this is enforced as http. For fas_secure_enable level "3", it is enforced as https.
-.sp
-Typically, the FAS service will be written in PHP or any other language that can provide dynamic web content.
-.sp
-FAS can then provide an action form for the client, typically requesting login, or self account creation for login.
-.sp
-The FAS can be on the same device as NDS, on the same local area network as NDS, or on an Internet hosted web server.
-.SS Security
-.sp
-\fBIf FAS Secure is enabled\fP (Levels 1 (default), 2 and 3), the client authentication token is kept secret until FAS verification is complete.
-.INDENT 0.0
-.INDENT 3.5
-\fBIf set to "0"\fP The FAS is enforced by NDS to use \fBhttp\fP protocol.
-The client token is sent to the FAS in clear text in the query string of the redirect along with authaction and redir.
-.sp
-\fBIf set to "1"\fP The FAS is enforced by NDS to use \fBhttp\fP protocol.
-When the sha256sum command is available AND faskey is set, the client token will be hashed and sent to the FAS identified as "hid" in the query string. The gatewayaddress is also sent on the query string, allowing the FAS to construct the authaction parameter. FAS must return the sha256sum of the concatenation of the original hid and faskey to be used by NDS for client authentication. This is returned in the normal way in the query string identified as "tok". NDS will automatically detect whether hid mode is active or the raw token is being returned.
-.sp
-Should sha256sum not be available or faskey is not set, then it is the responsibility of the FAS to request the token from NDSCTL.
-.sp
-\fBIf set to "2"\fP The FAS is enforced by NDS to use \fBhttp\fP protocol.
-.sp
-clientip, clientmac, gatewayname, client token, gatewayaddress, authdir, originurl and clientif are encrypted using faskey and passed to FAS in the query string.
-.sp
-The query string will also contain a randomly generated initialization vector to be used by the FAS for decryption.
-.sp
-The cipher used is "AES\-256\-CBC".
-.sp
-The "php\-cli" package and the "php\-openssl" module must both be installed for fas_secure level 2.
-.sp
-Nodogsplash does not depend on this package and module, but will exit gracefully if this package and module are not installed when this level is set.
-.sp
-The FAS must use the query string passed initialisation vector and the pre shared fas_key to decrypt the query string. An example FAS level 2 php script (fas\-aes.php) is preinstalled in the /etc/nodogsplash directory and also supplied in the source code.
-.sp
-\fBIf set to "3"\fP The FAS is enforced by NDS to use \fBhttps\fP protocol.
-Level 3 is the same as level 2 except the use of https protocol is enforced for FAS. In addition, the "authmon" daemon is loaded. This allows the external FAS, after client verification, to effectively traverse inbound firewalls and address translation to achieve NDS authentication without generating browser security warnings or errors. An example FAS level 3 php script (fas\-aes\-https.php) is preinstalled in the /etc/nodogsplash directory and also supplied in the source code.
-.UNINDENT
-.UNINDENT
-.sp
-\fBOption faskey must be set\fP if fas secure is set to levels 2 and 3 but is optional for level 1.
-.INDENT 0.0
-.INDENT 3.5
-Option faskey is used to encrypt the data sent by NDS to FAS.
-It can be any combination of A\-Z, a\-z and 0\-9, up to 16 characters with no white space.
-.sp
-This is used to create a sha256 digest that is in turn used to encrypt the data using the aes\-256\-cbc cypher.
-.sp
-A random initialisation vector is generated for every encryption and sent to FAS with the encrypted data.
-.sp
-Option faskey must be pre\-shared with FAS.
-.UNINDENT
-.UNINDENT
-.SS Example FAS Query strings
-.INDENT 0.0
-.INDENT 3.5
-\fBLevel 0\fP (fas_secure_enabled = 0), NDS sends the token and other information to FAS as clear text.
-.sp
-\fIhttp://fasremoteip:fasport/faspath?authaction=http://gatewayaddress:gatewayport/nodogsplash_auth/?clientip=[clientip]&gatewayname=[gatewayname]&tok=[token]&redir=[requested_url]\fP
-.INDENT 0.0
-.INDENT 3.5
-Although the simplest to set up, a knowledgeable user could bypass FAS, so running fas_secure_enabled at level 1 or 2 is recommended.
-.UNINDENT
-.UNINDENT
-.sp
-\fBLevel 1\fP (fas_secure_enabled = 1), NDS sends only information required to identify, the instance of NDS, the client and the client\(aqs originally requested URL.
-.sp
-\fBIf faskey is set\fP, NDS sends a digest of the random client token:
-.sp
-\fIhttp://fasremotefqdn:fasport/faspath?hid=[hash_id]&gatewayname=[gatewayname]&clientip=[clientip]&redir=[requested\-url]\fP
-.INDENT 0.0
-.INDENT 3.5
-The FAS must return the hash of the concatenated hid value and the value of faskey identified in the query string as "tok". NDS will automatically detect this.
-.UNINDENT
-.UNINDENT
-.sp
-\fBIf faskey is not set\fP the following is sent:
-.sp
-\fIhttp://fasremotefqdn:fasport/faspath?gatewayname=[gatewayname]&clientip=[clientip]&redir=[requested\-url]\fP
-.INDENT 0.0
-.INDENT 3.5
-It is the responsibility of FAS to obtain the unique client token allocated by NDS as well as constructing the return URL to NDS.
-.sp
-The return url will be constructed by FAS from predetermined knowledge of the configuration of NDS using gatewayname as an identifier.
-.sp
-The client\(aqs unique access token will be obtained from NDS by the FAS making a call to the get_client_token library utility:
-.sp
-\fB/usr/lib/nodogsplash/./get_client_token $clientip\fP
-.sp
-A json parser could be used to extract all the client variables supplied by ndsctl, an example can be found in the default PreAuth Login script in /usr/lib/nogogsplash/login.sh.
-.UNINDENT
-.UNINDENT
-.sp
-\fBLevels 2 and 3\fP (fas_secure_enabled = 2 and fas_secure_enabled = 3), NDS sends encrypted information to FAS.
-.sp
-\fIhttp://fasremotefqdn:fasport/faspath?fas=[aes\-256\-cbc data]&iv=[random initialisation vector]\fP (level 2)
-.sp
-\fIhttps://fasremotefqdn:fasport/faspath?fas=[aes\-256\-cbc data]&iv=[random initialisation vector]\fP (level 3)
-.INDENT 0.0
-.INDENT 3.5
-It is the responsibility of FAS to decrypt the aes\-256\-cbc data it receives, using the pre shared faskey and the random initialisation vector.
-.UNINDENT
-.UNINDENT
-.sp
-The decrypted string received by FAS will be of the form:
-[varname1]=[var1], [varname2]=[var2], ..... etc. (the separator being comma\-space).
-.sp
-eg \fIclientip=192.168.8.23, clientmac=04:15:52:6a:e4:ad, tok=770bfe05, originurl=.....\fP
-.sp
-Variables sent by NDS in the encrypted string in NDS v4.0.0 and above are as follows:
-.sp
-\fBclientip clientmac gatewayname tok gatewayaddress authdir originurl clientif\fP
-.INDENT 0.0
-.TP
-.B Where:
-\fBtok\fP is the client token
-.sp
-\fBgatewayaddress\fP is authentication address of NDS ie [nds_ip]:[nds_port]
-.sp
-\fBauthdir\fP is the NDS virtual authentication directory
-.INDENT 7.0
-.TP
-\fBclientif\fP is the interface string identifying the interface the client is connected to in the form of:
-[local interface] [meshnode mac] [local mesh interface]
-.UNINDENT
-.UNINDENT
-.sp
-Future versions of NDS may send additional variables and the order of the variables in the decrypted string may also vary, so it is the responsiblity of FAS to parse the decrypted string for the variables it requires.
-.UNINDENT
-.UNINDENT
-.SS Network Zones \- Determining the Interface the Client is Connected To
-.sp
-The Network coverage of a Captive Portal can take many forms, from a single SSID through to an extensive mesh network.
-.sp
-Using FAS, it is quite simple to dynamically adapt the Client Login page depending on the Network Zone a client is connected to.
-NDS can determine the local interface or 802.11s mesh network node a client is using. A simple lookup table can then be included in a custom FAS, relating interfaces or mesh nodes to sensibly named coverage zones.
-.sp
-A very simple example would be a captive portal set up with a wireless network for "Staff", another for "Guests" and office machines connected via ethernet.
-.INDENT 0.0
-.INDENT 3.5
-.INDENT 0.0
-.IP \(bu 2
-Ethernet connected office machines would gain access by simply clicking "Continue".
-.IP \(bu 2
-Staff mobiles connect to the Staff WiFi using a standard access code then clicking "Continue".
-.IP \(bu 2
-Guests connect to the open Guest Wifi and are required to enter details such as Name, email address etc.
-.UNINDENT
-.UNINDENT
-.UNINDENT
-.sp
-NDS is aware of the interface or mesh node a client is using.
-.sp
-For a FAS using \fIfas_secure_enabled = 2\fP, an additional variable, clientif, is sent to the FAS in the encrypted query string (local or remote FAS).
-.sp
-For all other levels of fas_secure_enabled, PreAuth and BinAuth, the library utility "get_client_interface" is required to be used by the relevant script (local FAS only).
-.sp
-Working examples can be found in the included scripts:
-.INDENT 0.0
-.INDENT 3.5
-.INDENT 0.0
-.IP \(bu 2
-fas\-aes.php
-.IP \(bu 2
-login.sh
-.IP \(bu 2
-demo\-preauth.sh
-.IP \(bu 2
-demo\-preauth\-remote\-image.sh
-.UNINDENT
-.UNINDENT
-.UNINDENT
-.sp
-For details of the clientif variable and how to use get_client_interface, see the section \fBLibrary Utilities\fP\&.
-.SS After Successful Verification by FAS
-.sp
-If the client is successfully verified by the FAS, FAS will return the unique token, or its hashed equivalent to NDS to finally allow the client access to the Internet.
-.SS Post FAS processing
-.sp
-Once the client has been authenticated by the FAS, NDS must then be informed to allow the client to have access to the Internet.
-.INDENT 0.0
-.INDENT 3.5
-This is done by accessing NDS at a special virtual URL.
-.sp
-This virtual URL is of the form:
-.sp
-\fIhttp://[nds_ip]:[nds_port]/[authdir]/?tok=[token]&redir=[landing_page_url]\fP
-.sp
-This is most commonly achieved using an html form of method GET.
-The parameter redir can be the client\(aqs originally requested URL sent by NDS, or more usefully, the URL of a suitable landing page.
-.sp
-Be aware that many client CPD processes will \fBautomatically close\fP the landing page as soon as Internet access is detected.
-.UNINDENT
-.UNINDENT
-.SS BinAuth Post FAS Processing
-.sp
-As BinAuth can be enabled at the same time as FAS, a BinAuth script may be used for custom post FAS processing. (see BinAuth).
-.SS Manual Access of NDS Virtual URL
-.sp
-If the user of an already authenticated client device manually accesses the NDS Virtual URL, they will be redirected back to FAS with the "status" query string.
-.INDENT 0.0
-.INDENT 3.5
-This will be of the form:
-.sp
-\fIhttp://fasremoteip:fasport/faspath?clientip=[clientip]&gatewayname=[gatewayname]&status=authenticated\fP
-.UNINDENT
-.UNINDENT
-.sp
-FAS should then serve a suitable error page informing the client user that they are already logged in.
-.SS Running FAS on your Nodogsplash router
-.sp
-FAS has been tested using uhttpd, lighttpd, ngnix, apache and libmicrohttpd.
-.sp
-\fBRunning on OpenWrt with uhttpd/PHP\fP:
-.INDENT 0.0
-.INDENT 3.5
-A FAS service may run quite well on uhttpd (the web server that serves Luci) on an OpenWrt supported device with 8MB flash and 32MB ram but shortage of ram will be an issue if more than two or three clients log in at the same time.
-.sp
-For this reason a device with a minimum of 8MB flash and 64MB ram is recommended.
-.sp
-\fIAlthough port 80 is the default for uhttpd, it is reserved for Captive Portal Detection so cannot be used for FAS. uhttpd can however be configured to operate on more than one port.\fP
-.sp
-We will use port 2080 in this example.
-.sp
-Install the module php7\-cgi. Further modules may be required depending on your requirements.
-.sp
-To enable FAS with php in uhttpd you must add the lines:
-.INDENT 0.0
-.INDENT 3.5
-\fBlist listen_http    0.0.0.0:2080\fP
-.sp
-\fBlist interpreter ".php=/usr/bin/php\-cgi"\fP
-.UNINDENT
-.UNINDENT
-.sp
-to the /etc/config/uhttpd file in the config uhttpd \(aqmain\(aq or first section.
-.sp
-The two important NDS options to set will be:
-.INDENT 0.0
-.IP 1. 3
-fasport. We will use port 2080 for uhttpd
-.IP 2. 3
-faspath. Set to, for example, /myfas/fas.php,
-your FAS files being placed in /www/myfas/
-.UNINDENT
-.UNINDENT
-.UNINDENT
-.SS Using a Shared Hosting Server for a Remote FAS
-.INDENT 0.0
-.INDENT 3.5
-A typical Internet hosted \fBshared\fP server will be set up to serve multiple domain names.
-.sp
-To access yours, it is important to configure the two options:
-.INDENT 0.0
-.INDENT 3.5
-fasremoteip = the \fBip address\fP of the remote server
-.sp
-\fBAND\fP
-.sp
-fasremotefqdn = the \fBFully Qualified Domain name\fP of the remote server
-.UNINDENT
-.UNINDENT
-.UNINDENT
-.UNINDENT
-.SS Using the FAS Example Scripts (fas\-aes.php and fas\-aes\-https.php)
-.sp
-You can run the FAS example script, fas\-aes.php, locally on the same OpenWrt device that is running NDS (A minimum of 64MB of ram may be enough, but 128MB is recommended), or remotely on an Internet based FAS server. The use of http protocol is enforced.
-.sp
-You can run the FAS example script, fas\-aes\-https.php, remotely on an Internet based https FAS server. The use of https protocol is enforced.
-.SS Example Script File fas\-aes.php
-.sp
-Assuming you have installed your web server of choice, configured it for port 2080 and added PHP support using the package php7\-cgi, you can do the following.
-.INDENT 0.0
-.INDENT 3.5
-(Under other operating systems you may need to edit the nodogsplash.conf file in /etc/nodogsplash instead, but the process is very similar.)
-.INDENT 0.0
-.IP \(bu 2
-Install the packages php7\-cli and php7\-mod\-openssl
-.IP \(bu 2
-Create a folder for the FAs script eg: /[server\-web\-root]/nds/ on the Internet FAS server
-.IP \(bu 2
-Place the file fas\-aes.php in /[server\-web\-root]/nds/
-.sp
-(You can find it in the /etc/nodogsplash directory.)
-.IP \(bu 2
-Edit the file /etc/config/nodogsplash
-.UNINDENT
-.INDENT 0.0
-.INDENT 3.5
-adding the lines:
-.INDENT 0.0
-.INDENT 3.5
-\fBoption fasport \(aq2080\(aq\fP
-.sp
-\fBoption faspath \(aq/nds/fas\-aes.php\(aq\fP
-.sp
-\fBoption fas_secure_enabled \(aq2\(aq\fP
-.sp
-\fBoption faskey \(aq1234567890\(aq\fP
-.UNINDENT
-.UNINDENT
-.UNINDENT
-.UNINDENT
-.INDENT 0.0
-.IP \(bu 2
-Restart NDS using the command \fBservice nodogsplash restart\fP
-.UNINDENT
-.UNINDENT
-.UNINDENT
-.SS Example Script File fas\-aes\-https.php
-.sp
-Assuming you have access to an Internet based https web server you can do the following.
-.INDENT 0.0
-.INDENT 3.5
-(Under other operating systems you may need to edit the nodogsplash.conf file in /etc/nodogsplash instead, but the process is very similar.)
-.INDENT 0.0
-.IP \(bu 2
-Install the packages php7\-cli and php7\-mod\-openssl on your NDS router
-.IP \(bu 2
-Create a folder for the FAs script eg: /[server\-web\-root]/nds/ on the Internet FAS server
-.IP \(bu 2
-Place the file fas\-aes.php in /[server\-web\-root]/nds/
-.sp
-(You can find it in the /etc/nodogsplash directory.)
-.IP \(bu 2
-Edit the file /etc/config/nodogsplash
-.UNINDENT
-.INDENT 0.0
-.INDENT 3.5
-adding the lines:
-.INDENT 0.0
-.INDENT 3.5
-\fBoption fasport \(aq443\(aq\fP (or the actual port in use if different)
-.sp
-\fBoption faspath \(aq/nds/fas\-aes\-https.php\(aq\fP
-.sp
-\fBoption fas_secure_enabled \(aq3\(aq\fP
-.sp
-\fBoption faskey \(aq1234567890\(aq\fP
-.sp
-\fBoption fasremoteip \(aq46.32.240.41\(aq\fP (change this to the actual ip address of the remote server)
-.sp
-\fBoption fasremotefqdn \(aqblue\-wave.net\(aq\fP (change this to the actual FQDN of the remote server)
-.UNINDENT
-.UNINDENT
-.UNINDENT
-.UNINDENT
-.INDENT 0.0
-.IP \(bu 2
-Restart NDS using the command \fBservice nodogsplash restart\fP
-.UNINDENT
-.UNINDENT
-.UNINDENT
-.SS Changing faskey
-.sp
-The value of option faskey should of course be changed, but must also be pre\-shared with FAS by editing the example or your own script to match the new value.
-.SH PREAUTH OPTION
-.SS Overview
-.sp
-\fBPreAuth\fP is an implementation of FAS \fIwithout the resource utilisation of a separate web server\fP, particularly useful for legacy devices with limited flash and RAM capacity.
-.sp
-\fBPreAuth\fP is a pre\-authentication process that enables NDS to directly serve dynamic web content generated by a script or executable program.
-.sp
-\fBNOTE:\fP
-.INDENT 0.0
-.INDENT 3.5
-From version 3.3.1 onwards, a PreAuth login script is pre\-installed. This generates a page asking for username and email address. Logins are recorded in a log file. It is enabled by un\-commenting just 3 lines in the config file. \fBFrom version 4.0.2 onwards\fP it is enabled by a single line in the config file that overrides any other FAS configuration.  \fBFrom version 4.3.0 onwards\fP it is enabled by setting config option login_option_enabled to "1"
-.UNINDENT
-.UNINDENT
-.sp
-\fBPreAuth is enabled\fP by configuring NDS FAS to point to a virtual URL in the NDS web root instead of an independent FAS server. The location of the PreAuth script or program is provided in the config file.
-.sp
-\fBThe PreAuth script\fP can be a shell script or any other script type that an interpreter is available for (for example, PHP\-cli, Python etc.).
-.sp
-A PreAuth program could be, for example, a compiled program written in C or any other language that has a compiler available for the platform.
-.sp
-The PreAuth script or program will parse the url encoded command line (query string) passed to it and output html depending on the contents of the query string it receives from NDS. In turn, NDS will serve this html to the client device that is attempting to access the Internet.
-.SS Selecting Pre\-Installed Username / Email Login Script (v4.3.0 onwards)
-.sp
-The default preauth login script is installed as part of the NoDogSplash package providing username/emailaddress login as an alternative to the basic splash page.
-.sp
-It is enabled by setting in config:
-.sp
-option login_option_enabled = \(aq1\(aq
-.sp
-No additional FAS or PreAuth config settings are required.
-.SS Using PreAuth version 4.0.2 onwards
-.INDENT 0.0
-.TP
-.B From version 4.0.2 onwards, PreAuth is enabled with a single configuration option:
-.INDENT 7.0
-.IP \(bu 2
-\fBpreauth\fP\&. This the path to the PreAuth script or executable.
-.UNINDENT
-.UNINDENT
-.sp
-This option overrides any other FAS configuration and takes the form of the path to the PreAuth script.
-The path to the preinstalled login script is included in option preauth in the default config files, for example in OpenWrt:
-.sp
-\fI#option preauth \(aq/usr/lib/nodogsplash/login.sh\(aq\fP
-.sp
-The "#" symbol means the line is commented. To activate, remove the "#". save and restart Nodogsplash.
-.SS Using PreAuth version 3.3.1 to version 4.0.1
-.sp
-From version 3.3.1 to version 4.0.1, PreAuth is set up using the standard NDS configuration for FAS
-(See the \fBForwarding Authentication Service (FAS)\fP section of this documentation).
-.sp
-In addition a single PreAuth configuration option is required to inform NDS of the location of the PreAuth script or program.
-.INDENT 0.0
-.TP
-.B In summary, the following configuration options should be set:
-.INDENT 7.0
-.IP 1. 3
-\fBfasport\fP\&. This enables FAS and \fImust\fP be set to the same value as the gateway port.
-.IP 2. 3
-\fBfaspath\fP\&. This \fImust\fP be set to the PreAuth virtual url, "/nodogsplash_preauth/" by default.
-.IP 3. 3
-\fBpreauth\fP\&. This the path to the PreAuth script.
-.UNINDENT
-.UNINDENT
-.sp
-The remaining FAS configuration options must be left unset at the default values.
-.INDENT 0.0
-.TP
-.B ie:
-.INDENT 7.0
-.IP 1. 3
-\fBfasremoteip\fP\&. Not set (defaults to the gateway ip address).
-.IP 2. 3
-\fBfas_secure_enable\fP\&. Not set (defaults to enabled).
-.UNINDENT
-.UNINDENT
-.sp
-\fBNOTE:\fP
-.INDENT 0.0
-.INDENT 3.5
-From version 3.3.1 onwards, the example PreAuth script is preinstalled.
-.UNINDENT
-.UNINDENT
-.SS Enabling the Preinstalled Login Script (v3.3.1 to 4.0.1)
-.sp
-On Openwrt, edit (to uncomment) following lines in the /etc/config/nodogsplash file:
-.INDENT 0.0
-.INDENT 3.5
-\fI#option fasport \(aq2050\(aq\fP
-.sp
-\fI#option faspath \(aq/nodogsplash_preauth/\(aq\fP
-.sp
-\fI#option preauth \(aq/usr/lib/nodogsplash/login.sh\(aq\fP
-.UNINDENT
-.UNINDENT
-.sp
-To read:
-.INDENT 0.0
-.INDENT 3.5
-\fIoption fasport \(aq2050\(aq\fP
-.sp
-\fIoption faspath \(aq/nodogsplash_preauth/\(aq\fP
-.sp
-\fIoption preauth \(aq/usr/lib/nodogsplash/login.sh\(aq\fP
-.UNINDENT
-.UNINDENT
-.SS Enabling the Preinstalled Login Script (v4.0.2 onwards)
-.sp
-On Openwrt, edit (to uncomment) following line in the /etc/config/nodogsplash file:
-.INDENT 0.0
-.INDENT 3.5
-\fI#option preauth \(aq/usr/lib/nodogsplash/login.sh\(aq\fP
-.UNINDENT
-.UNINDENT
-.sp
-To read:
-.INDENT 0.0
-.INDENT 3.5
-\fIoption preauth \(aq/usr/lib/nodogsplash/login.sh\(aq\fP
-.UNINDENT
-.UNINDENT
-.sp
-For other operating systems edit the equivalent lines in the /etc/nodogsplash/nodogsplash.conf file
-.sp
-After making the change, save the file and restart the router.
-.SS What Does the Example Login Script Do?
-.sp
-\fBThis example shell script\fP generates html output for NDS to serve as a dynamic splash page.
-.sp
-The example asks the client user to enter their name and email address.
-On entering this information the client user then clicks or taps "Continue".
-.sp
-The script then generates html code to send to NDS to serve a second "Thankyou" page and creates a log entry ( /tmp/ndslog.log ), recording the client authentication details.
-.sp
-On tapping "Continue" for the second time, the client user is given access to the Internet.
-.sp
-This is a simple example of a script to demonstrate how to use PreAuth as a built in FAS. The script could of course ask for any response from the client and conduct its own authentication procedures \- entirely at the discretion of the person setting up their own captive portal functionality.
-.SS PreAuth with Remote Images
-.sp
-An additional example PreAuth script, demo\-preauth\-remote\-image.sh, is available in the source code:
-.INDENT 0.0
-.INDENT 3.5
-\fIhttps://github.com/nodogsplash/nodogsplash/archive/master.zip\fP
-.UNINDENT
-.UNINDENT
-.sp
-and extracting from the folder:
-.INDENT 0.0
-.INDENT 3.5
-"forward_authentication_service/PreAuth/"
-.UNINDENT
-.UNINDENT
-.sp
-This is an enhancement of the preinstalled login.sh, giving an example of how to display images pulled in from remote web servers, both http and https.
-.sp
-The example displays the NodogSplash avatar image dynamically retreived from Github.
-.SS Writing A Preauth Script
-.sp
-A Preauth script can be written as a shell script or any other language that the system has an interpreter for. It could also be a complied program.
-.sp
-NDS calls the preauth script with a command line equivalent to an html query string but with ", " (comma space) in place of "&" (ampersand).
-.sp
-Full details are included in the example script demo\-preauth.sh available by downloading the Nodogsplash zip file from
-.INDENT 0.0
-.INDENT 3.5
-\fIhttps://github.com/nodogsplash/nodogsplash/\fP
-.UNINDENT
-.UNINDENT
-.sp
-and extracting from the folder
-.INDENT 0.0
-.INDENT 3.5
-"forward_authentication_service/PreAuth/"
-.UNINDENT
-.UNINDENT
-.SS Defining and Using Variables
-.sp
-The query string is sent to us from NDS in a urlencoded form, so we must decode it here so we can parse it. In a shell script we would use the code:
-.INDENT 0.0
-.INDENT 3.5
-.sp
-.nf
-.ft C
-query=$(printf "${query_enc//%/\e\ex}")
-.ft P
-.fi
-.UNINDENT
-.UNINDENT
-.sp
-In the example script we want to ask the client user for their username and email address.
-.sp
-We could ask for anything we like and add our own variables to the html forms we generate.
-.sp
-If we want to show a sequence of forms or information pages we can do this easily.
-.sp
-To return to the script and show additional pages, the form action must be set to:
-.INDENT 0.0
-.INDENT 3.5
-.sp
-.nf
-.ft C
-<form action=\e"/nodogsplash_preauth/\e" method=\e"get\e">
-.ft P
-.fi
-.UNINDENT
-.UNINDENT
-.sp
-Note: In a shell script, quotes ( " ) must be escaped with the
-.INDENT 0.0
-.INDENT 3.5
-.sp
-.nf
-.ft C
-"\e"
-.ft P
-.fi
-.UNINDENT
-.UNINDENT
-.sp
-character.
-.sp
-Any variables we need to preserve and pass back to ourselves or NDS must be added to the form as hidden:
-.INDENT 0.0
-.INDENT 3.5
-.sp
-.nf
-.ft C
-<input type=\e"hidden\e" name=......
-.ft P
-.fi
-.UNINDENT
-.UNINDENT
-.sp
-Such variables will appear in the query string when NDS re\-calls this script.
-.sp
-We can then parse for them again.
-.sp
-When the logic of this script decides we should allow the client to access the Internet we inform NDS with a final page displaying a continue button with the form action set to:
-.INDENT 0.0
-.INDENT 3.5
-.sp
-.nf
-.ft C
-"<form action=\e"/nodogsplash_auth/\e" method=\e"get\e">"
-.ft P
-.fi
-.UNINDENT
-.UNINDENT
-.sp
-We must also send NDS the client token as a hidden variable, but first we must obtain the token from ndsctl using a suitable command such as:
-.INDENT 0.0
-.INDENT 3.5
-.sp
-.nf
-.ft C
-tok="$(ndsctl json $clientip | grep token | cut \-c 10\- | cut \-c \-8)"
-.ft P
-.fi
-.UNINDENT
-.UNINDENT
-.sp
-In a similar manner we can obtain any client or NDS information that ndsctl provides.
-.sp
-The query string NDS sends to us will always be of the following form (with a "comma space" separator):
-.INDENT 0.0
-.INDENT 3.5
-.sp
-.nf
-.ft C
-?clientip=[clientipaddress], gatewayname=[gatewayname],  redir=[originalurl], var4=[data], var5=[data], var6......
-.ft P
-.fi
-.UNINDENT
-.UNINDENT
-.sp
-The first three variables will be clientip, gatewayname and redir
-.sp
-We have chosen to name redir as $requested here as it is actually the originally requested url.
-.sp
-There is one exception to this. If the client presses "back" on their browser NDS detects this and tells us by returning status=authenticated instead of redir=[originalurl]
-.sp
-If we detect this we show a page telling the client they are already logged in.
-.sp
-Additional variables returned by NDS will be those we define here and send to NDS via an html form method=get
-.sp
-See the example script which uses $username and $emailaddr
-.sp
-There is no limit to the number of variables we can define dynamically as long as the query string does not exceed 2048 bytes.
-.sp
-The query string will be truncated if it does exceed this length.
-.SS Displaying Remote Banner Images
-.sp
-A modified version of the Username/Email\-address login script is available that demonstrates how to display remotely hosted images on its login pages.
-.sp
-This additional example PreAuth script, demo\-preauth\-remote\-image.sh, is available in the source code:
-.INDENT 0.0
-.INDENT 3.5
-\fIhttps://github.com/nodogsplash/nodogsplash/archive/master.zip\fP
-.UNINDENT
-.UNINDENT
-.sp
-and extracting from the folder:
-.INDENT 0.0
-.INDENT 3.5
-"forward_authentication_service/PreAuth/"
-.UNINDENT
-.UNINDENT
-.sp
-This is an enhancement of the preinstalled login.sh, giving an example of how to display images pulled in from remote web servers, both http and https.
-.sp
-The example displays the NodogSplash avatar image dynamically retrieved from Github.
-.SH BINAUTH OPTION
-.SS Overview
-.sp
-\fBBinAuth provides a method of running a post authentication script\fP or extension program. BinAuth is ALWAYS local to NDS and as such will have access to all the resources of the local system.
-.sp
-\fBBinAuth works with, but does not require FAS\fP and in a simple system can be used to provide site\-wide username/password access.
-BinAuth is not available when FAS is used at fas_secure_enabled = 3.
-.sp
-\fBWith FAS, the redir variable forwarded to BinAuth\fP can contain an embedded payload of custom variables defined by the FAS. As FAS is typically remote from the NDS router, this provides a link to the local system.
-.sp
-\fBBinAuth has the means to set a session timeout\fP interval on a client by client basis.
-.sp
-\fBBinAuth is called by NDS at the following times:\fP
-.INDENT 0.0
-.INDENT 3.5
-.INDENT 0.0
-.IP \(bu 2
-After the client CPD browser makes an authentication request to NDS
-.IP \(bu 2
-After the client device is granted Internet access by NDS
-.IP \(bu 2
-After the client is deauthenticated by request
-.IP \(bu 2
-After the client idle timeout interval has expired
-.IP \(bu 2
-After the client session timeout interval has expired
-.IP \(bu 2
-After the client is authenticated by ndsctl command
-.IP \(bu 2
-After the client is deauthenticated by ndsctl command
-.IP \(bu 2
-After NDS has received a shutdown command
-.UNINDENT
-.UNINDENT
-.UNINDENT
-.SS Example BinAuth Scripts
-.sp
-Two example BinAuth scripts are included in the source files available for download at:
-\fI\%https://github.com/nodogsplash/nodogsplash/releases\fP
-.sp
-The files can be extracted from the downloaded release archive file and reside in the folder:
-.sp
-\fI/nodogsplash\-[*version*]/forward_authentication_service/binauth\fP
-.SS Example 1 \- Sitewide Username/Password
-.sp
-This example is a script designed to be used with or without FAS and provides site wide Username/Password login for two groups of users, in this case "Staff" and "Guest" with two corresponding sets of credentials. If used without FAS, a special html splash page must be installed, otherwise FAS must forward the required username and password variables.
-.sp
-The "Staff" user is allowed access to the Internet for the full duration of the global sessiontimeout interval before being logged out.
-.sp
-The "Guest" user is allowed access for 10 minutes before being logged out.
-.SS Installing Example 1
-.sp
-This script has two components, the actual script and an associated html file.
-.INDENT 0.0
-.INDENT 3.5
-.INDENT 0.0
-.IP \(bu 2
-binauth_sitewide.sh
-.IP \(bu 2
-splash_sitewide.html
-.UNINDENT
-.UNINDENT
-.UNINDENT
-.sp
-The file binauth_sitewide.sh should be copied to a suitable location on the NDS router, eg \fI/etc/nodogsplash/\fP
-.sp
-The file splash_sitewide.html should be copied to \fI/etc/nodogsplash/htdocs/\fP
-.sp
-Assuming FAS is not being used, NDS is then configured by setting the BinAuth and SplashPage options in the config file (/etc/config/nodogsplash on Openwrt, or /etc/nodogsplash/nodogsplash.conf on other operating systems.
-.sp
-On OpenWrt this is most easily accomplished by issuing the following commands:
-.INDENT 0.0
-.INDENT 3.5
-\fIuci set nodogsplash.@nodogsplash[0].splashpage=\(aqsplash_sitewide.html\(aq\fP
-.sp
-\fIuci set nodogsplash.@nodogsplash[0].binauth=\(aq/etc/nodogsplash/binauth_sitewide.sh\(aq\fP
-.sp
-\fIuci commit nodogsplash\fP
-.UNINDENT
-.UNINDENT
-.sp
-The script file must be executable and is flagged as such in the source archive. If necessary set using the command:
-.INDENT 0.0
-.INDENT 3.5
-\fIchmod u+x /etc/nodogsplash/binauth_sitewide.sh\fP
-.UNINDENT
-.UNINDENT
-.sp
-This script is then activated with the command:
-.INDENT 0.0
-.INDENT 3.5
-\fIservice nodogsplash restart\fP
-.UNINDENT
-.UNINDENT
-.sp
-\fBThe Example 1 script contains the following code:\fP
-.INDENT 0.0
-.INDENT 3.5
-.sp
-.nf
-.ft C
-#!/bin/sh
-
-# EXAMPLE 1
-# This is an example script for BinAuth
-# It verifies a client username and password and sets the session length.
-#
-# If BinAuth is enabled, NDS will call this script as soon as it has received an authentication request
-# from the web page served to the client\(aqs CPD (Captive Portal Detection) Browser by one of the following:
-#
-# 1. splash_sitewide.html
-# 2. PreAuth
-# 3. FAS
-#
-# The username and password entered by the clent user will be included in the query string sent to NDS via html GET
-# For an example, see the file splash_sitewide.html
-
-METHOD="$1"
-CLIENTMAC="$2"
-
-case "$METHOD" in
-       auth_client)
-               USERNAME="$3"
-               PASSWORD="$4"
-               if [ "$USERNAME" = "Staff" \-a "$PASSWORD" = "weneedit" ]; then
-                       # Allow Staff to access the Internet for the global sessiontimeout interval
-                       # Further values are reserved for upload and download limits in bytes. 0 for no limit.
-                       echo 0 0 0
-                       exit 0
-               elif [ "$USERNAME" = "Guest" \-a "$PASSWORD" = "thanks" ]; then
-                       # Allow Guest to access the Internet for 10 minutes (600 seconds)
-                       # Further values are reserved for upload and download limits in bytes. 0 for no limit.
-                       echo 600 0 0
-                       exit 0
-               else
-                       # Deny client access to the Internet.
-                       exit 1
-               fi
-
-               ;;
-       client_auth|client_deauth|idle_deauth|timeout_deauth|ndsctl_auth|ndsctl_deauth|shutdown_deauth)
-               INGOING_BYTES="$3"
-               OUTGOING_BYTES="$4"
-               SESSION_START="$5"
-               SESSION_END="$6"
-               # client_auth: Client authenticated via this script.
-               # client_deauth: Client deauthenticated by the client via splash page.
-               # idle_deauth: Client was deauthenticated because of inactivity.
-               # timeout_deauth: Client was deauthenticated because the session timed out.
-               # ndsctl_auth: Client was authenticated by the ndsctl tool.
-               # ndsctl_deauth: Client was deauthenticated by the ndsctl tool.
-               # shutdown_deauth: Client was deauthenticated by Nodogsplash terminating.
-               ;;
-esac
-.ft P
-.fi
-.UNINDENT
-.UNINDENT
-.sp
-The \fISESSION_START\fP and \fISESSION_END\fP values are the number of seconds since 1970 or may be 0 for unknown/unlimited.
-.sp
-\fBThe splash_sitewide.html page contains the following code:\fP
-.INDENT 0.0
-.INDENT 3.5
-.sp
-.nf
-.ft C
-<!DOCTYPE html>
-<html>
-<head>
-<meta http\-equiv="Cache\-Control" content="no\-cache, no\-store, must\-revalidate">
-<meta http\-equiv="Pragma" content="no\-cache">
-<meta http\-equiv="Expires" content="0">
-<meta charset="utf\-8">
-<meta name="viewport" content="width=device\-width, initial\-scale=1.0">
-
-<link rel="shortcut icon" href="/images/splash.jpg" type="image/x\-icon">
-<link rel="stylesheet" type="text/css" href="/splash.css">
-
-<title>$gatewayname Captive Portal.</title>
-
-<!\-\-
-Content:
-       Nodogsplash (NDS), by default, serves this splash page (splash.html)
-       when a client device Captive Portal Detection (CPD) process
-       attempts to send a port 80 request to the Internet.
-
-       You may either embed css in this file or use a separate .css file
-       in the same directory as this file, as demonstrated here.
-
-       It should be noted when designing a custom splash page
-       that for security reasons many CPD implementations:
-               Immediately close the browser when the client has authenticated.
-               Prohibit the use of href links.
-               Prohibit downloading of external files
-                       (including .css and .js).
-               Prohibit the execution of javascript.
-
-Authentication:
-       A client is authenticated on submitting an HTTP form, method=get,
-       passing $authaction, $tok and $redir.
-
-       It is also possible to authenticate using an href link to
-       $authtarget but be aware that many device Captive Portal Detection
-       processes prohibit href links, so this method may not work with
-       all client devices.
-
-Available variables:
-       error_msg: $error_msg
-       gatewayname: $gatewayname
-       tok: $tok
-       redir: $redir
-       authaction: $authaction
-       denyaction: $denyaction
-       authtarget: $authtarget
-       clientip: $clientip
-       clientmac: $clientmac
-       clientupload: $clientupload
-       clientdownload: $clientdownload
-       gatewaymac: $gatewaymac
-       nclients: $nclients
-       maxclients: $maxclients
-       uptime: $uptime
-
-Additional Variables that can be passed back via the HTTP get,
-or appended to the query string of the authtarget link:
-       username
-       password
-\-\->
-
-</head>
-
-<body>
-<div class="offset">
-<med\-blue>$gatewayname Captive Portal.</med\-blue>
-<div class="insert">
-<img style="height:60px; width:60px; float:left;" src="/images/splash.jpg" alt="Splash Page: For access to the Internet.">
-<big\-red>Welcome!</big\-red>
-<hr>
-<br>
-<italic\-black>For access to the Internet, please enter your Username and Password.</italic\-black>
-<br><br>
-<hr>
-
-<form method="get" action="$authaction">
-<input type="hidden" name="tok" value="$tok">
-<input type="hidden" name="redir" value="$redir">
-<input type="text" placeholder="Enter Username" name="username" value="" size="12" maxlength="12">
-<br>Username<br><br>
-<input type="password" placeholder="Enter Password" name="password" value="" size="12" maxlength="10">
-<br>Password<br><br>
-<input type="submit" value="Continue">
-</form>
-
-<hr>
-<copy\-right>Copyright &copy; The Nodogsplash Contributors 2004\-2019.<br>This software is released under the GNU GPL license.</copy\-right>
-
-</div></div>
-</body>
-</html>
-.ft P
-.fi
-.UNINDENT
-.UNINDENT
-.SS Example 2 \- Local NDS Access Log
-.sp
-This example is a script designed to be used with or without FAS and provides local NDS logging. FAS is often remote from the NDS router and this script provides a simple method of interacting directly with the local NDS. FAS can provide the values of custom variables securly embedded as a payload in the redir parameter that is relayed to BinAuth by NDS. FAS can also utilise the username and password parameters to send general purpose variables although these will be readable by the client user on their browser screen.
-.sp
-The log file is stored by default in the /tmp/ directory but no free space checking is done in this simple example.
-It would be a simple matter to change the location of the log file to a USB stick for example.
-.SS Installing Example 2
-.sp
-This script has a single component, the shell script.
-.INDENT 0.0
-.INDENT 3.5
-.INDENT 0.0
-.IP \(bu 2
-binauth_log.sh
-.UNINDENT
-.UNINDENT
-.UNINDENT
-.sp
-The file binauth_log.sh should be copied to a suitable location on the NDS router, eg \fI/etc/nodogsplash/\fP
-.sp
-Assuming FAS is not being used, NDS is then configured by setting the BinAuth option in the config file (/etc/config/nodogsplash on Openwrt, or /etc/nodogsplash/nodogsplash.conf on other operating systems.
-.sp
-On OpenWrt this is most easily accomplished by issuing the following commands:
-.INDENT 0.0
-.INDENT 3.5
-\fIuci set nodogsplash.@nodogsplash[0].binauth=\(aq/etc/nodogsplash/binauth_log.sh\(aq\fP
-.sp
-\fIuci commit nodogsplash\fP
-.UNINDENT
-.UNINDENT
-.sp
-The script file must be executable and is flagged as such in the source archive. If necessary set using the command:
-.INDENT 0.0
-.INDENT 3.5
-\fIchmod u+x /etc/nodogsplash/binauth_log.sh\fP
-.UNINDENT
-.UNINDENT
-.sp
-This script is then activated with the command:
-.INDENT 0.0
-.INDENT 3.5
-\fIservice nodogsplash restart\fP
-.UNINDENT
-.UNINDENT
-.sp
-\fBThe Example 2 script contains the following code:\fP
-.INDENT 0.0
-.INDENT 3.5
-.sp
-.nf
-.ft C
-#!/bin/sh
-
-# This is an example script for BinAuth
-# It can set the session duration per client and writes a local log.
-#
-# It retrieves redir, a variable that either contains the originally requested url
-# or a url\-encoded or aes\-encrypted payload of custom variables sent from FAS or PreAuth.
-#
-# The client User Agent string is also forwarded to this script.
-#
-# If BinAuth is enabled, NDS will call this script as soon as it has received an authentication request
-# from the web page served to the client\(aqs CPD (Captive Portal Detection) Browser by one of the following:
-#
-# 1. splash.html
-# 2. PreAuth
-# 3. FAS
-#
-
-# Get the current Date/Time for the log
-date=$(date)
-
-#
-# Get the action method from NDS ie the first command line argument.
-#
-# Possible values are:
-# "auth_client" \- NDS requests validation of the client
-# "client_auth" \- NDS has authorised the client
-# "client_deauth" \- NDS has deauthorised the client
-# "idle_deauth" \- NDS has deauthorised the client because the idle timeout duration has been exceeded
-# "timeout_deauth" \- NDS has deauthorised the client because the session length duration has been exceeded
-# "ndsctl_auth" \- NDS has authorised the client because of an ndsctl command
-# "ndsctl_deauth" \- NDS has deauthorised the client because of an ndsctl command
-# "shutdown_deauth" \- NDS has deauthorised the client because it received a shutdown command
-#
-action=$1
-
-if [ $action == "auth_client" ]; then
-       #
-       # The redir parameter is sent to this script as the fifth command line argument in url\-encoded form.
-       #
-       # In the case of a simple splash.html login, redir is the URL originally requested by the client CPD.
-       #
-       # In the case of PreAuth or FAS it MAY contain not only the originally requested URL
-       # but also a payload of custom variables defined by Preauth or FAS.
-       #
-       # It may just be simply url\-encoded (fas_secure_enabled 0 and 1), or
-       # aes encrypted (fas_secure_enabled 2)
-       #
-       # The username and password variables may be passed from splash.html, FAS or PreAuth and can be used
-       # not just as "username" and "password" but also as general purpose string variables to pass information to BinAuth.
-       #
-       # The client User Agent string is sent as the sixth command line argument.
-       # This can be used to determine much information about the capabilities of the client.
-       # In this case it will be added to the log.
-       #
-       # Both redir and useragent are url\-encoded, so decode:
-       redir_enc=$5
-       redir=$(printf "${redir_enc//%/\e\ex}")
-       useragent_enc=$6
-       useragent=$(printf "${useragent_enc//%/\e\ex}")
-
-       # Append to the log.
-
-       echo "$date, method=$1, clientmac=$2, clientip=$7, username=$3, password=$4, redir=$redir, useragent=$useragent" >> /tmp/binauth.log
-else
-       echo "$date, method=$1, clientmac=$2, bytes_incoming=$3, bytes_outgoing=$4, session_start=$5, session_end=$6" >> /tmp/binauth.log
-fi
-
-
-# Set length of session in seconds (eg 24 hours is 86400 seconds \- if set to 0 then defaults to global sessiontimeout value):
-session_length=0
-# The session length could be determined by FAS or PreAuth, on a per client basis, and embedded in the redir variable payload.
-
-# Finally before exiting, output the session length, followed by two integers (reserved for future use in traffic shaping)
-
-echo $session_length 0 0
-
-# exit 0 tells NDS is is ok to allow the client to have access.
-# exit 1 would tell NDS to deny access.
-
-exit 0
-.ft P
-.fi
-.UNINDENT
-.UNINDENT
-.SH LIBRARY UTILITIES
-.SS Overview
-.sp
-A number of library utilities are included. These may be used by NDS itself, FAS, Preauth and BinAuth. These may in the future, be enhanced, have additional functionality added.
-.sp
-By default, library utilities will be installed in the folder
-.sp
-\fB/usr/lib/nodogsplash/\fP
-.SS List of Library Utilities
-.SS get_client_token.sh
-.sp
-This utility allows the unique token of a client to be determined from the client ip address.
-.sp
-It can be used in BinAuth, PreAuth and local FAS scripts.
-.INDENT 0.0
-.INDENT 3.5
-Usage: get_client_token.sh [clientip]
-.sp
-Returns: [client token]
-.INDENT 0.0
-.TP
-.B Where:
-[client token] is the unique client token string.
-.UNINDENT
-.UNINDENT
-.UNINDENT
-.SS get_client_interface.sh
-.sp
-This utility allows the interface a client is using to be determined from the client mac address.
-.sp
-It is used by NDS when fas secure level 2 is set. Its output is sent to FAS in the encrypted query string as the variable "clientif"
-.INDENT 0.0
-.INDENT 3.5
-Usage: get_client_interface.sh [clientmac]
-.sp
-Returns: [local_interface] [meshnode_mac] [local_mesh_interface]
-.sp
-Where:
-.INDENT 0.0
-.INDENT 3.5
-[local_interface] is the local interface the client is using.
-.sp
-[meshnode_mac] is the mac address of the 802.11s meshnode the client is using (null if mesh not present).
-.sp
-[local_mesh_interface] is the local 802.11s interface the client is using (null if mesh not present).
-.UNINDENT
-.UNINDENT
-.UNINDENT
-.UNINDENT
-.SS unescape.sh
-.sp
-This utility allows an input string to be unescaped. It currently only supports url\-decoding.
-.sp
-It can be used by NDS as the unescape callback for libmicrohttpd.
-.sp
-To enable, set the unescape_callback_enabled option to "1"
-.sp
-To disable, set the unescape_callback_enabled option to "0"
-.sp
-The default is disabled (use internal MHD unescape)
-.sp
-eg In the OpenWrt configuration file
-.INDENT 0.0
-.INDENT 3.5
-.INDENT 0.0
-.INDENT 3.5
-\fBoption unescape_callback_enabled \(aq0\(aq\fP
-.UNINDENT
-.UNINDENT
-.sp
-Usage: unescape.sh [\-option] [escapedstring]
-.sp
-Returns: [unescapedstring]
-.sp
-Where:
-.INDENT 0.0
-.INDENT 3.5
-[\-option] is unescape type, currently \-url only
-.UNINDENT
-.UNINDENT
+The splash page generated from the basic splash.html file installed with NDS includes Template Variables (as listed in the splash.html file).
 .UNINDENT
 .UNINDENT
 .SH TRAFFIC CONTROL
@@ -1985,10 +685,10 @@ uci commit nodogsplash
 .fi
 .UNINDENT
 .UNINDENT
-.SS The Default Click and Go Splash Page
+.SS The Click and Go Splash Page
 .sp
-Enabled by setting option login_option_enabled = "0" (default)
-The default default splash page can be found at:
+NoDogSplash provides a simple templated click and go splash page.
+This can be found at:
 .INDENT 0.0
 .INDENT 3.5
 \fB/etc/nodogsplash/htdocs/splash.html\fP
@@ -2089,150 +789,32 @@ Prohibit the execution of javascript.
 .sp
 Also, note that any images you reference should reside in the subdirectory /etc/nodogsplash/htdocs/images/.
 .SS Dynamic Splash Pages
-.SS Pre\-Installed User Login Dynamic Splash Page
 .sp
-The pre\-installed dynamic splash page is enabled by setting option login_option_enabled = "1".
-.sp
-It generates a login page asking for username and email address.
-User logins are recorded in the log file /tmp/ndslog.log
-Details of how the script works are contained in comments in the script itself.
-.SS Custom Dynamic Splash Pages
-.sp
-Custom designed dynamically generated splash pages are supported using FAS and PreAuth (such as the included alternative username/email login script).
-.sp
-For details see the FAS and PreAuth chapters.
+From version 5.0.0 onwards, dynamic splash pages are supported by the openNDS package. See:
+\fI\%https://github.com/openNDS/openNDS\fP
 .SH FREQUENTLY ASKED QUESTIONS
-.SS What\(aqs the difference between v0.9, v1, v2, v3 and v4?
-.sp
-\fBv0.9 and v1\fP are the same codebase with the same feature set.
-If the documentation says something about v1, this is usually also valid
-for v0.9.
-.sp
-\fBv2\fP was developed before version v1 was released. In v2 the http code was replaced by libmicrohttpd and the template engine was rewritten. Many features became defunct because of this procedure.
-.sp
-\fBv3\fP cleans up the source code and adds three major new features,
-.INDENT 0.0
-.INDENT 3.5
-.INDENT 0.0
-.IP \(bu 2
-\fBFAS\fP
-.UNINDENT
-.INDENT 0.0
-.INDENT 3.5
-A forwarding authentication service. FAS supports development of "Credential Verification" running on any dynamic web serving platform, on the same device as NoDogSplash, on another device on the local network, or on an Internet hosted web server.
-.UNINDENT
-.UNINDENT
-.INDENT 0.0
-.IP \(bu 2
-\fBPreAuth\fP
-.UNINDENT
-.INDENT 0.0
-.INDENT 3.5
-An implementation of FAS running on the same device as Nodogsplash and using NoDogSplash\(aqs own web server to generate dynamic web pages. Any scripting language or even a compiled application program can be used. This has the advantage of not requiring the resources of a separate web server.
-.UNINDENT
-.UNINDENT
-.INDENT 0.0
-.IP \(bu 2
-\fBBinAuth\fP
-.UNINDENT
-.INDENT 0.0
-.INDENT 3.5
-Enabling an external script to be called for simple username/password authentication as well as doing post authentication processing such as setting session durations. This is similar to the old binvoucher feature, but more flexible.
-.UNINDENT
-.UNINDENT
-.sp
-In addition, in v3, the ClientTimeout setting was split into PreauthIdleTimeout and AuthIdleTimeout and for the ClientForceTimeout setting, SessionTimeout is now used instead.
-.UNINDENT
-.UNINDENT
-.sp
-\fBv4\fP continues to add enhancements towards improving NDS as a Captive Portal Engine that can be used in the development of custom solutions.
-.INDENT 0.0
-.INDENT 3.5
-Three major new features are introduced.
-.INDENT 0.0
-.IP \(bu 2
-\fBFAS FQDN\fP
-.UNINDENT
-.INDENT 0.0
-.INDENT 3.5
-Enabling simple configuration for a FAS running on a remote shared web hosting server.
-.UNINDENT
-.UNINDENT
-.INDENT 0.0
-.IP \(bu 2
-\fBFAS secure level 1\fP
-.UNINDENT
-.INDENT 0.0
-.INDENT 3.5
-From v4.3.0 onwards,  FAS secure level 1 supports token hashing. This enhances security and mitigates issues accessing ndsctl remotely to obtain the client token. This is particularly useful on legacy router devices with small flash and ram capacity.
-.UNINDENT
-.UNINDENT
-.INDENT 0.0
-.IP \(bu 2
-\fBFAS secure level 2\fP
-.UNINDENT
-.INDENT 0.0
-.INDENT 3.5
-Enabling aes256cbc encryption of NDS data transferred to remote FAS, thus preventing knowledgable client users from bypassing verification. Access to the FAS server using \fBhttp\fP protocol is enforced.
-.UNINDENT
-.UNINDENT
-.INDENT 0.0
-.IP \(bu 2
-\fBFAS secure level 3\fP
-.UNINDENT
-.INDENT 0.0
-.INDENT 3.5
-Enabling https access to a remote, Internet based FAS server, ensuring the client device does not receive any security warnings or errors. Access to the FAS server using \fBhttps\fP protocol is enforced.
-.sp
-Level 3 otherwise functions in the same way as level 2 with aes256cbc encryption of NDS data.
-.UNINDENT
-.UNINDENT
-.UNINDENT
-.UNINDENT
-.SS Can I update from v0.9 to v1?
-.sp
-Updating to v1.0.0 and v1.0.1, this is a very smooth update with full compatibility.
-.sp
-Updating to 1.0.2 requires iptables v1.4.21 or above.
-.SS Can I update from v0.9/v1 to v2.0.0?
+.SS Can I update from v0.9/v1/v2/v3/v4 to v5?
 .sp
 You can, if:
 .INDENT 0.0
 .IP \(bu 2
-You don\(aqt use BinVoucher
+You only want a simple templated splash page
 .IP \(bu 2
 You have iptables v1.4.21 or above
 .UNINDENT
-.SS Can I update from v0.9/v1/v2 to v3.0.0?
 .sp
-You can, if:
-.INDENT 0.0
-.IP \(bu 2
-You don\(aqt use BinVoucher
-.IP \(bu 2
-You have iptables v1.4.21 or above
-.IP \(bu 2
-You use the new options contained in the version 3 configuration file
-.UNINDENT
-.SS Can I update from v0.9/v1/v2/v3 to v4?
+\fBFrom version 5.0.0 onwards\fP, NoDogSplash is optimised for minimum non volatile storage (flash) and RAM requirements.
 .sp
-You can, if:
-.INDENT 0.0
-.IP \(bu 2
-You don\(aqt use BinVoucher
-.IP \(bu 2
-You have iptables v1.4.21 or above
-.IP \(bu 2
-You use the new options contained in the version 4 configuration file
-.UNINDENT
-.SS How do I use QoS or TrafficControl on OpenWrt?
+The advanced API support provided by BinAuth, Preauth and FAS have been moved to the \fBopenNDS\fP package:
+\fI\%https://opennds.readthedocs.io\fP
+.SS How do I use QoS or Traffic Control on OpenWrt?
 .sp
 The original pre version 1 feature has been broken since OpenWrt 12.09 (Attitude Adjustment), because the IMQ (Intermediate queueing device) is no longer supported.
 .INDENT 0.0
 .INDENT 3.5
 \fBPull Requests are welcome!\fP
 .sp
-However the OpenWrt package, SQM Scripts (Smart Queue Management), is fully compatible with Nodogsplash and if configured to operate on the Nodogsplash interface (br\-lan by default) will provide efficient IP connection based traffic control to ensure fair usage of available bandwidth.
+However the OpenWrt package, SQM Scripts (Smart Queue Management), is fully compatible with Nodogsplash and if configured to operate on the NoDogSplash interface (br\-lan by default) will provide efficient IP connection based traffic control to ensure fair usage of available bandwidth.
 .UNINDENT
 .UNINDENT
 .SS Is https capture supported?

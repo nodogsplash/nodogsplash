@@ -1,3 +1,9 @@
+nodogsplash (5.0.0-1) stable; urgency=medium
+
+  * Remove all Forwarding Authentication Service (FAS) support to the separate openNDS package
+
+ -- Rob White <dot@blue-wave.net>  Fri, 10 Apr 2020 22:23:00 +0000
+
 nodogsplash (4.5.0-1) stable; urgency=medium
 
   * Add - Enable https protocol for remote FAS [bluewavenet]
