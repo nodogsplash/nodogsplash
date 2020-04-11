@@ -1,20 +1,25 @@
-## 0. The Nodogsplash project
+## 0. The NoDogSplash project
 
-Nodogsplash is a Captive Portal that offers a simple way to provide restricted access to the Internet by showing a splash page to the user before Internet access is granted.
+NoDogSplash is a Captive Portal that offers a simple way to provide restricted access to the Internet by showing a splash page to the user before Internet access is granted.
 
-From version 5.0.0 it no longer supports the creation of sophisticated authentication applications. Instead, this functionality is provided by the openNDS package - https://github.com/openNDS/openNDS
+**From version 5.0.0**, NoDogSplash supports only simple templated splash pages.
 
-It was derived originally from the codebase of the Wifi Guard Dog project.
+The creation of sophisticated authentication applications is now supported by the **openNDS package** to be found at:
 
-Nodogsplash is released under the GNU General Public License.
+https://github.com/openNDS/openNDS
+
+This change ensures that NoDogSplash can be optimised for running on devices with very low resources without being compromised by continuing enhancement of Forwarding Authentication Services (FAS).
+
+NoDogSplash was derived originally from the codebase of the Wifi Guard Dog project.
+
+NoDogSplash is released under the GNU General Public License.
 
 * Mailing List: http://ml.ninux.org/mailman/listinfo/nodogsplash
 * Original Homepage (no longer available): http://kokoro.ucsd.edu/nodogsplash
 * Wifidog: http://dev.wifidog.org/
 * GNU GPL: http://www.gnu.org/copyleft/gpl.html
 
-The following describes what Nodogsplash does, how to get it and run it, and
-how to customize its behaviour for your application.
+The following describes what NoDogSplash does, how to get it and run it, and how to customize its behaviour for your application.
 
 ## 1. Overview
 
@@ -28,13 +33,13 @@ https://opennds.readthedocs.io
 
  All modern mobile devices, most desktop operating systems and most browsers now have a CPD process that automatically issues a port 80 request on connection to a network. NDS detects this and serves a special "**splash**" web page to the connecting client device.
 
-**Provide simple and immediate public Internet access**
+**Provide Simple and Immediate Public Internet Access Control**
 
- NDS provides a simple templated splash page.
+ NoDogSplash provides a simple templated splash page.
 
- This splash page provides basic notification and a simple click/tap to continue button.
+ This splash page enables basic client notification and a simple click/tap to continue button.
 
-  Customising the page seen by users is a simple matter of editing the respective html.
+  Customising the page seen by clients is a simple matter of editing the respective html.
 
 ## 2. Documentation
 

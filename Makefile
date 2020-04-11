@@ -43,22 +43,6 @@ install:
 	cp resources/splash.css $(DESTDIR)/etc/nodogsplash/htdocs/
 	cp resources/status.html $(DESTDIR)/etc/nodogsplash/htdocs/
 	cp resources/splash.jpg $(DESTDIR)/etc/nodogsplash/htdocs/images/
-	mkdir -p $(DESTDIR)/usr/lib/nodogsplash
-	cp forward_authentication_service/PreAuth/demo-preauth.sh $(DESTDIR)/usr/lib/nodogsplash/login.sh
-	sed -i 's/#!\/bin\/sh/#!\/bin\/bash/' $(DESTDIR)/usr/lib/nodogsplash/login.sh
-	cp forward_authentication_service/libs/get_client_interface.sh $(DESTDIR)/usr/lib/nodogsplash/
-	sed -i 's/#!\/bin\/sh/#!\/bin\/bash/' $(DESTDIR)/usr/lib/nodogsplash/get_client_interface.sh
-	cp forward_authentication_service/libs/get_client_token.sh $(DESTDIR)/usr/lib/nodogsplash/
-	sed -i 's/#!\/bin\/sh/#!\/bin\/bash/' $(DESTDIR)/usr/lib/nodogsplash/get_client_token.sh
-	cp forward_authentication_service/libs/unescape.sh $(DESTDIR)/usr/lib/nodogsplash/
-	sed -i 's/#!\/bin\/sh/#!\/bin\/bash/' $(DESTDIR)/usr/lib/nodogsplash/unescape.sh
-	cp forward_authentication_service/libs/authmon.sh $(DESTDIR)/usr/lib/nodogsplash/
-	sed -i 's/#!\/bin\/sh/#!\/bin\/bash/' $(DESTDIR)/usr/lib/nodogsplash/authmon.sh
-	cp forward_authentication_service/libs/post-request.php $(DESTDIR)/usr/lib/nodogsplash/
-	cp forward_authentication_service/fas-aes/fas-aes.php $(DESTDIR)/etc/nodogsplash/
-	cp forward_authentication_service/fas-aes/fas-aes-https.php $(DESTDIR)/etc/nodogsplash/
-
-
 
 checkastyle:
 	@command -v astyle >/dev/null 2>&1 || \
