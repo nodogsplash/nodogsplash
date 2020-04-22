@@ -41,8 +41,19 @@ Nodogsplash does not currently support traffic control but is fully compatible w
 - Call an external script that may accept username/password and set session durations per user.
 - Forwarding authentication to a service independent of NDS
 
+## 2. Split of Nodogsplash
 
-## 2. Documentation
+Nodogsplash has been splitted into 2 projects:
+
+* [OpenNDS](https://github.com/openNDS/openNDS) containing the FAS (Forward Authentication Service)
+* [Nodogsplash](https://github.com/nodogsplash/nodogsplash) containing a minimal version.
+
+OpenNDS has been forked of from version 4.x (commit 4bd2f00166ed17ac14f9b78037fce5725bd894ce).
+Nodogsplash has been forked of from 3.x (commit 28541e787c989589bcd0939d3affd4029a235a3a).
+
+The first version with different code bases is version 5.0
+
+## 3. Documentation
 
 For full documentation please look at https://nodogsplashdocs.rtfd.io/
 
