@@ -36,6 +36,7 @@
 #include "http_microhttpd.h"
 #include "http_microhttpd_utils.h"
 #include "mimetypes.h"
+#include "path.h"
 #include "safe.h"
 #include "template.h"
 #include "util.h"
@@ -238,7 +239,7 @@ get_ip(struct MHD_Connection *connection)
 int
 libmicrohttpd_cb(void *cls,
 				struct MHD_Connection *connection,
-				const char *url,
+				const char *_url,
 				const char *method,
 				const char *version,
 				const char *upload_data, size_t *upload_data_size, void **ptr)
@@ -247,9 +248,13 @@ libmicrohttpd_cb(void *cls,
 	t_client *client;
 	char *ip_addr;
 	char *mac;
+	char url[PATH_MAX] = { 0 };
 	int ret;
 
 	debug(LOG_DEBUG, "access: %s %s", method, url);
+
+	/* path sanitize */
+	buffer_path_simplify(url, _url);
 
 	/* only allow get */
 	if (0 != strcmp(method, "GET")) {
