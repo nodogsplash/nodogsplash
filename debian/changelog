@@ -1,3 +1,10 @@
+nodogsplash (4.0.3-1) stable; urgency=medium
+
+  * http_microhttpd: sanitize the path before parsing it.
+    Fix a path traversal attack.
+
+ -- Alexander Couzens <lynxis@fe80.eu> Mon, 04 May 2020 23:25:42 +0200
+
 nodogsplash (4.0.2-1) stable; urgency=medium
 
   * Fix bug - fas_remotefqdn not supported with option fas_secure_enabled 0 [bluewavenet]
