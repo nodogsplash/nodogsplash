@@ -1,3 +1,9 @@
+nodogsplash (4.5.1-1) stable; urgency=medium
+
+  * Fix path traversal attack. [lynxis]
+
+ -- Alexander Couzens <lynxis@fe80.eu>  Wed, 06 May 2020 06:05:00 +0000
+
 nodogsplash (4.5.0-1) stable; urgency=medium
 
   * Add - Enable https protocol for remote FAS [bluewavenet]
