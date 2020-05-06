@@ -417,15 +417,6 @@ ndsctl_status(FILE *fp)
 		fprintf(fp, "Preauth: Disabled\n");
 	}
 
-	if (config->fas_port) {
-		fprintf(fp, "FAS: Secure=%u URL: http://%s:%u%s\n",
-			config->fas_secure_enabled,
-			config->fas_remoteip,
-			config->fas_port, config->fas_path);
-	} else {
-		fprintf(fp, "FAS: Disabled\n");
-	}
-
 	fprintf(fp, "Client Check Interval: %ds\n", config->checkinterval);
 	fprintf(fp, "Preauth Idle Timeout: %dm\n", config->preauth_idle_timeout);
 	fprintf(fp, "Auth Idle Timeout: %dm\n", config->auth_idle_timeout);

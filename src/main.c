@@ -268,20 +268,6 @@ main_loop(void)
 	/* TODO: set listening socket */
 	debug(LOG_NOTICE, "Created web server on %s", config->gw_address);
 
-	/* Make sure fas_remoteip is set. Note: This does not enable FAS. */
-	if (!config->fas_remoteip) {
-		config->fas_remoteip = safe_strdup(config->gw_ip);
-	}
-
-	if (config->fas_port) {
-		debug(LOG_NOTICE, "Forwarding Authentication is Enabled.\n");
-		debug(LOG_NOTICE, "FAS URL is http://%s:%u%s\n", config->fas_remoteip, config->fas_port, config->fas_path);
-	}
-
-	if (config->fas_secure_enabled != 1 && config->fas_port) {
-		debug(LOG_NOTICE, "Warning - Forwarding Authentication - Security is DISABLED.\n");
-	}
-
 	if (config->preauth) {
 		debug(LOG_NOTICE, "Preauth is Enabled.\n");
 		debug(LOG_NOTICE, "Preauth Script is %s\n", config->preauth);

@@ -32,7 +32,6 @@ Contents:
    faq
    splash
    howitworks
-   fas
    preauth
    binauth
    traffic

@@ -141,7 +141,7 @@ generate_uci_config() {
 
   addline "GatewayInterface $ifname"
 
-  for option in preauth binauth fasport fasremoteip faspath fas_secure_enabled \
+  for option in preauth binauth \
     daemon debuglevel maxclients gatewayname gatewayinterface gatewayiprange \
     gatewayaddress gatewayport webroot splashpage statuspage \
     redirecturl sessiontimeout preauthidletimeout authidletimeout checkinterval \
@@ -155,7 +155,13 @@ generate_uci_config() {
       addline "$option $val"
     fi
   done
-
+  for option in fasport fasremoteip faspath fas_secure_enabled ; do
+    config_get val "$cfg" "$option"
+    if [ -n "$val" ]; then
+      echo "Warning: nodogsplash does not support $val"
+      return 1
+    fi
+  done
   config_get download "$cfg" downloadlimit
   config_get upload "$cfg" uploadlimit
 

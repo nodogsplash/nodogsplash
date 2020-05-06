@@ -74,58 +74,12 @@ config nodogsplash
   # Values session_start and session_start are in seconds since 1970 or 0 for unknown/unlimited.
   #
   #option binauth '/bin/myauth.sh'
-
-  # Enable Forwarding Authentication Service (FAS)
-  # If set redirection is changed from splash.html to a FAS (provided by the system administrator)
-  # The value is the IP port number of the FAS
-  # Note: if FAS is running locally (ie fasremoteip is NOT set), port 80 cannot be used.
-  #
-  # Typical Remote Shared Hosting Example:
-  #option fasport '80'
-  #
-  # Typical Locally Hosted example (ie fasremoteip not set):
-  #option fasport '2080'
-
-  # Option: fasremoteip
-  # Default: GatewayAddress (the IP of NDS)
-  # If set, this is the remote ip address of the FAS.
-  #
-  # Typical Remote Shared Hosting Example:
-  #option fasremoteip '46.32.240.41'
-
-  # Option: faspath
-  # Default: /
-  # This is the path from the FAS Web Root to the FAS login page
-  # (not the file system root).
-  #
-  # Typical Remote Shared Hosting Example:
-  #option faspath '/onboard-wifi.net/nodog/fas.php'
-  #
-  # Typical Locally Hosted example (ie fasremoteip not set):
-  #option faspath '/nodog/fas.php'
-
-  # Option: fas_secure_enabled
-  # Default: 1
-  # If set to "1", authaction and the client token are not revealed and it is the responsibility
-  # of the FAS to request the token from NDSCTL.
-  # If set to "0", the client token is sent to the FAS in clear text in the query string of the
-  # redirect along with authaction and redir.
-  #option fas_secure_enabled '0'
-
   # Enable PreAuth Support.
   #
   # A simple login script is provided in the package.
   # This generates a login page asking for usename and email address.
   # User logins are recorded in the log file /tmp/ndslog.log
   # Details of how the script works are contained in comments in the script itself.
-  #
-  # PreAuth support allows FAS to call a local program or script with html served by NDS
-  # If set, a program/script is called by the NDS FAS handler when:
-  # 1. fasremopteip is not set,
-  # 2. fasport is set to the gateway port
-  # 3. faspath is set to /nodogsplash_preauth/
-  #
-  # Initially FAS appends its query string to faspath.
   #
   # The Preauth program will output html code that will be served to the client by NDS
   # Using html GET the Preauth program may call:
@@ -138,12 +92,6 @@ config nodogsplash
   # It must also obtain the client token using ndsctl (or the original query string if fas_secure_enabled=0)
   # for NDS authentication when calling /nodogsplash_auth/
   #
-
-  # Enable username/emailaddress login.
-  # Note: fasport must be set to the same value as gatewayport (default = 2050)
-  # Enable by uncommenting the following three lines
-  #option fasport '2050'
-  #option faspath '/nodogsplash_preauth/'
   #option preauth '/usr/lib/nodogsplash/login.sh'
 
   # Your router may have several interfaces, and you
