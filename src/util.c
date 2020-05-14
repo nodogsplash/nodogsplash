@@ -422,6 +422,8 @@ ndsctl_status(FILE *fp)
 	fprintf(fp, "Preauth Idle Timeout: %sm\n", durationbuf);
 	format_duration(0, config->auth_idle_timeout * 60, durationbuf);
 	fprintf(fp, "Auth Idle Timeout: %s\n", durationbuf);
+	format_duration(0, config->session_timeout * 60, durationbuf);
+	fprintf(fp, "Session Timeout: %s\n", durationbuf);
 
 	if (config->redirectURL) {
 		fprintf(fp, "Redirect URL: %s\n", config->redirectURL);
