@@ -987,6 +987,7 @@ iptables_fw_counters_update(void)
 	free(script);
 	if (!output) {
 		debug(LOG_ERR, "popen(): %s", strerror(errno));
+		UNLOCK_CLIENT_LIST();
 		return -1;
 	}
 
@@ -1024,6 +1025,7 @@ iptables_fw_counters_update(void)
 	free(script);
 	if (!output) {
 		debug(LOG_ERR, "popen(): %s", strerror(errno));
+		UNLOCK_CLIENT_LIST();
 		return -1;
 	}
 
