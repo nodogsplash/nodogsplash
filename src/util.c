@@ -403,7 +403,9 @@ ndsctl_status(FILE *fp)
 	fprintf(fp, "Gateway Name: %s\n", config->gw_name);
 	fprintf(fp, "Managed interface: %s\n", config->gw_interface);
 	fprintf(fp, "Managed IP range: %s\n", config->gw_iprange);
-	fprintf(fp, "Server listening: http://%s\n", config->gw_address);
+	fprintf(fp, "Server listening: http://%s\n", config->gw_http_name);
+	if (strncmp(config->gw_http_name_port, config->gw_http_name, strlen(config->gw_http_name_port)))
+		fprintf(fp, "Server listening: http://%s\n", config->gw_http_name_port);
 
 	if (config->binauth) {
 		fprintf(fp, "Binauth Script: %s\n", config->binauth);

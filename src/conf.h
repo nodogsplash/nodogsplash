@@ -146,6 +146,8 @@ typedef struct {
 	char *gw_iprange;		/**< @brief IP range on gw_interface we will manage */
 	char *gw_ip;			/**< @brief Internal IP (v4 or v6) for our web server */
 	char *gw_address;		/**< @brief Internal IP with port for our web server */
+	char *gw_http_name;	        /**< @brief The gw_address with port if required */
+	char *gw_http_name_port;        /**< @brief The gw_address with port even when not required */
 	char *gw_mac;			/**< @brief MAC address of the interface we manage */
 	unsigned int gw_port;		/**< @brief Port the webserver will run on */
 	char *webroot;			/**< @brief Directory containing splash pages, etc. */
