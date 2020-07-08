@@ -1,3 +1,19 @@
+nodogsplash (5.0.0)
+
+Version 5.0.0 has been forked from 3.3.2 in order to remove the
+FAS in a clean way. All patches from 4.5.1 has been backported.
+
+  * Remove the FAS (forward authentication service)
+  * ndsctl status: show Session Timeout
+  * debian: use native format
+  * common.h: increase QUERYMAXLEN to 4k
+  * ndsctl_auth(): ensure client->id does not change between search and modify
+  * fw_iptables: fix a deadlock in case when popen() fails
+  * ndsctl status: use format_duration for Preauth/Auth Idle Timeout
+  * libmicrohttpd: sanitize the path before parsing it
+
+ -- Alexander Couzens <lynxis@fe80.eu> Wed, 8 Jul 2020 12:34:56 +0000
+
 nodogsplash (3.3.2)
 
   * Fix Issue introduced in v3.3.0 with the addition of Improvements towards usable IPv6 support, that caused CPD on client devices to fail with "Too Many Redirects" error. NDS now terminates gracefully with a console error if fasremoteip is set AND fasport=80  [bluewavenet]
