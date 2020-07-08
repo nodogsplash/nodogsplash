@@ -1,3 +1,161 @@
+nodogsplash (5.0.0-1) stable; urgency=medium
+
+  * Remove FAS
+
+ -- Alexander Couzens <lynxis@fe80.eu>  Tue, 8 Jul 2020 11:49:00 +0000
+
+nodogsplash (4.5.1-1) stable; urgency=medium
+
+  * Fix path traversal attack. [lynxis]
+
+ -- Alexander Couzens <lynxis@fe80.eu>  Wed, 06 May 2020 06:05:00 +0000
+
+nodogsplash (4.5.0-1) stable; urgency=medium
+
+  * Add - Enable https protocol for remote FAS [bluewavenet]
+  * Add - trusted devices list to ndsctl json output [bluewavenet]
+  * Add - option unescape_callback_enabled [bluewavenet]
+  * Add - get_client_token library utility [bluewavenet]
+  * Add - utf-8 to PreAuth header [bluewavenet]
+  * Add - PreAuth Support for hashed id (hid) if sent by NDS [bluewavenet]
+  * Add - library script shebang warning for systems not running Busybox [bluewavenet]
+  * Add - htmlentityencode function, encode gatewayname in templated splash page [bluewavenet]
+  * Add - htmlentity encode gatewayname on login page (PreAuth) [bluewavenet]
+  * Add - Simple customisation of log file location for PreAuth and BinAuth [bluewavenet]
+  * Add - option use_outdated_mhd [bluewavenet]
+  * Add - url-encode and htmlentity-encode gatewayname on startup [bluewavenet]
+  * Add - Allow special characters in username (PreAuth) [bluewavenet]
+  * Add - Documentation updates [bluewavenet]
+  * Add - Various style and cosmetic updates  [bluewavenet]
+  * Fix - Change library script shebang to bash in Debian [bluewavenet]
+  * Fix - Remove unnecessary characters causing script execution failure in Debian [bluewavenet]
+  * Fix - Add missing NULL parameter in MHD_OPTION_UNESCAPE_CALLBACK [skra72] [bluewavenet]
+  * Fix - Script failures running on Openwrt 19.07.0 [bluewavenet]
+  * Fix - Preauth, status=authenticated [bluewavenet]
+  * Fix - Prevent ndsctl from running if called from a Binauth script. [bluewavenet]
+  * Fix - Minor changes in Library scripts for better portability [bluewavenet]
+  * Fix - Prevent php notices on pedantic php servers [bluewavenet]
+  * Fix - broken remote image retrieval (PreAuth) [bluewavenet]
+  * Fix - Allow use of "#" in gatewayname [bluewavenet]
+
+ -- Rob White <dot@blue-wave.net>  Tue, 03 Mar 2020 20:30:00 +0000
+
+nodogsplash (4.4.0-1) stable; urgency=medium
+
+  * Add Client Network Zone detection supporting local interfaces and 802.11s mesh [bluewavenet]
+  * Add client zone and user agent to FAS/PreAuth logs [bluewavenet]
+  * Add requirements for retrieving https remote image for login page [bluewavenet]
+  * Add htmlentity encode and decode to preauth scripts [bluewavenet]
+  * Implement unescape callback for MHD allowing url special characters to be used in login forms [bluewavenet]
+  * Create get_client_interface library utility [bluewavenet]
+  * Create unescape library utility [bluewavenet]
+  * Update demo-preauth, login-option and fas scripts [bluewavenet]
+  * Update fwhook restart - do not use ndsctl to check if nds is running [bluewavenet]
+  * Update config files [bluewavenet]
+  * Fix - allow comma space to be used in PreAuth variables [bluewavenet]
+  * Fix - final redirect for fas-aes [bluewavenet]
+  * Fix - ignore trusted mac if invalid [bluewavenet]
+  * Documentation updates [bluewavenet]
+
+ -- Rob White <dot@blue-wave.net>  Mon, 06 Jan 2020 16:01:11 +0000
+
+nodogsplash (4.3.3-1) stable; urgency=medium
+
+  * Fix Memory corruption at high loads [bluewavenet]
+  * Prevent iptables and ndsctl deadlocks [lynxis]
+  * Prevent query string truncation for deauthenticated client when client is using some types of vpn software [bluewavenet]
+  * Add debuglevel logging for case of firewall restart in OpenWrt [bluewavenet]
+  * Return error 403(forbidden) when client attempts to use a forbidden http method [bluewavenet]
+
+ -- Rob White <dot@blue-wave.net>  Sat, 19 Oct 2019 13:42:16 +0000
+
+nodogsplash (4.3.2-1) stable; urgency=medium
+
+  * Fix deb package build error [martignoni]
+
+ -- Rob White <dot@blue-wave.net>  Wed, 10 Oct 2019 12:51:24 +0000
+
+nodogsplash (4.3.1-1) stable; urgency=medium
+
+  * Fix missing line in Makefile causing failure of Debian package creation [bluewavenet]
+
+ -- Rob White <dot@blue-wave.net>  Wed, 09 Oct 2019 14:40:31 +0000
+
+nodogsplash (4.3.0-1) stable; urgency=medium
+
+  * Create switch option to select preinstalled templated splash or preauth login [bluewavenet]
+  * Limit PreAuth and BinAuth log size in example scripts [bluewavenet]
+  * Reduce memory requirements and autoselect logfile location [bluewavenet]
+  * Create fas-hid example script [bluewavenet]
+  * Update FAS, PreAuth and BinAuth example scripts [bluewavenet]
+  * Hash client token (hid) for remote FAS enabling secure FAS for legacy/low-flash/low-ram hardware [bluewavenet]
+  * Fix NDS Uptime if NTP client is enabled [bluewavenet]
+  * Documentation updates for this release [bluewavenet]
+  * Fix numerous compiler warnings [mwarning]
+  * Fix openwrt fw_mark option type [mwarning]
+
+ -- Rob White <dot@blue-wave.net>  Mon, 07 Oct 2019 16:03:24 +0000
+
+nodogsplash (4.2.0-1) stable; urgency=medium
+
+  * BinAuth - Send User Agent string and client-ip to the binauth script [bluewavenet]
+  * BinAuth - Update the two example BinAuth scripts showing use of passed arguments [bluewavenet]
+  * Documentation - Update BinAuth section [bluewavenet]
+  * PreAuth - Send User Agent string to the preauth script [bluewavenet]
+  * PreAuth - Update the example PreAuth script showing use of passed arguments [bluewavenet]
+  * Documentation - Update PreAuth section [bluewavenet]
+
+ -- Rob White <dot@blue-wave.net>  Mon, 13 Sep 2019 20:32:33 +0000
+
+nodogsplash (4.1.0-1) stable; urgency=medium
+
+  * BinAuth - Send redir variable to the binauth script, allow passing of custom variable payload [bluewavenet]
+  * BinAuth - Provide two example BinAuth scripts [bluewavenet]
+  * Documentation - Rework Binauth section plus numerous minor updates [bluewavenet]
+  * Deprecate RedirectURL config option as it is rendered obsolete by many CPD implementations, use FAS instead [bluewavenet]
+  * Numerous minor updates to html, css and script files [bluewavenet]
+  * Fix bug - faskey, exit gracefully if not set and fas_secure_enabled = 2 [bluewavenet]
+  * Fix bug - Systemd, Do not set debug level in nodogsplash.service [bluewavenet]
+  * Fix bug - ndsctl, delete lock file if NDS is not started [bluewavenet]
+
+ -- Rob White <dot@blue-wave.net>  Mon, 2 Sep 2019 19:38:33 +0000
+
+nodogsplash (4.0.2-1) stable; urgency=medium
+
+  * Fix bug - fas_remotefqdn not supported with option fas_secure_enabled 0 [bluewavenet]
+  * Fix bug - prevent deadlock causing ndsctl to hang and NDS to become unresponsive [bluewavenet]
+  * PreAuth - Override FAS settings making configuration foolproof [bluewavenet]
+  * ndsctl - make json parsing consistent for all client variables [bluewavenet]
+  * Fix memory leak in template generation [lynxis]
+  * When executing the ndsctl stop command, cleanup all structures [lynxis]
+  * Check for positive errno in thread_ndsctl [lynxis]
+
+ -- Rob White <dot@blue-wave.net>  Mon, 15 Aug 2019 15:01:00 +0000
+
+nodogsplash (4.0.1-1) stable; urgency=medium
+
+  * Make debuglevel platform independent [mwarning]
+  * Add/move/reword some debug output lines [mwarning]
+  * Numerous code cleanups [mwarning]
+  * Put fas code into block [mwarning]
+  * Fix coding error in fas-aes.php incorrectly passing redir back to NDS [bluewavenet]
+  * Numerous documentation updates [bluewavenet]
+
+ -- Rob White <dot@blue-wave.net>  Mon, 29 Jul 2019 20:19:00 +0000
+
+nodogsplash (4.0.0-1) stable; urgency=medium
+
+  * Introduce aes encryption of the query string passed to remote FAS, allowing authdir and client token to be transferred securely. Uses php-cli and php-openssl. These are required if encryption is enabled but are not dependencies [bluewavenet]
+  * Introduce fasremotefqdn, specifying the FQDN of the remote FAS. This facilitates simplified support for FAS operation on shared hosting systems [bluewavenet]
+  * Add a FAS php script supporting aes encrypted query string sent from NDS [bluewavenet]
+  * Numerous Documentation updates [bluewavenet]
+  * Remove unused pagesdir and imagesdir [mwarning]
+  * Add Preauth script that displays images from remote servers [bluewavenet]
+  * Use elegant check for valid ip addresses [mwarning]
+  * openwrt initscript - add missing macmechanism in the config file [lynxis]
+
+ -- Rob White <dot@blue-wave.net>  Sun, 7 Jul 2019 08:29:00 +0000
+
 nodogsplash (3.3.2-1) stable; urgency=medium
 
   * Fix Issue introduced in v3.3.0 with the addition of Improvements towards usable IPv6 support, that caused CPD on client devices to fail with "Too Many Redirects" error. NDS now terminates gracefully with a console error if fasremoteip is set AND fasport=80  [bluewavenet]
@@ -78,7 +236,7 @@ nodogsplash (2.1.1-1) stable; urgency=medium
 
   * Update nodogsplash.conf for non-OpenWrt builds [bluewavenet]
   * Minor cosmetic changes
-  
+
  -- Rob White <dot@blue-wave.net>  Sat, 12 May 2018 10:03:00 +0000
 
 nodogsplash (2.1.0-1) UNRELEASED; urgency=medium
