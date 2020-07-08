@@ -1,4 +1,4 @@
-## 0. The Nodogsplash project
+## The Nodogsplash project
 
 Nodogsplash is a Captive Portal that offers a simple way to provide restricted access to the Internet by showing a splash page to the user before Internet access is granted.
 
@@ -16,7 +16,7 @@ Nodogsplash is released under the GNU General Public License.
 The following describes what Nodogsplash does, how to get it and run it, and
 how to customize its behavior for your application.
 
-## 1. Overview
+## Overview
 
 **Nodogsplash** (NDS) is a high performance, small footprint Captive Portal, offering by default a simple splash page restricted Internet connection, yet incorporates an API that allows the creation of sophisticated authentication applications.
 
@@ -41,7 +41,7 @@ Nodogsplash does not currently support traffic control but is fully compatible w
 - Call an external script that may accept username/password and set session durations per user.
 - Forwarding authentication to a service independent of NDS
 
-## 2. Split of Nodogsplash
+## Split of Nodogsplash
 
 Nodogsplash has been splitted into 2 projects:
 
@@ -53,7 +53,7 @@ Nodogsplash has been forked of from 3.x (commit 28541e787c989589bcd0939d3affd402
 
 The first version with different code bases is version 5.0
 
-## 3. Documentation
+## Documentation
 
 For full documentation please look at https://nodogsplashdocs.rtfd.io/
 
