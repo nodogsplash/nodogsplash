@@ -838,6 +838,10 @@ static void replace_variables(
 	char maxclients[12];
 	char clientupload[20];
 	char clientdownload[20];
+	char clientsessionstart[64];
+	char clientsessionend[64];
+	char sessiontimeoutblock[12];
+	char sessionlimitblock[12];
 	char uptime[64];
 
 	const char *redirect_url = NULL;
@@ -848,11 +852,16 @@ static void replace_variables(
 	sprintf(clientupload, "%llu", client->counters.outgoing);
 	sprintf(clientdownload, "%llu", client->counters.incoming);
 
+	format_time(client->session_start, clientsessionstart);
+	format_time(client->session_end, clientsessionend);
+	
 	get_uptime_string(uptime);
 	redirect_url = get_redirect_url(connection);
 
 	sprintf(nclients, "%d", get_client_list_length());
 	sprintf(maxclients, "%d", config->maxclients);
+	sprintf(sessionlimitblock, "%d", config->session_limit_block);
+	sprintf(sessiontimeoutblock, "%d", config->session_timeout_block);
 	safe_asprintf(&denyaction, "http://%s/%s/", config->gw_http_name, config->denydir);
 	safe_asprintf(&authaction, "http://%s/%s/", config->gw_http_name, config->authdir);
 	safe_asprintf(&authtarget, "http://%s/%s/?tok=%s&amp;redir=%s", config->gw_http_name, config->authdir, client->token, redirect_url);
@@ -865,9 +874,13 @@ static void replace_variables(
 		{"clientmac", client->mac},
 		{"clientupload", clientupload},
 		{"clientdownload", clientdownload},
+		{"clientsessionstart", clientsessionstart},
+		{"clientsessionend", clientsessionend},
 		{"gatewaymac", config->gw_mac},
 		{"gatewayname", config->gw_name},
 		{"maxclients", maxclients},
+		{"sessionlimitblock", sessionlimitblock},
+		{"sessiontimeoutblock", sessiontimeoutblock},
 		{"nclients", nclients},
 		{"redir", redirect_url},
 		{"tok", client->token},
