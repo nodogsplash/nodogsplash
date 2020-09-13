@@ -20,7 +20,7 @@ how to customize its behavior for your application.
 
 NoDogSplash is optimised for target devices with limited resources.
 
-**If you want a more sophisticated authentication system** providing a dynamic web interface, you need the openNDS package rather than NoDogSplash.
+**If you want a more sophisticated authentication system** providing a dynamic web interface, you need openNDS (https://github.com/openNDS/openNDS) rather than NoDogSplash.
 
 **All modern mobile devices**, most desktop operating systems and most browsers now have a Captive Portal Detection (CPD) process that automatically issues a port 80 request on connection to a network. Nodogsplash detects this and serves its 'splash' web page.
 
