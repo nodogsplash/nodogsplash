@@ -239,6 +239,8 @@ config_init(void)
 	rs->emptyrulesetpolicy = safe_strdup(DEFAULT_EMPTY_TRUSTED_USERS_POLICY);
 	rs = add_ruleset("trusted-users-to-router");
 	rs->emptyrulesetpolicy = safe_strdup(DEFAULT_EMPTY_TRUSTED_USERS_TO_ROUTER_POLICY);
+	rs = add_ruleset("authenticated-users-to-router");
+	rs->emptyrulesetpolicy = safe_strdup(DEFAULT_EMPTY_AUTHENTICATED_USERS_TO_ROUTER_POLICY);
 	rs = add_ruleset("users-to-router");
 	rs->emptyrulesetpolicy = safe_strdup(DEFAULT_EMPTY_USERS_TO_ROUTER_POLICY);
 	rs = add_ruleset("authenticated-users");
