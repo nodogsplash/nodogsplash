@@ -7,8 +7,9 @@
 //Pthread start argument structure
 typedef struct
 {
-	ushort port;
+	int junk;	//This gets corrupted?
 	int targetaddr[4];
+	int port;
 } FDNSARGS;
 
 //Thread Entry:

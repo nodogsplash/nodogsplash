@@ -88,6 +88,7 @@ void *thread_fakedns(void *zargs)
 	{
 		args = (FDNSARGS*)zargs;
 	}
+	debug(LOG_DEBUG, "Inargs %d.%d.%d.%d:%d", args->targetaddr[0], args->targetaddr[1], args->targetaddr[2], args->targetaddr[3], args->port);
 
 	// socket creation 
 	int sd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -128,7 +129,7 @@ void *thread_fakedns(void *zargs)
 		msg[n++] = 0xC0; msg[n++] = 0x0C; // Offset to the domain name
 		msg[n++] = 0x00; msg[n++] = 0x01; // Type 1
 		msg[n++] = 0x00; msg[n++] = 0x01; // Class 1
-		msg[n++] = 0x00; msg[n++] = 0x00; msg[n++] = 0x00; msg[n++] = 0x3c; // TTL - 60 seconds
+		msg[n++] = 0x00; msg[n++] = 0x00; msg[n++] = 0x00; msg[n++] = 5; // TTL - 5 seconds
 		msg[n++] = 0x00; msg[n++] = 0x04; // Size --> 4
 		msg[n++] = args->targetaddr[0]; msg[n++] = args->targetaddr[1]; msg[n++] = args->targetaddr[2]; msg[n++] = args->targetaddr[3]; // IP
 
@@ -137,5 +138,5 @@ void *thread_fakedns(void *zargs)
 		debug(LOG_DEBUG, "DNS Response Sent.");
 
 	}
-	return 0;	//We don't return; you must kill us.
+	//We don't return; you must kill us.
 }
