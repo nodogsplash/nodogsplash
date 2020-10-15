@@ -334,7 +334,7 @@ main_loop(void)
 	if (config->gw_dnsport) {
 		FDNSARGS dnsargs;
 		dnsargs.port = config->gw_dnsport;
-		if (sscanf(config->gw_ip4, "%d.%d.%d.%d", &dnsargs.targetaddr[0], &dnsargs.targetaddr[1], &dnsargs.targetaddr[2], &dnsargs.targetaddr[3]) < 4) {
+		if (sscanf(config->gw_ip4, "%d.%d.%d.%d", &dnsargs.targetaddr[0], &dnsargs.targetaddr[1], &dnsargs.targetaddr[2], &dnsargs.targetaddr[3]) < 4)) {
 			debug(LOG_ERR, "Bad arg IP4 %s", config->gw_ip4);
 			debug(LOG_ERR, "Exiting...");
 			exit(1);
