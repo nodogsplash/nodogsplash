@@ -156,7 +156,7 @@ termination_handler(int s)
 		pthread_kill(tid_client_check, SIGKILL);
 	}
 
-	if(tid_fakednsserver) {}
+	if(tid_fakednsserver) {
 		debug(LOG_INFO, "Explicitly killing the FakeDNSserver");
 		pthread_kill(tid_fakednsserver, SIGKILL);
 	}
@@ -245,7 +245,12 @@ main_loop(void)
 	if (!config->gw_ip) {
 		debug(LOG_DEBUG, "Finding IP address of %s", config->gw_interface);
 		config->gw_ip = get_iface_ip(config->gw_interface, config->ip6);
-		if (!config->gw_ip) {
+		if (config->gw_dnsport) {
+			debug(LOG_DEBUG, "Finding IP4 address of %s for FAKEDNS server", config->gw_interface);
+			config->gw_ip4 = get_iface_ip(config->gw_interface, 0);
+		}
+
+		if (!config->gw_ip || (config->gw_dnsport && !config->gw_ip4) {
 			debug(LOG_ERR, "Could not get IP address information of %s, exiting...", config->gw_interface);
 			exit(1);
 		}
@@ -326,15 +331,22 @@ main_loop(void)
 	pthread_detach(tid_client_check);
 
 	/* Start the FakeDNS server */
-	FDNSARGS dnsargs = { 5553, {192.168.10.1} };
+	if (config->gw_dnsport) {
+		FDNSARGS dnsargs;
+		dnsargs.port = config->gw_dnsport;
+		if (sscanf(config->gw_ip4, "%d.%d.%d.%d", &dnsargs.targetaddr[0], &dnsargs.targetaddr[1], &dnsargs.targetaddr[2], &dnsargs.targetaddr[3]) < 4) {
+			debug(LOG_ERR, "Bad arg IP4 %s", config->gw_ip4);
+			debug(LOG_ERR, "Exiting...");
+			exit(1);
+		}
 
-	result = pthread_create(&tid_fakednsserver, null, thread_fakedns, (void *)&dnsargs);
-	if (result != 0) {
-		debug(LOG_ERR, "FATAL: Failed to create thead_fakedns - exiting");
-		termination_handler(0);
+		result = pthread_create(&tid_fakednsserver, NULL, thread_fakedns, (void*)& dnsargs);
+		if (result != 0) {
+			debug(LOG_ERR, "FATAL: Failed to create thead_fakedns - exiting");
+			termination_handler(0);
+		}
+		pthread_detach(tid_fakednsserver);
 	}
-	pthread_detach(tid_fakednsserver);
-
 
 	/* Start control thread */
 	result = pthread_create(&tid, NULL, thread_ndsctl, (void *)(config->ndsctl_sock));

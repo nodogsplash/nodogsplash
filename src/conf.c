@@ -75,9 +75,11 @@ typedef enum {
 	oGatewayInterface,
 	oGatewayIPRange,
 	oGatewayIP,
+	oGatewayIP4,
 	/* TODO: deprecate oGatewayAddress option */
 	oGatewayAddress,
 	oGatewayPort,
+	oGatewayDNSPort,
 	oHTTPDMaxConn,
 	oWebRoot,
 	oSplashPage,
@@ -126,9 +128,11 @@ static const struct {
 	{ "gatewayinterface", oGatewayInterface },
 	{ "gatewayiprange", oGatewayIPRange },
 	{ "gatewayip", oGatewayIP },
+	{ "gatewayip4", oGatewayIP4 },
 	/* TODO: remove/deprecate gatewayaddress keyword */
 	{ "gatewayaddress", oGatewayAddress },
 	{ "gatewayport", oGatewayPort },
+	{ "gatewaydnsport", oGatewayDNSPort },
 	{ "webroot", oWebRoot },
 	{ "splashpage", oSplashPage },
 	{ "statuspage", oStatusPage },
@@ -200,7 +204,9 @@ config_init(void)
 	config.gw_address = NULL;
 	config.gw_domain = NULL;
 	config.gw_ip = NULL;
+	config.gw_ip4 = NULL;
 	config.gw_port = DEFAULT_GATEWAYPORT;
+	config.gw_dnsport = DEFAULT_GATEWAYDNSPORT;
 	config.webroot = safe_strdup(DEFAULT_WEBROOT);
 	config.splashpage = safe_strdup(DEFAULT_SPLASHPAGE);
 	config.statuspage = safe_strdup(DEFAULT_STATUSPAGE);
@@ -768,8 +774,18 @@ config_read(const char *filename)
 		case oGatewayIP:
 			config.gw_ip = safe_strdup(p1);
 			break;
+		case oGatewayIP4:
+			config.gw_ip4 = safe_strdup(p1);
+			break;
 		case oGatewayPort:
 			if (sscanf(p1, "%u", &config.gw_port) < 1) {
+				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
+				debug(LOG_ERR, "Exiting...");
+				exit(1);
+			}
+			break;
+		case oGatewayDNSPort:
+			if (sscanf(p1, "%u", &config.gw_dnsport) < 1) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
 				exit(1);

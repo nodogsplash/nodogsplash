@@ -54,6 +54,7 @@
 #define DEFAULT_GATEWAY_IPRANGE "0.0.0.0/0"
 #define DEFAULT_GATEWAYNAME "NoDogSplash"
 #define DEFAULT_GATEWAYPORT 2050
+#define DEFAULT_GATEWAYDNSPORT 5553
 #define DEFAULT_CHECKINTERVAL 30
 #define DEFAULT_SESSION_TIMEOUT 0
 #define DEFAULT_SESSION_TIMEOUT_BLOCK 0
@@ -147,12 +148,14 @@ typedef struct {
 	char *gw_interface;		/**< @brief Interface we will manage */
 	char *gw_iprange;		/**< @brief IP range on gw_interface we will manage */
 	char *gw_ip;			/**< @brief Internal IP (v4 or v6) for our web server */
+	char* gw_ip4;			/**< @brief Internal IP (v4) for our web server */
 	char *gw_address;		/**< @brief Internal IP with port for our web server */
 	char *gw_domain;		/**< @brief A domain under which nodogsplash is reachable. */
 	char *gw_http_name;	        /**< @brief Either gw_domain if defined or gw_address with port if required */
 	char *gw_http_name_port;        /**< @brief Either gw_domain if defined or gw_address with port even not required */
 	char *gw_mac;			/**< @brief MAC address of the interface we manage */
 	unsigned int gw_port;		/**< @brief Port the webserver will run on */
+	unsigned int gw_dnsport;		/**< @brief Port the fakednsserver will run on */
 	char *webroot;			/**< @brief Directory containing splash pages, etc. */
 	char *splashpage;		/**< @brief Name of main splash page */
 	char *statuspage;		/**< @brief Name of info status page */

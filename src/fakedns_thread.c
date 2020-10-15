@@ -86,7 +86,7 @@ void *thread_fakedns(void *zargs)
 	}
 	else
 	{
-		args = (FDSNARGS*)zargs;
+		args = (FDNSARGS*)zargs;
 	}
 
 	// socket creation 
@@ -113,7 +113,7 @@ void *thread_fakedns(void *zargs)
 	while (1) {
 		// receive message 
 		int n = recvfrom(sd, msg, MSG_SIZE, flags,
-			(struct sockaddr*) & addr, &len);
+			(struct sockaddr*) & addr, (socklen_t *)&len);
 
 		if (n < 0) { continue; }
 		LOdebug(LOG_DEBUG,"DNS Request Received [I don't care what it is].")

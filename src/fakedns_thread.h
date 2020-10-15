@@ -8,7 +8,7 @@
 typedef struct
 {
 	ushort port;
-	char targetaddr[4];
+	int targetaddr[4];
 } FDNSARGS;
 
 //Thread Entry:
