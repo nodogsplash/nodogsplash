@@ -116,7 +116,7 @@ void *thread_fakedns(void *zargs)
 			(struct sockaddr*) & addr, (socklen_t *)&len);
 
 		if (n < 0) { continue; }
-		LOdebug(LOG_DEBUG,"DNS Request Received [I don't care what it is].")
+		debug(LOG_DEBUG, "DNS Request Received [I don't care what it is].");
 
 		// Same Id
 		msg[2] = 0x81; msg[3] = 0x80; // Change Opcode and flags 
@@ -134,7 +134,7 @@ void *thread_fakedns(void *zargs)
 
 																																		// Send the answer
 		sendto(sd, msg, n, flags, (struct sockaddr*) & addr, len);
-		debug(LOG_DEBUG,"DNS Response Sent.")
+		debug(LOG_DEBUG, "DNS Response Sent.");
 
 	}
 	return 0;	//We don't return; you must kill us.
