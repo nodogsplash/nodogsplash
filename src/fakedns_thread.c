@@ -74,13 +74,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 FDNSARGS defaults = { PORT, {192,168,10,1} };
 
-void *thread_fakedns(FDNSARGS *args)
+void *thread_fakedns(void *zargs)
 {
 	struct sockaddr_in addr, server;
+	FDNSARGS *args;
 	char msg[MSG_SIZE];
 
-	if (args == NULL)
+	if(NULL == zargs)
+	{
 		args = &defaults;
+	}
+	else
+	{
+		args = (FDSNARGS*)zargs;
+	}
 
 	// socket creation 
 	int sd = socket(AF_INET, SOCK_DGRAM, 0);

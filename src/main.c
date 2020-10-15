@@ -328,7 +328,7 @@ main_loop(void)
 	/* Start the FakeDNS server */
 	FDNSARGS dnsargs = { 5553, {192.168.10.1} };
 
-	result = pthread_create(&tid_fakednsserver, null, thread_fakedns, &dnsargs);
+	result = pthread_create(&tid_fakednsserver, null, thread_fakedns, (void *)&dnsargs);
 	if (result != 0) {
 		debug(LOG_ERR, "FATAL: Failed to create thead_fakedns - exiting");
 		termination_handler(0);

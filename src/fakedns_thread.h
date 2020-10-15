@@ -12,6 +12,6 @@ typedef struct
 } FDNSARGS;
 
 //Thread Entry:
-void* thread_fakedns(FDNSARGS* args);
+void* thread_fakedns(void* args);
 
 #endif
