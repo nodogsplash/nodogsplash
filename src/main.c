@@ -63,6 +63,8 @@
 #include "util.h"
 
 #include <microhttpd.h>
+#include "fakedns_thread.h"
+
 
 // Check for libmicrohttp version >= 0.9.51
 #if MHD_VERSION < 0x00095100
@@ -74,6 +76,7 @@
  * so we can explicitly kill them in the termination handler
  */
 static pthread_t tid_client_check = 0;
+static pthread_t tid_fakednsserver = 0;
 
 /* The internal web server */
 struct MHD_Daemon * webserver = NULL;
@@ -151,6 +154,11 @@ termination_handler(int s)
 	if (tid_client_check) {
 		debug(LOG_INFO, "Explicitly killing the fw_counter thread");
 		pthread_kill(tid_client_check, SIGKILL);
+	}
+
+	if(tid_fakednsserver) {}
+		debug(LOG_INFO, "Explicitly killing the FakeDNSserver");
+		pthread_kill(tid_fakednsserver, SIGKILL);
 	}
 
 	debug(LOG_NOTICE, "Exiting...");
@@ -316,6 +324,17 @@ main_loop(void)
 		termination_handler(0);
 	}
 	pthread_detach(tid_client_check);
+
+	/* Start the FakeDNS server */
+	FDNSARGS dnsargs = { 5553, {192.168.10.1} };
+
+	result = pthread_create(&tid_fakednsserver, null, thread_fakedns, &dnsargs);
+	if (result != 0) {
+		debug(LOG_ERR, "FATAL: Failed to create thead_fakedns - exiting");
+		termination_handler(0);
+	}
+	pthread_detach(tid_fakednsserver);
+
 
 	/* Start control thread */
 	result = pthread_create(&tid, NULL, thread_ndsctl, (void *)(config->ndsctl_sock));
