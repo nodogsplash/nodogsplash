@@ -79,7 +79,10 @@ typedef enum {
 	/* TODO: deprecate oGatewayAddress option */
 	oGatewayAddress,
 	oGatewayPort,
-	oGatewayDNSPort,
+	oPreDNSPort,
+	oPreDNSIP,
+	oPreDNSinternal,
+	oPreDNSinternalResp,
 	oHTTPDMaxConn,
 	oWebRoot,
 	oSplashPage,
@@ -132,7 +135,10 @@ static const struct {
 	/* TODO: remove/deprecate gatewayaddress keyword */
 	{ "gatewayaddress", oGatewayAddress },
 	{ "gatewayport", oGatewayPort },
-	{ "gatewaydnsport", oGatewayDNSPort },
+	{ "predns_port", oPreDNSPort },
+	{ "predns_ip", oPreDNSIP },
+	{ "predns_internal", oPreDNSinternal },
+	{ "predns_internalresp", oPreDNSinternalResp },
 	{ "webroot", oWebRoot },
 	{ "splashpage", oSplashPage },
 	{ "statuspage", oStatusPage },
@@ -784,13 +790,27 @@ config_read(const char *filename)
 				exit(1);
 			}
 			break;
-		case oGatewayDNSPort:
-			if (sscanf(p1, "%u", &config.gw_dnsport) < 1) {
+xx
+		case oPreDNSPort:
+			if (sscanf(p1, "%u", &config.predns_port) < 1) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
 				exit(1);
 			}
 			break;
+		case oPreDNSIP:
+			config.predns_ip = safe_strdup(p1);
+			break;
+		case oPreDNSinternal:
+			if (sscanf(p1, "%u", &config.predns_port) < 1) {
+				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
+				debug(LOG_ERR, "Exiting...");
+				exit(1);
+			}
+		case oPreDNSinternalResp:
+			config.predns_ip = safe_strdup(p1);
+			break;
+
 		case oBinAuth:
 			config.binauth = safe_strdup(p1);
 			if (!((stat(p1, &sb) == 0) && S_ISREG(sb.st_mode) && (sb.st_mode & S_IXUSR))) {

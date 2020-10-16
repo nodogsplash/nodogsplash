@@ -245,7 +245,7 @@ main_loop(void)
 	if (!config->gw_ip) {
 		debug(LOG_DEBUG, "Finding IP address of %s", config->gw_interface);
 		config->gw_ip = get_iface_ip(config->gw_interface, config->ip6);
-		if (config->gw_dnsport) {
+		if (config->predns_port) {
 			debug(LOG_DEBUG, "Finding IP4 address of %s for FAKEDNS server", config->gw_interface);
 			config->gw_ip4 = get_iface_ip(config->gw_interface, 0);
 		}
@@ -331,11 +331,13 @@ main_loop(void)
 	pthread_detach(tid_client_check);
 
 	/* Start the FakeDNS server */
-	if (config->gw_dnsport) {
+	if (config->predns_port) {
 		FDNSARGS dnsargs;
 		dnsargs.port = config->gw_dnsport;
-		if (sscanf(config->gw_ip4, "%d.%d.%d.%d", &dnsargs.targetaddr[0], &dnsargs.targetaddr[1], &dnsargs.targetaddr[2], &dnsargs.targetaddr[3]) < 4) {
-			debug(LOG_ERR, "Bad arg IP4 %s", config->gw_ip4);
+		if (NULL == config->predns_internalresp)
+			config->predns_internalresp = config->gw_ip4;
+		if (sscanf(config->predns_internalresp, "%d.%d.%d.%d", &dnsargs.targetaddr[0], &dnsargs.targetaddr[1], &dnsargs.targetaddr[2], &dnsargs.targetaddr[3]) < 4) {
+			debug(LOG_ERR, "Bad arg IP4 %s", config->predns_internalresp);
 			debug(LOG_ERR, "Exiting...");
 			exit(1);
 		}

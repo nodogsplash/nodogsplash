@@ -54,7 +54,9 @@
 #define DEFAULT_GATEWAY_IPRANGE "0.0.0.0/0"
 #define DEFAULT_GATEWAYNAME "NoDogSplash"
 #define DEFAULT_GATEWAYPORT 2050
-#define DEFAULT_GATEWAYDNSPORT 5553
+#define DEFAULT_PREDNS_PORT 5553
+#define DEFAULT_PREDNS_IP "0.0.0.0"
+#define DEFAULT_PREDNS_INTERNAL 1
 #define DEFAULT_CHECKINTERVAL 30
 #define DEFAULT_SESSION_TIMEOUT 0
 #define DEFAULT_SESSION_TIMEOUT_BLOCK 0
@@ -155,7 +157,10 @@ typedef struct {
 	char *gw_http_name_port;        /**< @brief Either gw_domain if defined or gw_address with port even not required */
 	char *gw_mac;			/**< @brief MAC address of the interface we manage */
 	unsigned int gw_port;		/**< @brief Port the webserver will run on */
-	unsigned int gw_dnsport;		/**< @brief Port the fakednsserver will run on */
+	unsigned int predns_port;		/**< @brief Port for pre-auth-dns -- if 0, disables redirect*/
+	char * predns_ip;	/**< @brief Address for pre-auth-dns */
+	unsigned int predns_internal;		/**< @brief Use internal fakedns server */
+	char* predns_internalresp;		/**< @brief Response of internal fakedns server*/
 	char *webroot;			/**< @brief Directory containing splash pages, etc. */
 	char *splashpage;		/**< @brief Name of main splash page */
 	char *statuspage;		/**< @brief Name of info status page */

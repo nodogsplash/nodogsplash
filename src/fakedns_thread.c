@@ -125,6 +125,9 @@ void *thread_fakedns(void *zargs)
 		msg[8] = 0; msg[9] = 0; // NSCOUNT
 		msg[10] = 0; msg[11] = 0; // ARCOUNT
 
+		//ToDo: if args->targetaddr[0] == -1, return NXDOMAIN
+		//		if args->targetaddr[0] == -2, return NODATA
+
 		// Keep request in message and add answer
 		msg[n++] = 0xC0; msg[n++] = 0x0C; // Offset to the domain name
 		msg[n++] = 0x00; msg[n++] = 0x01; // Type 1
@@ -138,5 +141,5 @@ void *thread_fakedns(void *zargs)
 		debug(LOG_DEBUG, "DNS Response Sent.");
 
 	}
-	//We don't return; you must kill us.
+	//We don't return; you must kill us. 
 }

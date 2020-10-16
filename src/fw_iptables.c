@@ -517,10 +517,10 @@ iptables_fw_init(void)
 		//ToDo: Allow local port 80?
 		rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p tcp --dport 80 -j DNAT --to-destination %s", gw_address);
 
-		if (config->gw_dnsport) {
+		if (config->predns_port) {
 			// CHAIN_OUTGOING, packets for port 53, redirect to fakedns_port on primary address for the iface
-			rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p tcp --dport 53 -j DNAT --to %s:%d", config->gw_ip4, config->gw_dnsport);
-			rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p udp --dport 53 -j DNAT --to %s:%d", config->gw_ip4, config->gw_dnsport);
+			rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p tcp --dport 53 -j DNAT --to %s:%d", config->predns_ip, config->gw_dnsport);
+			rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p udp --dport 53 -j DNAT --to %s:%d", config->predns_ip, config->gw_dnsport);
 		}
 
 		// CHAIN_OUTGOING, other packets ACCEPT
@@ -564,10 +564,10 @@ iptables_fw_init(void)
 	rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -p tcp --dport %d -j ACCEPT", gw_port);
 	//ToDo: Port 80?
 
-	// CHAIN_TO_ROUTER, packets to FakeDNS listening on gw_port on router ACCEPT 
-	if (config->gw_dnsport) {
-		rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -p udp --dport %d -j ACCEPT", config->gw_dnsport);
-		rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -p tcp --dport %d -j ACCEPT", config->gw_dnsport);
+	// CHAIN_TO_ROUTER, packets to FakeDNS listening on gw_port on router ACCEPT ToDo: I should really only do this if this is /on me/
+	if (config->predns_port) {
+		rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -p udp --dport %d -j ACCEPT", config->predns_port);
+		rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -p tcp --dport %d -j ACCEPT", config->predns_port);
 	}
 
 	// CHAIN_TO_ROUTER, packets marked TRUSTED:
