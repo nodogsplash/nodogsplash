@@ -339,7 +339,7 @@ main_loop(void)
 	/* Start the FakeDNS server */
 	if (config->predns_internal && config->predns_port) {
 		FDNSARGS dnsargs;
-		dnsargs.port = config->gw_dnsport;
+		dnsargs.port = config->predns_port;
 		if (!config->predns_internalresp)
 			config->predns_internalresp = config->gw_ip4;	//If not specified, it is me.
 		if (sscanf(config->predns_internalresp, "%d.%d.%d.%d", &dnsargs.targetaddr[0], &dnsargs.targetaddr[1], &dnsargs.targetaddr[2], &dnsargs.targetaddr[3]) < 4) {
