@@ -519,8 +519,8 @@ iptables_fw_init(void)
 
 		if (config->predns_port) {
 			// CHAIN_OUTGOING, packets for port 53, redirect to fakedns_port on primary address for the iface
-			rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p tcp --dport 53 -j DNAT --to %s:%d", config->predns_ip, config->gw_dnsport);
-			rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p udp --dport 53 -j DNAT --to %s:%d", config->predns_ip, config->gw_dnsport);
+			rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p tcp --dport 53 -j DNAT --to %s:%d", config->predns_ip, config->predns_port);
+			rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p udp --dport 53 -j DNAT --to %s:%d", config->predns_ip, config->predns_port);
 		}
 
 		// CHAIN_OUTGOING, other packets ACCEPT
