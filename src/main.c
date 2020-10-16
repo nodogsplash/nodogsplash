@@ -330,12 +330,18 @@ main_loop(void)
 	}
 	pthread_detach(tid_client_check);
 
+	/* Handle Pre-AuthDNS Redirect parameter cleanup */
+	if (config->predns_port != 0) {
+		if (!config->predns_ip)
+			config->predns_ip = config->gw_ip4;		//If not specified, it is me.
+	}
+
 	/* Start the FakeDNS server */
-	if (config->predns_port) {
+	if (config->predns_internal && config->predns_port) {
 		FDNSARGS dnsargs;
 		dnsargs.port = config->gw_dnsport;
-		if (NULL == config->predns_internalresp)
-			config->predns_internalresp = config->gw_ip4;
+		if (!config->predns_internalresp)
+			config->predns_internalresp = config->gw_ip4;	//If not specified, it is me.
 		if (sscanf(config->predns_internalresp, "%d.%d.%d.%d", &dnsargs.targetaddr[0], &dnsargs.targetaddr[1], &dnsargs.targetaddr[2], &dnsargs.targetaddr[3]) < 4) {
 			debug(LOG_ERR, "Bad arg IP4 %s", config->predns_internalresp);
 			debug(LOG_ERR, "Exiting...");

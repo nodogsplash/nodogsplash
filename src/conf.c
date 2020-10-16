@@ -212,6 +212,10 @@ config_init(void)
 	config.gw_ip = NULL;
 	config.gw_ip4 = NULL;
 	config.gw_port = DEFAULT_GATEWAYPORT;
+	config.predns_port = DEFAULT_PREDNS_PORT;
+	config.predns_ip = DEFAULT_PREDNS_IP;
+	config.predns_internal = DEFAULT_PREDNS_INTERNAL;
+	char* predns_internalresp = DEFAULT_PREDNS_INTERNALRESP;
 	config.gw_dnsport = DEFAULT_GATEWAYDNSPORT;
 	config.webroot = safe_strdup(DEFAULT_WEBROOT);
 	config.splashpage = safe_strdup(DEFAULT_SPLASHPAGE);
@@ -790,7 +794,6 @@ config_read(const char *filename)
 				exit(1);
 			}
 			break;
-xx
 		case oPreDNSPort:
 			if (sscanf(p1, "%u", &config.predns_port) < 1) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
@@ -810,7 +813,6 @@ xx
 		case oPreDNSinternalResp:
 			config.predns_ip = safe_strdup(p1);
 			break;
-
 		case oBinAuth:
 			config.binauth = safe_strdup(p1);
 			if (!((stat(p1, &sb) == 0) && S_ISREG(sb.st_mode) && (sb.st_mode & S_IXUSR))) {
