@@ -88,13 +88,13 @@ void *thread_fakedns(void *zargs)
 	{
 		args = (FDNSARGS*)zargs;
 	}
-	debug(LOG_DEBUG, "Inargs %d.%d.%d.%d:%d", args->targetaddr[0], args->targetaddr[1], args->targetaddr[2], args->targetaddr[3], args->port);
+	debug(LOG_INFO, "Inargs %d.%d.%d.%d:%d", args->targetaddr[0], args->targetaddr[1], args->targetaddr[2], args->targetaddr[3], args->port);
 
 	// socket creation 
 	int sd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sd < 0) {
 		debug(LOG_ERR, "FAKEDNS couldn't get dgram socket.");
-		return;
+		return NULL;
 	}
 
 	// bind local server port 
@@ -104,7 +104,7 @@ void *thread_fakedns(void *zargs)
 	int rc = bind(sd, (struct sockaddr*) & server, sizeof(server));
 	if (rc < 0) {
 		debug(LOG_ERR, "FAKEDNS couldn't bind to port %d.", args->port);
-		return;
+		return NULL;
 	}
 
 	debug(LOG_NOTICE, "FakeDNS Running on port %d...", args->port);
