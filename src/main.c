@@ -250,7 +250,7 @@ main_loop(void)
 			config->gw_ip4 = get_iface_ip(config->gw_interface, 0);
 		}
 
-		if (!config->gw_ip || (config->gw_dnsport && !config->gw_ip4)) {
+		if (!config->gw_ip || (config->predns_port && !config->gw_ip4)) {
 			debug(LOG_ERR, "Could not get IP address information of %s, exiting...", config->gw_interface);
 			exit(1);
 		}
