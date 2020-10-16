@@ -215,8 +215,7 @@ config_init(void)
 	config.predns_port = DEFAULT_PREDNS_PORT;
 	config.predns_ip = DEFAULT_PREDNS_IP;
 	config.predns_internal = DEFAULT_PREDNS_INTERNAL;
-	char* predns_internalresp = DEFAULT_PREDNS_INTERNALRESP;
-	config.gw_dnsport = DEFAULT_GATEWAYDNSPORT;
+	config.predns_internalresp = DEFAULT_PREDNS_INTERNALRESP;
 	config.webroot = safe_strdup(DEFAULT_WEBROOT);
 	config.splashpage = safe_strdup(DEFAULT_SPLASHPAGE);
 	config.statuspage = safe_strdup(DEFAULT_STATUSPAGE);
