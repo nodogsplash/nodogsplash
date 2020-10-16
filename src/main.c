@@ -311,6 +311,13 @@ main_loop(void)
 		debug(LOG_NOTICE, "Binauth Script is %s\n", config->binauth);
 	}
 
+	/* Handle Pre-AuthDNS Redirect parameter cleanup */
+	if (config->predns_port != 0) {
+		if (!config->predns_ip)
+			config->predns_ip = config->gw_ip4;		//If not specified, it is me.
+	}
+
+
 	/* Reset the firewall (cleans it, in case we are restarting after nodogsplash crash) */
 	iptables_fw_destroy();
 
@@ -329,12 +336,6 @@ main_loop(void)
 		termination_handler(0);
 	}
 	pthread_detach(tid_client_check);
-
-	/* Handle Pre-AuthDNS Redirect parameter cleanup */
-	if (config->predns_port != 0) {
-		if (!config->predns_ip)
-			config->predns_ip = config->gw_ip4;		//If not specified, it is me.
-	}
 
 	/* Start the FakeDNS server */
 	if (config->predns_internal && config->predns_port) {
