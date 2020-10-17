@@ -32,6 +32,16 @@ config nodogsplash
   #
   #option gatewayport '2050'
 
+  # Pre-Auth DNS Redirection -
+  #   If PreDNS_port is set to 0, will not redirect pre-auth DNS requests; otherwise they're redirected to PreDNS_ip:PreDNS_port
+  #   The internal/naive DNS server will also not start if PreDNS_port = 0 (there's no point)
+  #    option PreDNS_port 5553
+  #    option PreDNS_ip	[Gateway address determined at runtime]
+  #
+  #   NoDogSplash has its own naive DNS server; combined with pre-auth redirect, you can run offline easily
+  #   Set to 0 if you don't want to use it (eg, if you set up a separate DNSMasq for pre-auth clients).
+  #	    option PreDNS_Internal 1
+  #     option Predns_InternalResp [Gateway address determined at runtime]
 
   option gatewayname 'OpenWrt Nodogsplash'
   option maxclients '250'

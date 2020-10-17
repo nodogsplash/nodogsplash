@@ -132,7 +132,7 @@ void *thread_fakedns(void *zargs)
 		msg[n++] = 0xC0; msg[n++] = 0x0C; // Offset to the domain name
 		msg[n++] = 0x00; msg[n++] = 0x01; // Type 1
 		msg[n++] = 0x00; msg[n++] = 0x01; // Class 1
-		msg[n++] = 0x00; msg[n++] = 0x00; msg[n++] = 0x00; msg[n++] = 5; // TTL - 5 seconds
+		msg[n++] = 0x00; msg[n++] = 0x00; msg[n++] = 0x00; msg[n++] = 5; // TTL - 5 seconds  GRR... a lot of people override this!!
 		msg[n++] = 0x00; msg[n++] = 0x04; // Size --> 4
 		msg[n++] = args->targetaddr[0]; msg[n++] = args->targetaddr[1]; msg[n++] = args->targetaddr[2]; msg[n++] = args->targetaddr[3]; // IP
 
