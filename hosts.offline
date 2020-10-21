@@ -1,0 +1,17 @@
+
+#Android Captive Portal Detection
+108.177.122.94	connectivitycheck.gstatic.com
+64.233.177.104	www.google.com
+
+#Apple Captive Portal Detection
+17.253.7.203	captive.apple.com
+
+#Windows 10, with NCSI
+131.107.255.255	dns.msftncsi.com
+23.63.249.202	www.msftncsi.com
+
+#Windows/No NCSI
+13.107.4.52		www.msftconnecttest.com
+
+#FireFox
+34.107.221.82	detectportal.firefox.com

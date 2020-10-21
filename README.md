@@ -4,6 +4,7 @@ Nodogsplash is a Captive Portal that offers a simple way to provide restricted a
 
 It was derived originally from the codebase of the Wifi Guard Dog project.
 
+
 Nodogsplash is released under the GNU General Public License.
 
 * Mailing List: http://ml.ninux.org/mailman/listinfo/nodogsplash
@@ -20,7 +21,7 @@ how to customize its behavior for your application.
 
 NoDogSplash is optimised for target devices with limited resources.
 
-**If you want a more sophisticated authentication system** providing a dynamic web interface, you need [openNDS](https://github.com/openNDS/openNDS) rather than NoDogSplash.
+**If you want a more sophisticated authentication system** providing a dynamic web interface (FASport / FASpath), you need [openNDS](https://github.com/openNDS/openNDS) rather than NoDogSplash.
 
 **All modern mobile devices**, most desktop operating systems and most browsers now have a Captive Portal Detection (CPD) process that automatically issues a port 80 request on connection to a network. Nodogsplash detects this and serves its 'splash' web page.
 
@@ -47,5 +48,9 @@ For full documentation please look at https://nodogsplashdocs.rtfd.io/
 You can select either *Stable* or *Latest* documentation.
 
 ---
+
+##Hints for offline (or semi-offline) use:
+Each Captive Portal Detection system uses a different detection URL; if you log DNS queries during connection, you can see them.
+As a starting point, add *hosts.offline* to your hosts file and you will be good with iPhones (tested 6C), Androids (Galaxy S7Edge) and Windows (tested Win10).
 
 Email contact: nodogsplash (at) ml.ninux.org
