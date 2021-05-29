@@ -53,13 +53,15 @@
 
 
 static t_client *add_client(const char mac[], const char ip[]);
+static int trusted(struct MHD_Connection *connection, const char *url, t_client *client);
+static int blocked(struct MHD_Connection *connection, const char *url,  t_client *client);
 static int authenticated(struct MHD_Connection *connection, const char *url, t_client *client);
 static int preauthenticated(struct MHD_Connection *connection, const char *url, t_client *client);
 static int authenticate_client(struct MHD_Connection *connection, const char *redirect_url, t_client *client);
 static int get_host_value_callback(void *cls, enum MHD_ValueKind kind, const char *key, const char *value);
 static int serve_file(struct MHD_Connection *connection, t_client *client, const char *url);
-static int show_splashpage(struct MHD_Connection *connection, t_client *client);
-static int show_statuspage(struct MHD_Connection *connection, t_client *client);
+static int show_statuspage(struct MHD_Connection *connection, t_client *client, const char *url);
+static int show_splashpage(struct MHD_Connection *connection, t_client *client, const char *url);
 static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, const char *originurl, const char *querystr);
 static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *client, const char *host, const char *url);
 static int send_error(struct MHD_Connection *connection, int error);
@@ -68,6 +70,7 @@ static int send_refresh(struct MHD_Connection *connection);
 static int is_foreign_hosts(const char *host);
 static int is_splashpage(const char *host, const char *url);
 static int get_query(struct MHD_Connection *connection, char **collect_query, const char *separator);
+static int is_statuspage(const char *host, const char *url);
 static const char *get_redirect_url(struct MHD_Connection *connection);
 static const char *lookup_mimetype(const char *filename);
 
@@ -163,10 +166,9 @@ static int is_foreign_hosts(const char *host)
 	return 1;
 }
 
-static int is_splashpage(const char *host, const char *url)
+static int is_own_page(s_config *config, const char *own_page, const char *host, const char *url)
 {
 	char our_host[MAX_HOSTPORTLEN];
-	s_config *config = config_get_config();
 	snprintf(our_host, MAX_HOSTPORTLEN, "%s", config->gw_address);
 
 	if (host == NULL) {
@@ -174,8 +176,7 @@ static int is_splashpage(const char *host, const char *url)
 		 * '/' -> splash
 		 * '' -> splash [is this even possible with MHD?
 		 */
-		if (strlen(url) == 0 ||
-				!strcmp("/", url)) {
+		if (strlen(url) == 0 || !strcmp("/", url)) {
 			return 1;
 		}
 	} else {
@@ -189,22 +190,37 @@ static int is_splashpage(const char *host, const char *url)
 		/* '/' -> splash
 		 * '' -> splash
 		 */
-		if (strlen(url) == 0 ||
-				!strcmp("/", url)) {
+		if (strlen(url) == 0 || !strcmp("/", url)) {
 			return 1;
 		}
 
-		if (strlen(url) > 0 &&
-				!strcmp(config->splashpage, url+1)) {
+		if (strlen(url) > 0 && !strcmp(own_page, url + 1)) {
 			return 1;
 		}
 	}
+
 	/* doesnt hit one of our rules - this isn't the splashpage */
 	return 0;
 }
 
+static int is_splashpage(const char *host, const char *url)
+{
+	s_config *config = config_get_config();
+	return is_own_page(config, config->splashpage, host, url);
+}
 
-/* @brief Get client mac by ip address from neighbor cache */
+static int is_statuspage(const char *host, const char *url)
+{
+	s_config *config = config_get_config();
+	return is_own_page(config, config->statuspage, host, url);
+}
+
+/**
+ * Get an IP's MAC address from the ARP cache.
+ * Go through all the entries in /proc/net/arp until we find the requested
+ * IP address and return the MAC address bound to it.
+ * @todo Make this function portable (using shell scripts?)
+ */
 int
 get_client_mac(char mac[18], const char req_ip[])
 {
@@ -345,13 +361,25 @@ libmicrohttpd_cb(void *cls,
 		}
 	}
 
-	if (client && (client->fw_connection_state == FW_MARK_AUTHENTICATED ||
-			client->fw_connection_state == FW_MARK_TRUSTED)) {
-		/* client already authed - dangerous!!! This should never happen */
+	const int connstate = client->fw_connection_state;
+
+	if (connstate == FW_MARK_AUTHENTICATED) {
 		return authenticated(connection, url, client);
 	}
 
-	return preauthenticated(connection, url, client);
+	if (connstate == FW_MARK_TRUSTED) {
+		return trusted(connection, url, client);
+	}
+
+	if (connstate == FW_MARK_BLOCKED) {
+		return blocked(connection, url, client);
+	}
+
+	if (connstate == FW_MARK_PREAUTHENTICATED) {
+		return preauthenticated(connection, url, client);
+	}
+
+	return send_error(connection, 503);
 }
 
 /**
@@ -474,6 +502,20 @@ static int authenticate_client(struct MHD_Connection *connection,
 	}
 }
 
+static int trusted(struct MHD_Connection *connection,
+					const char *url,
+					t_client *client)
+{
+	return show_statuspage(connection, client, url);
+}
+
+static int blocked(struct MHD_Connection *connection,
+					const char *url,
+					t_client *client)
+{
+	return show_statuspage(connection, client, url);
+}
+
 /**
  * @brief authenticated - called for all request from authenticated clients.
  * @param connection
@@ -513,11 +555,11 @@ static int authenticated(struct MHD_Connection *connection,
 	}
 
 	if (check_authdir_match(url, config->authdir)) {
-		return show_statuspage(connection, client);
+		return show_statuspage(connection, client, url);
 	}
 
 	if (check_authdir_match(url, config->preauthdir)) {
-		return show_statuspage(connection, client);
+		return show_statuspage(connection, client, url);
 	}
 
 	/* user doesn't want the splashpage or tried to auth itself */
@@ -634,12 +676,7 @@ static int preauthenticated(struct MHD_Connection *connection,
 		return authenticate_client(connection, redirect_url, client);
 	}
 
-	if (is_splashpage(host, url)) {
-		return show_splashpage(connection, client);
-	}
-
-	/* no special handling left - try to serve static content to the user */
-	return serve_file(connection, client, url);
+	return show_splashpage(connection, client, url);
 }
 
 /**
@@ -1080,10 +1117,19 @@ static int show_templated_page(struct MHD_Connection *connection, t_client *clie
  * @param client
  * @return
  */
-static int show_splashpage(struct MHD_Connection *connection, t_client *client)
+static int show_splashpage(struct MHD_Connection *connection, t_client *client, const char *url)
 {
 	s_config *config = config_get_config();
-	return show_templated_page(connection, client, config->splashpage);
+	const char *host = NULL;
+
+	MHD_get_connection_values(connection, MHD_HEADER_KIND, get_host_value_callback, &host);
+
+	if (is_splashpage(host, url)) {
+		return show_templated_page(connection, client, config->splashpage);
+	}
+
+	/* no special handling left - try to serve static content to the user */
+	return serve_file(connection, client, url);
 }
 
 /**
@@ -1092,10 +1138,19 @@ static int show_splashpage(struct MHD_Connection *connection, t_client *client)
  * @param client
  * @return
  */
-static int show_statuspage(struct MHD_Connection *connection, t_client *client)
+static int show_statuspage(struct MHD_Connection *connection, t_client *client, const char *url)
 {
-	s_config *config = config_get_config();
-	return show_templated_page(connection, client, config->statuspage);
+	const char *host = NULL;
+
+	MHD_get_connection_values(connection, MHD_HEADER_KIND, get_host_value_callback, &host);
+
+	// Users might get redirected here because they are blocked....
+	if (is_statuspage(host, url)) {
+		return show_statuspage(connection, client, url);
+	}
+
+	/* no special handling left - try to serve static content to the user */
+	return serve_file(connection, client, url);
 }
 
 /**
