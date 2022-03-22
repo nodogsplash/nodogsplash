@@ -7,9 +7,9 @@ Before attempting to customise NDS you should ensure it is working in this basic
 
 NDS reads its configuration file when it starts up but the location of this file varies depending on the operating system.
 
-As NDS is a package that requires hardware configured as an IP router, perhaps the most common installation is using OpenWrt. However NDS can be compiled to run on most Linux distributions, the most common being Debian or one of its popular variants (eg Raspbian).
+As NDS is a package that requires hardware configured as an IP router, perhaps the most common installation is using OpenWrt. However, NDS can be compiled to run on most Linux distributions, the most common being Debian or one of its popular variants (eg, Raspbian).
 
-If NDS is working in the default, post installation mode, then you will have met the NDS dependencies and can now move on to your own customisation.
+If NDS is working in the default, post-installation mode, then you will have met the NDS dependencies and can now move on to your own customisation.
 
 The Configuration File
 **********************
@@ -19,7 +19,7 @@ In OpenWrt, or operating systems supporting UCI (such as LEDE) the configuration
   ``/etc/config/nodogsplash``
 
 
-In other operating systems the configuration is kept in the file:
+In other operating systems, the configuration is kept in the file:
 
   ``/etc/nodogsplash/nodogsplash.conf``
 
@@ -73,7 +73,7 @@ replaced by their values:
 
   It should be noted however that, depending on vendor, the client's built in CPD may not respond to simple html links.
 
- An href link example that my prove to be problematical:
+ An href link example that may prove to be problematical:
 
   ``<a href="$authtarget">Enter</a>``
 
@@ -82,7 +82,7 @@ replaced by their values:
 * *$imagesdir* The directory in nodogsplash's web hierarchy where images to be displayed in the splash page must be located.
 * *$tok*, *$redir*, *$authaction*, and *$denyaction* are available and should be used to write the splash page to use a GET-method HTML form instead of using $authtarget as the value of an href attribute to communicate with the nodogsplash server.
 
- *$authaction* and *$denyaction* are virtual urls used to inform NDS that a client should be authenticated or deauthenticated and are of the form:
+ *$authaction* and *$denyaction* are virtual URLs used to inform NDS that a client should be authenticated or deauthenticated and are of the form:
 
  `http://gatewayaddress:gatewayport/nodogsplash_auth/`
 
