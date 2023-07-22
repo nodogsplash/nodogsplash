@@ -1,3 +1,23 @@
+nodogsplash (5.0.1)
+
+* fix path traversal security issue
+* add session_limit_block feature
+    The session_limit_block is similiar to session_timeout_block,
+    but instead of limiting the time, it limits the traffic.
+    The session_limit_block allows to limit a user to a certain
+    amount of traffic before the user will be blocked from applying again.
+* add session_timeout_block feature
+    The session_timeout_block config allows end and block
+    a session after a certain timeout. E.g. allows to limit a
+    user to have internet connectivity for 20 minutes and not allowing
+    to apply again.
+* Introduce variable gw_http_name/port
+    gw_http_name holds the http hostname and port in the correct
+    representation to work with it. Saves sprintf calls for every
+    connection.
+
+ -- Moritz Warning <moritzwarning@web.de>  Wed, 22 Jul 2023 18:34:55 +0000
+
 nodogsplash (5.0.0)
 
 Version 5.0.0 has been forked from 3.3.2 in order to remove the
