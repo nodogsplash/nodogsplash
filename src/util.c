@@ -377,7 +377,7 @@ int is_addr(const char* addr) {
 void
 ndsctl_status(FILE *fp)
 {
-	char timebuf[32];
+	char timebuf[64];
 	char durationbuf[64];
 	s_config *config;
 	t_client *client;
@@ -598,9 +598,9 @@ ndsctl_clients(FILE *fp)
 		fprintf(fp, "added=%lld\n", (long long) client->session_start);
 		fprintf(fp, "active=%lld\n", (long long) client->counters.last_updated);
 		if (client->session_start) {
-			fprintf(fp, "duration=%lu\n", now - client->session_start);
+			fprintf(fp, "duration=%lld\n", (long long) (now - client->session_start));
 		} else {
-			fprintf(fp, "duration=%lu\n", 0ul);
+			fprintf(fp, "duration=%lld\n", 0ll);
 		}
 		fprintf(fp, "token=%s\n", client->token ? client->token : "none");
 		fprintf(fp, "state=%s\n", fw_connection_state_as_string(client->fw_connection_state));
@@ -633,9 +633,9 @@ ndsctl_json_client(FILE *fp, const t_client *client, time_t now)
 	fprintf(fp, "\"added\":%lld,\n", (long long) client->session_start);
 	fprintf(fp, "\"active\":%lld,\n", (long long) client->counters.last_updated);
 	if (client->session_start) {
-		fprintf(fp, "\"duration\":%lu,\n", now - client->session_start);
+		fprintf(fp, "\"duration\":%lld,\n", (long long) (now - client->session_start));
 	} else {
-		fprintf(fp, "\"duration\":%lu,\n", 0ul);
+		fprintf(fp, "\"duration\":%lld,\n", 0ll);
 	}
 	fprintf(fp, "\"token\":\"%s\",\n", client->token ? client->token : "none");
 	fprintf(fp, "\"state\":\"%s\",\n", fw_connection_state_as_string(client->fw_connection_state));
