@@ -1156,21 +1156,23 @@ static int serve_file(struct MHD_Connection *connection, t_client *client, const
 	struct stat stat_buf;
 	s_config *config = config_get_config();
 	struct MHD_Response *response;
-	char filename[PATH_MAX];
+	char path[PATH_MAX+1];
 	int ret = MHD_NO;
-	const char *mimetype = NULL;
-	off_t size;
 
-	snprintf(filename, PATH_MAX, "%s/%s", config->webroot, url);
-
-	/* check if file exists and is not a directory */
-	ret = stat(filename, &stat_buf);
-	if (ret) {
-		/* stat failed */
-		return send_error(connection, 404);
+	if (strstr(url, "../") != NULL) {
+		debug(LOG_WARNING, "Probable Path Traversal Attack Detected - %s", url);
+		return send_error(connection, 403);
 	}
 
+	snprintf(path, PATH_MAX, "%s/%s", config->webroot, url);
+
+	/* check if file exists and is not a directory */
+	ret = stat(path, &stat_buf);
+	if (ret)
+		return send_error(connection, 404);
+
 	if (!S_ISREG(stat_buf.st_mode)) {
+		// path does not point to a regular file
 #ifdef S_ISLNK
 		/* ignore links */
 		if (!S_ISLNK(stat_buf.st_mode))
@@ -1178,14 +1180,14 @@ static int serve_file(struct MHD_Connection *connection, t_client *client, const
 		return send_error(connection, 404);
 	}
 
-	int fd = open(filename, O_RDONLY);
+	int fd = open(path, O_RDONLY);
 	if (fd < 0)
 		return send_error(connection, 404);
 
-	mimetype = lookup_mimetype(filename);
+	const char *mimetype = lookup_mimetype(path);
 
 	/* serving file and creating response */
-	size = lseek(fd, 0, SEEK_END);
+	off_t size = lseek(fd, 0, SEEK_END);
 	if (size < 0)
 		return send_error(connection, 404);
 
