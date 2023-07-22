@@ -9,7 +9,7 @@ sudo apt-get install git subversion g++ libncurses5-dev gawk zlib1g-dev build-es
 
 Build Commands:
 ```
-git clone git clone https://git.openwrt.org/openwrt/openwrt.git
+git clone https://git.openwrt.org/openwrt/openwrt.git
 cd openwrt
 
 ./scripts/feeds update -a
@@ -20,7 +20,6 @@ git clone git://github.com/nodogsplash/nodogsplash.git
 cp -rf nodogsplash/openwrt/nodogsplash package/
 rm -rf nodogsplash/
 
-make defconfig
 make menuconfig
 ```
 
@@ -66,3 +65,10 @@ Also make sure to enable
 ```
 
 in the menu when you do `make menuconfig`.
+
+Recompile the image:
+
+```
+make package/nodogsplash/clean V=s
+make -j8
+```

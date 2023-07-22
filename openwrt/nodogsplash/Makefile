@@ -7,8 +7,8 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=nodogsplash
 PKG_FIXUP:=autoreconf
-PKG_VERSION:=3.3.3
-PKG_RELEASE:=1-beta
+PKG_VERSION:=5.0.1
+PKG_RELEASE:=1
 
 PKG_SOURCE_URL:=https://codeload.github.com/nodogsplash/nodogsplash/tar.gz/v$(PKG_VERSION)?
 PKG_SOURCE:=nodogsplash-$(PKG_VERSION).tar.gz
@@ -26,7 +26,9 @@ define Package/nodogsplash
 	SUBMENU:=Captive Portals
 	SECTION:=net
 	CATEGORY:=Network
-	DEPENDS:=+libpthread +iptables-mod-ipopt +libmicrohttpd-no-ssl
+	DEPENDS:=+libpthread +libmicrohttpd-no-ssl +iptables \
+		+iptables-mod-nat-extra +iptables-mod-ipopt \
+		+iptables-mod-conntrack-extra
 	TITLE:=Open public network gateway daemon
 	URL:=https://github.com/nodogsplash/nodogsplash
 	CONFLICTS:=nodogsplash2
@@ -41,15 +43,13 @@ define Package/nodogsplash/description
 endef
 
 define Package/nodogsplash/install
+	$(CP) ./files/* $(1)/
 
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/nodogsplash $(1)/usr/bin/
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ndsctl $(1)/usr/bin/
 
 	$(INSTALL_DIR) $(1)/etc/nodogsplash/htdocs/images
-	$(INSTALL_DIR) $(1)/etc/config
-	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_DIR) $(1)/etc/uci-defaults
 	$(INSTALL_DIR) $(1)/usr/lib/nodogsplash
 	$(CP) $(PKG_BUILD_DIR)/resources/splash.html $(1)/etc/nodogsplash/htdocs/
 	$(CP) $(PKG_BUILD_DIR)/resources/splash.css $(1)/etc/nodogsplash/htdocs/
@@ -59,7 +59,6 @@ define Package/nodogsplash/install
 	$(CP) $(PKG_BUILD_DIR)/openwrt/nodogsplash/files/etc/init.d/nodogsplash $(1)/etc/init.d/
 	$(CP) $(PKG_BUILD_DIR)/openwrt/nodogsplash/files/etc/uci-defaults/40_nodogsplash $(1)/etc/uci-defaults/
 	$(CP) $(PKG_BUILD_DIR)/openwrt/nodogsplash/files/usr/lib/nodogsplash/restart.sh $(1)/usr/lib/nodogsplash/
-	$(CP) $(PKG_BUILD_DIR)/forward_authentication_service/PreAuth/demo-preauth.sh $(1)/usr/lib/nodogsplash/login.sh
 endef
 
 define Package/nodogsplash/postrm
