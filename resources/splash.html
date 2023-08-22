@@ -55,7 +55,7 @@ Available variables:
 	maxclients: $maxclients
 	uptime: $uptime
 
-Additional Variables that can be passed back via the HTTP get,
+Additional variables for binauth that can be passed back via the HTTP GET,
 or appended to the query string of the authtarget link:
 	username
 	password
@@ -77,9 +77,15 @@ or appended to the query string of the authtarget link:
 <br><br>
 <hr>
 
-<form method="get" action="$authaction">
+<form method="GET" action="$authaction">
 <input type="hidden" name="tok" value="$tok">
 <input type="hidden" name="redir" value="$redir">
+<!-- for binauth script
+<label>Name:</label>
+<input type="text" name="username"><br><br>
+<label>Password:</label>
+<input type="text" name="password"><br><br>
+-->
 <input type="submit" value="Continue">
 </form>
 	
