@@ -288,11 +288,6 @@ main_loop(void)
 	/* TODO: set listening socket */
 	debug(LOG_NOTICE, "Created web server on %s", config->gw_http_name);
 
-	if (config->preauth) {
-		debug(LOG_NOTICE, "Preauth is Enabled.\n");
-		debug(LOG_NOTICE, "Preauth Script is %s\n", config->preauth);
-	}
-
 	if (config->binauth) {
 		debug(LOG_NOTICE, "Binauth is Enabled.\n");
 		debug(LOG_NOTICE, "Binauth Script is %s\n", config->binauth);

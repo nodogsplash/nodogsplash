@@ -32,7 +32,6 @@ Contents:
    faq
    splash
    howitworks
-   preauth
    binauth
    traffic
    ndsctl

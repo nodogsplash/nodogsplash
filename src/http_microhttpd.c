@@ -516,54 +516,8 @@ static int authenticated(struct MHD_Connection *connection,
 		return show_statuspage(connection, client);
 	}
 
-	if (check_authdir_match(url, config->preauthdir)) {
-		return show_statuspage(connection, client);
-	}
-
 	/* user doesn't want the splashpage or tried to auth itself */
 	return serve_file(connection, client, url);
-}
-
-/**
- * @brief show_preauthpage - run preauth script and serve output.
- */
-static int show_preauthpage(struct MHD_Connection *connection, const char *query)
-{
-	char msg[HTMLMAXSIZE] = {0};
-	// Encoded querystring could be up to 3 times the size of unencoded version
-	char query_enc[QUERYMAXLEN * 3] = {0};
-	int rc;
-	struct MHD_Response *response;
-	int ret;
-	s_config *config = config_get_config();
-
-	if (query) {
-		if (uh_urlencode(query_enc, sizeof(query_enc), query, strlen(query)) == -1) {
-			debug(LOG_WARNING, "could not encode query");
-			return -1;
-		} else {
-			debug(LOG_DEBUG, "query: %s", query);
-		}
-	}
-
-	rc = execute_ret(msg, HTMLMAXSIZE - 1, "%s '%s'", config->preauth, query_enc);
-
-	if (rc != 0) {
-		debug(LOG_WARNING, "Preauth script: %s '%s' - failed to execute", config->preauth, query);
-		return -1;
-	}
-
-	// serve the script output (in msg)
-	response = MHD_create_response_from_buffer(strlen(msg), (char *)msg, MHD_RESPMEM_MUST_COPY);
-
-	if (!response) {
-		return send_error(connection, 503);
-	}
-
-	MHD_add_response_header(response, "Content-Type", "text/html");
-	ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
-	MHD_destroy_response(response);
-	return ret;
 }
 
 /**
@@ -587,17 +541,6 @@ static int preauthenticated(struct MHD_Connection *connection,
 	s_config *config = config_get_config();
 
 	debug(LOG_DEBUG, "url: %s", url);
-
-	/* Check for preauthdir */
-	if (check_authdir_match(url, config->preauthdir)) {
-
-		debug(LOG_DEBUG, "preauthdir url detected: %s", url);
-
-		get_query(connection, &query, QUERYSEPARATOR);
-
-		ret = show_preauthpage(connection, query);
-		return ret;
-	}
 
 	MHD_get_connection_values(connection, MHD_HEADER_KIND, get_host_value_callback, &host);
 

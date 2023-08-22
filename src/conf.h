@@ -65,7 +65,6 @@
 #define DEFAULT_STATUSPAGE "status.html"
 #define DEFAULT_AUTHDIR "nodogsplash_auth"
 #define DEFAULT_DENYDIR "nodogsplash_deny"
-#define DEFAULT_PREAUTHDIR "nodogsplash_preauth"
 #define DEFAULT_MACMECHANISM MAC_BLOCK
 #define DEFAULT_SET_MSS 1
 #define DEFAULT_MSS_VALUE 0
@@ -159,7 +158,6 @@ typedef struct {
 	char *redirectURL;		/**< @brief URL to direct client to after authentication */
 	char *authdir;			/**< @brief Notional relative dir for authentication URL */
 	char *denydir;			/**< @brief Notional relative dir for denial URL */
-	char *preauthdir;		/**< @brief Notional relative dir for preauth URL */
 	int session_timeout;		/**< @brief Minutes of the default session length */
 	int session_timeout_block;	/**< @brief state of default session_timeout block or not */
 	int session_limit_block;	/**< @brief Download limit, MB after block */

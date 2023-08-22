@@ -206,7 +206,6 @@ config_init(void)
 	config.statuspage = safe_strdup(DEFAULT_STATUSPAGE);
 	config.authdir = safe_strdup(DEFAULT_AUTHDIR);
 	config.denydir = safe_strdup(DEFAULT_DENYDIR);
-	config.preauthdir = safe_strdup(DEFAULT_PREAUTHDIR);
 	config.redirectURL = NULL;
 	config.preauth_idle_timeout = DEFAULT_PREAUTH_IDLE_TIMEOUT,
 	config.auth_idle_timeout = DEFAULT_AUTH_IDLE_TIMEOUT,
