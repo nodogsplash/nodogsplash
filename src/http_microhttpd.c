@@ -56,13 +56,13 @@ static t_client *add_client(const char mac[], const char ip[]);
 static int authenticated(struct MHD_Connection *connection, const char *url, t_client *client);
 static int preauthenticated(struct MHD_Connection *connection, const char *url, t_client *client);
 static int authenticate_client(struct MHD_Connection *connection, const char *redirect_url, t_client *client);
-static int get_host_value_callback(void *cls, enum MHD_ValueKind kind, const char *key, const char *value);
+static enum MHD_Result get_host_value_callback(void *cls, enum MHD_ValueKind kind, const char *key, const char *value);
 static int serve_file(struct MHD_Connection *connection, t_client *client, const char *url);
 static int show_splashpage(struct MHD_Connection *connection, t_client *client);
 static int show_statuspage(struct MHD_Connection *connection, t_client *client);
 static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, const char *originurl, const char *querystr);
 static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *client, const char *host, const char *url);
-static int send_error(struct MHD_Connection *connection, int error);
+static enum MHD_Result send_error(struct MHD_Connection *connection, int error);
 static int send_redirect_temp(struct MHD_Connection *connection, const char *url);
 static int send_refresh(struct MHD_Connection *connection);
 static int is_foreign_hosts(const char *host);
@@ -126,7 +126,7 @@ struct collect_query {
 	char **elements;
 };
 
-static int collect_query_string(void *cls, enum MHD_ValueKind kind, const char *key, const char * value)
+static enum MHD_Result collect_query_string(void *cls, enum MHD_ValueKind kind, const char *key, const char * value)
 {
 	/* what happens when '?=foo' supplied? */
 	struct collect_query *collect_query = cls;
@@ -140,7 +140,7 @@ static int collect_query_string(void *cls, enum MHD_ValueKind kind, const char *
 }
 
 /* a dump iterator required for counting all elements */
-static int counter_iterator(void *cls, enum MHD_ValueKind kind, const char *key, const char *value)
+static enum MHD_Result counter_iterator(void *cls, enum MHD_ValueKind kind, const char *key, const char *value)
 {
 	return MHD_YES;
 }
@@ -294,7 +294,7 @@ get_client_ip(char ip_addr[INET6_ADDRSTRLEN], struct MHD_Connection *connection)
  * @param ptr - unused
  * @return
  */
-int
+enum MHD_Result
 libmicrohttpd_cb(void *cls,
 				struct MHD_Connection *connection,
 				const char *_url,
@@ -534,10 +534,7 @@ static int preauthenticated(struct MHD_Connection *connection,
 	const char *host = NULL;
 	const char *redirect_url;
 	char *querystr = NULL;
-	char query_str[QUERYMAXLEN] = {0};
-	char *query = query_str;
 
-	int ret;
 	s_config *config = config_get_config();
 
 	debug(LOG_DEBUG, "url: %s", url);
@@ -713,7 +710,7 @@ static const char *get_redirect_url(struct MHD_Connection *connection)
 /* save the query or empty string into **query.*/
 static int get_query(struct MHD_Connection *connection, char **query, const char *separator)
 {
-	int element_counter;
+	enum MHD_Result element_counter;
 	char **elements;
 	char query_str[QUERYMAXLEN] = {0};
 	struct collect_query collect_query;
@@ -801,7 +798,7 @@ static int send_refresh(struct MHD_Connection *connection)
 	return ret;
 }
 
-static int send_error(struct MHD_Connection *connection, int error)
+static enum MHD_Result send_error(struct MHD_Connection *connection, int error)
 {
 	struct MHD_Response *response = NULL;
 	// cannot automate since cannot translate automagically between error number and MHD's status codes
@@ -874,7 +871,7 @@ static int send_error(struct MHD_Connection *connection, int error)
  * @param value
  * @return MHD_YES or MHD_NO. MHD_NO means we found our item and this callback will not called again.
  */
-static int get_host_value_callback(void *cls, enum MHD_ValueKind kind, const char *key, const char *value)
+static enum MHD_Result get_host_value_callback(void *cls, enum MHD_ValueKind kind, const char *key, const char *value)
 {
 	const char **host = (const char **)cls;
 	if (MHD_HEADER_KIND != kind) {

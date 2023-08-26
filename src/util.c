@@ -318,7 +318,7 @@ get_ext_iface(void)
 }
 
 char *
-format_duration(time_t from, time_t to, char buf[64])
+format_duration(time_t from, time_t to, char *buf)
 {
 	int days, hours, minutes, seconds;
 	long long int secs;
@@ -354,14 +354,14 @@ format_duration(time_t from, time_t to, char buf[64])
 }
 
 char *
-format_time(time_t time, char buf[64])
+format_time(time_t time, char *buf)
 {
 	strftime(buf, 64, "%a %b %d %H:%M:%S %Y", localtime(&time));
 	return buf;
 }
 
 char *
-get_uptime_string(char buf[64])
+get_uptime_string(char *buf)
 {
 	return format_duration(started_time, time(NULL), buf);
 }
