@@ -65,7 +65,7 @@ void parse_commandline(int argc, char **argv)
 
 	s_config *config = config_get_config();
 
-	while (-1 != (c = getopt(argc, argv, "c:hfd:sw:vi:64"))) {
+	while (-1 != (c = getopt(argc, argv, "c:hfd:sw:vi:r:64"))) {
 
 		switch(c) {
 
@@ -105,6 +105,13 @@ void parse_commandline(int argc, char **argv)
 		case 'v':
 			printf("This is Nodogsplash version " VERSION "\n");
 			exit(1);
+			break;
+
+		case 'r':
+			if (optarg) {
+				free(config->webroot);
+				config->webroot = safe_strdup(optarg);
+			}
 			break;
 
 		case '4':
