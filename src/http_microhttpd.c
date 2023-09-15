@@ -67,7 +67,7 @@ static int send_redirect_temp(struct MHD_Connection *connection, const char *url
 static int send_refresh(struct MHD_Connection *connection);
 static int is_foreign_hosts(const char *host);
 static int is_splashpage(const char *host, const char *url);
-static int get_query(struct MHD_Connection *connection, char **collect_query, const char *separator);
+static int get_query(struct MHD_Connection *connection, char *query, size_t query_size, const char *separator);
 static const char *get_redirect_url(struct MHD_Connection *connection);
 static const char *lookup_mimetype(const char *filename);
 
@@ -627,15 +627,14 @@ static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, 
 static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *client, const char *host, const char *url)
 {
 	char *originurl = NULL;
-	char query_str[QUERYMAXLEN] = {0};
-	char *query = query_str;
+	char query[QUERYMAXLEN] = {0};
 	int ret = 0;
 	const char *separator = "&";
 	char *querystr = NULL;
 	s_config *config = config_get_config();
 
-	get_query(connection, &query, separator);
-	if (!query) {
+	ret = get_query(connection, query, QUERYMAXLEN, separator);
+	if (ret < 0) {
 		debug(LOG_DEBUG, "Unable to get query string - error 503");
 		/* no mem */
 		return send_error(connection, 503);
@@ -708,26 +707,29 @@ static const char *get_redirect_url(struct MHD_Connection *connection)
 }
 
 /* save the query or empty string into **query.*/
-static int get_query(struct MHD_Connection *connection, char **query, const char *separator)
+static int get_query(struct MHD_Connection *connection, char *query, size_t query_size, const char *separator)
 {
 	enum MHD_Result element_counter;
 	char **elements;
-	char query_str[QUERYMAXLEN] = {0};
 	struct collect_query collect_query;
 	int i;
-	int j;
 	int length = 0;
 
 	debug(LOG_DEBUG, " Separator is [%s].", separator);
 
+	if (!query_size || query == NULL) {
+		return -EINVAL;
+	}
+
 	element_counter = MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, counter_iterator, NULL);
 	if (element_counter == 0) {
-		*query = safe_strdup("");
+		*query = '\0';
 		return 0;
 	}
+
 	elements = calloc(element_counter, sizeof(char *));
 	if (elements == NULL) {
-		return 0;
+		return -EINVAL;
 	}
 	collect_query.i = 0;
 	collect_query.elements = elements;
@@ -740,44 +742,33 @@ static int get_query(struct MHD_Connection *connection, char **query, const char
 			continue;
 		length += strlen(elements[i]);
 
-		if (i > 0) /* q=foo&o=bar the '&' need also some space */
-			length++;
+		/* q=foo&o=bar the '&' need also some space */
+		length++;
 	}
 
-	/* don't miss the zero terminator */
-	if (*query == NULL) {
-		for (i = 0; i < element_counter; i++) {
-			free(elements[i]);
-		}
+	/* the query string is tooo big */
+	if (length + 1 > query_size) {
+		debug(LOG_WARNING, " Query string exceeds the maximum of %d bytes.", query_size);
 		free(elements);
-		return 0;
+		return -ENOMEM;
 	}
 
-	for (i = 0, j = 0; i < element_counter; i++) {
+	for (i = 0; i < element_counter; i++) {
 		if (!elements[i]) {
 			continue;
 		}
-		strncpy(*query + j, elements[i], length - j);
+
 		if (i == 0) {
 			// query_str is empty when i = 0 so safe to copy a single char into it
-			strcpy(query_str, "?");
+			strlcpy(query, "?", query_size);
 		} else {
-			if (QUERYMAXLEN - strlen(query_str) > length - j + 1) {
-				strncat(query_str, separator, QUERYMAXLEN - strlen(query_str));
-			}
+			strlcat(query, separator, query_size);
 		}
 
-		// note: query string will be truncated if too long
-		if (QUERYMAXLEN - strlen(query_str) > length - j) {
-			strncat(query_str, *query, QUERYMAXLEN - strlen(query_str));
-		} else {
-			debug(LOG_WARNING, " Query string exceeds the maximum of %d bytes so has been truncated.", QUERYMAXLEN);
-		}
-
+		strlcat(query, elements[i], query_size);
 		free(elements[i]);
 	}
 
-	strncpy(*query, query_str, QUERYMAXLEN);
 	free(elements);
 	return 0;
 }
