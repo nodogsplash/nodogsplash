@@ -14,8 +14,8 @@
  * @file http_microhttpd.c
  * @brief a httpd implementation using libmicrohttpd
  * @author Copyright (C) 2015 Alexander Couzens <lynxis@fe80.eu>
+ * @author Copyright (C) 2023 Moritz Warning <moritzwarning@web.de>
  */
-
 
 #include <microhttpd.h>
 #include <syslog.h>
@@ -27,6 +27,7 @@
 #include <linux/limits.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <stdbool.h>
 
 #include "client_list.h"
 #include "conf.h"
@@ -67,7 +68,6 @@ static int send_redirect_temp(struct MHD_Connection *connection, const char *url
 static int send_refresh(struct MHD_Connection *connection);
 static int is_foreign_hosts(const char *host);
 static int is_splashpage(const char *host, const char *url);
-static int get_query(struct MHD_Connection *connection, char **collect_query, const char *separator);
 static const char *get_redirect_url(struct MHD_Connection *connection);
 static const char *lookup_mimetype(const char *filename);
 
@@ -121,27 +121,33 @@ static int do_binauth(struct MHD_Connection *connection, const char *binauth, t_
 	return 0;
 }
 
-struct collect_query {
-	int i;
-	char **elements;
+struct get_query_data {
+	bool error;
+	size_t capacity;
+	size_t size;
+	char *query;
 };
 
-static enum MHD_Result collect_query_string(void *cls, enum MHD_ValueKind kind, const char *key, const char * value)
+static enum MHD_Result get_query_callback(void *cls, enum MHD_ValueKind kind, const char *key, const char *value)
 {
-	/* what happens when '?=foo' supplied? */
-	struct collect_query *collect_query = cls;
-	if (key && !value) {
-		collect_query->elements[collect_query->i] = safe_strdup(key);
-	} else if (key && value) {
-		safe_asprintf(&(collect_query->elements[collect_query->i]), "%s=%s", key, value);
-	}
-	collect_query->i++;
-	return MHD_YES;
-}
+	struct get_query_data *data = cls;
+	const char separator = data->size ? '&' : '?';
+	const char *format = value ? "%c%s=%s" : "%c%s";
+	const int left = data->capacity - data->size;
 
-/* a dump iterator required for counting all elements */
-static enum MHD_Result counter_iterator(void *cls, enum MHD_ValueKind kind, const char *key, const char *value)
-{
+	if (key != NULL && kind == MHD_GET_ARGUMENT_KIND) {
+		// append '?foo=bar', '&foo=bar', '?foo', '&foo'
+		int n = snprintf(&data->query[data->size], left, format, separator, key, value);
+		if (n >= left) {
+			data->query[data->size] = '\0';
+			data->error = true;
+			return MHD_NO;
+		} else {
+			data->size += n;
+		}
+	}
+
+	// continue iteration
 	return MHD_YES;
 }
 
@@ -629,17 +635,21 @@ static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, 
 static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *client, const char *host, const char *url)
 {
 	char *originurl = NULL;
-	char query_str[QUERYMAXLEN] = {0};
-	char *query = query_str;
-	int ret = 0;
-	const char *separator = "&";
+	char query[QUERYMAXLEN] = { 0 };
 	char *querystr = NULL;
 	s_config *config = config_get_config();
 
-	get_query(connection, &query, separator);
-	if (!query) {
+	struct get_query_data data = {
+		.error = false,
+		.size = 0,
+		.capacity = QUERYMAXLEN,
+		.query = query,
+	};
+
+	// collect query
+	if (MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, get_query_callback, &data) < 0 || data.error) {
 		debug(LOG_DEBUG, "Unable to get query string - error 503");
-		/* no mem */
+		/* not enough memory */
 		return send_error(connection, 503);
 	}
 
@@ -647,7 +657,7 @@ static int redirect_to_splashpage(struct MHD_Connection *connection, t_client *c
 
 	safe_asprintf(&querystr, "?clientip=%s&gatewayname=%s", client->ip, config->gw_name);
 	safe_asprintf(&originurl, "http://%s%s%s", host, url, query);
-	ret = encode_and_redirect_to_splashpage(connection, originurl, querystr);
+	int ret = encode_and_redirect_to_splashpage(connection, originurl, querystr);
 	free(originurl);
 	free(querystr);
 	return ret;
@@ -707,81 +717,6 @@ int send_redirect_temp(struct MHD_Connection *connection, const char *url)
 static const char *get_redirect_url(struct MHD_Connection *connection)
 {
 	return MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "redir");
-}
-
-/* save the query or empty string into **query.*/
-static int get_query(struct MHD_Connection *connection, char **query, const char *separator)
-{
-	enum MHD_Result element_counter;
-	char **elements;
-	char query_str[QUERYMAXLEN] = {0};
-	struct collect_query collect_query;
-	int i;
-	int j;
-	int length = 0;
-
-	debug(LOG_DEBUG, " Separator is [%s].", separator);
-
-	element_counter = MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, counter_iterator, NULL);
-	if (element_counter == 0) {
-		*query = safe_strdup("");
-		return 0;
-	}
-	elements = calloc(element_counter, sizeof(char *));
-	if (elements == NULL) {
-		return 0;
-	}
-	collect_query.i = 0;
-	collect_query.elements = elements;
-
-	// Collect the arguments of the query string from MHD
-	MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, collect_query_string, &collect_query);
-
-	for (i = 0; i < element_counter; i++) {
-		if (!elements[i])
-			continue;
-		length += strlen(elements[i]);
-
-		if (i > 0) /* q=foo&o=bar the '&' need also some space */
-			length++;
-	}
-
-	/* don't miss the zero terminator */
-	if (*query == NULL) {
-		for (i = 0; i < element_counter; i++) {
-			free(elements[i]);
-		}
-		free(elements);
-		return 0;
-	}
-
-	for (i = 0, j = 0; i < element_counter; i++) {
-		if (!elements[i]) {
-			continue;
-		}
-		strncpy(*query + j, elements[i], length - j);
-		if (i == 0) {
-			// query_str is empty when i = 0 so safe to copy a single char into it
-			strcpy(query_str, "?");
-		} else {
-			if (QUERYMAXLEN - strlen(query_str) > length - j + 1) {
-				strncat(query_str, separator, QUERYMAXLEN - strlen(query_str));
-			}
-		}
-
-		// note: query string will be truncated if too long
-		if (QUERYMAXLEN - strlen(query_str) > length - j) {
-			strncat(query_str, *query, QUERYMAXLEN - strlen(query_str));
-		} else {
-			debug(LOG_WARNING, " Query string exceeds the maximum of %d bytes so has been truncated.", QUERYMAXLEN);
-		}
-
-		free(elements[i]);
-	}
-
-	strncpy(*query, query_str, QUERYMAXLEN);
-	free(elements);
-	return 0;
 }
 
 static int send_refresh(struct MHD_Connection *connection)
