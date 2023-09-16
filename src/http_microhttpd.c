@@ -600,7 +600,9 @@ static int encode_and_redirect_to_splashpage(struct MHD_Connection *connection, 
 
 	if (originurl) {
 		if (uh_urlencode(encoded, sizeof(encoded), originurl, strlen(originurl)) == -1) {
-			debug(LOG_WARNING, "could not encode url");
+			debug(LOG_WARNING, "cannot encode url");
+			/* not enough memory */
+			return send_error(connection, 503);
 		} else {
 			debug(LOG_DEBUG, "originurl: %s", originurl);
 		}
