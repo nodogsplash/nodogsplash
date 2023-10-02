@@ -6,7 +6,6 @@ It was derived originally from the codebase of the Wifi Guard Dog project.
 
 Nodogsplash is released under the GNU General Public License.
 
-* Mailing List: http://ml.ninux.org/mailman/listinfo/nodogsplash
 * Original Homepage (no longer available): http://kokoro.ucsd.edu/nodogsplash
 * Wifidog: http://dev.wifidog.org/
 * GNU GPL: http://www.gnu.org/copyleft/gpl.html
