@@ -1,3 +1,9 @@
+nodogsplash (5.0.2-1) stable; urgency=high
+
+  * Fix crash if query string is too long.
+
+ -- Moritz Warning <moritzwarning@web.de>  Tue, 10 Oct 2023 12:02:20 +0000
+
 nodogsplash (5.0.1-1) stable; urgency=medium
 
   * Fix path traversal security issue
