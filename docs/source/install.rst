@@ -56,7 +56,7 @@ There isn't a package in the repository (yet). But we have support for a debian 
 
 Requirements beside debian tools are:
 
-- libmicrohttpd-dev (>= 0.9.51) [avaiable in **stretch**]
+- libmicrohttpd-dev (>= 0.9.71) [avaiable in **bullseye**]
 
 But you can also compile libmicrohttpd on your own if you're still running jessie or older.
 
