@@ -45,6 +45,3 @@ For full documentation please look at https://nodogsplashdocs.rtfd.io/
 
 You can select either *Stable* or *Latest* documentation.
 
----
-
-Email contact: nodogsplash (at) ml.ninux.org
