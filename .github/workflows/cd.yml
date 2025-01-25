@@ -1,0 +1,68 @@
+name: Continuous Deployment
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - v*
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Debian Packages
+    strategy:
+      matrix:
+        architecture: ['amd64', 'arm64']
+        version: ['22.04', '24.04']
+    runs-on:
+      ubuntu-${{ matrix.version }}${{ matrix.architecture == 'amd64' && '' ||
+      '-arm' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libmicrohttpd-dev build-essential debhelper dh-make fakeroot devscripts
+
+      - name: Build
+        run: |
+          make
+          dpkg-buildpackage -us -uc -b
+          mv ../*.deb ./nodogsplash_ubuntu-${{ matrix.version }}_${{ matrix.architecture }}.deb
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: debian-package-${{ matrix.architecture }}-${{ matrix.version }}
+          path: '*.deb'
+
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push' && github.ref_type == 'tag'
+    steps:
+      - name: Download Packages
+        uses: actions/download-artifact@v4
+        with:
+          pattern: debian-package-*
+          merge-multiple: true
+
+      - name: Extract version from tag name
+        id: extract
+        run: |
+          echo "VERSION=$(echo ${{ github.ref }} | sed 's/v//')" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            *.deb
+          tag_name: ${{ steps.extract.outputs.VERSION }}
+          body: |
+            Release ${{ steps.extract.outputs.VERSION }}
