@@ -5,10 +5,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "debug.h"
-#include "safe.h"
-
-
 static const char *get_variable_value(const struct template *vars, const char *name)
 {
 	int i;

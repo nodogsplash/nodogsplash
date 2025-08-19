@@ -26,10 +26,8 @@
 
 #define _GNU_SOURCE
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <syslog.h>
-#include <errno.h>
 #include <pthread.h>
 #include <sys/wait.h>
 #include <sys/types.h>
@@ -40,7 +38,6 @@
 #include "debug.h"
 #include "conf.h"
 #include "client_list.h"
-#include "http_microhttpd.h"
 #include "fw_iptables.h"
 #include "util.h"
 

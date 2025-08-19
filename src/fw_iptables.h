@@ -27,7 +27,6 @@
 #ifndef _FW_IPTABLES_H_
 #define _FW_IPTABLES_H_
 
-#include "auth.h"
 #include "client_list.h"
 
 /*@{*/

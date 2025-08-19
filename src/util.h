@@ -26,6 +26,9 @@
 #ifndef _UTIL_H_
 #define _UTIL_H_
 
+#include <stdio.h>
+#include <time.h>
+
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 #define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
 

@@ -36,7 +36,6 @@
 #include <sys/un.h>
 #include <unistd.h>
 #include <syslog.h>
-#include <signal.h>
 #include <errno.h>
 #include <sys/epoll.h>
 #include <fcntl.h>
@@ -47,10 +46,7 @@
 #include "conf.h"
 #include "debug.h"
 #include "auth.h"
-#include "safe.h"
 #include "client_list.h"
-#include "fw_iptables.h"
-#include "main.h"
 
 #include "ndsctl_thread.h"
 
