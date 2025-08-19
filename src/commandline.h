@@ -28,7 +28,7 @@
 
 
 /** @brief Parses the command line and set the config accordingly */
-void parse_commandline(int, char**);
+void parse_commandline(int argc, char **argv);
 
 
 #endif /* _COMMANDLINE_H_ */
