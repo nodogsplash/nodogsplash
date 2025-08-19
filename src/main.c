@@ -28,6 +28,7 @@
 
 #define _GNU_SOURCE
 
+#include <stdbool.h>
 #include <stdlib.h>
 #include <syslog.h>
 #include <pthread.h>
@@ -57,6 +58,7 @@
 #include "client_list.h"
 #include "ndsctl_thread.h"
 #include "fw_iptables.h"
+#include "state_file.h"
 #include "util.h"
 
 #include <microhttpd.h>
@@ -77,6 +79,8 @@ struct MHD_Daemon * webserver = NULL;
 
 /* Time when nodogsplash started  */
 time_t started_time = 0;
+
+bool write_state_file = false;
 
 /**@internal
  * @brief Handles SIGCHLD signals to avoid zombie processes
@@ -134,6 +138,16 @@ termination_handler(int s)
 	} else {
 		debug(LOG_INFO, "Cleaning up and exiting");
 	}
+
+#ifdef WITH_STATE_FILE
+	if (write_state_file) {
+		s_config *config = config_get_config();
+		if (config->statefile && strlen(config->statefile)) {
+			debug(LOG_INFO, "Writing current state to file %s", config->statefile);
+			state_file_export(config->statefile);
+		}
+	}
+#endif /* WITH_STATE_FILE */
 
 	auth_client_deauth_all();
 
@@ -301,6 +315,24 @@ main_loop(void)
 		exit(1);
 	}
 
+#ifdef WITH_STATE_FILE
+	result = state_file_import(config->statefile);
+	if (result < 0) {
+		debug(LOG_ERR, "Failed to parse state file. Will overwrite old state.");
+		debug(LOG_ERR, "Reset clients and firewall state.");
+		iptables_fw_destroy();
+		if (iptables_fw_init() != 0) {
+			debug(LOG_ERR, "Error initializing firewall rules! Cleaning up");
+			iptables_fw_destroy();
+			debug(LOG_ERR, "Exiting because of error initializing firewall rules");
+			exit(1);
+		}
+		client_list_flush();
+	} else if (result > 0) {
+		debug(LOG_ERR, "Failed to open state file for reading. Ignoring.");
+	}
+#endif
+
 	/* Start client statistics and timeout clean-up thread */
 	result = pthread_create(&tid_client_check, NULL, thread_client_timeout_check, NULL);
 	if (result != 0) {
@@ -316,6 +348,7 @@ main_loop(void)
 		termination_handler(1);
 	}
 
+	write_state_file = true;
 	result = pthread_join(tid, NULL);
 	if (result) {
 		debug(LOG_INFO, "Failed to wait for nodogsplash thread.");

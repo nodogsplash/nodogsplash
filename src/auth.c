@@ -66,7 +66,14 @@ static void binauth_action(t_client *client, const char *reason)
 	}
 }
 
-static int auth_change_state(t_client *client, const unsigned int new_state, const char *reason)
+/*! Change the authentication state
+ *
+ * \param client
+ * \param new_state
+ * \param reason
+ * \return 0 on a successful state change.
+ */
+int auth_change_state(t_client *client, const unsigned int new_state, const char *reason)
 {
 	const unsigned int state = client->fw_connection_state;
 

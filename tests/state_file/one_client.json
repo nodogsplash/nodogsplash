@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "name": "nodogsplash",
+  "clients": [
+    {
+      "ip": "192.168.42.44",
+      "mac": "00:16:3e:06:e3:7c",
+      "token": "49c1fb0e",
+      "fw_connection_state": 196608,
+      "session_start": 0,
+      "session_end": 0,
+      "download_limit": 0,
+      "upload_limit": 0,
+      "id": 2,
+      "counters": {
+        "incoming": 6890102,
+        "outgoing": 113871,
+        "last_updated": 1756220222
+      }
+    }
+  ]
+}

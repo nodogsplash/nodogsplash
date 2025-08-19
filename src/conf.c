@@ -102,7 +102,8 @@ typedef enum {
 	oFWMarkTrusted,
 	oFWMarkBlocked,
 	oBinAuth,
-	oPreAuth
+	oPreAuth,
+	oStateFile,
 } OpCodes;
 
 /** @internal
@@ -153,6 +154,7 @@ static const struct {
 	{ "fw_mark_blocked", oFWMarkBlocked },
 	{ "binauth", oBinAuth },
 	{ "preauth", oPreAuth },
+	{ "statefile", oStateFile },
 	{ NULL, oBadOption },
 };
 
@@ -229,6 +231,7 @@ config_init(void)
 	config.ip6 = DEFAULT_IP6;
 	config.binauth = NULL;
 	config.preauth = NULL;
+	config.statefile = safe_strdup(DEFAULT_STATE_FILE);
 
 	/* Set up default FirewallRuleSets, and their empty ruleset policies */
 	rs = add_ruleset("trusted-users");
@@ -939,6 +942,15 @@ config_read(const char *filename)
 			debug(LOG_ERR, "Bad option %s on line %d in %s", s, linenum, filename);
 			debug(LOG_ERR, "Exiting...");
 			exit(1);
+			break;
+		case oStateFile:
+			if (config.statefile)
+				free(config.statefile);
+
+			config.statefile = safe_strdup(p1);
+#ifndef WITH_STATE_FILE
+			debug(LOG_ERR, "nodogsplash built without statefile, but statefile given.");
+#endif /* WITH_STATE_FILE */
 			break;
 		}
 	}

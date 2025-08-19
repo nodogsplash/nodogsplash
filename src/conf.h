@@ -76,6 +76,7 @@
 #define DEFAULT_SYSLOG_FACILITY LOG_DAEMON
 #define DEFAULT_NDSCTL_SOCK "/tmp/ndsctl.sock"
 #define DEFAULT_INTERNAL_SOCK "/tmp/ndsctl.sock"
+#define DEFAULT_STATE_FILE "/tmp/nds.state"
 #define DEFAULT_FW_MARK_AUTHENTICATED 0x30000
 #define DEFAULT_FW_MARK_TRUSTED 0x20000
 #define DEFAULT_FW_MARK_BLOCKED 0x10000
@@ -183,6 +184,7 @@ typedef struct {
 	int ip6;			/**< @brief enable IPv6 */
 	char *binauth;			/**< @brief external authentication program */
 	char *preauth;			/**< @brief external preauthentication program */
+	char *statefile;		/**< @brief external preauthentication program */
 } s_config;
 
 /** @brief Get the current gateway configuration */

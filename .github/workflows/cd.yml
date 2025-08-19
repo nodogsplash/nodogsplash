@@ -28,11 +28,12 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libmicrohttpd-dev build-essential debhelper dh-make fakeroot devscripts
+          sudo apt-get install -y libmicrohttpd-dev build-essential debhelper dh-make fakeroot devscripts libjson-c-dev
 
       - name: Build
         run: |
           make
+          make tests
           dpkg-buildpackage -us -uc -b
           mv ../*.deb ./nodogsplash_ubuntu-${{ matrix.version }}_${{ matrix.architecture }}.deb
 

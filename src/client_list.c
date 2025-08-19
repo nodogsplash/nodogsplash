@@ -54,6 +54,8 @@ pthread_mutex_t client_list_mutex = PTHREAD_MUTEX_INITIALIZER;
  */
 static t_client *firstclient = NULL;
 
+static void _client_list_free_node(t_client *client);
+
 /** Return current length of the client list
  */
 int
@@ -78,6 +80,28 @@ client_list_init(void)
 {
 	firstclient = NULL;
 	client_count = 0;
+}
+
+/*! Flush all clients without calling hooks or cleaning up the fw
+ *
+ */
+void
+client_list_flush(void)
+{
+	t_client *client = firstclient;
+	t_client *prev = NULL;
+
+	if (client_count == 0)
+		return;
+
+	while (client != NULL) {
+		prev = client;
+		client = client->next;
+		_client_list_free_node(prev);
+	}
+	firstclient = NULL;
+	client_count = 0;
+	client_id = 1;
 }
 
 /** @internal
