@@ -18,6 +18,7 @@
  */
 
 #ifndef _UHTTPD_UTILS_
+#define _UHTTPD_UTILS_
 
 #include <sys/stat.h>
 
