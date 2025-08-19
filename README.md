@@ -41,7 +41,7 @@ The first version with different code bases is version 5.0
 
 ## Documentation
 
-For full documentation please look at https://nodogsplashdocs.rtfd.io/
+For full documentation please look at https://nodogsplash.readthedocs.io/en/latest/
 
 You can select either *Stable* or *Latest* documentation.
 
