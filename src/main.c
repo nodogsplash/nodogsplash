@@ -26,6 +26,7 @@
   @author Copyright (C) 2008 Paul Kube <nodogsplash@kokoro.ucsd.edu>
  */
 
+#define _GNU_SOURCE
 
 
 #include <stdio.h>

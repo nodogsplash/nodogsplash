@@ -23,6 +23,8 @@
     @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
 */
 
+#define _GNU_SOURCE
+
 #include <stdio.h>
 #include <errno.h>
 #include <syslog.h>
