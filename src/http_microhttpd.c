@@ -23,7 +23,6 @@
 #include <syslog.h>
 #include <arpa/inet.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
 #include <pthread.h>
 #include <linux/limits.h>

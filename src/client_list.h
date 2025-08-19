@@ -27,6 +27,11 @@
 #ifndef _CLIENT_LIST_H_
 #define _CLIENT_LIST_H_
 
+#include <pthread.h>
+#include <time.h>
+
+#include "debug.h"
+
 /** Counters struct for a client's bandwidth usage (in bytes)
  */
 typedef struct _t_counters {

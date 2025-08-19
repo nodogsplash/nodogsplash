@@ -28,10 +28,7 @@
 
 #define _GNU_SOURCE
 
-
-#include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <syslog.h>
 #include <pthread.h>
 #include <signal.h>
@@ -50,7 +47,6 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
-#include "common.h"
 #include "http_microhttpd.h"
 #include "safe.h"
 #include "debug.h"

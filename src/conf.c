@@ -42,9 +42,6 @@
 #include "safe.h"
 #include "debug.h"
 #include "conf.h"
-#include "auth.h"
-#include "util.h"
-
 
 /** @internal
  * Holds the current configuration of the gateway */

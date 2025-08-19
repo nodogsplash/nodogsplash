@@ -43,7 +43,6 @@
 
 #include "safe.h"
 #include "conf.h"
-#include "auth.h"
 #include "client_list.h"
 #include "fw_iptables.h"
 #include "debug.h"

@@ -21,23 +21,14 @@
 #define _GNU_SOURCE
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <stdarg.h>
 #include <syslog.h>
-#include <errno.h>
-#include <string.h>
 #include <pthread.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#include "common.h"
-
-#include "safe.h"
 #include "conf.h"
-#include "client_list.h"
-#include "auth.h"
-#include "fw_iptables.h"
 #include "debug.h"
 #include "util.h"
 
