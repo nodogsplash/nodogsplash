@@ -6,7 +6,7 @@ CFLAGS+=-Isrc
 LDFLAGS+=-pthread
 LDLIBS=-lmicrohttpd
 
-STRIP=yes
+STRIP ?= yes
 
 NDS_OBJS=src/auth.o src/client_list.o src/commandline.o src/conf.o \
 	src/debug.o src/fw_iptables.o src/path.o src/main.o src/http_microhttpd.o src/http_microhttpd_utils.o \
@@ -30,10 +30,10 @@ clean:
 	rm -rf dist
 
 install:
-#ifeq(yes,$(STRIP))
+ifeq (yes,$(STRIP))
 	strip nodogsplash
 	strip ndsctl
-#endif
+endif
 	mkdir -p $(DESTDIR)/usr/bin/
 	cp ndsctl $(DESTDIR)/usr/bin/
 	cp nodogsplash $(DESTDIR)/usr/bin/
