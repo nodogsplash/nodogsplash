@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - master
+      - main
+      - ci
     tags:
       - v*
   pull_request:
