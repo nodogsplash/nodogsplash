@@ -24,8 +24,8 @@
     @author Copyright (C) 2007 Paul Kube <nodogsplash@kokoro.ucsd.edu>
 */
 
-#ifndef _FW_IPTABLES_H_
-#define _FW_IPTABLES_H_
+#ifndef _NDS_FW_IPTABLES_H_
+#define _NDS_FW_IPTABLES_H_
 
 #include "client_list.h"
 
@@ -89,4 +89,4 @@ int iptables_unallow_mac(const char mac[]);
 int iptables_trust_mac(const char mac[]);
 int iptables_untrust_mac(const char mac[]);
 
-#endif /* _IPTABLES_H_ */
+#endif /* _NDS_IPTABLES_H_ */

@@ -1,5 +1,5 @@
-#ifndef NDS_MICROHTTPD_H
-#define NDS_MICROHTTPD_H
+#ifndef _NDS_MICROHTTPD_H
+#define _NDS_MICROHTTPD_H
 
 #include <stdio.h>
 
@@ -17,4 +17,4 @@ enum MHD_Result libmicrohttpd_cb (void *cls,
 					const char *upload_data, size_t *upload_data_size, void **ptr);
 
 
-#endif // NDS_MICROHTTPD_H
+#endif /* _NDS_MICROHTTPD_H */

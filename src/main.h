@@ -23,8 +23,8 @@
     @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
 */
 
-#ifndef _MAIN_H_
-#define _MAIN_H_
+#ifndef _NDS_MAIN_H_
+#define _NDS_MAIN_H_
 
 
 #define MINIMUM_STARTED_TIME 1178487900 /* 2007-05-06 */
@@ -33,4 +33,4 @@
 void termination_handler(int s);
 
 
-#endif /* _MAIN_H_ */
+#endif /* _NDS_MAIN_H_ */

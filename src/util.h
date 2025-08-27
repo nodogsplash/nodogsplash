@@ -23,8 +23,8 @@
     @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
 */
 
-#ifndef _UTIL_H_
-#define _UTIL_H_
+#ifndef _NDS_UTIL_H_
+#define _NDS_UTIL_H_
 
 #include <stdio.h>
 #include <time.h>
@@ -96,4 +96,4 @@ unsigned short rand16(void);
  **/
 #define MAX_HOSTPORTLEN ( INET6_ADDRSTRLEN + sizeof("[]:65536")-1 )
 
-#endif /* _UTIL_H_ */
+#endif /* _NDS_UTIL_H_ */

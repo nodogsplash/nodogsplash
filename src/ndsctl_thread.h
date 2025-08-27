@@ -24,8 +24,8 @@
     trivially modified for nodogsplash
 */
 
-#ifndef _NDSCTL_THREAD_H_
-#define _NDSCTL_THREAD_H_
+#ifndef _NDS_NDSCTL_THREAD_H_
+#define _NDS_NDSCTL_THREAD_H_
 
 
 #define DEFAULT_NDSCTL_SOCK "/tmp/ndsctl.sock"
@@ -34,4 +34,4 @@
 void *thread_ndsctl(void *arg);
 
 
-#endif
+#endif /* _NDS_NDSCTL_THREAD_H_ */

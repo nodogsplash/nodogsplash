@@ -17,8 +17,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef _UHTTPD_UTILS_
-#define _UHTTPD_UTILS_
+#ifndef _NDS_UHTTPD_UTILS_
+#define _NDS_UHTTPD_UTILS_
 
 #include <sys/stat.h>
 
@@ -61,4 +61,4 @@ int uh_urldecode(char *buf, int blen, const char *src, int slen);
 int uh_urlencode(char *buf, int blen, const char *src, int slen);
 int uh_b64decode(char *buf, int blen, const void *src, int slen);
 
-#endif
+#endif /* _NDS_UHTTPD_UTILS_ */

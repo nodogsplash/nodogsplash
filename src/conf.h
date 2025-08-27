@@ -26,8 +26,8 @@
 
 #define COPYRIGHT "NodogSplash, Copyright (C) 2016 - 2023, The Nodogsplash Contributors"
 
-#ifndef _CONF_H_
-#define _CONF_H_
+#ifndef _NDS_CONF_H_
+#define _NDS_CONF_H_
 
 #define VERSION "5.0.2"
 
@@ -250,4 +250,4 @@ int set_debuglevel(const char[]);
 	debug(LOG_DEBUG, "Config unlocked"); \
 } while (0)
 
-#endif /* _CONF_H_ */
+#endif /* _NDS_CONF_H_ */

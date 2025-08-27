@@ -23,8 +23,8 @@
     @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
 */
 
-#ifndef _COMMON_H_
-#define _COMMON_H_
+#ifndef _NDS_COMMON_H_
+#define _NDS_COMMON_H_
 
 /** @brief Read buffer for socket read? */
 #define MAX_BUF 4096
@@ -38,4 +38,4 @@
 /* Max dynamic html page size in bytes */
 #define HTMLMAXSIZE 4096
 
-#endif /* _COMMON_H_ */
+#endif /* _NDS_COMMON_H_ */

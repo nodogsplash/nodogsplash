@@ -24,9 +24,9 @@
     trivially modified 2007 for nodogsplash
 */
 
-#ifndef _NDSCTL_H_
-#define _NDSCTL_H_
+#ifndef _NDS_NDSCTL_H_
+#define _NDS_NDSCTL_H_
 
 #define DEFAULT_SOCK "/tmp/ndsctl.sock"
 
-#endif /* _NDSCTL_H_ */
+#endif /* _NDS_NDSCTL_H_ */

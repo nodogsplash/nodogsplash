@@ -23,8 +23,8 @@
 	@author Copyright (C) 2005 Mina Naguib <mina@ilesansfil.org>
 */
 
-#ifndef _SAFE_H_
-#define _SAFE_H_
+#ifndef _NDS_SAFE_H_
+#define _NDS_SAFE_H_
 
 
 #include <stdarg.h> /* For va_list */
@@ -54,4 +54,4 @@ int safe_vasprintf(char **strp, const char *fmt, va_list ap);
 pid_t safe_fork(void);
 
 
-#endif /* _SAFE_H_ */
+#endif /* _NDS_SAFE_H_ */

@@ -1,5 +1,5 @@
-#ifndef TEMPLATE_H
-#define TEMPLATE_H
+#ifndef _NDS_TEMPLATE_H
+#define _NDS_TEMPLATE_H
 
 #include <stdlib.h>
 
@@ -24,4 +24,4 @@ struct template {
 int tmpl_parse(struct template *vars, char *dst, size_t dst_len, const char *src, size_t src_len);
 
 
-#endif // TEMPLATE_H
+#endif /* _NDS_TEMPLATE_H */

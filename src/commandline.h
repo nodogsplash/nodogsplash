@@ -23,12 +23,12 @@
     @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
 */
 
-#ifndef _COMMANDLINE_H_
-#define _COMMANDLINE_H_
+#ifndef _NDS_COMMANDLINE_H_
+#define _NDS_COMMANDLINE_H_
 
 
 /** @brief Parses the command line and set the config accordingly */
 void parse_commandline(int argc, char **argv);
 
 
-#endif /* _COMMANDLINE_H_ */
+#endif /* _NDS_COMMANDLINE_H_ */

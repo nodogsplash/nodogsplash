@@ -17,8 +17,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef _UHTTPD_MIMETYPES_
-#define _UHTTPD_MIMETYPES_
+#ifndef _NDS_UHTTPD_MIMETYPES_
+#define _NDS_UHTTPD_MIMETYPES_
 
 struct mimetype {
 	const char *extn;
@@ -93,5 +93,5 @@ static const struct mimetype uh_mime_types[] = {
 	{ "otf",		"application/x-font-opentype" },
 };
 
-#endif
+#endif /* _NDS_UHTTPD_MIMETYPES_ */
 

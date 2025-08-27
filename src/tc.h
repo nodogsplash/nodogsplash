@@ -19,8 +19,8 @@
 \********************************************************************/
 
 
-#ifndef _TC_H_
-#define _TC_H_
+#ifndef _NDS_TC_H_
+#define _NDS_TC_H_
 
 #define MTU 1500
 #define HZ 100
@@ -40,4 +40,4 @@ int
 tc_detach_client(const char down_dev[], int download_limit, const char up_dev[], int upload_limit, int idx);
 
 
-#endif /* _TC_H_ */
+#endif /* _NDS_TC_H_ */

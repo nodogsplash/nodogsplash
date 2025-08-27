@@ -23,8 +23,8 @@
     @author Copyright (C) 2004 Alexandre Carmel-Veilleux <acv@miniguru.ca>
 */
 
-#ifndef _AUTH_H_
-#define _AUTH_H_
+#ifndef _NDS_AUTH_H_
+#define _NDS_AUTH_H_
 
 int auth_client_deauth(unsigned id, const char *reason);
 int auth_client_auth(unsigned id, const char *reason);
@@ -42,4 +42,4 @@ void *thread_client_timeout_check(void *arg);
 /** @brief Deauth all authenticated clients */
 void auth_client_deauth_all();
 
-#endif
+#endif /* _NDS_AUTH_H_ */

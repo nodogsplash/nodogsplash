@@ -23,8 +23,8 @@
     @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
 */
 
-#ifndef _DEBUG_H_
-#define _DEBUG_H_
+#ifndef _NDS_DEBUG_H_
+#define _NDS_DEBUG_H_
 
 #include <syslog.h>
 
@@ -39,4 +39,4 @@
 /** @internal */
 void _debug(const char filename[], int line, int level, const char *format, ...);
 
-#endif /* _DEBUG_H_ */
+#endif /* _NDS_DEBUG_H_ */
