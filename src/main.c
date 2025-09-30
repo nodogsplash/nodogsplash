@@ -316,6 +316,7 @@ main_loop(void)
 	}
 
 #ifdef WITH_STATE_FILE
+	debug(LOG_INFO, "Trying to load a state file.");
 	result = state_file_import(config->statefile);
 	if (result < 0) {
 		debug(LOG_ERR, "Failed to parse state file. Will overwrite old state.");
@@ -330,6 +331,8 @@ main_loop(void)
 		client_list_flush();
 	} else if (result > 0) {
 		debug(LOG_ERR, "Failed to open state file for reading. Ignoring.");
+	} else { /* result == 0 */
+		debug(LOG_INFO, "Successful loaded state file.");
 	}
 #endif
 
