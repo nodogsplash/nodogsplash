@@ -306,7 +306,9 @@ _iptables_append_ruleset(const char table[], const char ruleset[], const char ch
 int
 iptables_block_mac(const char mac[])
 {
+	// Delete the command that allowed access when blocking a device.
 	iptables_do_command("-t nat -D " CHAIN_OUTGOING " -m mac --mac-source %s -p tcp --dport 80 -j RETURN > /dev/null 2>&1", mac);
+	execute("ip6tables -D FORWARD -m mac --mac-source %s -j ACCEPT > /dev/null 2>&1", mac);
 	return iptables_do_command("-t mangle -A " CHAIN_BLOCKED " -m mac --mac-source %s -j MARK %s 0x%x", mac, markop, FW_MARK_BLOCKED);
 }
 
@@ -319,28 +321,36 @@ iptables_unblock_mac(const char mac[])
 int
 iptables_allow_mac(const char mac[])
 {
+	// When configuring permissions, adding a "allow" command allows the device to access the IPv6 internet.
 	iptables_do_command("-t nat -I " CHAIN_OUTGOING " -m mac --mac-source %s -p tcp --dport 80 -j RETURN > /dev/null 2>&1", mac);
+	execute("ip6tables -I FORWARD -m mac --mac-source %s -j ACCEPT", mac);
 	return iptables_do_command("-t mangle -I " CHAIN_BLOCKED " -m mac --mac-source %s -j RETURN", mac);
 }
 
 int
 iptables_unallow_mac(const char mac[])
 {
+	// When permission is revoked, the allow command is removed, and the device cannot access the IPv6 Internet.
 	iptables_do_command("-t nat -D " CHAIN_OUTGOING " -m mac --mac-source %s -p tcp --dport 80 -j RETURN > /dev/null 2>&1", mac);
+	execute("ip6tables -D FORWARD -m mac --mac-source %s -j ACCEPT > /dev/null 2>&1", mac);
 	return iptables_do_command("-t mangle -D " CHAIN_BLOCKED " -m mac --mac-source %s -j RETURN", mac);
 }
 
 int
 iptables_trust_mac(const char mac[])
 {
+	// When a device is trusted, adding a permission command allows the device to access the IPv6 internet.
 	iptables_do_command("-t nat -I " CHAIN_OUTGOING " -m mac --mac-source %s -p tcp --dport 80 -j RETURN > /dev/null 2>&1", mac);
+	execute("ip6tables -I FORWARD -m mac --mac-source %s -j ACCEPT", mac);
 	return iptables_do_command("-t mangle -A " CHAIN_TRUSTED " -m mac --mac-source %s -j MARK %s 0x%x", mac, markop, FW_MARK_TRUSTED);
 }
 
 int
 iptables_untrust_mac(const char mac[])
 {
+	// When trust is revoked, the allow command is deleted, and the device cannot access the IPv6 Internet.
 	iptables_do_command("-t nat -D " CHAIN_OUTGOING " -m mac --mac-source %s -p tcp --dport 80 -j RETURN > /dev/null 2>&1", mac);
+	execute("ip6tables -D FORWARD -m mac --mac-source %s -j ACCEPT > /dev/null 2>&1", mac);
 	return iptables_do_command("-t mangle -D " CHAIN_TRUSTED " -m mac --mac-source %s -j MARK %s 0x%x", mac, markop, FW_MARK_TRUSTED);
 }
 
@@ -503,6 +513,8 @@ iptables_fw_init(void)
 		 * nat PREROUTING chain
 		 */
 
+		// Disable IPv6 data forwarding on all gateway interfaces to prevent devices from accessing internet services via IPv6.
+		execute("ip6tables -I FORWARD -i %s -j DROP", gw_interface);
 		// packets coming in on gw_interface jump to CHAIN_OUTGOING
 		rc |= iptables_do_command("-t nat -I PREROUTING -i %s -s %s -j " CHAIN_OUTGOING, gw_interface, gw_iprange);
 		// CHAIN_OUTGOING, packets marked TRUSTED  ACCEPT
@@ -717,6 +729,9 @@ iptables_fw_destroy(void)
 
 	debug(LOG_DEBUG, "Destroying our iptables entries");
 
+	// Command to remove blocking IPv6 forwarding on gateway interface
+	execute("ip6tables -D FORWARD -i %s -j  DROP > /dev/null 2>&1", config->gw_interface);
+
 	/* Everything in the mangle table */
 	debug(LOG_DEBUG, "Destroying chains in the MANGLE table");
 	iptables_fw_destroy_mention("mangle", "PREROUTING", CHAIN_TRUSTED);
@@ -853,6 +868,8 @@ iptables_fw_authenticate(t_client *client)
 	/* This rule is for marking upload (outgoing) packets, and for upload byte counting */
 	rc |= iptables_do_command("-t mangle -A " CHAIN_OUTGOING " -s %s -m mac --mac-source %s -j MARK %s 0x%x", client->ip, client->mac, markop, FW_MARK_AUTHENTICATED);
 	iptables_do_command("-t nat -I " CHAIN_OUTGOING " -m mac --mac-source %s -p tcp --dport 80 -j RETURN", client->mac);
+	// By adding a permission command to an authenticated device, the device can access the IPv6 internet.
+	execute("ip6tables -I FORWARD -m mac --mac-source %s -j ACCEPT", client->mac);
 	rc |= iptables_do_command("-t mangle -A " CHAIN_INCOMING " -d %s -j MARK %s 0x%x", client->ip, markop, FW_MARK_AUTHENTICATED);
 	/* This rule is just for download (incoming) byte counting, see iptables_fw_counters_update() */
 	rc |= iptables_do_command("-t mangle -A " CHAIN_INCOMING " -d %s -j ACCEPT", client->ip);
@@ -891,6 +908,8 @@ iptables_fw_deauthenticate(t_client *client)
 	rc |= iptables_do_command("-t mangle -D " CHAIN_OUTGOING " -s %s -m mac --mac-source %s -j MARK %s 0x%x", client->ip, client->mac, markop, FW_MARK_AUTHENTICATED);
 	rc |= iptables_do_command("-t mangle -D " CHAIN_INCOMING " -d %s -j MARK %s 0x%x", client->ip, markop, FW_MARK_AUTHENTICATED);
 	rc |= iptables_do_command("-t mangle -D " CHAIN_INCOMING " -d %s -j ACCEPT", client->ip);
+	// The device that has been decertified will no longer be able to access the IPv6 internet after the permission command is removed.
+	execute("ip6tables -D FORWARD -m mac --mac-source %s -j ACCEPT > /dev/null 2>&1", client->mac);
 	iptables_do_command("-t nat -D " CHAIN_OUTGOING " -m mac --mac-source %s -p tcp --dport 80 -j RETURN", client->mac);
 
 	if (traffic_control) {
