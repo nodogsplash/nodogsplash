@@ -29,7 +29,7 @@
 #ifndef _NDS_CONF_H_
 #define _NDS_CONF_H_
 
-#define VERSION "5.0.2"
+#define VERSION "5.0.3"
 
 /*@{*/
 /** Defines */
@@ -63,6 +63,7 @@
 #define DEFAULT_WEBROOT "/etc/nodogsplash/htdocs"
 #define DEFAULT_SPLASHPAGE "splash.html"
 #define DEFAULT_STATUSPAGE "status.html"
+#define DEFAULT_ADDRESS_REUSE 1
 #define DEFAULT_AUTHDIR "nodogsplash_auth"
 #define DEFAULT_DENYDIR "nodogsplash_deny"
 #define DEFAULT_MACMECHANISM MAC_BLOCK
@@ -185,6 +186,7 @@ typedef struct {
 	char *binauth;			/**< @brief external authentication program */
 	char *preauth;			/**< @brief external preauthentication program */
 	char *statefile;		/**< @brief external preauthentication program */
+	int address_reuse; // disable port multiplexing
 } s_config;
 
 /** @brief Get the current gateway configuration */

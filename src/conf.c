@@ -232,6 +232,7 @@ config_init(void)
 	config.binauth = NULL;
 	config.preauth = NULL;
 	config.statefile = safe_strdup(DEFAULT_STATE_FILE);
+	config.address_reuse = DEFAULT_ADDRESS_REUSE;
 
 	/* Set up default FirewallRuleSets, and their empty ruleset policies */
 	rs = add_ruleset("trusted-users");
