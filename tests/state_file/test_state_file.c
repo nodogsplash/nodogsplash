@@ -125,12 +125,17 @@ void one_client(void)
 
 void one_client_no_counter(void)
 {
-	assert(state_file_import("one_client_no_counter.json") == -3);
+	/* invalid entries are ignored */
+	assert(state_file_import("one_client_no_counter.json") == 0);
+	print_client_list();
+	assert(get_client_list_length() == 0);
 }
 
 void one_client_missing_counter(void)
 {
-	assert(state_file_import("one_client_missing_counter.json") == -3);
+	/* invalid entries are ignored */
+	assert(state_file_import("one_client_missing_counter.json") == 0);
+	assert(get_client_list_length() == 0);
 }
 
 void three_clients(void)
@@ -151,7 +156,9 @@ void three_clients(void)
 
 void three_clients_dup_id(void)
 {
-	assert(state_file_import("three_clients_dup_id.json") == -3);
+	/* invalid entries are ignored, 2 valid entries, 1 invalid */
+	assert(state_file_import("three_clients_dup_id.json") == 0);
+	assert(get_client_list_length() == 2);
 	print_client_list();
 }
 
