@@ -141,7 +141,7 @@ err:
 int
 state_file_import_client(json_object *json_client)
 {
-	t_client *client;
+	t_client *client = NULL;
 	const char *mac = NULL;
 	const char *ip = NULL;
 	unsigned id;
@@ -193,6 +193,8 @@ state_file_import_client(json_object *json_client)
 
 	return 0;
 err:
+	if (client)
+		client_list_delete(client);
 	return -1;
 }
 
@@ -258,10 +260,7 @@ state_file_import(const char *path)
 
 		rc = state_file_import_client(client);
 		if (rc) {
-			debug(LOG_ERR, "clients: Invalid client entry %s", json_object_to_json_string(client));
-			UNLOCK_CLIENT_LIST();
-			rc = -3;
-			goto err;
+			debug(LOG_ERR, "clients: Ignoring invalid client entry %s", json_object_to_json_string(client));
 		}
 	}
 	UNLOCK_CLIENT_LIST();
