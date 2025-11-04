@@ -29,7 +29,7 @@
 #ifndef _NDS_CONF_H_
 #define _NDS_CONF_H_
 
-#define VERSION "5.0.3"
+#define VERSION "5.0.2"
 
 /*@{*/
 /** Defines */
@@ -175,6 +175,7 @@ typedef struct {
 	int log_syslog;			/**< @brief boolean, whether to log to syslog */
 	int syslog_facility;		/**< @brief facility to use when using syslog for logging */
 	int macmechanism; 		/**< @brief mechanism wrt MAC addrs */
+	int address_reuse;      /**< @brief disable port multiplexing */
 	t_firewall_ruleset *rulesets;	/**< @brief firewall rules */
 	t_MAC *trustedmaclist;		/**< @brief list of trusted macs */
 	t_MAC *blockedmaclist;		/**< @brief list of blocked macs */
@@ -186,7 +187,6 @@ typedef struct {
 	char *binauth;			/**< @brief external authentication program */
 	char *preauth;			/**< @brief external preauthentication program */
 	char *statefile;		/**< @brief external preauthentication program */
-	int address_reuse; // disable port multiplexing
 } s_config;
 
 /** @brief Get the current gateway configuration */

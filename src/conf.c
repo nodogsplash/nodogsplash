@@ -104,6 +104,7 @@ typedef enum {
 	oBinAuth,
 	oPreAuth,
 	oStateFile,
+	oAddressReuse,
 } OpCodes;
 
 /** @internal
@@ -155,6 +156,7 @@ static const struct {
 	{ "binauth", oBinAuth },
 	{ "preauth", oPreAuth },
 	{ "statefile", oStateFile },
+	{ "addressreuse", oAddressReuse },
 	{ NULL, oBadOption },
 };
 
@@ -742,6 +744,11 @@ config_read(const char *filename)
 			} else if (config.debuglevel > DEBUGLEVEL_MAX) {
 				config.debuglevel = DEBUGLEVEL_MAX;
 				debug(LOG_WARNING, "Invalid debug level. Set to maximum.");
+			}
+			break;
+		case oAddressReuse:
+			if ((value = parse_boolean(p1)) != -1) {
+				config.address_reuse = value;
 			}
 			break;
 		case oMaxClients:
