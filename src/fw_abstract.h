@@ -6,6 +6,7 @@
 #include <time.h>
 
 #include "fw_iptables.h"
+#include "fw_nftables.h"
 
 typedef struct {
   int (*init)(void);
@@ -27,6 +28,7 @@ typedef struct {
 extern fw_ops fw_gops;
 
 void fw_use_iptables();
+void fw_use_nftables();
 
 #endif /* _FW_ABSTRACT_H_ */
 

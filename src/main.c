@@ -372,8 +372,12 @@ int main(int argc, char **argv)
 	config_read(config->configfile);
 	config_validate();
 
-	// Initialize IPTables
-	fw_use_iptables();
+	// Initialize IPTables / NFTables
+	if (config->use_nftables) {
+		fw_use_nftables();	
+	} else {
+		fw_use_iptables();
+	}
 
 	// Initializes the linked list of connected clients
 	client_list_init();

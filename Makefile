@@ -8,6 +8,7 @@ LDLIBS=-lmicrohttpd
 
 STRIP ?= yes
 ENABLE_STATE_FILE ?= yes
+ENABLE_NFTABLES ?= yes
 
 NDS_OBJS=src/auth.o src/client_list.o src/commandline.o src/conf.o \
 	src/debug.o src/fw_abstract.o src/fw_common.o src/fw_iptables.o \
@@ -18,6 +19,12 @@ ifeq (yes,$(ENABLE_STATE_FILE))
 CFLAGS += -DWITH_STATE_FILE
 LDLIBS += -ljson-c
 NDS_OBJS += src/state_file.o
+endif
+
+ifeq (yes,$(ENABLE_NFTABLES))
+CFLAGS += -DWITH_NFTABLES_SUPPORT
+LDLIBS += -lnftables
+NDS_OBJS += src/fw_nftables.o
 endif
 
 .PHONY: all clean install checkastyle fixstyle deb tests
