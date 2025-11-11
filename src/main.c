@@ -57,7 +57,7 @@
 #include "auth.h"
 #include "client_list.h"
 #include "ndsctl_thread.h"
-#include "fw_iptables.h"
+#include "fw_abstract.h"
 #include "state_file.h"
 #include "util.h"
 
@@ -131,7 +131,7 @@ termination_handler(int s)
 
 	debug(LOG_NOTICE, "Handler for termination caught signal %d", s);
 
-	/* Makes sure we only call iptables_fw_destroy() once. */
+	/* Makes sure we only call fw_gops.fw_destroy() once. */
 	if (pthread_mutex_trylock(&sigterm_mutex)) {
 		debug(LOG_INFO, "Another thread already began global termination handler. I'm exiting");
 		pthread_exit(NULL);
@@ -152,7 +152,7 @@ termination_handler(int s)
 	auth_client_deauth_all();
 
 	debug(LOG_INFO, "Flushing firewall rules...");
-	iptables_fw_destroy();
+	fw_gops.destroy();
 
 	/* XXX Hack
 	 * Aparently pthread_cond_timedwait under openwrt prevents signals (and therefore
@@ -305,12 +305,12 @@ main_loop(void)
 	}
 
 	/* Reset the firewall (cleans it, in case we are restarting after nodogsplash crash) */
-	iptables_fw_destroy();
+	fw_gops.destroy();
 
 	/* Then initialize it */
-	if (iptables_fw_init() != 0) {
+	if (fw_gops.init() != 0) {
 		debug(LOG_ERR, "Error initializing firewall rules! Cleaning up");
-		iptables_fw_destroy();
+		fw_gops.destroy();
 		debug(LOG_ERR, "Exiting because of error initializing firewall rules");
 		exit(1);
 	}
@@ -320,10 +320,10 @@ main_loop(void)
 	if (result < 0) {
 		debug(LOG_ERR, "Failed to parse state file. Will overwrite old state.");
 		debug(LOG_ERR, "Reset clients and firewall state.");
-		iptables_fw_destroy();
-		if (iptables_fw_init() != 0) {
+		fw_gops.destroy();
+		if (fw_gops.init() != 0) {
 			debug(LOG_ERR, "Error initializing firewall rules! Cleaning up");
-			iptables_fw_destroy();
+			fw_gops.destroy();
 			debug(LOG_ERR, "Exiting because of error initializing firewall rules");
 			exit(1);
 		}
@@ -371,6 +371,9 @@ int main(int argc, char **argv)
 	debug(LOG_INFO, "Reading and validating configuration file %s", config->configfile);
 	config_read(config->configfile);
 	config_validate();
+
+	// Initialize IPTables
+	fw_use_iptables();
 
 	// Initializes the linked list of connected clients
 	client_list_init();
