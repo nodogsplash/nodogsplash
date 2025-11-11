@@ -63,7 +63,7 @@
 #include "util.h"
 #include "conf.h"
 #include "debug.h"
-#include "fw_iptables.h"
+#include "fw_abstract.h"
 
 
 /* Defined in main.c */
@@ -456,18 +456,18 @@ ndsctl_status(FILE *fp)
 		}
 	}
 
-	download_bytes = iptables_fw_total_download();
+	download_bytes = fw_gops.total_download();
 	fprintf(fp, "Total download: %llu kByte", download_bytes / 1000);
 	fprintf(fp, "; avg: %.2f kbit/s\n", ((double) download_bytes) / 125 / uptimesecs);
 
-	upload_bytes = iptables_fw_total_upload();
+	upload_bytes = fw_gops.total_upload();
 	fprintf(fp, "Total upload: %llu kByte", upload_bytes / 1000);
 	fprintf(fp, "; avg: %.2f kbit/s\n", ((double) upload_bytes) / 125 / uptimesecs);
 	fprintf(fp, "====\n");
 	fprintf(fp, "Client authentications since start: %u\n", authenticated_since_start);
 
 	/* Update the client's counters so info is current */
-	iptables_fw_counters_update();
+	fw_gops.counters_update();
 
 	LOCK_CLIENT_LIST();
 
@@ -506,7 +506,7 @@ ndsctl_status(FILE *fp)
 
 		fprintf(fp, "  Token: %s\n", client->token ? client->token : "none");
 
-		fprintf(fp, "  State: %s\n", fw_connection_state_as_string(client->fw_connection_state));
+		fprintf(fp, "  State: %s\n", fw_gops.connection_state_as_string(client->fw_connection_state));
 
 		download_bytes = client->counters.incoming;
 		upload_bytes = client->counters.outgoing;
@@ -580,7 +580,7 @@ ndsctl_clients(FILE *fp)
 	now = time(NULL);
 
 	/* Update the client's counters so info is current */
-	iptables_fw_counters_update();
+	fw_gops.counters_update();
 
 	LOCK_CLIENT_LIST();
 
@@ -603,7 +603,7 @@ ndsctl_clients(FILE *fp)
 			fprintf(fp, "duration=%lld\n", 0ll);
 		}
 		fprintf(fp, "token=%s\n", client->token ? client->token : "none");
-		fprintf(fp, "state=%s\n", fw_connection_state_as_string(client->fw_connection_state));
+		fprintf(fp, "state=%s\n", fw_gops.connection_state_as_string(client->fw_connection_state));
 
 		durationsecs = now - client->session_start;
 		download_bytes = client->counters.incoming;
@@ -638,7 +638,7 @@ ndsctl_json_client(FILE *fp, const t_client *client, time_t now)
 		fprintf(fp, "\"duration\":%lld,\n", 0ll);
 	}
 	fprintf(fp, "\"token\":\"%s\",\n", client->token ? client->token : "none");
-	fprintf(fp, "\"state\":\"%s\",\n", fw_connection_state_as_string(client->fw_connection_state));
+	fprintf(fp, "\"state\":\"%s\",\n", fw_gops.connection_state_as_string(client->fw_connection_state));
 
 	durationsecs = now - client->session_start;
 	download_bytes = client->counters.incoming;
@@ -659,7 +659,7 @@ ndsctl_json_one(FILE *fp, const char *arg)
 	now = time(NULL);
 
 	/* Update the client's counters so info is current */
-	iptables_fw_counters_update();
+	fw_gops.counters_update();
 
 	LOCK_CLIENT_LIST();
 
@@ -685,7 +685,7 @@ ndsctl_json_all(FILE *fp)
 	now = time(NULL);
 
 	/* Update the client's counters so info is current */
-	iptables_fw_counters_update();
+	fw_gops.counters_update();
 
 	LOCK_CLIENT_LIST();
 

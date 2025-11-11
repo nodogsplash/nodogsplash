@@ -35,7 +35,7 @@
 #include "conf.h"
 #include "debug.h"
 #include "auth.h"
-#include "fw_iptables.h"
+#include "fw_abstract.h"
 #include "client_list.h"
 #include "util.h"
 
@@ -81,7 +81,7 @@ int auth_change_state(t_client *client, const unsigned int new_state, const char
 		return -1;
 	} else if (state == FW_MARK_PREAUTHENTICATED) {
 		if (new_state == FW_MARK_AUTHENTICATED) {
-			iptables_fw_authenticate(client);
+			fw_gops.authenticate(client);
 			binauth_action(client, reason);
 		} else if (new_state == FW_MARK_BLOCKED) {
 			return -1;
@@ -92,11 +92,11 @@ int auth_change_state(t_client *client, const unsigned int new_state, const char
 		}
 	} else if (state == FW_MARK_AUTHENTICATED) {
 		if (new_state == FW_MARK_PREAUTHENTICATED) {
-			iptables_fw_deauthenticate(client);
+			fw_gops.deauthenticate(client);
 			binauth_action(client, reason);
 			client_reset(client);
 		} else if (new_state == FW_MARK_BLOCKED) {
-			iptables_fw_deauthenticate(client);
+			fw_gops.deauthenticate(client);
 			binauth_action(client, reason);
 			auth_client_block(client->mac);
 			client_list_delete(client);
@@ -149,7 +149,7 @@ fw_refresh_client_list(void)
 	const time_t now = time(NULL);
 
 	/* Update all the counters */
-	if (-1 == iptables_fw_counters_update()) {
+	if (-1 == fw_gops.counters_update()) {
 		debug(LOG_ERR, "Could not get counters from firewall!");
 		return;
 	}
@@ -312,8 +312,11 @@ auth_client_trust(const char *mac)
 
 	LOCK_CONFIG();
 
-	if (!add_to_trusted_mac_list(mac) && !iptables_trust_mac(mac)) {
-		rc = 0;
+	rc = fw_gops.trust_mac(mac);
+	if (rc) {
+		if(!add_to_trusted_mac_list(mac)) {
+			rc = 0;
+		}
 	}
 
 	UNLOCK_CONFIG();
@@ -327,9 +330,12 @@ auth_client_untrust(const char *mac)
 	int rc = -1;
 
 	LOCK_CONFIG();
+	rc = remove_from_trusted_mac_list(mac);
 
-	if (!remove_from_trusted_mac_list(mac) && !iptables_untrust_mac(mac)) {
-		rc = 0;
+	if(rc) {
+		if (!fw_gops.untrust_mac(mac)) {
+			rc = 0;
+		}
 	}
 
 	UNLOCK_CONFIG();
@@ -359,8 +365,12 @@ auth_client_allow(const char *mac)
 
 	LOCK_CONFIG();
 
-	if (!add_to_allowed_mac_list(mac) && !iptables_allow_mac(mac)) {
-		rc = 0;
+	rc = fw_gops.allow_mac(mac);
+
+	if(!rc) {
+		if (!add_to_allowed_mac_list(mac)) {
+			rc = 0;
+		}
 	}
 
 	UNLOCK_CONFIG();
@@ -375,8 +385,11 @@ auth_client_unallow(const char *mac)
 
 	LOCK_CONFIG();
 
-	if (!remove_from_allowed_mac_list(mac) && !iptables_unallow_mac(mac)) {
-		rc = 0;
+	rc = remove_from_allowed_mac_list(mac);
+	if(rc) {
+		if (!fw_gops.unallow_mac(mac)) {
+			rc = 0;
+		}
 	}
 
 	UNLOCK_CONFIG();
@@ -391,8 +404,12 @@ auth_client_block(const char *mac)
 
 	LOCK_CONFIG();
 
-	if (!add_to_blocked_mac_list(mac) && !iptables_block_mac(mac)) {
-		rc = 0;
+	rc = fw_gops.block_mac(mac);
+
+	if (rc) {
+		if (!add_to_blocked_mac_list(mac)) {
+			rc = 0;
+		}
 	}
 
 	UNLOCK_CONFIG();
@@ -407,8 +424,10 @@ auth_client_unblock(const char *mac)
 
 	LOCK_CONFIG();
 
-	if (!remove_from_blocked_mac_list(mac) && !iptables_unblock_mac(mac)) {
-		rc = 0;
+	rc = remove_from_blocked_mac_list(mac);
+	
+	if(rc) {
+		rc = fw_gops.unblock_mac(mac);
 	}
 
 	UNLOCK_CONFIG();

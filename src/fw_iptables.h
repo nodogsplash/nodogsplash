@@ -75,7 +75,7 @@ unsigned long long int iptables_fw_total_upload();
 int iptables_fw_counters_update(void);
 
 /** @brief Return a string representing a connection state */
-const char *fw_connection_state_as_string(int mark);
+const char *iptables_fw_connection_state_as_string(int mark);
 
 /** @brief Fork an iptables command */
 int iptables_do_command(const char format[], ...);
