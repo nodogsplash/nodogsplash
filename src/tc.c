@@ -105,20 +105,20 @@ tc_detach_client(const char down_dev[], int download_limit, const char up_dev[],
 
 	if (download_limit > 0) {
 		for (n = 2; n >= 0; n--)
-			rc |= execute("filter del dev %s parent 1: prio %d", down_dev, id + n);
+			rc |= execute("tc filter del dev %s parent 1: prio %d", down_dev, id + n);
 		for (n = 2; n >= 1; n--)
-			rc |= execute("qdisc del dev %s parent 1:%d", down_dev, id + n);
+			rc |= execute("tc qdisc del dev %s parent 1:%d", down_dev, id + n);
 		for (n = 2; n >= 0; n--)
-			rc |= execute("class del dev %s parent 1: classid 1:%d", down_dev, id + n);
+			rc |= execute("tc class del dev %s parent 1: classid 1:%d", down_dev, id + n);
 	}
 
 	if (upload_limit > 0) {
 		for (n = 2; n >= 0; n--)
-			rc |= execute("filter del dev %s parent 1: prio %d", up_dev, id + n);
+			rc |= execute("tc filter del dev %s parent 1: prio %d", up_dev, id + n);
 		for (n = 2;n >= 1; n--)
-			rc |= execute("qdisc del dev %s parent 1:%d", up_dev, id + n);
+			rc |= execute("tc qdisc del dev %s parent 1:%d", up_dev, id + n);
 		for (n = 2; n >= 0; n--)
-			rc |= execute("class del dev %s parent 1: classid 1:%d", up_dev, id + n);
+			rc |= execute("tc class del dev %s parent 1: classid 1:%d", up_dev, id + n);
 	}
 
 	return rc;
