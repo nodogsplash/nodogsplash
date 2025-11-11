@@ -36,6 +36,7 @@
 #include "debug.h"
 #include "auth.h"
 #include "fw_abstract.h"
+#include "fw_common.h"
 #include "client_list.h"
 #include "util.h"
 

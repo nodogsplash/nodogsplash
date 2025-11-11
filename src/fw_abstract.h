@@ -15,7 +15,6 @@ typedef struct {
   unsigned long long int (*total_download)();
   unsigned long long int (*total_upload)();
   int (*counters_update)(void);
-  const char *(*connection_state_as_string)(int mark);
   int (*do_command)(const char format[], ...);
   int (*block_mac)(const char mac[]);
   int (*unblock_mac)(const char mac[]);

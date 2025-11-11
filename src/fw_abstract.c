@@ -9,7 +9,6 @@ void fw_use_iptables() {
 	fw_gops.block_mac = iptables_block_mac;
 	fw_gops.trust_mac = iptables_trust_mac;
 	fw_gops.do_command = iptables_do_command;
-	fw_gops.connection_state_as_string = iptables_fw_connection_state_as_string;
 	fw_gops.untrust_mac = iptables_untrust_mac;
 	fw_gops.unallow_mac = iptables_unallow_mac;
 	fw_gops.unblock_mac = iptables_unblock_mac;

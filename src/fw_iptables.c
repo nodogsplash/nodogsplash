@@ -44,6 +44,7 @@
 #include "safe.h"
 #include "conf.h"
 #include "client_list.h"
+#include "fw_common.h"
 #include "fw_iptables.h"
 #include "debug.h"
 #include "util.h"
@@ -54,14 +55,7 @@
 
 static char *_iptables_compile(const char[], const char[], t_firewall_rule *);
 static int _iptables_append_ruleset(const char[], const char[], const char[]);
-static int _iptables_init_marks(void);
-
-/** Used to mark packets, and characterize client state.  Unmarked packets are considered 'preauthenticated' */
-unsigned int FW_MARK_PREAUTHENTICATED; /**< @brief 0: Actually not used as a packet mark */
-unsigned int FW_MARK_AUTHENTICATED;    /**< @brief The client is authenticated */
-unsigned int FW_MARK_BLOCKED;          /**< @brief The client is blocked */
-unsigned int FW_MARK_TRUSTED;          /**< @brief The client is trusted */
-unsigned int FW_MARK_MASK;             /**< @brief Iptables mask: bitwise or of the others */
+static int iptables_fw_destroy_mention(const char *table, const char *chain, const char *mention);
 
 extern pthread_mutex_t client_list_mutex;
 extern pthread_mutex_t config_mutex;
@@ -80,62 +74,6 @@ static const char* markop = "--set-mark";
  * Used to configure use of mark mask, or not
  */
 static const char* markmask = "";
-
-
-/** Return a string representing a connection state */
-const char *
-iptables_fw_connection_state_as_string(int mark)
-{
-	if (mark == FW_MARK_PREAUTHENTICATED)
-		return "Preauthenticated";
-	if (mark == FW_MARK_AUTHENTICATED)
-		return "Authenticated";
-	if (mark == FW_MARK_TRUSTED)
-		return "Trusted";
-	if (mark == FW_MARK_BLOCKED)
-		return "Blocked";
-	return "ERROR: unrecognized mark";
-}
-
-/** @internal */
-int
-_iptables_init_marks()
-{
-	/* Check FW_MARK values are distinct.  */
-	if (FW_MARK_BLOCKED == FW_MARK_TRUSTED ||
-			FW_MARK_TRUSTED == FW_MARK_AUTHENTICATED ||
-			FW_MARK_AUTHENTICATED == FW_MARK_BLOCKED) {
-		debug(LOG_ERR, "FW_MARK_BLOCKED, FW_MARK_TRUSTED, FW_MARK_AUTHENTICATED not distinct values.");
-		return -1;
-	}
-
-	/* Check FW_MARK values nonzero.  */
-	if (FW_MARK_BLOCKED == 0 ||
-			FW_MARK_TRUSTED == 0 ||
-			FW_MARK_AUTHENTICATED == 0) {
-		debug(LOG_ERR, "FW_MARK_BLOCKED, FW_MARK_TRUSTED, FW_MARK_AUTHENTICATED not all nonzero.");
-		return -1;
-	}
-
-	FW_MARK_PREAUTHENTICATED = 0;  /* always 0 */
-	/* FW_MARK_MASK is bitwise OR of other marks */
-	FW_MARK_MASK = FW_MARK_BLOCKED | FW_MARK_TRUSTED | FW_MARK_AUTHENTICATED;
-
-	debug(LOG_INFO,"Iptables mark %s: 0x%x",
-		iptables_fw_connection_state_as_string(FW_MARK_PREAUTHENTICATED),
-		FW_MARK_PREAUTHENTICATED);
-	debug(LOG_INFO,"Iptables mark %s: 0x%x",
-		iptables_fw_connection_state_as_string(FW_MARK_AUTHENTICATED),
-		FW_MARK_AUTHENTICATED);
-	debug(LOG_INFO,"Iptables mark %s: 0x%x",
-		iptables_fw_connection_state_as_string(FW_MARK_TRUSTED),
-		FW_MARK_TRUSTED);
-	debug(LOG_INFO,"Iptables mark %s: 0x%x",
-		iptables_fw_connection_state_as_string(FW_MARK_BLOCKED),
-		FW_MARK_BLOCKED);
-
-	return 0;
-}
 
 /** @internal */
 int
@@ -427,7 +365,7 @@ iptables_fw_init(void)
 	}
 
 	/* Set up packet marking methods */
-	rc |= _iptables_init_marks();
+	rc |= fw_common_init_marks();
 	rc |= _iptables_check_mark_masking();
 
 	/*

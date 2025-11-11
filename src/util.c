@@ -64,6 +64,7 @@
 #include "conf.h"
 #include "debug.h"
 #include "fw_abstract.h"
+#include "fw_common.h"
 
 
 /* Defined in main.c */
@@ -506,7 +507,7 @@ ndsctl_status(FILE *fp)
 
 		fprintf(fp, "  Token: %s\n", client->token ? client->token : "none");
 
-		fprintf(fp, "  State: %s\n", fw_gops.connection_state_as_string(client->fw_connection_state));
+		fprintf(fp, "  State: %s\n", fw_common_connection_state_as_string(client->fw_connection_state));
 
 		download_bytes = client->counters.incoming;
 		upload_bytes = client->counters.outgoing;
@@ -603,7 +604,7 @@ ndsctl_clients(FILE *fp)
 			fprintf(fp, "duration=%lld\n", 0ll);
 		}
 		fprintf(fp, "token=%s\n", client->token ? client->token : "none");
-		fprintf(fp, "state=%s\n", fw_gops.connection_state_as_string(client->fw_connection_state));
+		fprintf(fp, "state=%s\n", fw_common_connection_state_as_string(client->fw_connection_state));
 
 		durationsecs = now - client->session_start;
 		download_bytes = client->counters.incoming;
@@ -638,7 +639,7 @@ ndsctl_json_client(FILE *fp, const t_client *client, time_t now)
 		fprintf(fp, "\"duration\":%lld,\n", 0ll);
 	}
 	fprintf(fp, "\"token\":\"%s\",\n", client->token ? client->token : "none");
-	fprintf(fp, "\"state\":\"%s\",\n", fw_gops.connection_state_as_string(client->fw_connection_state));
+	fprintf(fp, "\"state\":\"%s\",\n", fw_common_connection_state_as_string(client->fw_connection_state));
 
 	durationsecs = now - client->session_start;
 	download_bytes = client->counters.incoming;
