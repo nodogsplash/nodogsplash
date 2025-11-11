@@ -10,7 +10,8 @@ STRIP ?= yes
 ENABLE_STATE_FILE ?= yes
 
 NDS_OBJS=src/auth.o src/client_list.o src/commandline.o src/conf.o \
-	src/debug.o src/fw_iptables.o src/path.o src/main.o src/http_microhttpd.o src/http_microhttpd_utils.o \
+	src/debug.o src/fw_abstract.o src/fw_iptables.o \
+	src/path.o src/main.o src/http_microhttpd.o src/http_microhttpd_utils.o \
 	src/ndsctl_thread.o src/safe.o src/tc.o src/util.o src/template.o
 
 ifeq (yes,$(ENABLE_STATE_FILE))

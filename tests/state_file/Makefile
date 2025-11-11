@@ -17,6 +17,7 @@ TEST_STATE_FILE_OBJECT := \
 	../../src/client_list.c \
 	../../src/conf.c \
 	../../src/debug.c \
+	../../src/fw_abstract.c \
 	../../src/fw_iptables.c \
 	../../src/safe.c \
 	../../src/state_file.c \

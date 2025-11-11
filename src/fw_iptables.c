@@ -84,7 +84,7 @@ static const char* markmask = "";
 
 /** Return a string representing a connection state */
 const char *
-fw_connection_state_as_string(int mark)
+iptables_fw_connection_state_as_string(int mark)
 {
 	if (mark == FW_MARK_PREAUTHENTICATED)
 		return "Preauthenticated";
@@ -122,16 +122,16 @@ _iptables_init_marks()
 	FW_MARK_MASK = FW_MARK_BLOCKED | FW_MARK_TRUSTED | FW_MARK_AUTHENTICATED;
 
 	debug(LOG_INFO,"Iptables mark %s: 0x%x",
-		fw_connection_state_as_string(FW_MARK_PREAUTHENTICATED),
+		iptables_fw_connection_state_as_string(FW_MARK_PREAUTHENTICATED),
 		FW_MARK_PREAUTHENTICATED);
 	debug(LOG_INFO,"Iptables mark %s: 0x%x",
-		fw_connection_state_as_string(FW_MARK_AUTHENTICATED),
+		iptables_fw_connection_state_as_string(FW_MARK_AUTHENTICATED),
 		FW_MARK_AUTHENTICATED);
 	debug(LOG_INFO,"Iptables mark %s: 0x%x",
-		fw_connection_state_as_string(FW_MARK_TRUSTED),
+		iptables_fw_connection_state_as_string(FW_MARK_TRUSTED),
 		FW_MARK_TRUSTED);
 	debug(LOG_INFO,"Iptables mark %s: 0x%x",
-		fw_connection_state_as_string(FW_MARK_BLOCKED),
+		iptables_fw_connection_state_as_string(FW_MARK_BLOCKED),
 		FW_MARK_BLOCKED);
 
 	return 0;
