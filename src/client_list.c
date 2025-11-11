@@ -38,7 +38,7 @@
 #include "debug.h"
 #include "conf.h"
 #include "client_list.h"
-#include "fw_iptables.h"
+#include "fw_common.h"
 #include "util.h"
 
 
