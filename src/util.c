@@ -164,6 +164,44 @@ int execute_ret(char* msg, int msg_len, const char fmt[], ...)
 	return _execute_ret(msg, msg_len, cmd);
 }
 
+int
+get_client_mac(char mac[18], const char req_ip[])
+{
+	char line[255] = {0};
+	char ip[64];
+	FILE *stream;
+	int len;
+
+	len = strlen(req_ip);
+
+	if ((len + 2) > sizeof(ip)) {
+		return -1;
+	}
+
+	// Extend search string by one space
+	memcpy(ip, req_ip, len);
+	ip[len] = ' ';
+	ip[len+1] = '\0';
+
+	stream = popen("ip neigh show", "r");
+	if (!stream) {
+		return -1;
+	}
+
+	while (fgets(line, sizeof(line) - 1, stream) != NULL) {
+		if (0 == strncmp(line, ip, len + 1)) {
+			if (1 == sscanf(line, "%*s %*s %*s %*s %17[A-Fa-f0-9:] ", mac)) {
+				pclose(stream);
+				return 0;
+			}
+		}
+	}
+
+	pclose(stream);
+
+	return -1;
+}
+
 char *
 get_iface_ip(const char ifname[], int ip6)
 {
