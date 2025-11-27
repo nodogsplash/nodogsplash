@@ -36,7 +36,6 @@
 int execute(const char fmt[], ...);
 int execute_ret(char* msg, int msg_len, const char fmt[], ...);
 
-/* @brief Get client mac by ip address from neighbor cache  */
 int get_client_mac(char mac[18], const char req_ip[]);
 
 /* @brief Get IP address of an interface */
