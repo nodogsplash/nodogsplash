@@ -894,9 +894,9 @@ static int show_templated_page(struct MHD_Connection *connection, t_client *clie
 	char filename[PATH_MAX];
 	const char *mimetype;
 	int size = 0, bytes = 0;
-	int page_fd;
-	char *page_result;
-	char *page_tmpl;
+	int page_fd = -1;
+	char *page_result = NULL;
+	char *page_tmpl = NULL;
 
 	snprintf(filename, PATH_MAX, "%s/%s", config->webroot, page);
 
@@ -913,35 +913,29 @@ static int show_templated_page(struct MHD_Connection *connection, t_client *clie
 
 	/* we TMPLVAR_SIZE for template variables */
 	page_tmpl = calloc(size, 1);
-	if (page_tmpl == NULL) {
-		close(page_fd);
-		return send_error(connection, 503);
+	if (!page_tmpl) {
+		goto err503;
 	}
 
 	page_result = calloc(size + TMPLVAR_SIZE, 1);
-	if (page_result == NULL) {
-		close(page_fd);
-		free(page_tmpl);
-		return send_error(connection, 503);
+	if (!page_result) {
+		goto err503;
 	}
 
 	while (bytes < size) {
 		ret = read(page_fd, page_tmpl + bytes, size - bytes);
 		if (ret < 0) {
-			free(page_result);
-			free(page_tmpl);
-			close(page_fd);
-			return send_error(connection, 503);
+			goto err503;
 		}
 		bytes += ret;
 	}
 
 	replace_variables(connection, client, page_result, size + TMPLVAR_SIZE, page_tmpl, size);
 
+	/* MHD takes ownership of page_result */
 	response = MHD_create_response_from_buffer(strlen(page_result), (void *)page_result, MHD_RESPMEM_MUST_FREE);
 	if (!response) {
-		close(page_fd);
-		return send_error(connection, 503);
+		goto err503;
 	}
 
 	MHD_add_response_header(response, "Content-Type", mimetype);
@@ -952,6 +946,18 @@ static int show_templated_page(struct MHD_Connection *connection, t_client *clie
 	close(page_fd);
 
 	return ret;
+
+err503:
+	if (page_result)
+		free(page_result);
+
+	if (page_tmpl)
+		free(page_tmpl);
+
+	if (page_fd >= 0)
+		close(page_fd);
+
+	return send_error(connection, 503);
 }
 
 /**
