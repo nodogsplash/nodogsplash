@@ -316,7 +316,7 @@ libmicrohttpd_cb(void *cls,
 	char url[PATH_MAX] = { 0 };
 	int rc = 0;
 
-	/* path sanitaze */
+	/* path sanitize */
 	buffer_path_simplify(url, _url);
 
 	debug(LOG_DEBUG, "access: %s %s", method, url);
