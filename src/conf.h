@@ -184,7 +184,7 @@ typedef struct {
 	int ip6;			/**< @brief enable IPv6 */
 	char *binauth;			/**< @brief external authentication program */
 	char *preauth;			/**< @brief external preauthentication program */
-	char *statefile;		/**< @brief external preauthentication program */
+	char *statefile;		/**< @brief saves the client states */
 } s_config;
 
 /** @brief Get the current gateway configuration */
