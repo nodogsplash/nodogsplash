@@ -51,6 +51,8 @@ typedef struct _t_client {
 	time_t session_start;	/**< @brief Time the client was authenticated */
 	time_t session_end;		/**< @brief Time until client will be deauthenticated */
 	t_counters counters;	/**< @brief Counters for input/output of the client. */
+	unsigned long long incoming_offset; /**< @brief Offset for incoming traffic (from previous IPs) */
+	unsigned long long outgoing_offset; /**< @brief Offset for outgoing traffic (from previous IPs) */
 	int download_limit;		/**< @brief Download limit, kb/s */
 	int upload_limit;		/**< @brief Upload limit, kb/s */
 	unsigned id;

@@ -179,6 +179,8 @@ void client_reset(t_client *client)
 	// Reset traffic counters
 	client->counters.incoming = 0;
 	client->counters.outgoing = 0;
+	client->incoming_offset = 0;
+	client->outgoing_offset = 0;
 	client->counters.last_updated = time(NULL);
 
 	// Reset seesion time
@@ -215,7 +217,38 @@ client_list_add_client(const char mac[], const char ip[])
 
 	client = client_list_find(mac, ip);
 	if (!client) {
-		client = _client_list_append(mac, ip);
+		// Versuche Client nur über MAC zu finden (IP-Wechsel Erkennung)
+		client = client_list_find_by_mac(mac);
+
+		if (client) {
+			debug(LOG_INFO, "Client %s changed IP from %s to %s", mac, client->ip, ip);
+
+			// Wenn der Client bereits authentifiziert ist, müssen wir die Firewall-Regeln aktualisieren
+			if (client->fw_connection_state == FW_MARK_AUTHENTICATED) {
+				// Zähler aktualisieren, bevor wir die Regeln löschen
+				iptables_fw_counters_update();
+				
+				// Aktuellen Stand als Offset speichern
+				client->incoming_offset = client->counters.incoming;
+				client->outgoing_offset = client->counters.outgoing;
+
+				// Alte Regeln entfernen
+				iptables_fw_deauthenticate(client);
+				
+				// IP aktualisieren
+				if (client->ip) free(client->ip);
+				client->ip = safe_strdup(ip);
+
+				// Neue Regeln hinzufügen
+				iptables_fw_authenticate(client);
+			} else {
+				// Nur IP aktualisieren
+				if (client->ip) free(client->ip);
+				client->ip = safe_strdup(ip);
+			}
+		} else {
+			client = _client_list_append(mac, ip);
+		}
 	} else {
 		debug(LOG_INFO, "Client %s %s token %s already on client list", ip, mac, client->token);
 	}
