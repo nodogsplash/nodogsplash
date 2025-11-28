@@ -24,41 +24,45 @@
     @author Copyright (C) 2007 Paul Kube <nodogsplash@kokoro.ucsd.edu>
 */
 
-#ifndef _NDS_FW_IPTABLES_H_
-#define _NDS_FW_IPTABLES_H_
+#ifndef _FW_NFTABLES_H_
+#define _FW_NFTABLES_H_
+
+#include <ctype.h>
 
 #include "client_list.h"
 #include "fw_common.h"
 
+void nftables_initialize_nft_context();
+
 /** @brief Initialize the firewall */
-int iptables_fw_init(void);
+int nftables_fw_init(void);
 
 /** @brief Destroy the firewall */
-int iptables_fw_destroy(void);
+int nftables_fw_destroy(void);
 
 /** @brief Define the access of a specific client */
-int iptables_fw_authenticate(t_client *client);
-int iptables_fw_deauthenticate(t_client *client);
+int nftables_fw_authenticate(t_client *client);
+int nftables_fw_deauthenticate(t_client *client);
 
 /** @brief Return the total download usage in bytes */
-unsigned long long int iptables_fw_total_download();
+unsigned long long int nftables_fw_total_download();
 
 /** @brief Return the total upload usage in bytes */
-unsigned long long int iptables_fw_total_upload();
+unsigned long long int nftables_fw_total_upload();
 
 /** @brief All counters in the client list */
-int iptables_fw_counters_update(void);
+int nftables_fw_counters_update(void);
 
-/** @brief Fork an iptables command */
-int iptables_do_command(const char format[], ...);
+/** @brief Fork an nftables command */
+int nftables_do_command(const char format[], ...);
 
-int iptables_block_mac(const char mac[]);
-int iptables_unblock_mac(const char mac[]);
+int nftables_block_mac(const char mac[]);
+int nftables_unblock_mac(const char mac[]);
 
-int iptables_allow_mac(const char mac[]);
-int iptables_unallow_mac(const char mac[]);
+int nftables_allow_mac(const char mac[]);
+int nftables_unallow_mac(const char mac[]);
 
-int iptables_trust_mac(const char mac[]);
-int iptables_untrust_mac(const char mac[]);
+int nftables_trust_mac(const char mac[]);
+int nftables_untrust_mac(const char mac[]);
 
-#endif /* _NDS_IPTABLES_H_ */
+#endif /* _FW_NFTABLES_H_ */
