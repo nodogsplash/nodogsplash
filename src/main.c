@@ -283,22 +283,6 @@ main_loop(void)
 	}
 	debug(LOG_NOTICE, "Detected gateway %s at %s (%s)", config->gw_interface, config->gw_ip, config->gw_mac);
 
-	/* Initializes the web server */
-	if ((webserver = MHD_start_daemon(
-						MHD_USE_EPOLL_INTERNALLY | MHD_USE_TCP_FASTOPEN,
-						config->gw_port,
-						NULL, NULL,
-						libmicrohttpd_cb, NULL,
-						MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 120,
-						MHD_OPTION_LISTENING_ADDRESS_REUSE, 1,
-						MHD_OPTION_END)) == NULL) {
-		debug(LOG_ERR, "Could not create web server: %s", strerror(errno));
-		exit(1);
-	}
-
-	/* TODO: set listening socket */
-	debug(LOG_NOTICE, "Created web server on %s", config->gw_http_name);
-
 	if (config->binauth) {
 		debug(LOG_NOTICE, "Binauth is Enabled.\n");
 		debug(LOG_NOTICE, "Binauth Script is %s\n", config->binauth);
@@ -316,6 +300,7 @@ main_loop(void)
 	}
 
 #ifdef WITH_STATE_FILE
+	debug(LOG_INFO, "Trying to load a state file.");
 	result = state_file_import(config->statefile);
 	if (result < 0) {
 		debug(LOG_ERR, "Failed to parse state file. Will overwrite old state.");
@@ -330,6 +315,8 @@ main_loop(void)
 		client_list_flush();
 	} else if (result > 0) {
 		debug(LOG_ERR, "Failed to open state file for reading. Ignoring.");
+	} else { /* result == 0 */
+		debug(LOG_INFO, "Successful loaded state file.");
 	}
 #endif
 
@@ -347,6 +334,22 @@ main_loop(void)
 		debug(LOG_ERR, "FATAL: Failed to create thread_ndsctl - exiting");
 		termination_handler(1);
 	}
+
+	/* Initializes the web server */
+	if ((webserver = MHD_start_daemon(
+		 MHD_USE_EPOLL_INTERNALLY | MHD_USE_TCP_FASTOPEN,
+		 config->gw_port,
+		 NULL, NULL,
+		 libmicrohttpd_cb, NULL,
+		 MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 120,
+		 MHD_OPTION_LISTENING_ADDRESS_REUSE, 1,
+		 MHD_OPTION_END)) == NULL) {
+		debug(LOG_ERR, "Could not create web server: %s", strerror(errno));
+		exit(1);
+	}
+
+	/* TODO: set listening socket */
+	debug(LOG_NOTICE, "Created web server on %s", config->gw_http_name);
 
 	write_state_file = true;
 	result = pthread_join(tid, NULL);
