@@ -79,7 +79,7 @@ t_client * client_list_find(const char mac[], const char ip[]);
 t_client * client_list_find_by_id(const unsigned id);
 
 /** @brief Finds a client only by its IP */
-t_client *client_list_find_by_ip(const char ip[]); /* needed by fw_iptables.c, auth.c * and ndsctl_thread.c */
+t_client *client_list_find_by_ip(const char ip[]); /* needed by fw_abstract.c, auth.c * and ndsctl_thread.c */
 
 /** @brief Finds a client only by its MAC */
 t_client *client_list_find_by_mac(const char mac[]); /* needed by ndsctl_thread.c */
