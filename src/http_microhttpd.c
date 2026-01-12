@@ -792,7 +792,7 @@ static enum MHD_Result send_error(struct MHD_Connection *connection, int error)
 	case 503:
 		response = MHD_create_response_from_buffer(strlen(page_503), (char *)page_503, MHD_RESPMEM_PERSISTENT);
 		MHD_add_response_header(response, "Content-Type", mimetype);
-		ret = MHD_queue_response(connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
+		ret = MHD_queue_response(connection, MHD_HTTP_SERVICE_UNAVAILABLE, response);
 		break;
 	}
 
