@@ -96,6 +96,9 @@ void client_list_delete(t_client *client);
 /** @brief Flush all clients without calling any hooks or fw handlers */
 void client_list_flush(void);
 
+/** @brief Prints a client status */
+void client_list_debug_print_client(t_client *client, int level);
+
 #define LOCK_CLIENT_LIST() do { \
 	debug(LOG_DEBUG, "Locking client list"); \
 	pthread_mutex_lock(&client_list_mutex); \

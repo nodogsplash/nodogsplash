@@ -407,3 +407,16 @@ client_list_delete(t_client *client)
 		}
 	}
 }
+
+/**
+ * @brief Prints a client status
+ *
+ * @param client Points to the client to be printed
+ */
+void
+client_list_debug_print_client(t_client *client, int level)
+{
+	/* client mac, IP and ID are always set */
+	debug(level, "Client ID: %d | IP: %s | MAC: %s | state: %s",
+		client->id, client->ip, client->mac, fw_common_connection_state_as_string(client->fw_connection_state));
+}

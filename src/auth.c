@@ -289,6 +289,9 @@ auth_client_auth_nolock(const unsigned id, const char *reason)
 	rc = auth_change_state(client, FW_MARK_AUTHENTICATED, reason);
 	if (rc == 0) {
 		authenticated_since_start++;
+	} else {
+		debug(LOG_ERR, "Client %d failed auth_change_state, client status:", id);
+		client_list_debug_print_client(client, LOG_ERR);
 	}
 
 	return rc;
