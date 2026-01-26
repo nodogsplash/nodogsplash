@@ -66,7 +66,6 @@
 #include "fw_abstract.h"
 #include "fw_common.h"
 
-
 /* Defined in main.c */
 extern time_t started_time;
 
@@ -162,6 +161,93 @@ int execute_ret(char* msg, int msg_len, const char fmt[], ...)
 	}
 
 	return _execute_ret(msg, msg_len, cmd);
+}
+
+static int
+get_client_mac_proc(char mac[18], const char req_ip[])
+{
+	int len = 0;
+	FILE *f;
+	char ip[64];
+	char line[256] = {};
+
+	len = strlen(req_ip);
+	if ((len + 2) > sizeof(ip)) {
+		return -1;
+	}
+
+	// Extend search string by one space
+	memcpy(ip, req_ip, len);
+	ip[len] = ' ';
+	ip[len+1] = '\0';
+
+	f = fopen("/proc/net/arp", "r");
+	if (f == NULL) {
+		return 1;
+	}
+
+	while (fgets(line, sizeof(line) - 1, f) != NULL) {
+		if (0 == strncmp(line, ip, len + 1)) {
+			if (1 == sscanf(line, "%*s %*s %*s %17[A-Fa-f0-9:] ", mac)) {
+				return 0;
+			}
+		}
+	}
+
+	return -1;
+}
+
+static int
+get_client_mac_iproute(char mac[18], const char req_ip[])
+{
+	int len = 0;
+	FILE *f;
+	char ip[64];
+	char line[256] = {};
+
+	len = strlen(req_ip);
+	if ((len + 2) > sizeof(ip)) {
+		return -1;
+	}
+
+	// Extend search string by one space
+	memcpy(ip, req_ip, len);
+	ip[len] = ' ';
+	ip[len+1] = '\0';
+
+	f = popen("ip neigh show", "r");
+	if (f == NULL) {
+		debug(LOG_ERR, "can't execute \"ip neigh show\", can't find IPs for MACs");
+		return 1;
+	}
+
+	while (fgets(line, sizeof(line) - 1, f) != NULL) {
+		if (0 == strncmp(line, ip, len + 1)) {
+			if (1 == sscanf(line, "%*s %*s %*s %*s %17[A-Fa-f0-9:] ", mac)) {
+				return 0;
+			}
+		}
+	}
+
+	return -1;
+}
+
+/**
+ * @brief Get client mac by ip address from neighbor cache
+ * @return return 0 on success, -1 when the MAC was not found, and 1 when the call to get the information failed
+ */
+int
+get_client_mac(char mac[18], const char req_ip[])
+{
+	int rc = 0;
+
+	rc = get_client_mac_proc(mac, req_ip);
+	if (rc == 1) {
+		debug(LOG_DEBUG, "could not open file /proc/net/arp, using iproute tools instead");
+		rc = get_client_mac_iproute(mac, req_ip);
+	}
+
+	return rc;
 }
 
 char *
