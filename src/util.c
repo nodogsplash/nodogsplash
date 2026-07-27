@@ -40,6 +40,10 @@
 #include <arpa/inet.h>
 #include <sys/time.h>
 #include <ifaddrs.h>
+#include <unistd.h>
+#include <linux/netlink.h>
+#include <linux/rtnetlink.h>
+#include <linux/neighbour.h>
 
 #if defined(__NetBSD__)
 #include <sys/socket.h>
@@ -65,7 +69,6 @@
 #include "debug.h"
 #include "fw_abstract.h"
 #include "fw_common.h"
-
 
 /* Defined in main.c */
 extern time_t started_time;
@@ -162,6 +165,92 @@ int execute_ret(char* msg, int msg_len, const char fmt[], ...)
 	}
 
 	return _execute_ret(msg, msg_len, cmd);
+}
+
+/**
+ * @brief Get client mac by ip address from the kernel neighbor cache via netlink.
+ * Supports both IPv4 and IPv6.
+ * @return 0 on success, -1 when the MAC was not found, 1 on all other errors
+ */
+int
+get_client_mac(char mac[18], const char req_ip[])
+{
+	struct in_addr  addr4;
+	struct in6_addr addr6;
+	int family, addr_len;
+	void *addr_ptr;
+
+	if (inet_pton(AF_INET, req_ip, &addr4) == 1) {
+		family = AF_INET;  addr_ptr = &addr4;  addr_len = sizeof(addr4);
+	} else if (inet_pton(AF_INET6, req_ip, &addr6) == 1) {
+		family = AF_INET6; addr_ptr = &addr6;  addr_len = sizeof(addr6);
+	} else {
+		return 1;
+	}
+
+	int sock = socket(AF_NETLINK, SOCK_RAW | SOCK_CLOEXEC, NETLINK_ROUTE);
+	if (sock < 0) {
+		debug(LOG_ERR, "get_client_mac: could not open netlink socket: %s", strerror(errno));
+		return 1;
+	}
+
+	struct {
+		struct nlmsghdr nlh;
+		struct ndmsg    ndm;
+	} req = {};
+
+	req.nlh.nlmsg_len   = NLMSG_LENGTH(sizeof(struct ndmsg));
+	req.nlh.nlmsg_type  = RTM_GETNEIGH;
+	req.nlh.nlmsg_flags = NLM_F_REQUEST | NLM_F_DUMP;
+	req.nlh.nlmsg_seq   = 1;
+	req.ndm.ndm_family  = family;
+
+	if (send(sock, &req, req.nlh.nlmsg_len, 0) < 0) {
+		debug(LOG_ERR, "get_client_mac: netlink send failed: %s", strerror(errno));
+		close(sock);
+		return 1;
+	}
+
+	char buf[4096];
+	int found = 0;
+
+	while (!found) {
+		ssize_t len = recv(sock, buf, sizeof(buf), 0);
+		if (len <= 0)
+			break;
+
+		for (struct nlmsghdr *nlh = (struct nlmsghdr *)buf;
+		     NLMSG_OK(nlh, (unsigned int)len) && !found;
+		     nlh = NLMSG_NEXT(nlh, len)) {
+
+			if (nlh->nlmsg_type == NLMSG_DONE)  { found = -1; break; }
+			if (nlh->nlmsg_type == NLMSG_ERROR) { found = -1; break; }
+			if (nlh->nlmsg_type != RTM_NEWNEIGH) continue;
+
+			struct ndmsg *ndm = NLMSG_DATA(nlh);
+			if (ndm->ndm_family != family) continue;
+			if (ndm->ndm_state & (NUD_INCOMPLETE | NUD_FAILED | NUD_NOARP)) continue;
+
+			struct rtattr *rta = (struct rtattr *)(((char *)ndm) + NLMSG_ALIGN(sizeof(struct ndmsg)));
+			int rta_len = NLMSG_PAYLOAD(nlh, sizeof(struct ndmsg));
+			void *dst = NULL, *lladdr = NULL;
+
+			for (; RTA_OK(rta, rta_len); rta = RTA_NEXT(rta, rta_len)) {
+				if (rta->rta_type == NDA_DST)    dst    = RTA_DATA(rta);
+				if (rta->rta_type == NDA_LLADDR) lladdr = RTA_DATA(rta);
+			}
+
+			if (dst && lladdr && memcmp(dst, addr_ptr, addr_len) == 0) {
+				unsigned char *m = lladdr;
+				snprintf(mac, 18, "%02x:%02x:%02x:%02x:%02x:%02x",
+				         m[0], m[1], m[2], m[3], m[4], m[5]);
+				found = 1;
+			}
+		}
+	}
+
+	close(sock);
+	return found == 1 ? 0 : -1;
 }
 
 char *
