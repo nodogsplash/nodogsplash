@@ -14,4 +14,5 @@ run_tests_state_file:
 	$(MAKE) -C ./state_file/ tests
 
 clean:
+	$(MAKE) -C ./conf/ clean
 	$(MAKE) -C ./state_file/ clean

@@ -21,3 +21,6 @@ test_conf: $(TEST_CONF_OBJECT)
 
 run_test_conf: test_conf
 	./test_conf
+
+clean:
+	rm test_conf
