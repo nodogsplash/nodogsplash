@@ -28,7 +28,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libmicrohttpd-dev build-essential debhelper dh-make fakeroot devscripts libjansson-dev
+          sudo apt-get install -y libmicrohttpd-dev build-essential debhelper dh-make fakeroot devscripts libjansson-dev libnftables-dev
 
       - name: Build
         run: |

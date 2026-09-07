@@ -7,6 +7,10 @@
 
 #include "fw_iptables.h"
 
+#ifdef WITH_NFTABLES_SUPPORT
+#include "fw_nftables.h"
+#endif
+
 typedef struct {
   int (*init)(void);
   int (*destroy)(void);
@@ -26,7 +30,8 @@ typedef struct {
 
 extern fw_ops fw_gops;
 
-void fw_use_iptables();
+int fw_use_iptables();
+int fw_use_nftables();
 
 #endif /* _FW_ABSTRACT_H_ */
 

@@ -422,6 +422,17 @@ ndsctl_status(FILE *fp)
 		fprintf(fp, "Preauth: Disabled\n");
 	}
 
+	#ifdef WITH_NFTABLES_SUPPORT
+	if (config->use_nftables) {
+		fprintf(fp, "NFTABLES support: enabled\n");
+		if (config->nftable_name) {
+			fprintf(fp, "NFTABLE name: %s\n", config->nftable_name);
+		}
+	} else {
+		fprintf(fp, "NFTABLES support: disabled\n");
+	}
+	#endif /* WITH_NFTABLES_SUPPORT */
+
 	fprintf(fp, "Client Check Interval: %ds\n", config->checkinterval);
 	format_duration(0, config->preauth_idle_timeout * 60, durationbuf);
 	fprintf(fp, "Preauth Idle Timeout: %sm\n", durationbuf);
