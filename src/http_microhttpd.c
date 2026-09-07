@@ -318,6 +318,11 @@ libmicrohttpd_cb(void *cls,
 	char url[PATH_MAX] = { 0 };
 	int rc = 0;
 
+	if (strlen(_url) >= PATH_MAX) {
+		debug(LOG_WARNING, "414: Request URI too long (%zu bytes)", strlen(_url));
+		return send_error(connection, 414);
+	}
+
 	/* path sanitize */
 	buffer_path_simplify(url, _url);
 
@@ -753,6 +758,7 @@ static enum MHD_Result send_error(struct MHD_Connection *connection, int error)
 	const char *page_400 = "<html><head><title>Error 400</title></head><body><h1>Error 400 - Bad Request</h1></body></html>";
 	const char *page_403 = "<html><head><title>Error 403</title></head><body><h1>Error 403 - Forbidden</h1></body></html>";
 	const char *page_404 = "<html><head><title>Error 404</title></head><body><h1>Error 404 - Not Found</h1></body></html>";
+	const char *page_414 = "<html><head><title>Error 414</title></head><body><h1>Error 414 - URI Too Long</h1></body></html>";
 	const char *page_500 = "<html><head><title>Error 500</title></head><body><h1>Error 500 - Internal Server Error. Oh no!</body></html>";
 	const char *page_501 = "<html><head><title>Error 501</title></head><body><h1>Error 501 - Not Implemented</h1></body></html>";
 	const char *page_503 = "<html><head><title>Error 503</title></head><body><h1>Error 503 - Internal Server Error</h1></body></html>";
@@ -784,6 +790,12 @@ static enum MHD_Result send_error(struct MHD_Connection *connection, int error)
 		response = MHD_create_response_from_buffer(strlen(page_404), (char *)page_404, MHD_RESPMEM_PERSISTENT);
 		MHD_add_response_header(response, "Content-Type", mimetype);
 		ret = MHD_queue_response(connection, MHD_HTTP_NOT_FOUND, response);
+		break;
+
+	case 414:
+		response = MHD_create_response_from_buffer(strlen(page_414), (char *)page_414, MHD_RESPMEM_PERSISTENT);
+		MHD_add_response_header(response, "Content-Type", mimetype);
+		ret = MHD_queue_response(connection, MHD_HTTP_URI_TOO_LONG, response);
 		break;
 
 	case 500:
