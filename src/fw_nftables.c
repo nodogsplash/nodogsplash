@@ -676,6 +676,80 @@ unsigned long long int nftables_fw_total_download() {
     return _nft_get_named_counter("global_download_counter"); 
 }
 
+static void
+_nftables_fw_parse_json_authlist(t_client *client, json_t *elem_arr) {
+	/* parse authlist as outgoing traffic (upload) */
+	size_t index_elem = 0;
+	json_t *wrapper_elem;
+	json_array_foreach(elem_arr, index_elem, wrapper_elem)  {
+		json_t *elem_obj = json_object_get(wrapper_elem, "elem");
+		json_t *val_obj = json_object_get(elem_obj, "val");
+		json_t *counter_obj = json_object_get(elem_obj, "counter");
+		uint64_t bytes = 0;
+		const char *ip = NULL;
+		const char *mac = NULL;
+		if (counter_obj) {
+			json_t *b = json_object_get(counter_obj, "bytes");
+			if (json_is_integer(b)) bytes = json_integer_value(b);
+		}
+		if (val_obj && json_is_object(val_obj)) {
+			/* in authlist, IP and MAC are in a concatenation */
+			json_t *concat_arr = json_object_get(val_obj, "concat");
+			if (json_is_array(concat_arr) && json_array_size(concat_arr) >= 2) {
+				ip = json_string_value(json_array_get(concat_arr, 0));
+				mac = json_string_value(json_array_get(concat_arr, 1));
+
+				if (ip && mac) {
+					client = client_list_find(mac, ip);
+					if (client) {
+						uint64_t total = bytes;
+						if (total > client->counters.outgoing) {
+							client->counters.outgoing = total;
+							client->counters.last_updated = time(NULL);
+						}
+					} else {
+						debug(LOG_DEBUG, "Upload: Client not found for IP %s MAC %s", ip, mac);
+					}
+				}										
+			}
+		}
+	}
+}
+
+static void
+_nftables_fw_parse_json_authlist_ip(t_client *client, json_t *elem_arr) {
+	/* parse authlist_ip as incoming traffic (download) */
+	size_t index_elem = 0;
+	json_t *wrapper_elem;
+	json_array_foreach(elem_arr, index_elem, wrapper_elem)  {
+		json_t *elem_obj = json_object_get(wrapper_elem, "elem");
+		json_t *val_obj = json_object_get(elem_obj, "val");
+		json_t *counter_obj = json_object_get(elem_obj, "counter");
+		uint64_t bytes = 0;
+		const char *ip = NULL;
+		if (counter_obj) {
+			json_t *b = json_object_get(counter_obj, "bytes");
+			if (json_is_integer(b)) bytes = json_integer_value(b);
+		}
+		if (val_obj && json_is_string(val_obj)) {
+			/* in authlist_ip, IP is a string without a concatenation */
+			ip = json_string_value(val_obj);
+			if (ip) {
+				client = client_list_find_by_ip(ip);
+				if (client) {
+					uint64_t total = bytes;
+					if (total > client->counters.incoming) {
+						client->counters.incoming = total;
+						client->counters.last_updated = time(NULL);
+					}
+				} else {
+					debug(LOG_DEBUG, "Download: Client not found for IP %s", ip);
+				}
+			}
+		}
+	}
+}
+
 int
 nftables_fw_counters_update(void)
 {
@@ -719,73 +793,9 @@ nftables_fw_counters_update(void)
 		json_t *elem_arr = json_object_get(set_wrapper, "elem");
 		if (sname && elem_arr && json_is_array(elem_arr)) {
 			if (strcmp(sname, "authlist") == 0) {
-				/* parse authlist as outgoing traffic (upload) */
-				size_t index_elem = 0;
-				json_t *wrapper_elem;
-				json_array_foreach(elem_arr, index_elem, wrapper_elem)  {
-					json_t *elem_obj = json_object_get(wrapper_elem, "elem");
-					json_t *val_obj = json_object_get(elem_obj, "val");
-					json_t *counter_obj = json_object_get(elem_obj, "counter");
-					uint64_t bytes = 0;
-					const char *ip = NULL;
-					const char *mac = NULL;
-					if (counter_obj) {
-						json_t *b = json_object_get(counter_obj, "bytes");
-						if (json_is_integer(b)) bytes = json_integer_value(b);
-					}
-					if (val_obj && json_is_object(val_obj)) {
-						/* in authlist, IP and MAC are in a concatenation */
-						json_t *concat_arr = json_object_get(val_obj, "concat");
-						if (json_is_array(concat_arr) && json_array_size(concat_arr) >= 2) {
-							ip = json_string_value(json_array_get(concat_arr, 0));
-							mac = json_string_value(json_array_get(concat_arr, 1));
-
-							if (ip && mac) {
-								client = client_list_find(mac, ip);
-								if (client) {
-									uint64_t total = bytes;
-									if (total > client->counters.outgoing) {
-										client->counters.outgoing = total;
-										client->counters.last_updated = time(NULL);
-									}
-								} else {
-									debug(LOG_DEBUG, "Upload: Client not found for IP %s MAC %s", ip, mac);
-								}
-							}										
-						}
-					}
-				}
+				_nftables_fw_parse_json_authlist(client, elem_arr);
 			} else if (strcmp(sname, "authlist_ip") == 0) {
-				/* parse authlist_ip as incoming traffic (download) */
-				size_t index_elem = 0;
-				json_t *wrapper_elem;
-				json_array_foreach(elem_arr, index_elem, wrapper_elem)  {
-					json_t *elem_obj = json_object_get(wrapper_elem, "elem");
-						json_t *val_obj = json_object_get(elem_obj, "val");
-						json_t *counter_obj = json_object_get(elem_obj, "counter");
-						uint64_t bytes = 0;
-						const char *ip = NULL;
-						if (counter_obj) {
-							json_t *b = json_object_get(counter_obj, "bytes");
-							if (json_is_integer(b)) bytes = json_integer_value(b);
-						}
-						if (val_obj && json_is_string(val_obj)) {
-							/* in authlist_ip, IP is a string without a concatenation */
-							ip = json_string_value(val_obj);
-							if (ip) {
-								client = client_list_find_by_ip(ip);
-								if (client) {
-									uint64_t total = bytes;
-									if (total > client->counters.incoming) {
-										client->counters.incoming = total;
-										client->counters.last_updated = time(NULL);
-									}
-								} else {
-									debug(LOG_DEBUG, "Download: Client not found for IP %s", ip);
-								}
-							}
-						}
-					}
+				_nftables_fw_parse_json_authlist_ip(client, elem_arr);
 			}
 		}
 		
