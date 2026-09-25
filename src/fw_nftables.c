@@ -21,8 +21,7 @@
 /** @internal
   @file fw_nftables.c
   @brief Firewall nftables functions using libjansson
-  @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
-  @author Copyright (C) 2007 Paul Kube <nodogsplash@kokoro.ucsd.edu>
+  @author Copyright (C) 2026 Arne Zachlod <arne@nerdkeller.org>
  */
 
 #define _GNU_SOURCE
